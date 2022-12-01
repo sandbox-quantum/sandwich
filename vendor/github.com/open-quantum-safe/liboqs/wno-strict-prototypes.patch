@@ -1,0 +1,12 @@
+diff --git a/.CMake/compiler_opts.cmake b/.CMake/compiler_opts.cmake
+index 72c741a..7f13db6 100644
+--- a/.CMake/compiler_opts.cmake
++++ b/.CMake/compiler_opts.cmake
+@@ -66,6 +66,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+     add_compile_options(-Wall)
+     add_compile_options(-Wextra)
+     add_compile_options(-Wpedantic)
++    add_compile_options(-Wno-strict-prototypes)
+     add_compile_options(-Wno-unused-command-line-argument)
+     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -Wa,--noexecstack")
+ 

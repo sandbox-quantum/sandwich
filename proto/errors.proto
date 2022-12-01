@@ -1,0 +1,124 @@
+// This protobuf aims to describe any types of errors.
+// The idea is to be as accurate as possible. However, there may be overlaps
+// between multiple error codes, for instance `ERROR_INVALID_ARGUMENT` and
+// `ERROR_PROTOBUF`. The strategy is to choose the error that best fits the
+// case. New type of errors can be introduced if the existing ones are not
+// accurate enough.
+
+syntax = "proto3";
+
+package saq.sandwich.proto;
+
+// Errors
+enum Error {
+  // No error.
+  ERROR_OK = 0;
+
+  // Invalid argument. For instance, thrown when a unexpected null pointer is
+  // passed.
+  ERROR_INVALID_ARGUMENT = 1;
+
+  // Memory error. Thrown when an allocation failed.
+  ERROR_MEMORY = 2;
+
+  // I/O error.
+  ERROR_IO = 3;
+
+  // Unknown error
+  ERROR_UNKNOWN = 4;
+
+  // Invalid configuration. Thrown when SandwichConfiguration is malformed,
+  // or invalid in a specific context.
+  ERROR_INVALID_CONFIGURATION = 5;
+
+  // Unsupported implementation.
+  ERROR_UNSUPPORTED_IMPLEMENTATION = 6;
+
+  // Unsupported protocol.
+  ERROR_UNSUPPORTED_PROTOCOL = 7;
+
+  // Mismatch between selected implementation and protocol. Thrown when a
+  // a implementation does not support a protocol. For example: libssh with
+  // TLS1.3.
+  ERROR_IMPLEMENTATION_PROTOCOL_MISMATCH = 8;
+
+  // Protobuf error. Thrown when an error happened during a serialization or
+  // deserialization.
+  ERROR_PROTOBUF = 9;
+
+  // Invalid network address.
+  ERROR_NETWORK_INVALID_ADDRESS = 10;
+
+  // Invalid network port.
+  ERROR_NETWORK_INVALID_PORT = 11;
+
+  // Invalid context. Thrown when user creates a tunnel from an invalid context.
+  ERROR_INVALID_CONTEXT = 12;
+
+  // Bad file descriptor. Thrown when user supplies an invalid file descriptor.
+  // For example, this error may be thrown by `sandwich_tunnel_from_fd`.
+  ERROR_BAD_FD = 13;
+
+  // Unsupported method. Thrown when a method for a tunnel is not supported.
+  // For example, thrown when the tunnel is a client tunnel, and the user
+  // calls `accept`.
+  ERROR_UNSUPPORTED_TUNNEL_METHOD = 14;
+
+  // Integer overflow. Thrown when an integer overflow happens.
+  ERROR_INTEGER_OVERFLOW = 15;
+
+  // Memory overflow. Thrown when a memory overflow happens.
+  ERROR_MEMORY_OVERFLOW = 16;
+
+  // Implementation error. Thrown when an error occurred in the implementation
+  // layer. For instance with OpenSSL, thrown if `SSL_connect` failed.
+  ERROR_IMPLEMENTATION = 17;
+
+  // Tunnel is invalid.
+  ERROR_INVALID_TUNNEL = 18;
+
+  // A specified KEM is invalid.
+  ERROR_INVALID_KEM = 19;
+
+  // A timeout occured.
+  ERROR_TIMEOUT = 20;
+
+  // Failed to resolve network address.
+  ERROR_NETWORK_ADDRESS_RESOLVE = 21;
+
+  // Failed to connect to an host.
+  ERROR_NETWORK_CONNECT = 22;
+
+  // Failed to create a socket.
+  ERROR_SOCKET_FAILED = 23;
+
+  // Call to getsockopt or setsockopt failed.
+  ERROR_SOCKET_OPT_FAILED = 24;
+
+  // Invalid ai family.
+  ERROR_SOCKET_INVALID_AI_FAMILY = 25;
+
+  // Connection refused.
+  ERROR_CONNECTION_REFUSED = 26;
+
+  // Network is unreachable.
+  ERROR_NETWORK_UNREACHABLE = 27;
+
+  // Poll failed on socket.
+  ERROR_SOCKET_POLL_FAILED = 28;
+
+  // Invalid certificate.
+  ERROR_INVALID_CERTIFICATE = 29;
+
+  // Unsupported certificate.
+  ERROR_UNSUPPORTED_CERTIFICATE = 30;
+
+  // Invalid private key.
+  ERROR_INVALID_PRIVATE_KEY = 31;
+
+  // Unsupported private key.
+  ERROR_UNSUPPORTED_PRIVATE_KEY = 32;
+
+  // Unsupported protocol version.
+  ERROR_UNSUPPORTED_PROTOCOL_VERSION = 33;
+}

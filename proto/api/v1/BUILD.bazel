@@ -1,0 +1,85 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
+proto_library(
+    name = "encoding_format_proto",
+    srcs = ["encoding_format.proto"],
+)
+
+proto_library(
+    name = "data_source_proto",
+    srcs = ["data_source.proto"],
+    deps = [
+        ":encoding_format_proto",
+    ],
+)
+
+proto_library(
+    name = "certificate_proto",
+    srcs = ["certificate.proto"],
+    deps = [
+        ":data_source_proto",
+    ],
+)
+
+proto_library(
+    name = "private_key_proto",
+    srcs = ["private_key.proto"],
+    deps = [
+        ":data_source_proto",
+    ],
+)
+
+proto_library(
+    name = "tls_proto",
+    srcs = ["tls.proto"],
+    deps = [
+        ":certificate_proto",
+        ":private_key_proto",
+    ],
+)
+
+proto_library(
+    name = "api_proto",
+    srcs = ["configuration.proto"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":tls_proto",
+    ],
+)
+
+##############
+# Go library #
+##############
+
+go_proto_library(
+    name = "api_go_proto",
+    importpath = "github.com/sandbox-quantum/sandwich/proto/sandwich/api/v1",
+    protos = [
+        ":api_proto",
+        ":certificate_proto",
+        ":data_source_proto",
+        ":encoding_format_proto",
+        ":private_key_proto",
+        ":tls_proto",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+###############
+# C++ library #
+###############
+
+cc_proto_library(
+    name = "api_cc_proto",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":api_proto",
+    ],
+)

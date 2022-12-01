@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+
+import "proto/api/v1/data_source.proto";
+
+// A certificate.
+message Certificate {
+  oneof source {
+    ASN1DataSource static = 1;
+  }
+}
