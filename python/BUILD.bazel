@@ -1,0 +1,53 @@
+py_library(
+    name = "errors",
+    srcs = [
+        "errors.py",
+    ],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto:sandwich_python_proto",
+    ],
+)
+
+py_library(
+    name = "io",
+    srcs = [
+        "io.py",
+    ],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":errors",
+    ],
+)
+
+py_library(
+    name = "python",
+    srcs = [
+        "sandwich.py",
+    ],
+    data = [
+        "//c:sandwich_shared",
+    ],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":errors",
+        ":io",
+        "//proto:sandwich_python_proto",
+        "//proto/api/v1:api_python_proto",
+        "@bazel_tools//tools/python/runfiles",
+    ],
+)
+
+py_test(
+    name = "tunnel_test",
+    srcs = ["tunnel_test.py"],
+    data = [
+        "//testdata:tests_data",
+    ],
+    deps = [
+        ":python",
+    ],
+)

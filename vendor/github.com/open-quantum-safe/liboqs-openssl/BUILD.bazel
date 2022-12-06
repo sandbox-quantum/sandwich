@@ -365,12 +365,3 @@ cc_library(
         ":openssl-crypto",
     ],
 )
-
-cc_binary(
-    name = "compile-link_test",
-    srcs = ["compile-link_test.c"],
-    deps = [
-        ":liboqs",
-        ":openssl",
-    ],
-)
