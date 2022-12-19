@@ -1,5 +1,0 @@
-filegroup(
-    name = "tests_data",
-    srcs = glob(["*"]),
-    visibility = ["//visibility:public"],
-)
