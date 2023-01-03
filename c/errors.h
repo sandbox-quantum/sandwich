@@ -1,0 +1,67 @@
+// Copyright 2022 SandboxAQ
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * \file
+ * \brief Enum Error in namespace Sandwich.
+ */
+
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** \brief Enum Error. */
+enum SandwichError { 
+  SANDWICH_ERROR_OK = 0,
+  SANDWICH_ERROR_INVALID_ARGUMENT = 1,
+  SANDWICH_ERROR_MEMORY = 2,
+  SANDWICH_ERROR_IO = 3,
+  SANDWICH_ERROR_UNKNOWN = 4,
+  SANDWICH_ERROR_INVALID_CONFIGURATION = 5,
+  SANDWICH_ERROR_UNSUPPORTED_IMPLEMENTATION = 6,
+  SANDWICH_ERROR_UNSUPPORTED_PROTOCOL = 7,
+  SANDWICH_ERROR_IMPLEMENTATION_PROTOCOL_MISMATCH = 8,
+  SANDWICH_ERROR_PROTOBUF = 9,
+  SANDWICH_ERROR_NETWORK_INVALID_ADDRESS = 10,
+  SANDWICH_ERROR_NETWORK_INVALID_PORT = 11,
+  SANDWICH_ERROR_INVALID_CONTEXT = 12,
+  SANDWICH_ERROR_BAD_FD = 13,
+  SANDWICH_ERROR_UNSUPPORTED_TUNNEL_METHOD = 14,
+  SANDWICH_ERROR_INTEGER_OVERFLOW = 15,
+  SANDWICH_ERROR_MEMORY_OVERFLOW = 16,
+  SANDWICH_ERROR_IMPLEMENTATION = 17,
+  SANDWICH_ERROR_INVALID_TUNNEL = 18,
+  SANDWICH_ERROR_INVALID_KEM = 19,
+  SANDWICH_ERROR_TIMEOUT = 20,
+  SANDWICH_ERROR_NETWORK_ADDRESS_RESOLVE = 21,
+  SANDWICH_ERROR_NETWORK_CONNECT = 22,
+  SANDWICH_ERROR_SOCKET_FAILED = 23,
+  SANDWICH_ERROR_SOCKET_OPT_FAILED = 24,
+  SANDWICH_ERROR_SOCKET_INVALID_AI_FAMILY = 25,
+  SANDWICH_ERROR_CONNECTION_REFUSED = 26,
+  SANDWICH_ERROR_NETWORK_UNREACHABLE = 27,
+  SANDWICH_ERROR_SOCKET_POLL_FAILED = 28,
+  SANDWICH_ERROR_INVALID_CERTIFICATE = 29,
+  SANDWICH_ERROR_UNSUPPORTED_CERTIFICATE = 30,
+  SANDWICH_ERROR_INVALID_PRIVATE_KEY = 31,
+  SANDWICH_ERROR_UNSUPPORTED_PRIVATE_KEY = 32,
+  SANDWICH_ERROR_UNSUPPORTED_PROTOCOL_VERSION = 33,
+};
+typedef enum SandwichError SandwichError;
+
+#ifdef __cplusplus
+} // end extern "C"
+#endif

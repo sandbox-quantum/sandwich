@@ -1,0 +1,194 @@
+cc_library(
+    name = "openssl",
+    srcs = ["openssl.cc"],
+    hdrs = ["openssl.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//cc:data_source",
+        "//cc:errors",
+        "//cc:result",
+        "//cc:tunnel",
+        "//cc/io",
+        "//proto:sandwich_cc_proto",
+        "//proto/api/v1:api_cc_proto",
+        "//vendor/github.com/open-quantum-safe/liboqs-openssl:openssl",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "context",
+    srcs = ["context.cc"],
+    hdrs = ["context.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":openssl",
+        "//cc:context",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "context_factory",
+    srcs = ["context_factory.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":client",
+        ":context",
+        ":server",
+        "//proto/api/v1:api_cc_proto",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "client",
+    srcs = ["client.cc"],
+    hdrs = ["client.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":context",
+        ":tunnel",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "server",
+    srcs = ["server.cc"],
+    hdrs = ["server.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":context",
+        ":tunnel",
+    ],
+    alwayslink = True,
+)
+
+cc_test(
+    name = "client_context_test",
+    timeout = "short",
+    srcs = ["client_context_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    linkstatic = True,
+    deps = [
+        ":sandwich",
+        "//cc:sandwich",
+        "//cc:tests_utils",
+    ],
+)
+
+cc_test(
+    name = "server_context_test",
+    timeout = "short",
+    srcs = ["server_context_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    linkstatic = True,
+    deps = [
+        ":sandwich",
+        "//cc:sandwich",
+        "//cc:tests_utils",
+    ],
+)
+
+cc_library(
+    name = "tunnel",
+    srcs = ["tunnel.cc"],
+    hdrs = ["tunnel.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    linkstatic = True,
+    deps = [
+        ":openssl",
+        "//cc:tunnel",
+        "//cc/io",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "sandwich",
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":client",
+        ":context_factory",
+        ":server",
+        ":tunnel",
+    ],
+    alwayslink = True,
+)
+
+cc_test(
+    name = "tunnels_test",
+    timeout = "short",
+    srcs = ["tunnels_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    linkstatic = True,
+    deps = [
+        "//cc:sandwich",
+        "//cc:tests_utils",
+        "//cc/io:socket",
+    ],
+)
+
+cc_test(
+    name = "tunnel_closed_test",
+    timeout = "short",
+    srcs = ["tunnel_closed_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    linkstatic = True,
+    deps = [
+        "//cc:sandwich",
+        "//cc:tests_utils",
+        "//cc/io:socket",
+    ],
+)

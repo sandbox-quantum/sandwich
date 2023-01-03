@@ -1,0 +1,176 @@
+cc_library(
+    name = "exports",
+    hdrs = ["exports.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+cc_library(
+    name = "errors",
+    hdrs = ["errors.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+cc_library(
+    name = "result",
+    srcs = ["result.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+cc_library(
+    name = "data_source",
+    srcs = ["data_source.cc"],
+    hdrs = ["data_source.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":errors",
+        ":result",
+        "//proto/api/v1:api_cc_proto",
+    ],
+)
+
+cc_library(
+    name = "context",
+    srcs = ["context.cc"],
+    hdrs = ["context.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":errors",
+        ":exports",
+        ":result",
+        ":tunnel",
+        "//cc/io",
+        "//proto/api/v1:api_cc_proto",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "context_factory",
+    srcs = ["context_factory.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":context",
+        "//cc/openssl:context",
+        "//cc/openssl:context_factory",
+        "//proto/api/v1:api_cc_proto",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "tests_utils",
+    hdrs = ["tests_utils.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "tunnel_state",
+    hdrs = ["tunnel_state.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "tunnel_handshake_state",
+    hdrs = ["tunnel_handshake_state.h"],
+    copts = [
+        "--std=c++20",
+    ],
+)
+
+cc_library(
+    name = "tunnel_record_errors",
+    hdrs = ["tunnel_record_errors.h"],
+    copts = [
+        "--std=c++20",
+    ],
+)
+
+cc_library(
+    name = "tunnel",
+    srcs = ["tunnel.cc"],
+    hdrs = ["tunnel.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":errors",
+        ":exports",
+        ":tunnel_handshake_state",
+        ":tunnel_record_errors",
+        ":tunnel_state",
+        "//cc:result",
+        "//cc/io",
+        "//proto:sandwich_cc_proto",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "error_strings",
+    srcs = ["error_strings.cc"],
+    hdrs = ["error_strings.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":errors",
+        ":tunnel_handshake_state",
+        ":tunnel_record_errors",
+        ":tunnel_state",
+        "//cc/io:io_errors",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "sandwich",
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":context_factory",
+        ":error_strings",
+        ":tunnel",
+        "//cc/openssl:sandwich",
+    ],
+    alwayslink = True,
+)

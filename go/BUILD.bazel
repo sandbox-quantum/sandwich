@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sandwich",
+    srcs = [
+        "errors.go",
+        "io.go",
+        "sandwich.go",
+    ],
+    cdeps = [
+        "//c:sandwich",
+    ],
+    cgo = True,
+    importpath = "github.com/sandbox-quantum/sandwich/go/sandwich",
+    deps = [
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@org_golang_google_protobuf//proto:go_default_library",
+    ],
+)
+
+go_test(
+    name = "sandwich_test",
+    timeout = "short",
+    srcs = ["sandwich_test.go"],
+    cgo = True,
+    data = [
+        "//testdata:tests_data",
+    ],
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@io_bazel_rules_go//go/tools/bazel",
+    ],
+)
+
+go_test(
+    name = "fuzz_test",
+    timeout = "short",
+    srcs = ["fuzz_test.go"],
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@io_bazel_rules_go//go/tools/bazel",
+        "@org_golang_google_protobuf//proto:go_default_library",
+    ],
+)

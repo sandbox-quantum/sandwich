@@ -1,0 +1,59 @@
+// Copyright 2022 SandboxAQ
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package saq.sandwich.proto;
+
+
+// Tunnel modes.
+enum Mode {
+  // Unspecified mode.
+  MODE_UNSPECIFIED = 0;
+  // Client mode.
+  MODE_CLIENT = 1;
+  // Server mode.
+  MODE_SERVER = 2;
+}
+
+// Events that can be polled from a tunnel.
+// Multiple events can be bitwise-OR by `sandwich_tunnel_poll`.
+enum PollEvents {
+  // No-op option.
+  POLL_UNSPECIFIED = 0;
+
+  // Poll is not supported.
+  POLL_UNSUPPORTED = 1;
+
+  // There is data to read.
+  POLL_IN = 2;
+
+  // Writing is possible.
+  POLL_OUT = 4;
+
+  // The remote peer closed the connection.
+  POLL_HUP = 8;
+
+  // An error occurred.
+  POLL_ERR = 16;
+}
+
+// Information that can be obtained from a tunnel.
+enum TunnelInfo {
+  // The network address (string).
+  TUNNEL_INFO_NETADDRESS = 0;
+
+  // The network port (integer)..
+  TUNNEL_INFO_NETPORT = 1;
+}

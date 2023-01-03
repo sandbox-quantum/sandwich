@@ -1,0 +1,61 @@
+// Copyright 2022 SandboxAQ
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+
+import "proto/api/v1/certificate.proto";
+import "proto/api/v1/private_key.proto";
+
+enum TLSFlags {
+  // Unspecified flags.
+  TLSFLAGS_UNSPECIFIED = 0;
+
+  // Skip certificate and signature verification (insecure mode).
+  TLSFLAGS_SKIP_VERIFY = 1;
+};
+
+// TLS options, for both client and server modes.
+message TLSOptions {
+  // The kem.
+  repeated string kem = 1;
+
+  // Flags, as options.
+  int32 flags = 2;
+
+  // Next id: 3
+}
+
+// TLS options, specific to the client mode.
+message TLSClientOptions {
+  // Common TLS options.
+  TLSOptions common_options = 1;
+
+  // Collection of trusted certificates.
+  repeated Certificate trusted_certificates = 2;
+}
+
+// TLS options, specific to the server mode.
+message TLSServerOptions {
+  // Common TLS options.
+  TLSOptions common_options = 1;
+
+  // Certificate.
+  Certificate certificate = 2;
+
+  // A private key.
+  PrivateKey private_key = 3;
+}
