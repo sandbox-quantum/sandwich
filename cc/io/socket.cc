@@ -27,6 +27,9 @@
 
 extern "C" {
 
+#ifdef __APPLE__
+#include <fcntl.h>
+#endif
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include <poll.h>
@@ -35,6 +38,13 @@ extern "C" {
 #include <unistd.h>
 
 } // end extern "C"
+
+#ifndef SOL_TCP
+#ifndef IPPROTO_TCP
+#error "Failed to find SOL_TCP or IPPROTO_TCP
+#endif
+#define SOL_TCP IPPROTO_TCP
+#endif
 
 namespace saq::sandwich::io {
 
@@ -123,9 +133,23 @@ namespace {
 /// \return The created socket, or an error.
 [[nodiscard, maybe_unused]] auto NewNonBlockingSocket(const int af_inet)
     -> Result<FileDescriptor, sandwich::Error> {
+#ifdef SOCK_NONBLOCK
   // NOLINTNEXTLINE(hicpp-signed-bitwise)
   auto sock = ::socket(af_inet, SOCK_STREAM | SOCK_NONBLOCK, 0);
-
+#else
+  auto sock = ::socket(af_inet, SOCK_STREAM, 0);
+  if (sock > 0) {
+    const int flags = ::fcntl(sock, F_GETFL, 0);
+    if (flags == -1) {
+      ::close(sock);
+      return sandwich::Error::kSocketOptFailed;
+    }
+    if (fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
+      ::close(sock);
+      return sandwich::Error::kSocketOptFailed;
+    }
+  }
+#endif
   if (sock < 0) {
     return sandwich::Error::kSocketFailed;
   }
@@ -322,10 +346,10 @@ namespace {
     -> sandwich::Error {
   if (address.ai_family == AF_INET) {
     // NOLINTNEXTLINE
-    address.addr.i4.sin_port = ::htons(netport);
+    address.addr.i4.sin_port = htons(netport);
   } else if (address.ai_family == AF_INET6) {
     // NOLINTNEXTLINE
-    address.addr.i6.sin6_port = ::htons(netport);
+    address.addr.i6.sin6_port = htons(netport);
   } else {
     return sandwich::Error::kSocketInvalidAiFamily;
   }

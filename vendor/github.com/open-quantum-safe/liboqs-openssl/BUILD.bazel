@@ -250,11 +250,13 @@ genrule(
                      -Wno-unknown-warning-option
             make build_generated
            )
-           cmake --build liboqs_build -j $$(nproc)
+           ncores=$$(nproc) || ncores=$$(sysctl -n hw.logicalcpu)
+           cmake --build liboqs_build -j $$ncores
            cmake --install liboqs_build
            (
             cd openssl_build
-            make -j $$(nproc) -o test || make -j $$(nproc) -o test
+            mkdir -p oqs/lib oqs/lib64
+            make -j $$ncores -o test || make -j $$ncores -o test
             make install_sw
             cp $$ROOT_DIR/external/open-quantum-safe.openssl_no_liboqs/apps/openssl.cnf $$INSTALL_DIR/lib/
            )""",

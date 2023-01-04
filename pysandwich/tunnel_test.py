@@ -142,9 +142,9 @@ def create_client_conf(s: Sandwich) -> Context:
 
 
 def create_ios() -> (SandwichIO.IO, SandwichIO.IO):
-    s1, s2 = socket.socketpair(
-        family=socket.AF_UNIX, type=socket.SOCK_STREAM | socket.SOCK_NONBLOCK
-    )
+    s1, s2 = socket.socketpair(family=socket.AF_UNIX, type=socket.SOCK_STREAM)
+    s1.setblocking(0)
+    s2.setblocking(0)
     return Socket(s1), Socket(s2)
 
 

@@ -103,6 +103,7 @@ import abc
 import ctypes
 import os
 import pathlib
+import platform
 import typing
 
 from bazel_tools.tools.python.runfiles import runfiles
@@ -114,16 +115,22 @@ import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 
 
-def _find_sandwich_dll() -> typing.Optional[pathlib.Path]:
-    """Finds the path to the libsandwich dll (`libsandwich_shared.so`).
+def _find_sandwich_dll(extension=".so") -> typing.Optional[pathlib.Path]:
+    """Finds the path to the libsandwich dll (`libsandwich_shared.so`, or
+    `libsandwich_shared.dylib`).
 
-    Finds the path to the file `libsandwich_shared.so`, using a list of default path.
+    Finds the path to the file `libsandwich_shared.so` or
+    `libsandwich_shared.dylib`, using a list of default path.
 
+    Args:
+        extension:
+            Library extension: `so` or `dylib`.
     Returns:
-        The path to `libsandwich_shared.so` if it was successfully found, else None.
+        The path to `libsandwich_shared.so` or `libsandwich_shared.dylib` if
+        it was successfully found, else None.
     """
     r = runfiles.Create()
-    libpath = "sandwich/c/libsandwich_shared.so"
+    libpath = f"sandwich/c/libsandwich_shared.{extension}"
     ret = r.Rlocation(libpath)
     return pathlib.Path(ret)
 
@@ -509,10 +516,16 @@ class Sandwich:
         Raises:
             FileNotFoundError: The Sandwich shared library could not be found.
         """
+        self._platform = platform.system()
+        extension = "so"
+        if self._platform == "Darwin":
+            extension = "dylib"
 
         path: pathlib.Path = ""
-        if (path := dllpath) == None and (dllpath := _find_sandwich_dll()) == None:
-            raise FileNotFoundError("Failed to find `libsandwich.so`")
+        if (path := dllpath) == None and (
+            dllpath := _find_sandwich_dll(extension)
+        ) == None:
+            raise FileNotFoundError(f"Failed to find `libsandwich.{extension}`")
 
         if isinstance(dllpath, pathlib.Path):
             if dllpath.is_symlink():

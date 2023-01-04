@@ -20,6 +20,7 @@
 ///
 /// \author thb-sb
 
+#include <array>
 #include <thread>
 
 #include "c/tests_utils.h"
@@ -33,6 +34,10 @@ extern "C" {
 #include <unistd.h>
 
 #include "c/sandwich.h"
+
+#ifndef SOCK_NONBLOCK
+#include <fcntl.h>
+#endif
 
 } // end extern "C"
 
@@ -488,8 +493,20 @@ int main() {
 
   // Create two connected sockets, to use with saq::sandwich::io::Socket.
   std::array<int, 2> fds{0};
+#ifdef SOCK_NONBLOCK
+  // NOLINTNEXTLINE(hicpp-signed-bitwise)
   auto err{::socketpair(PF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0, fds.data())};
   sandwich_assert(err == 0);
+#else
+  auto err{::socketpair(PF_LOCAL, SOCK_STREAM, 0, fds.data())};
+  sandwich_assert(err == 0);
+  for (auto fd : fds) {
+    int flags = ::fcntl(fd, F_GETFL, 0);
+    sandwich_assert(flags != -1);
+    flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    sandwich_assert(flags != -1);
+  }
+#endif
 
   // Create I/O interfaces for client and server.
   auto ios{CreateIOs(fds)};
