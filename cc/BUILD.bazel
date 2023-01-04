@@ -88,15 +88,6 @@ cc_library(
 )
 
 cc_library(
-    name = "tests_utils",
-    hdrs = ["tests_utils.h"],
-    copts = [
-        "--std=c++20",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "tunnel_state",
     hdrs = ["tunnel_state.h"],
     copts = [
@@ -173,4 +164,18 @@ cc_library(
         "//cc/openssl:sandwich",
     ],
     alwayslink = True,
+)
+
+cc_library(
+    name = "tests_utils",
+    srcs = ["tests_utils.cc"],
+    hdrs = ["tests_utils.h"],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = ["//cc:__subpackages__"],
+    deps = [
+        ":sandwich",
+        "//cc/io:socket",
+    ],
 )

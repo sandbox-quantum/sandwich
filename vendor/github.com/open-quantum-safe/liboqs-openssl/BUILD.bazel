@@ -246,7 +246,8 @@ genrule(
                      --prefix=$$INSTALL_DIR \
                      -isystem $$ROOT_DIR/liboqs_build/include \
                      -L$$ROOT_DIR/liboqs_build/lib \
-                     -Wno-bitwise-instead-of-logical
+                     -Wno-bitwise-instead-of-logical \
+                     -Wno-unknown-warning-option
             make build_generated
            )
            cmake --build liboqs_build -j $$(nproc)

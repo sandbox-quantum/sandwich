@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,32 +27,6 @@
 #include "proto/sandwich.pb.h"
 
 namespace {
-
-/// \brief Create a configuration.
-///
-/// \param mode Mode.
-/// \param impl Implementation.
-/// \param proto Protocol.
-///
-/// \return The configuration.
-auto NewConfiguration(
-    const saq::sandwich::proto::Mode mode,
-    const saq::sandwich::proto::api::v1::Implementation impl,
-    const saq::sandwich::proto::api::v1::Protocol proto)
-    -> saq::sandwich::proto::api::v1::Configuration {
-  saq::sandwich::proto::api::v1::Configuration config{};
-
-  config.set_protocol(proto);
-  config.set_impl(impl);
-
-  if (mode == saq::sandwich::proto::Mode::MODE_CLIENT) {
-    config.mutable_client()->mutable_tls()->mutable_common_options();
-  } else if (mode == saq::sandwich::proto::Mode::MODE_SERVER) {
-    config.mutable_server()->mutable_tls()->mutable_common_options();
-  }
-
-  return config;
-}
 
 /// \brief Test with invalid protocol.
 ///

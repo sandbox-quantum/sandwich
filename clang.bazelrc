@@ -1,0 +1,9 @@
+build:clang --action_env=CC=clang-13
+build:clang --action_env=CXX=clang++-13
+build:clang --action_env='LLVM_CONFIG=/usr/lib/llvm-13/bin/llvm-config'
+build:clang --repo_env='LLVM_CONFIG=/usr/lib/llvm-13/bin/llvm-config'
+
+# Google abseil triggers this warning if we compile using clang 14 or newer
+build:clang --host_copt -Wno-deprecated-builtins
+build:clang --host_copt -Wno-unknown-warning-option
+

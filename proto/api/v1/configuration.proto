@@ -37,20 +37,6 @@ enum Implementation {
   IMPL_OPENSSL1_1_1_OQS = 2;
 }
 
-// Socket options to apply to tunnels.
-enum SocketOptions {
-  // No-op options.
-  // Note: we cannot use an `optional uint32` for `socket_options`, because
-  // optional fields are not supported by the protobuf crate (Rust):
-  // > is a proto3 file that contains optional fields, but code generator.
-  // > protoc-gen-rust hasn't been updated to support optional fields in proto3.
-  // > Please ask the owner of this code generator to support proto3 optional.
-  SOCK_UNSPECIFIED = 0;
-
-  // Non-blocking mode.
-  SOCK_NONBLOCK = 1;
-}
-
 // Client options.
 message ClientOptions {
   oneof opts {
@@ -76,9 +62,6 @@ message Configuration {
 
   // The implementation to use.
   Implementation impl = 2;
-
-  // Bitwise-OR of SocketFlags.
-  uint32 socket_options = 3;
 
   // The option specific to the pair {protocol, impl}.
   oneof opts {

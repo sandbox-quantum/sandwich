@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 #include <thread>
 
-#include "cc/tests_utils.h"
+#include "c/tests_utils.h"
 #include "proto/api/v1/configuration.pb.h"
 #include "proto/sandwich.pb.h"
 

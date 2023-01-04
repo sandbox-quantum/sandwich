@@ -141,6 +141,14 @@ cc_binary(
     ],
 )
 
+cc_library(
+    name = "tests_utils",
+    hdrs = ["tests_utils.h"],
+    copts = [
+        "--std=c++20",
+    ],
+)
+
 cc_test(
     name = "tunnels_test",
     timeout = "short",
@@ -154,7 +162,7 @@ cc_test(
     linkstatic = True,
     deps = [
         ":sandwich",
-        "//cc:tests_utils",
+        ":tests_utils",
         "//proto/api/v1:api_cc_proto",
     ],
 )

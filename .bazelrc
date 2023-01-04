@@ -1,0 +1,5 @@
+import %workspace%/clang.bazelrc
+
+build:cicd --config=clang
+
+test --test_output=errors
