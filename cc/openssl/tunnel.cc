@@ -42,7 +42,7 @@ template <typename ErrT>
 ///
 /// \return The most appropriate io::IO::Error.
 template <>
-[[nodiscard]] auto OpenSSLErrorTo<io::IO::Error>(const int err)
+[[nodiscard, maybe_unused]] auto OpenSSLErrorTo<io::IO::Error>(const int err)
     -> io::IO::Error {
   switch (err) {
     using IOError = io::IO::Error;

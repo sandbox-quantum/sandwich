@@ -410,9 +410,18 @@ auto SandwichBIOWrite(::BIO *bio, const char *data, const size_t len,
   auto *tun = static_cast<Tunnel *>(::BIO_get_data(bio));
   auto &ioint = tun->GetIO();
 
+  auto state = tun->GetState();
+  if (state != tunnel::State::kHandshakeDone) {
+    ::SSL *ssl = nullptr;
+    if ((::BIO_get_ssl(bio, &ssl) == 1) &&
+        (::SSL_get_state(ssl) == TLS_ST_OK)) {
+      state = tunnel::State::kHandshakeDone;
+    }
+  }
+
   // NOLINTNEXTLINE
-  const auto opres = ioint.Write(
-      {reinterpret_cast<const std::byte *>(data), len}, tun->GetState());
+  const auto opres =
+      ioint.Write({reinterpret_cast<const std::byte *>(data), len}, state);
   *written = opres.count;
   if (opres.err == io::IO::Error::kOk) {
     return 1;
@@ -440,9 +449,18 @@ auto SandwichBIORead(::BIO *bio, char *data, const size_t len, size_t *read)
   auto *tun = static_cast<Tunnel *>(::BIO_get_data(bio));
   auto &ioint = tun->GetIO();
 
+  auto state = tun->GetState();
+  if (state != tunnel::State::kHandshakeDone) {
+    ::SSL *ssl = nullptr;
+    if ((::BIO_get_ssl(bio, &ssl) == 1) &&
+        (::SSL_get_state(ssl) == TLS_ST_OK)) {
+      state = tunnel::State::kHandshakeDone;
+    }
+  }
+
   // NOLINTNEXTLINE
   const auto opres =
-      ioint.Read({reinterpret_cast<std::byte *>(data), len}, tun->GetState());
+      ioint.Read({reinterpret_cast<std::byte *>(data), len}, state);
   *read = opres.count;
   if (opres.err == io::IO::Error::kOk) {
     return 1;
