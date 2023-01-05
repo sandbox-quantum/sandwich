@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bazelbuild/rules_go/go/tools/bazel"
 	"github.com/sandbox-quantum/sandwich/go/sandwich"
+	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	pb "github.com/sandbox-quantum/sandwich/proto/sandwich"
 	api "github.com/sandbox-quantum/sandwich/proto/sandwich/api/v1"
