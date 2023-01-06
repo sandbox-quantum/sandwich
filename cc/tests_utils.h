@@ -24,6 +24,8 @@
 #include <span>
 #include <string_view>
 
+#include "gtest/gtest.h"
+
 #include "cc/context.h"
 #include "cc/tunnel.h"
 #include "proto/api/v1/configuration.pb.h"
@@ -85,12 +87,14 @@ struct IOPair {
 /// \param mode Mode.
 /// \param impl Implementation.
 /// \param proto Protocol.
+/// \param[out] config Configuration to write.
 ///
 /// \return A new configuration.
 [[nodiscard]] auto NewConfiguration(sandwich_proto::Mode mode,
                                     sandwich_api::Implementation impl,
-                                    sandwich_api::Protocol proto)
-    -> sandwich_api::Configuration;
+                                    sandwich_api::Protocol proto,
+                                    sandwich_api::Configuration *config)
+    -> testing::AssertionResult;
 
 /// \brief Add a certificate to the list of trusted certificate for clients,
 /// or set the certificate for server.
@@ -98,61 +102,65 @@ struct IOPair {
 /// \param config TLS configuration.
 /// \param certpath Path to the certificate.
 /// \param certfmt Certificate format.
-void TLSConfigurationSetCertificate(sandwich_api::Configuration *config,
-                                    const std::string_view &certpath,
-                                    sandwich_api::ASN1EncodingFormat certfmt);
+[[nodiscard]] auto TLSConfigurationSetCertificate(
+    sandwich_api::Configuration *config, const std::string_view &certpath,
+    sandwich_api::ASN1EncodingFormat certfmt) -> testing::AssertionResult;
 
 /// \brief Set the private key to a TLS configuration.
 ///
 /// \param config TLS configuration.
 /// \param keypath Path to the private key.
 /// \param keyfmt Private key format.
-void TLSConfigurationSetPrivateKey(sandwich_api::Configuration *config,
-                                   const std::string_view &keypath,
-                                   sandwich_api::ASN1EncodingFormat keyfmt);
+[[nodiscard]] auto TLSConfigurationSetPrivateKey(
+    sandwich_api::Configuration *config, const std::string_view &keypath,
+    sandwich_api::ASN1EncodingFormat keyfmt) -> testing::AssertionResult;
 
 /// \brief Append a KEM to a TLS configuration.
 ///
 /// \param config TLS configuration.
 /// \param kem KEM to append to config.
-void TLSConfigurationAddKEM(sandwich_api::Configuration *config,
-                            const std::string_view &kem);
+[[nodiscard]] auto TLSConfigurationAddKEM(sandwich_api::Configuration *config,
+                                          const std::string_view &kem)
+    -> testing::AssertionResult;
 
 /// \brief Append KEMs to a TLS configuration.
 ///
 /// \param config TLS configuration.
 /// \param kems KEM to append to config.
-void TLSConfigurationAddKEMs(sandwich_api::Configuration *config,
-                             const std::span<const std::string_view> &kems);
+[[nodiscard]] auto TLSConfigurationAddKEMs(
+    sandwich_api::Configuration *config,
+    const std::span<const std::string_view> &kems) -> testing::AssertionResult;
 
 /// \brief Create a Sandwich context from a configuration.
 ///
 /// \param config Configuration.
-///
-/// \return The Sandwich context.
-[[nodiscard]] auto CreateContext(const sandwich_api::Configuration &config)
-    -> std::unique_ptr<sandwich::Context>;
+/// \param[out] context Context unique pointer to fill.
+[[nodiscard]] auto CreateContext(const sandwich_api::Configuration &config,
+                                 std::unique_ptr<sandwich::Context> *context)
+    -> testing::AssertionResult;
 
 /// \brief Create a Sandwich tunnel from a context and an I/O interface.
 ///
 /// \param context Configuration.
 /// \param ioint I/O interface.
+/// \param[out] tun Tunnel unique pointer to fill.
 ///
 /// \return The tunnel.
 [[nodiscard]] auto CreateTunnel(std::unique_ptr<sandwich::Context> *context,
-                                std::unique_ptr<sandwich::io::IO> ioint)
-    -> std::unique_ptr<sandwich::Tunnel>;
+                                std::unique_ptr<sandwich::io::IO> ioint,
+                                std::unique_ptr<sandwich::Tunnel> *tun)
+    -> testing::AssertionResult;
 
 /// \brief Create a TLS client context from a trusted certificate and a KEM.
 ///
 /// \param certpath Path to the certificate.
 /// \param certfmt Certificate format.
 /// \param kem KEM to use.
-///
-/// \return A new TLS Sandwich client context.
+/// \param[out] context Context unique pointer to fill.
 [[nodiscard]] auto CreateTLSClientContext(
     const std::string_view &certpath, sandwich_api::ASN1EncodingFormat certfmt,
-    const std::string_view &kem) -> std::unique_ptr<sandwich::Context>;
+    const std::string_view &kem, std::unique_ptr<sandwich::Context> *context)
+    -> testing::AssertionResult;
 
 /// \brief Create a TLS server context from a certificate,a key and a KEM.
 ///
@@ -161,20 +169,20 @@ void TLSConfigurationAddKEMs(sandwich_api::Configuration *config,
 /// \param keypath Path to the private key.
 /// \param keyfmt Private key format.
 /// \param kem KEM to use.
-///
-/// \return A new TLS Sandwich client context.
+/// \param[out] context Context unique pointer to fill.
 [[nodiscard]] auto CreateTLSServerContext(
     const std::string_view &certpath, sandwich_api::ASN1EncodingFormat certfmt,
     const std::string_view &keypath, sandwich_api::ASN1EncodingFormat keyfmt,
-    const std::string_view &kem) -> std::unique_ptr<sandwich::Context>;
+    const std::string_view &kem, std::unique_ptr<sandwich::Context> *context)
+    -> testing::AssertionResult;
 
 /// \brief Create two connected I/O interfaces using
 /// saq::sandwich::io::Socket.
 ///
 /// \param fds File descriptors.
+/// \param[out] pair The IOPair to fill.
 ///
 /// The first file descriptor in `fds` is the client's.
 /// and last file descriptor in `fds` is the server's
-///
-/// This function succeed.
-[[nodiscard]] auto CreateSocketIOPair(const std::array<int, 2> &fds) -> IOPair;
+[[nodiscard]] auto CreateSocketIOPair(const std::array<int, 2> &fds,
+                                      IOPair *pair) -> testing::AssertionResult;

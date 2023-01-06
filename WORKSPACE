@@ -122,3 +122,10 @@ rust_bindgen_register_toolchains()
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 
 rust_proto_repositories()
+
+http_archive(
+    name = "com_google_googletest",
+    sha256 = "7897bfaa5ad39a479177cfb5c3ce010184dbaee22a7c3727b212282871918751",
+    strip_prefix = "googletest-a4ab0abb93620ce26efad9de9296b73b16e88588",
+    urls = ["https://github.com/google/googletest/archive/a4ab0abb93620ce26efad9de9296b73b16e88588.tar.gz"],
+)

@@ -177,5 +177,6 @@ cc_library(
     deps = [
         ":sandwich",
         "//cc/io:socket",
+        "@com_google_googletest//:gtest_main",
     ],
 )

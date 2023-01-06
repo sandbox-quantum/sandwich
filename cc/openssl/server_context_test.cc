@@ -21,105 +21,82 @@
 #include <cassert>
 #include <iostream>
 
+#include "gtest/gtest.h"
+
 #include "cc/context.h"
 #include "cc/result.h"
 #include "cc/tests_utils.h"
 #include "proto/sandwich.pb.h"
 
-namespace {
-
 /// \brief Test with invalid protocol.
-///
-/// This test fails.
-void TestWithInvalidProtocolNOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, InvalidProtocolTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
   config.set_protocol(
       saq::sandwich::proto::api::v1::Protocol::PROTO_UNSPECIFIED);
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == false);
-  sandwich_assert(res.GetError() ==
-                  saq::sandwich::Error::kInvalidConfiguration);
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+  ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
+  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidConfiguration)
+      << "Bad error code";
 }
 
 /// \brief Test with invalid KEM
-///
-/// This test fails.
-void TestWithInvalidKemNOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, InvalidKEMTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
-  config.mutable_server()->mutable_tls()->mutable_common_options()->add_kem(
-      "Kyb3r1337");
+  ASSERT_TRUE(TLSConfigurationAddKEM(&config, "Kyb3r1337"));
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == false);
-  sandwich_assert(res.GetError() == saq::sandwich::Error::kInvalidKem);
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+  ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
+  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidKem)
+      << "Bad error code";
 }
 
 /// \brief Test with no certificate or kems
-///
-/// This test succeeds.
-void TestWithNoCertNoKemsOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, NoCertNoKEMTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == true);
-  auto ctx = std::move(res.Get());
-  sandwich_assert(ctx != nullptr);
-  sandwich_assert(ctx->Implementation() == config.impl());
-  sandwich_assert(ctx->Protocol() == config.protocol());
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+  ASSERT_TRUE(res) << "Expected good configuration, got bad configuration";
 }
 
 /// \brief Test with invalid certificate: invalid path
-///
-/// This test fails.
-void TestWithInvalidCertBadPathNOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, InvalidCertBadPathTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
-  auto *cert = config.mutable_server()
-                   ->mutable_tls()
-                   ->mutable_certificate()
-                   ->mutable_static_();
-
-  cert->mutable_data()->set_filename("path/does/not/exists");
-  cert->set_format(saq::sandwich::proto::api::v1::ASN1EncodingFormat::
-                       ENCODING_FORMAT_DER);
-
+  ASSERT_TRUE(TLSConfigurationSetCertificate(
+      &config, "path/does/not/exist",
+      sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_DER));
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == false);
-  sandwich_assert(res.GetError() ==
-                  saq::sandwich::Error::kInvalidCertificate);
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+  ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
+  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidCertificate)
+      << "Bad error code";
 }
 
 /// \brief Test with invalid certificate: neither path or buffer
-///
-/// This test fails.
-void TestWithInvalidCertEmptyNOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, InvalidCertEmptyTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
   auto *cert = config.mutable_server()
                    ->mutable_tls()
@@ -130,21 +107,18 @@ void TestWithInvalidCertEmptyNOK() {
                        ENCODING_FORMAT_DER);
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == false);
-  sandwich_assert(res.GetError() ==
-                  saq::sandwich::Error::kInvalidConfiguration);
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+  ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
+  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidConfiguration)
+      << "Bad error code";
 }
 
 /// \brief Test with invalid certificate: invalid encoding format
-///
-/// This test fails.
-void TestWithInvalidCertInvalidFormatNOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, InvalidCertInvalidFormatTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
   auto *cert = config.mutable_server()
                    ->mutable_tls()
@@ -156,84 +130,42 @@ void TestWithInvalidCertInvalidFormatNOK() {
       static_cast<saq::sandwich::proto::api::v1::ASN1EncodingFormat>(42));
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == false);
-  sandwich_assert(res.GetError() ==
-                  saq::sandwich::Error::kInvalidConfiguration);
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+  ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
+  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidConfiguration)
+      << "Bad error code";
 }
 
 /// \brief Test with a valid KEM
-///
-/// This test succeeds.
-void TestWithNoCertOneValidKemOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, NoCertOneValidKEMTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
-  config.mutable_server()->mutable_tls()->mutable_common_options()->add_kem(
-      "kyber1024");
+  ASSERT_TRUE(TLSConfigurationAddKEM(&config, "kyber1024"));
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == true);
-  auto ctx = std::move(res.Get());
-  sandwich_assert(ctx != nullptr);
-  sandwich_assert(ctx->Implementation() == config.impl());
-  sandwich_assert(ctx->Protocol() == config.protocol());
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+  ASSERT_TRUE(res) << "Expected good configuration, got bad configuration";
 }
 
 /// \brief Test with a valid KEM and a valid certificate
-///
-/// This test succeeds.
-void TestWithValidCertValidKemOK() {
-  auto config{NewConfiguration(
+TEST(ServerContextTests, ValidCertValidKEMTest) {
+  sandwich_api::Configuration config;
+  ASSERT_TRUE(NewConfiguration(
       saq::sandwich::proto::Mode::MODE_SERVER,
       saq::sandwich::proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
-      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13)};
+      saq::sandwich::proto::api::v1::Protocol::PROTO_TLS_13, &config));
 
-  config.mutable_server()->mutable_tls()->mutable_common_options()->add_kem(
-      "kyber1024");
+  ASSERT_TRUE(TLSConfigurationAddKEM(&config, "kyber1024"));
 
-  auto *cert = config.mutable_server()
-                   ->mutable_tls()
-                   ->mutable_certificate()
-                   ->mutable_static_();
-  cert->mutable_data()->set_filename("testdata/cert.pem");
-  cert->set_format(saq::sandwich::proto::api::v1::ASN1EncodingFormat::
-                       ENCODING_FORMAT_PEM);
-
-  auto *key = config.mutable_server()
-                  ->mutable_tls()
-                  ->mutable_private_key()
-                  ->mutable_static_();
-  key->mutable_data()->set_filename("testdata/key.pem");
-  key->set_format(saq::sandwich::proto::api::v1::ASN1EncodingFormat::
-                      ENCODING_FORMAT_PEM);
+  ASSERT_TRUE(TLSConfigurationSetCertificate(
+      &config, "testdata/cert.pem",
+      sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM));
+  ASSERT_TRUE(TLSConfigurationSetPrivateKey(
+      &config, "testdata/key.pem",
+      sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM));
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
-  sandwich_assert(res == true);
-  auto ctx = std::move(res.Get());
-  sandwich_assert(ctx != nullptr);
-  sandwich_assert(ctx->Implementation() == config.impl());
-  sandwich_assert(ctx->Protocol() == config.protocol());
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
-}
-
-} // end anonymous namespace
-
-auto main() -> int {
-  TestWithInvalidProtocolNOK();
-  TestWithInvalidKemNOK();
-  TestWithInvalidCertBadPathNOK();
-  TestWithInvalidCertEmptyNOK();
-  TestWithInvalidCertInvalidFormatNOK();
-
-  TestWithNoCertNoKemsOK();
-  TestWithNoCertOneValidKemOK();
-  TestWithValidCertValidKemOK();
-  return 0;
+  ASSERT_TRUE(res) << "Expected good configuration, got bad configuration";
 }

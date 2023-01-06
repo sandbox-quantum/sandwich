@@ -18,6 +18,8 @@
 ///
 /// \author thb-sb
 
+#include "gtest/gtest.h"
+
 #include "cc/context.h"
 #include "cc/io/io.h"
 #include "cc/io/socket.h"
@@ -55,14 +57,25 @@ constexpr std::string_view SupportedKEM{"kyber1024"};
 ///     for the server's response ("wants to read from the socket").
 ///
 /// \param client Client's tunnel.
-void ClientInitiateHandshake(sandwich::Tunnel *client) {
+[[nodiscard]] auto ClientInitiateHandshake(sandwich::Tunnel *client)
+    -> testing::AssertionResult {
   auto state{client->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kWantRead);
+  if (state != sandwich::Tunnel::HandshakeState::kWantRead) {
+    return testing::AssertionFailure()
+           << "Expected `kWantRead` for the client, got "
+           << static_cast<int>(state);
+  }
 
-  sandwich_assert(client->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeInProgress);
+  auto tunstate{client->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kHandshakeInProgress) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeInProgress` for the client, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 2. The server reads the beginning of the handshake, and answers to
@@ -72,15 +85,32 @@ void ClientInitiateHandshake(sandwich::Tunnel *client) {
 ///        client may have to notify the server about an change or an alert.
 ///
 /// \param server Server's tunnel.
-void ServerAnswerHandshake(sandwich::Tunnel *server) {
-  sandwich_assert(server->GetState() == sandwich::Tunnel::State::kNotConnected);
-  auto state{server->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kWantRead);
+[[nodiscard]] auto ServerAnswerHandshake(sandwich::Tunnel *server)
+    -> testing::AssertionResult {
+  auto tunstate{server->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kNotConnected) {
+    return testing::AssertionFailure()
+           << "Expected `kNotConnected` for the server, got "
+           << static_cast<int>(tunstate);
+  }
 
-  sandwich_assert(server->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeInProgress);
+  auto state{server->Handshake()};
+  if (state != sandwich::Tunnel::HandshakeState::kWantRead) {
+    return testing::AssertionFailure()
+           << "Expected `kWantRead` for the server, got "
+           << static_cast<int>(state);
+  }
+
+  tunstate = server->GetState();
+  if (tunstate != sandwich::Tunnel::State::kHandshakeInProgress) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeInProgress` for the server, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 3. The client acknowledges the handshake by verifying the transcript'
@@ -89,14 +119,25 @@ void ServerAnswerHandshake(sandwich::Tunnel *server) {
 ///        `Tunnel::Handshake` therefore MUST be `kHandshakeDone`.
 ///
 /// \param client Client's tunnel.
-void ClientCompleteHandshake(sandwich::Tunnel *client) {
+[[nodiscard]] auto ClientCompleteHandshake(sandwich::Tunnel *client)
+    -> testing::AssertionResult {
   auto state{client->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kDone);
+  if (state != sandwich::Tunnel::HandshakeState::kDone) {
+    return testing::AssertionFailure()
+           << "Expected `kDone` for the client, got "
+           << static_cast<int>(state);
+  }
 
-  sandwich_assert(client->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeDone);
+  auto tunstate{client->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kHandshakeDone) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeDone` for the client, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 4. The server acknowledges the handshake too. Now, the tunnel' state
@@ -105,72 +146,100 @@ void ClientCompleteHandshake(sandwich::Tunnel *client) {
 ///        `kHandshakeDone`.
 ///
 /// \param server Server's tunnel.
-void ServerCompleteHandshake(sandwich::Tunnel *server) {
+[[nodiscard]] auto ServerCompleteHandshake(sandwich::Tunnel *server)
+    -> testing::AssertionResult {
   auto state{server->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kDone);
+  if (state != sandwich::Tunnel::HandshakeState::kDone) {
+    return testing::AssertionFailure()
+           << "Expected `kDone` for the server, got "
+           << static_cast<int>(state);
+  }
 
-  sandwich_assert(server->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeDone);
+  auto tunstate{server->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kHandshakeDone) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeDone` for the server, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
-auto main() -> int {
-  auto client = CreateTLSClientContext(
+TEST(OpenSSLClosedTunnels, OpenSSLClosedTunnels) {
+  std::unique_ptr<sandwich::Context> client;
+  ASSERT_TRUE(CreateTLSClientContext(
       CertificatePath, sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM,
-      SupportedKEM);
-  auto server = CreateTLSServerContext(
+      SupportedKEM, &client))
+      << "Failed to create the TLS client context";
+
+  std::unique_ptr<sandwich::Context> server;
+  ASSERT_TRUE(CreateTLSServerContext(
       CertificatePath, sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM,
       PrivateKeyPath, sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM,
-      SupportedKEM);
+      SupportedKEM, &server))
+      << "Failed to create the TLS server context";
 
   // Create two connected sockets, to use with sandwich::io::Socket.
   std::array<int, 2> fds{0};
 #ifdef SOCK_NONBLOCK
   // NOLINTNEXTLINE(hicpp-signed-bitwise)
   auto err{::socketpair(PF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0, fds.data())};
-  sandwich_assert(err == 0);
+  ASSERT_EQ(err, 0) << "`socketpair` returned an error: " << err << '('
+                    << ::strerror(errno) << ')';
 #else
   auto err{::socketpair(PF_LOCAL, SOCK_STREAM, 0, fds.data())};
-  sandwich_assert(err == 0);
+  ASSERT_EQ(err, 0) << "`socketpair` returned an error: " << err << '('
+                    << ::strerror(errno) << ')';
   for (auto fd : fds) {
     int flags = ::fcntl(fd, F_GETFL, 0);
-    sandwich_assert(flags != -1);
+    ASSERT_NEQ(flag, -1) << "`fcntl` returned an error: " << flags << '('
+                         << ::strerror(errno) << ')';
     flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    sandwich_assert(flags != -1);
+    ASSERT_NEQ(flag, -1) << "`fcntl` returned an error: " << flags << '('
+                         << ::strerror(errno) << ')';
   }
 #endif
 
   // Create I/O interfaces for client and server.
-  auto ios{CreateSocketIOPair(fds)};
+  IOPair ios;
+  ASSERT_TRUE(CreateSocketIOPair(fds, &ios)) << "Failed to create the IOPair";
 
   // Create tunnels.
-  auto client_tunnel = CreateTunnel(&client, std::move(ios.client));
-  auto server_tunnel = CreateTunnel(&server, std::move(ios.server));
+  std::unique_ptr<sandwich::Tunnel> client_tunnel;
+  ASSERT_TRUE(CreateTunnel(&client, std::move(ios.client), &client_tunnel))
+      << "Failed to create the client tunnel";
+  std::unique_ptr<sandwich::Tunnel> server_tunnel;
+  ASSERT_TRUE(CreateTunnel(&server, std::move(ios.server), &server_tunnel))
+      << "Failed to create the server tunnel";
 
   // Client initiates the handshake.
-  ClientInitiateHandshake(&*client_tunnel);
+  ASSERT_TRUE(ClientInitiateHandshake(&*client_tunnel))
+      << "`ClientInitiateHandshake` failed";
 
   // Server answers.
-  ServerAnswerHandshake(&*server_tunnel);
+  ASSERT_TRUE(ServerAnswerHandshake(&*server_tunnel))
+      << "`ServerAnswerHandshake` failed";
 
   // Client is okay with the signature, the handshake is done.
-  ClientCompleteHandshake(&*client_tunnel);
+  ASSERT_TRUE(ClientCompleteHandshake(&*client_tunnel))
+      << "`ClientCompleteHandshake` failed";
 
   // The server accesses to the record layer.
-  ServerCompleteHandshake(&*server_tunnel);
+  ASSERT_TRUE(ServerCompleteHandshake(&*server_tunnel))
+      << "`ServerCompleteHandshake` failed";
 
   // Close the server.
   server_tunnel->Close();
   server_tunnel->GetIO().Close();
-  sandwich_assert(server_tunnel->GetState() ==
-                  sandwich::tunnel::State::kBeingShutdown);
+  ASSERT_EQ(server_tunnel->GetState(), sandwich::tunnel::State::kBeingShutdown)
+      << "Invalid server tunnel state";
 
   auto ioop{client_tunnel->Write(kPingMsg)};
-  sandwich_assert(!ioop);
-  sandwich_assert(ioop.GetError() == sandwich::tunnel::RecordError::kClosed);
+  ASSERT_FALSE(ioop) << "Expected failed client I/O op, got " << ioop.Get();
+  ASSERT_EQ(ioop.GetError(), sandwich::tunnel::RecordError::kClosed)
+      << "Invalid error code for the I/O op";
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
-
-  return 0;
 }

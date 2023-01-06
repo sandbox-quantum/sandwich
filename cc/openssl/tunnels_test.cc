@@ -18,9 +18,14 @@
 ///
 /// \author thb-sb
 
+#include <cerrno>
+#include <cstring>
 #include <thread>
 
+#include "gtest/gtest.h"
+
 #include "cc/context.h"
+#include "cc/error_strings.h"
 #include "cc/io/io.h"
 #include "cc/io/socket.h"
 #include "cc/tests_utils.h"
@@ -56,17 +61,28 @@ constexpr std::string_view SupportedKEM{"kyber1024"};
 ///     the tunnel' state MUST be `kHandshakeInProgress`. The returned value
 ///     from `Tunnel::Handshake` MUST be `kWantRead`, because the client
 ///     sent the Hello,Key,Share part of the TLS1.3 handshake, and it waits
-///     for the server's response (« wants to read from the socket»).
+///     for the server's response ("wants to read from the socket").
 ///
 /// \param client Client's tunnel.
-void ClientInitiateHandshake(sandwich::Tunnel *client) {
+[[nodiscard]] auto ClientInitiateHandshake(sandwich::Tunnel *client)
+    -> testing::AssertionResult {
   auto state{client->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kWantRead);
+  if (state != sandwich::Tunnel::HandshakeState::kWantRead) {
+    return testing::AssertionFailure()
+           << "Expected `kWantRead` for the client, got "
+           << static_cast<int>(state);
+  }
 
-  sandwich_assert(client->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeInProgress);
+  auto tunstate{client->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kHandshakeInProgress) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeInProgress` for the client, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 2. The server reads the beginning of the handshake, and answers to
@@ -76,15 +92,32 @@ void ClientInitiateHandshake(sandwich::Tunnel *client) {
 ///        client may have to notify the server about an change or an alert.
 ///
 /// \param server Server's tunnel.
-void ServerAnswerHandshake(sandwich::Tunnel *server) {
-  sandwich_assert(server->GetState() == sandwich::Tunnel::State::kNotConnected);
-  auto state{server->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kWantRead);
+[[nodiscard]] auto ServerAnswerHandshake(sandwich::Tunnel *server)
+    -> testing::AssertionResult {
+  auto tunstate{server->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kNotConnected) {
+    return testing::AssertionFailure()
+           << "Expected `kNotConnected` for the server, got "
+           << static_cast<int>(tunstate);
+  }
 
-  sandwich_assert(server->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeInProgress);
+  auto state{server->Handshake()};
+  if (state != sandwich::Tunnel::HandshakeState::kWantRead) {
+    return testing::AssertionFailure()
+           << "Expected `kWantRead` for the server, got "
+           << static_cast<int>(state);
+  }
+
+  tunstate = server->GetState();
+  if (tunstate != sandwich::Tunnel::State::kHandshakeInProgress) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeInProgress` for the server, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 3. The client acknowledges the handshake by verifying the transcript'
@@ -93,14 +126,25 @@ void ServerAnswerHandshake(sandwich::Tunnel *server) {
 ///        `Tunnel::Handshake` therefore MUST be `kHandshakeDone`.
 ///
 /// \param client Client's tunnel.
-void ClientCompleteHandshake(sandwich::Tunnel *client) {
+[[nodiscard]] auto ClientCompleteHandshake(sandwich::Tunnel *client)
+    -> testing::AssertionResult {
   auto state{client->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kDone);
+  if (state != sandwich::Tunnel::HandshakeState::kDone) {
+    return testing::AssertionFailure()
+           << "Expected `kDone` for the client, got "
+           << static_cast<int>(state);
+  }
 
-  sandwich_assert(client->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeDone);
+  auto tunstate{client->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kHandshakeDone) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeDone` for the client, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 4. The server acknowledges the handshake too. Now, the tunnel' state
@@ -109,58 +153,114 @@ void ClientCompleteHandshake(sandwich::Tunnel *client) {
 ///        `kHandshakeDone`.
 ///
 /// \param server Server's tunnel.
-void ServerCompleteHandshake(sandwich::Tunnel *server) {
+[[nodiscard]] auto ServerCompleteHandshake(sandwich::Tunnel *server)
+    -> testing::AssertionResult {
   auto state{server->Handshake()};
-  sandwich_assert(state == sandwich::Tunnel::HandshakeState::kDone);
+  if (state != sandwich::Tunnel::HandshakeState::kDone) {
+    return testing::AssertionFailure()
+           << "Expected `kDone` for the server, got "
+           << static_cast<int>(state);
+  }
 
-  sandwich_assert(server->GetState() ==
-                  sandwich::Tunnel::State::kHandshakeDone);
+  auto tunstate{server->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kHandshakeDone) {
+    return testing::AssertionFailure()
+           << "Expected `kHandshakeDone` for the server, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
-/// \brief 5. The client sends a « Ping » message to the server.
+/// \brief 5. The client sends a "Ping" message to the server.
 ///
 /// \param client Client's tunnel.
-void ClientSendPing(sandwich::Tunnel *client) {
+[[nodiscard]] auto ClientSendPing(sandwich::Tunnel *client)
+    -> testing::AssertionResult {
   auto ioop{client->Write(kPingMsg)};
-  sandwich_assert(ioop);
-  sandwich_assert(ioop.Get() == kPingMsg.size());
+  if (!ioop) {
+    return testing::AssertionFailure()
+           << "Expected a successful client I/O op, got an error: "
+           << sandwich::GetStringError(ioop.GetError());
+  }
+  if (ioop.Get() != kPingMsg.size()) {
+    return testing::AssertionFailure() << "Expected " << kPingMsg.size()
+                                       << " byte(s) sent by the client, got "
+                                       << ioop.Get() << " byte(s) sent";
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
-/// \brief 6. The server reads the « Ping » message, and sends back a
-///           « Pong » message.
+/// \brief 6. The server reads the "Ping" message, and sends back a
+///           "Pong" message.
 ///
 /// \param server Server's tunnel.
-void ServerReadPingSendPong(sandwich::Tunnel *server) {
+[[nodiscard]] auto ServerReadPingSendPong(sandwich::Tunnel *server)
+    -> testing::AssertionResult {
   MsgBuffer buffer{};
 
   auto ioop{server->Read(buffer)};
-  sandwich_assert(ioop);
-  sandwich_assert(ioop.Get() == kPingMsg.size());
-  sandwich_assert(buffer == kPingMsg);
+  if (!ioop) {
+    return testing::AssertionFailure()
+           << "Expected a successful server I/O op, got an error: "
+           << sandwich::GetStringError(ioop.GetError());
+  }
+  if (ioop.Get() != kPingMsg.size()) {
+    return testing::AssertionFailure() << "Expected " << kPingMsg.size()
+                                       << " byte(s) read by the server, got "
+                                       << ioop.Get() << " byte(s) read";
+  }
+  if (buffer != kPingMsg) {
+    return testing::AssertionFailure() << "Ping messages mismatch";
+  }
 
   ioop = server->Write(kPongMsg);
-  sandwich_assert(ioop);
-  sandwich_assert(ioop.Get() == kPongMsg.size());
+  if (!ioop) {
+    return testing::AssertionFailure()
+           << "Expected a successful server I/O op, got an error: "
+           << sandwich::GetStringError(ioop.GetError());
+  }
+  if (ioop.Get() != kPongMsg.size()) {
+    return testing::AssertionFailure() << "Expected " << kPongMsg.size()
+                                       << " byte(s) sent by the server, got "
+                                       << ioop.Get() << " byte(s) sent";
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
-/// \brief 7. Client reads « Pong » message.
+/// \brief 7. Client reads "Pong" message.
 ///
 /// \param client Client's tunnel.
-void ClientReadPong(sandwich::Tunnel *client) {
+[[nodiscard]] auto ClientReadPong(sandwich::Tunnel *client)
+    -> testing::AssertionResult {
   MsgBuffer buffer{};
 
   auto ioop{client->Read(buffer)};
-  sandwich_assert(ioop);
-  sandwich_assert(ioop.Get() == kPingMsg.size());
-  sandwich_assert(buffer == kPongMsg);
+  if (!ioop) {
+    return testing::AssertionFailure()
+           << "Expected a successful client I/O op, got an error: "
+           << sandwich::GetStringError(ioop.GetError());
+  }
+  if (ioop.Get() != kPongMsg.size()) {
+    return testing::AssertionFailure() << "Expected " << kPongMsg.size()
+                                       << " byte(s) read by the client, got "
+                                       << ioop.Get() << " byte(s) read";
+  }
+  if (buffer != kPongMsg) {
+    return testing::AssertionFailure() << "Pong messages mismatch";
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 8. Server tries to read something.
@@ -168,136 +268,214 @@ void ClientReadPong(sandwich::Tunnel *client) {
 /// At this stage, the client hasn't written anything. The socket is
 /// non-blocking, so the server MUST receive a `kWantRead`, and
 /// `RecordResult::WouldBlock` MUST return true.
-void ServerTriesRead(sandwich::Tunnel *server) {
+[[nodiscard]] auto ServerTriesRead(sandwich::Tunnel *server)
+    -> testing::AssertionResult {
   MsgBuffer buffer{};
 
   auto ioop{server->Read(buffer)};
-  sandwich_assert(!ioop);
-  sandwich_assert(ioop.GetError() == sandwich::Tunnel::RecordError::kWantRead);
-  sandwich_assert(ioop.WouldBlock());
+  if (ioop) {
+    return testing::AssertionFailure()
+           << "Expected a failed server I/O op, got an success: " << ioop.Get();
+  }
+  if (ioop.GetError() != sandwich::Tunnel::RecordError::kWantRead) {
+    return testing::AssertionFailure()
+           << "Expected the error code "
+           << static_cast<int>(sandwich::Tunnel::RecordError::kWantRead)
+           << " for the server, got " << static_cast<int>(ioop.GetError());
+  }
+  if (!ioop.WouldBlock()) {
+    return testing::AssertionFailure()
+           << "`IOOpResult::WouldBlock` returns false, but must return true";
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 9. Server closes the tunnel.
 ///
 /// At this stage, the server sent a TLS alert `SHUTDOWN`. The tunnel is now
 /// closed to the server side.
-void ServerClosesTunnel(sandwich::Tunnel *server) {
+[[nodiscard]] auto ServerClosesTunnel(sandwich::Tunnel *server)
+    -> testing::AssertionResult {
   const auto state = server->Close();
-  sandwich_assert(state == sandwich::Tunnel::State::kBeingShutdown);
+  if (state != sandwich::Tunnel::State::kBeingShutdown) {
+    return testing::AssertionFailure()
+           << "Expected kBeingShutdown for the server, got "
+           << static_cast<int>(state);
+  }
 
   auto ioop{server->Write(kPingMsg)};
-  sandwich_assert(!ioop);
-  sandwich_assert(ioop.GetError() == sandwich::Tunnel::RecordError::kClosed);
+  if (ioop) {
+    return testing::AssertionFailure()
+           << "Expected a failed server I/O op, got an success: " << ioop.Get();
+  }
+  if (ioop.GetError() != sandwich::Tunnel::RecordError::kClosed) {
+    return testing::AssertionFailure()
+           << "Expected the error code "
+           << static_cast<int>(sandwich::Tunnel::RecordError::kClosed)
+           << " for the server, got " << static_cast<int>(ioop.GetError());
+  }
 
   server->Close();
-  sandwich_assert(server->GetState() == sandwich::Tunnel::State::kDisconnected);
+
+  const auto tunstate{server->GetState()};
+  if (tunstate != sandwich::Tunnel::State::kDisconnected) {
+    return testing::AssertionFailure()
+           << "Expected kDisconnected for the server, got "
+           << static_cast<int>(tunstate);
+  }
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 10. The client tries to write something, but the server asked for
 /// closing the tunnel. Therefore, the error `RecordError::kBeingShutdown` is
 /// returned.
-void ClientTriesWriteAfterClose(sandwich::Tunnel *client) {
+[[nodiscard]] auto ClientTriesWriteAfterClose(sandwich::Tunnel *client)
+    -> testing::AssertionResult {
   auto ioop{client->Write(kPingMsg)};
-
-  sandwich_assert(ioop);
+  if (!ioop) {
+    return testing::AssertionFailure()
+           << "Expected a successful client I/O op, got an error: "
+           << sandwich::GetStringError(ioop.GetError());
+  }
 
   MsgBuffer buffer{};
   ioop = client->Read(buffer);
-  sandwich_assert(!ioop);
+  if (ioop) {
+    return testing::AssertionFailure()
+           << "Expected a failed client I/O op, got " << ioop.Get();
+  }
 
-  sandwich_assert(ioop.GetError() ==
-                  sandwich::Tunnel::RecordError::kBeingShutdown);
-  sandwich_assert(client->Close() == sandwich::Tunnel::State::kDisconnected);
+  if (ioop.GetError() != sandwich::Tunnel::RecordError::kBeingShutdown) {
+    return testing::AssertionFailure()
+           << "Expected the error code "
+           << static_cast<int>(sandwich::Tunnel::RecordError::kBeingShutdown)
+           << " for the client, got " << static_cast<int>(ioop.GetError());
+  }
+  const auto tunstate{client->Close()};
+  if (tunstate != sandwich::Tunnel::State::kDisconnected) {
+    return testing::AssertionFailure()
+           << "Expected kDisconnected for the client, got "
+           << static_cast<int>(tunstate);
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
+
+  return testing::AssertionSuccess();
 }
 
 /// \brief 11. Create a new tunnel using the existing I/O interface from an
 /// old tunnel.
 auto RecycleIOToNewTunnel(std::unique_ptr<sandwich::Context> *ctx,
-                          std::unique_ptr<sandwich::Tunnel> old_tun)
-    -> std::unique_ptr<sandwich::Tunnel> {
-  auto io = old_tun->ReleaseIO();
-  sandwich_assert(io != nullptr);
-  auto tun = CreateTunnel(ctx, std::move(io));
-  sandwich_assert(tun != nullptr);
+                          std::unique_ptr<sandwich::Tunnel> *old_tun)
+    -> testing::AssertionResult {
+  auto io = (*old_tun)->ReleaseIO();
+  if (!io) {
+    return testing::AssertionFailure()
+           << "Expected a non-null I/O interface from `ReleaseIO`, got null";
+  }
+  if (auto ares = CreateTunnel(ctx, std::move(io), old_tun); !ares) {
+    return ares << "Failed to create a new tunnel from an old I/O interface";
+  }
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
 
-  return tun;
+  return testing::AssertionSuccess();
 }
 
 } // end anonymous namespace
 
-int main() {
-  auto client = CreateTLSClientContext(
+TEST(OpenSSLTunnels, OpenSSLTunnels) {
+  std::unique_ptr<sandwich::Context> client;
+  ASSERT_TRUE(CreateTLSClientContext(
       CertificatePath, sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM,
-      SupportedKEM);
-  auto server = CreateTLSServerContext(
+      SupportedKEM, &client))
+      << "Failed to create the TLS client context";
+
+  std::unique_ptr<sandwich::Context> server;
+  ASSERT_TRUE(CreateTLSServerContext(
       CertificatePath, sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM,
       PrivateKeyPath, sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM,
-      SupportedKEM);
+      SupportedKEM, &server))
+      << "Failed to create the TLS server context";
 
   // Create two connected sockets, to use with sandwich::io::Socket.
   std::array<int, 2> fds{0};
 #ifdef SOCK_NONBLOCK
   // NOLINTNEXTLINE(hicpp-signed-bitwise)
   auto err{::socketpair(PF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0, fds.data())};
-  sandwich_assert(err == 0);
+  ASSERT_EQ(err, 0) << "`socketpair` returned an error: " << err << '('
+                    << ::strerror(errno) << ')';
 #else
   auto err{::socketpair(PF_LOCAL, SOCK_STREAM, 0, fds.data())};
-  sandwich_assert(err == 0);
+  ASSERT_EQ(err, 0) << "`socketpair` returned an error: " << err << '('
+                    << ::strerror(errno) << ')';
   for (auto fd : fds) {
     int flags = ::fcntl(fd, F_GETFL, 0);
-    sandwich_assert(flags != -1);
+    ASSERT_NEQ(flag, -1) << "`fcntl` returned an error: " << flags << '('
+                         << ::strerror(errno) << ')';
     flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    sandwich_assert(flags != -1);
+    ASSERT_NEQ(flag, -1) << "`fcntl` returned an error: " << flags << '('
+                         << ::strerror(errno) << ')';
   }
 #endif
 
   // Create I/O interfaces for client and server.
-  auto ios{CreateSocketIOPair(fds)};
+  IOPair ios;
+  ASSERT_TRUE(CreateSocketIOPair(fds, &ios)) << "Failed to create the IOPair";
 
   // Create tunnels.
-  auto client_tunnel = CreateTunnel(&client, std::move(ios.client));
-  auto server_tunnel = CreateTunnel(&server, std::move(ios.server));
+  std::unique_ptr<sandwich::Tunnel> client_tunnel;
+  ASSERT_TRUE(CreateTunnel(&client, std::move(ios.client), &client_tunnel))
+      << "Failed to create the client tunnel";
+  std::unique_ptr<sandwich::Tunnel> server_tunnel;
+  ASSERT_TRUE(CreateTunnel(&server, std::move(ios.server), &server_tunnel))
+      << "Failed to create the server tunnel";
 
   // Client initiates the handshake.
-  ClientInitiateHandshake(&*client_tunnel);
+  ASSERT_TRUE(ClientInitiateHandshake(&*client_tunnel))
+      << "`ClientInitiateHandshake` failed";
 
   // Server answers.
-  ServerAnswerHandshake(&*server_tunnel);
+  ASSERT_TRUE(ServerAnswerHandshake(&*server_tunnel))
+      << "`ServerAnswerHandshake` failed";
 
   // Client is okay with the signature, the handshake is done.
-  ClientCompleteHandshake(&*client_tunnel);
+  ASSERT_TRUE(ClientCompleteHandshake(&*client_tunnel))
+      << "`ClientCompleteHandshake` failed";
 
   // The server accesses to the record layer.
-  ServerCompleteHandshake(&*server_tunnel);
+  ASSERT_TRUE(ServerCompleteHandshake(&*server_tunnel))
+      << "`ServerCompleteHandshake` failed";
 
-  // Client sends « Ping ».
-  ClientSendPing(&*client_tunnel);
+  // Client sends "Ping".
+  ASSERT_TRUE(ClientSendPing(&*client_tunnel)) << "`ClientSendPing` failed";
 
-  // Server receives « Ping » and sends « Pong ».
-  ServerReadPingSendPong(&*server_tunnel);
+  // Server receives "Ping" and sends "Pong".
+  ASSERT_TRUE(ServerReadPingSendPong(&*server_tunnel))
+      << "`ServerReadPingSendPong` failed";
 
-  // Client receives « Pong ».
-  ClientReadPong(&*client_tunnel);
+  // Client receives "Pong".
+  ASSERT_TRUE(ClientReadPong(&*client_tunnel)) << "`ClientReadPong` failed";
 
   // Server tries to read, it triggers a `WANT_READ`, and WouldBlock returns
   // true.
-  ServerTriesRead(&*server_tunnel);
+  ASSERT_TRUE(ServerTriesRead(&*server_tunnel)) << "`ServerTriesRead` failed";
 
   // Server closes the tunnel  by calling `Close`. It triggers a `SHUTDOWN`
   // TLS alert.
-  ServerClosesTunnel(&*server_tunnel);
+  ASSERT_TRUE(ServerClosesTunnel(&*server_tunnel))
+      << "`ServerClosesTunnel` failed";
 
   // Client tries to write to the tunnel.
   // Because the server sent a `SHUTDOWN` TLS alert, the read after
   // the write fails and return `RecordState::kBeingShutdown`.
-  ClientTriesWriteAfterClose(&*client_tunnel);
+  ASSERT_TRUE(ClientTriesWriteAfterClose(&*client_tunnel))
+      << "`ClientTriesWriteAfterClose` failed";
 
   {
     // Flushing client and server sockets
@@ -316,26 +494,30 @@ int main() {
 
   // Create a new server tunnel using the existing I/O interface from the
   // old client tunnel.
-  server_tunnel = RecycleIOToNewTunnel(&server, std::move(server_tunnel));
+  ASSERT_TRUE(RecycleIOToNewTunnel(&server, &server_tunnel))
+      << "`RecycleIOToNewTunnel` with server tunnel failed";
 
   // Create a new client tunnel using the existing I/O interface from the
   // old client tunnel.
-  client_tunnel = RecycleIOToNewTunnel(&client, std::move(client_tunnel));
+  ASSERT_TRUE(RecycleIOToNewTunnel(&client, &client_tunnel))
+      << "`RecycleIOToNewTunnel` with client tunnel failed";
 
   // Redo: client initiates the handshake.
-  ClientInitiateHandshake(&*client_tunnel);
+  ASSERT_TRUE(ClientInitiateHandshake(&*client_tunnel))
+      << "`ClientInitiateHandshake` failed";
 
   // Redo: server answers.
-  ServerAnswerHandshake(&*server_tunnel);
+  ASSERT_TRUE(ServerAnswerHandshake(&*server_tunnel))
+      << "`ServerAnswerHandshake` failed";
 
   // Redo: client is okay with the signature, the handshake is done.
-  ClientCompleteHandshake(&*client_tunnel);
+  ASSERT_TRUE(ClientCompleteHandshake(&*client_tunnel))
+      << "`ClientCompleteHandshake` failed";
 
   // Redo: the server accesses to the record layer.
-  ServerCompleteHandshake(&*server_tunnel);
+  ASSERT_TRUE(ServerCompleteHandshake(&*server_tunnel))
+      << "`ServerCompleteHandshake` failed";
 
   client_tunnel->Close();
   server_tunnel->Close();
-
-  return 0;
 }
