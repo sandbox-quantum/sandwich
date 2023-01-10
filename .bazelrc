@@ -4,8 +4,8 @@ import %workspace%/clang.bazelrc
 # Without this flag, Bazel may raise an error about a repo that is not compatible
 # with a specific platform, even if it is not the actual platform it is building
 # on.
-build:cicd --noincompatible_use_platforms_repo_for_constraints
+build --noincompatible_use_platforms_repo_for_constraints
 
-build:cicd --config=clang
+build --config=clang
 
 test --test_output=errors
