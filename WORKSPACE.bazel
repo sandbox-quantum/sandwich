@@ -95,7 +95,8 @@ go_rules_dependencies()
 
 go_register_toolchains(version = "1.18.4")
 
-gazelle_dependencies()
+# See https://github.com/bazelbuild/bazel-gazelle/issues/678
+gazelle_dependencies(go_repository_default_config = "@//:WORKSPACE.bazel")
 
 http_archive(
     name = "rules_rust",
