@@ -1,0 +1,9 @@
+load(":rules.bzl", "gen_cert_key")
+
+gen_cert_key(
+    name = "cert_test",
+    alg = "falcon1024",
+    out_cert = "cert_test.crt",
+    out_key = "cert_test.key",
+    visibility = ["//visibility:private"],
+)
