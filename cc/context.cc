@@ -23,7 +23,7 @@
 namespace saq::sandwich {
 
 Context::Context(const ProtoConfiguration &config)
-    : protocol_{config.protocol()}, implementation_{config.impl()} {}
+    : implementation_{config.impl()} {}
 
 Context::~Context() = default;
 

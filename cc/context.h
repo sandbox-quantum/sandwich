@@ -93,14 +93,6 @@ class SANDWICH_CC_API Context {
   /// \return The current mode.
   [[nodiscard]] virtual auto Mode() const noexcept -> proto::Mode = 0;
 
-  /// \brief Returns the current protocol.
-  ///
-  /// \return The current mode.
-  [[nodiscard]] inline auto Protocol() const noexcept
-      -> proto::api::v1::Protocol {
-    return protocol_;
-  }
-
   /// \brief Returns the current implementation.
   ///
   /// \return The current mode.
@@ -152,10 +144,6 @@ class SANDWICH_CC_API Context {
   explicit Context(const ProtoConfiguration &config);
 
  private:
-  /// \brief Protocol.
-  proto::api::v1::Protocol protocol_ =
-      proto::api::v1::Protocol::PROTO_UNSPECIFIED;
-
   /// \brief Implementation.
   proto::api::v1::Implementation implementation_ =
       proto::api::v1::Implementation::IMPL_UNSPECIFIED;

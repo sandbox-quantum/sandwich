@@ -82,18 +82,16 @@ struct IOPair {
   std::unique_ptr<sandwich::io::IO> server;
 };
 
-/// \brief Create a new configuration from a mode, an impl and a protocol.
+/// \brief Create a new TLS configuration from a mode, an impl and a protocol.
 ///
 /// \param mode Mode.
 /// \param impl Implementation.
-/// \param proto Protocol.
 /// \param[out] config Configuration to write.
 ///
 /// \return A new configuration.
-[[nodiscard]] auto NewConfiguration(sandwich_proto::Mode mode,
-                                    sandwich_api::Implementation impl,
-                                    sandwich_api::Protocol proto,
-                                    sandwich_api::Configuration *config)
+[[nodiscard]] auto NewTLSConfiguration(sandwich_proto::Mode mode,
+                                       sandwich_api::Implementation impl,
+                                       sandwich_api::Configuration *config)
     -> testing::AssertionResult;
 
 /// \brief Add a certificate to the list of trusted certificate for clients,

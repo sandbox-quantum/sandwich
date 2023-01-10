@@ -31,12 +31,11 @@
 /// \brief Test with invalid protocol.
 TEST(ClientContextTests, InvalidProtocolTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
-  config.set_protocol(sandwich_api::Protocol::PROTO_UNSPECIFIED);
+  config.mutable_client()->clear_tls();
 
   auto res = sandwich::Context::FromConfiguration(config);
   ASSERT_FALSE(res) << "Expected bad configuration, got a good configuration";
@@ -47,10 +46,9 @@ TEST(ClientContextTests, InvalidProtocolTest) {
 /// \brief Test with invalid KEM
 TEST(ClientContextTests, InvalidKEMTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
   ASSERT_TRUE(TLSConfigurationAddKEM(&config, "Kyb3r1337"));
 
@@ -62,10 +60,9 @@ TEST(ClientContextTests, InvalidKEMTest) {
 /// \brief Test with no certificate or kems
 TEST(ClientContextTests, NoCertNoKEMTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
   auto res = sandwich::Context::FromConfiguration(config);
   ASSERT_TRUE(res) << "Expected good configuration";
@@ -74,10 +71,9 @@ TEST(ClientContextTests, NoCertNoKEMTest) {
 /// \brief Test with invalid certificate: invalid path
 TEST(ClientContextTests, InvalidCertBadPathTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
   ASSERT_TRUE(TLSConfigurationSetCertificate(
       &config, "path/does/not/exist",
@@ -92,10 +88,9 @@ TEST(ClientContextTests, InvalidCertBadPathTest) {
 /// \brief Test with invalid certificate: neither path or buffer
 TEST(ClientContextTests, InvalidCertEmptyTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
   auto *cert = config.mutable_client()
                    ->mutable_tls()
@@ -113,10 +108,9 @@ TEST(ClientContextTests, InvalidCertEmptyTest) {
 /// \brief Test with invalid certificate: invalid encoding format
 TEST(ClientContextTests, ValidCertInvalidFormatTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
   auto *cert = config.mutable_client()
                    ->mutable_tls()
@@ -135,10 +129,9 @@ TEST(ClientContextTests, ValidCertInvalidFormatTest) {
 /// \brief Test with a valid KEM
 TEST(ClientContextTests, NoCertOneValidKEMTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
   ASSERT_TRUE(TLSConfigurationAddKEM(&config, "kyber1024"));
 
@@ -149,10 +142,9 @@ TEST(ClientContextTests, NoCertOneValidKEMTest) {
 /// \brief Test with a valid KEM and a valid certificate
 TEST(ClientContextTests, ValidCertValidKEMTest) {
   sandwich_api::Configuration config;
-  ASSERT_TRUE(
-      NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                       sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                       sandwich_api::Protocol::PROTO_TLS_13, &config));
+  ASSERT_TRUE(NewTLSConfiguration(
+      sandwich_proto::Mode::MODE_CLIENT,
+      sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config));
 
   ASSERT_TRUE(TLSConfigurationAddKEM(&config, "kyber1024"));
   ASSERT_TRUE(TLSConfigurationSetCertificate(

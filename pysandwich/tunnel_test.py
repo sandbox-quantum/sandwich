@@ -109,7 +109,6 @@ def create_server_conf(s: Sandwich) -> Context:
         Configuration for the server.
     """
     conf = SandwichAPI.Configuration()
-    conf.protocol = SandwichAPI.PROTO_TLS_13
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
@@ -129,7 +128,6 @@ def create_client_conf(s: Sandwich) -> Context:
         Configuration for the client.
     """
     conf = SandwichAPI.Configuration()
-    conf.protocol = SandwichAPI.PROTO_TLS_13
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.client.tls.common_options.kem.append(_DEFAULT_KEM)

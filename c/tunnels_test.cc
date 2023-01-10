@@ -57,17 +57,14 @@ constexpr MsgBuffer kPongMsg{std::byte{'P'}, std::byte{'o'}, std::byte{'n'},
 ///
 /// \param mode Mode.
 /// \param impl Implementation.
-/// \param proto Protocol.
 ///
 /// \return The configuration.
-auto NewConfiguration(
+auto NewTLSConfiguration(
     const saq::sandwich::proto::Mode mode,
-    const saq::sandwich::proto::api::v1::Implementation impl,
-    const saq::sandwich::proto::api::v1::Protocol proto)
+    const saq::sandwich::proto::api::v1::Implementation impl)
     -> saq::sandwich::proto::api::v1::Configuration {
   saq::sandwich::proto::api::v1::Configuration config{};
 
-  config.set_protocol(proto);
   config.set_impl(impl);
 
   if (mode == saq::sandwich::proto::Mode::MODE_CLIENT) {
@@ -87,11 +84,9 @@ using SandwichContextDeleter = std::function<void(struct ::SandwichContext *)>;
 /// \return A Sandwich context for the client.
 auto CreateClientContext()
     -> std::unique_ptr<struct ::SandwichContext, SandwichContextDeleter> {
-  auto config{NewConfiguration(saq::sandwich::proto::Mode::MODE_CLIENT,
-                               saq::sandwich::proto::api::v1::
-                                   Implementation::IMPL_OPENSSL1_1_1_OQS,
-                               saq::sandwich::proto::api::v1::Protocol::
-                                   PROTO_TLS_13)};
+  auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_CLIENT,
+                                  saq::sandwich::proto::api::v1::
+                                      Implementation::IMPL_OPENSSL1_1_1_OQS)};
 
   config.mutable_client()->mutable_tls()->mutable_common_options()->add_kem(
       "kyber1024");
@@ -120,11 +115,9 @@ auto CreateClientContext()
 /// \return A Sandwich context for the server.
 auto CreateServerContext()
     -> std::unique_ptr<struct ::SandwichContext, SandwichContextDeleter> {
-  auto config{NewConfiguration(saq::sandwich::proto::Mode::MODE_SERVER,
-                               saq::sandwich::proto::api::v1::
-                                   Implementation::IMPL_OPENSSL1_1_1_OQS,
-                               saq::sandwich::proto::api::v1::Protocol::
-                                   PROTO_TLS_13)};
+  auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_SERVER,
+                                  saq::sandwich::proto::api::v1::
+                                      Implementation::IMPL_OPENSSL1_1_1_OQS)};
 
   config.mutable_server()->mutable_tls()->mutable_common_options()->add_kem(
       "kyber1024");

@@ -19,14 +19,6 @@ package saq.sandwich.proto.api.v1;
 
 import "proto/api/v1/tls.proto";
 
-// Supported protocols.
-enum Protocol {
-  // Unspecified protocol.
-  PROTO_UNSPECIFIED = 0;
-  // TLS 1.3
-  PROTO_TLS_13 = 1;
-}
-
 // Supported implementations.
 enum Implementation {
   // Unspecified implementation.
@@ -57,18 +49,15 @@ message ServerOptions {
 
 // A configuration for a sandwich tunnel (server or client).
 message Configuration {
-  // The protocol to use.
-  Protocol protocol = 1;
-
   // The implementation to use.
-  Implementation impl = 2;
+  Implementation impl = 1;
 
   // The option specific to the pair {protocol, impl}.
   oneof opts {
     // Client options.
-    ClientOptions client = 4;
+    ClientOptions client = 2;
     // Server options.
-    ServerOptions server = 5;
+    ServerOptions server = 3;
   }
-  // Next id: 6
+  // Next id: 4
 }

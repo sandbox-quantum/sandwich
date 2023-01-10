@@ -25,10 +25,6 @@ namespace saq::sandwich {
 
 auto Context::FromConfiguration(const ProtoConfiguration &config)
     -> ContextResult {
-  if (!Protocol_IsValid(config.protocol()) ||
-      (config.protocol() == proto::api::v1::Protocol::PROTO_UNSPECIFIED)) {
-    return Error::kInvalidConfiguration;
-  }
   if (!Implementation_IsValid(config.impl()) ||
       (config.impl() == proto::api::v1::Implementation::IMPL_UNSPECIFIED)) {
     return Error::kInvalidConfiguration;

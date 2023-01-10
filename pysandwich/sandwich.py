@@ -46,7 +46,6 @@ sandwich_handle = Sandwich()
 
 # Create a Sandwich context, using a Sandwich Configuration from protobuf.
 conf = SandwichProto.Configuration()
-conf.protocol = SandwichProto.Protocol.PROTO_TLS_13
 conf.impl = SandwichProto.Implementation.IMPL_OPENSSL_1_1_1
 
 # Set KEM
@@ -180,11 +179,6 @@ class Context:
         err = self._sandwich.c_call("sandwich_context_new", *args)
         if err != errors.SandwichGlobalException.ERROR_OK:
             raise errors.SandwichGlobalException.new(err)
-
-    def protocol(self) -> SandwichAPI.Protocol:
-        """The selected protocol."""
-
-        return self._configuration.protocol
 
     def implementation(self) -> SandwichAPI.Implementation:
         """The selected implementation."""

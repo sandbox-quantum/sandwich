@@ -37,13 +37,6 @@ constexpr std::array<proto::api::v1::Implementation, 2>
         proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS,
 };
 
-/// \brief Protocol(s) supported by this file.
-///
-/// \note We don't use a std::set because there is no constexpr constructor.
-constexpr std::array<proto::api::v1::Protocol, 1> kSupportedProtocols = {
-    proto::api::v1::Protocol::PROTO_TLS_13,
-};
-
 } // end anonymous namespace
 
 auto Context::FromConfiguration(const ProtoConfiguration &config)
@@ -52,10 +45,6 @@ auto Context::FromConfiguration(const ProtoConfiguration &config)
                 kSupportedImplementations.end(),
                 config.impl()) == kSupportedImplementations.end()) {
     return Error::kUnsupportedImplementation;
-  }
-  if (std::find(kSupportedProtocols.begin(), kSupportedProtocols.end(),
-                config.protocol()) == kSupportedProtocols.end()) {
-    return Error::kUnsupportedProtocol;
   }
 
   switch (config.opts_case()) {

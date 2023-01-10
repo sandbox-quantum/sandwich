@@ -91,8 +91,7 @@ func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 	}
 
 	return &api.Configuration{
-		Protocol: api.Protocol_PROTO_TLS_13,
-		Impl:     api.Implementation_IMPL_OPENSSL1_1_1_OQS,
+		Impl: api.Implementation_IMPL_OPENSSL1_1_1_OQS,
 		Opts: &api.Configuration_Server{
 			Server: &api.ServerOptions{
 				Opts: &api.ServerOptions_Tls{
@@ -141,8 +140,7 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 	}
 
 	return &api.Configuration{
-		Protocol: api.Protocol_PROTO_TLS_13,
-		Impl:     api.Implementation_IMPL_OPENSSL1_1_1_OQS,
+		Impl: api.Implementation_IMPL_OPENSSL1_1_1_OQS,
 		Opts: &api.Configuration_Client{
 			Client: &api.ClientOptions{
 				Opts: &api.ClientOptions_Tls{

@@ -23,10 +23,9 @@
 #include "cc/error_strings.h"
 #include "cc/io/socket.h"
 
-auto NewConfiguration(const sandwich_proto::Mode mode,
-                      const sandwich_api::Implementation impl,
-                      const sandwich_api::Protocol proto,
-                      sandwich_api::Configuration *config)
+auto NewTLSConfiguration(const sandwich_proto::Mode mode,
+                         const sandwich_api::Implementation impl,
+                         sandwich_api::Configuration *config)
     -> testing::AssertionResult {
   if (!sandwich_proto::Mode_IsValid(mode)) {
     return testing::AssertionFailure() << mode << " isn't a valid mode";
@@ -35,24 +34,18 @@ auto NewConfiguration(const sandwich_proto::Mode mode,
     return testing::AssertionFailure()
            << impl << " isn't a valid implementation";
   }
-  if (!sandwich_api::Protocol_IsValid(proto)) {
-    return testing::AssertionFailure() << proto << " isn't a valid protocol";
-  }
   if (config == nullptr) {
     return testing::AssertionFailure() << "`config` must not be null";
   }
 
-  config->set_protocol(proto);
   config->set_impl(impl);
 
-  if (proto == sandwich_api::Protocol::PROTO_TLS_13) {
-    if (mode == sandwich_proto::Mode::MODE_CLIENT) {
-      config->mutable_client()->mutable_tls()->mutable_common_options();
-    } else if (mode == sandwich_proto::Mode::MODE_SERVER) {
-      config->mutable_server()->mutable_tls()->mutable_common_options();
-    } else {
-      return testing::AssertionFailure() << "Unreachable code";
-    }
+  if (mode == sandwich_proto::Mode::MODE_CLIENT) {
+    config->mutable_client()->mutable_tls()->mutable_common_options();
+  } else if (mode == sandwich_proto::Mode::MODE_SERVER) {
+    config->mutable_server()->mutable_tls()->mutable_common_options();
+  } else {
+    return testing::AssertionFailure() << "Unreachable code";
   }
 
   return testing::AssertionSuccess();
@@ -229,11 +222,6 @@ auto CreateContext(const sandwich_api::Configuration &config,
            << "Expected impl " << config.impl() << ", got "
            << (*context)->Implementation();
   }
-  if ((*context)->Protocol() != config.protocol()) {
-    return testing::AssertionFailure()
-           << "Expected protocol " << config.protocol() << ", got "
-           << (*context)->Protocol();
-  }
   return testing::AssertionSuccess();
 }
 
@@ -267,10 +255,9 @@ auto CreateTLSClientContext(const std::string_view &certpath,
 
   auto ares{testing::AssertionFailure() << "Undefined value returned"};
   sandwich_api::Configuration config;
-  if (ares =
-          NewConfiguration(sandwich_proto::Mode::MODE_CLIENT,
-                           sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                           sandwich_api::Protocol::PROTO_TLS_13, &config);
+  if (ares = NewTLSConfiguration(
+          sandwich_proto::Mode::MODE_CLIENT,
+          sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config);
       !ares) {
     return ares;
   }
@@ -299,10 +286,9 @@ auto CreateTLSServerContext(const std::string_view &certpath,
   auto ares{testing::AssertionFailure() << "Undefined value returned"};
 
   sandwich_api::Configuration config;
-  if (ares =
-          NewConfiguration(sandwich_proto::Mode::MODE_SERVER,
-                           sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS,
-                           sandwich_api::Protocol::PROTO_TLS_13, &config);
+  if (ares = NewTLSConfiguration(
+          sandwich_proto::Mode::MODE_SERVER,
+          sandwich_api::Implementation::IMPL_OPENSSL1_1_1_OQS, &config);
       !ares) {
     return ares;
   }
