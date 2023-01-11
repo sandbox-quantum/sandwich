@@ -1,0 +1,26 @@
+version: 2.1
+
+jobs:
+  run-all-tests:
+    docker:
+      - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
+        auth:
+          username: _json_key
+          password: $RUNNER_GCR_SA_KEY
+    steps:
+      - checkout
+      - run:
+          name: "Run all test targets"
+          command: |
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+            bazelisk test --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
+              --google_default_credentials \
+              //...
+
+workflows:
+  presubmit:
+    jobs:
+      - run-all-tests:
+          context:
+          - bazel-cache
