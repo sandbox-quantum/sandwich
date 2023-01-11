@@ -247,7 +247,7 @@ def _create_linking_context(ctx, install_dir):
       LinkingContext objects for OpenSSL and liboqs.
     """
     linker_inputs = []
-    for l in ("liboqs.a", "libssl.a", "libcrypto.a"):
+    for l in ("liboqs.a", "libcrypto.a", "libssl.a"):
         linker_inputs.append(_create_linker_input(
             ctx = ctx,
             install_dir = install_dir,
