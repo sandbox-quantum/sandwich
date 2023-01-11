@@ -42,6 +42,7 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
     """
 
     cmd = """
+  set -e
   export BASE_DIR="$PWD/"
 
   export CMAKE="$BASE_DIR/$1"
@@ -66,6 +67,8 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
   (
     cd "$OPENSSL_BUILD_DIR"
     mkdir lib/
+    mkdir -p include/openssl/
+    touch include/openssl/ssl.h
     touch lib/libssl.a lib/libcrypto.a
   )
   mkdir -p "$LIBOQS_BUILD_DIR"
@@ -77,14 +80,14 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
               "-DCMAKE_ASM_COMPILER=$CC" \
               "-DCMAKE_MAKE_PROGRAM=$NINJA" \
               "-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR" \
-              "-DOPENSSL_ROOT_DIR=$OPENSSL_SRC_DIR" \
+              "-DOPENSSL_ROOT_DIR=$OPENSSL_BUILD_DIR" \
               -DOQS_BUILD_ONLY_LIB=ON \
-              "-DCMAKE_C_FLAGS=-fuse-ld=lld -isystem $OPENSSL_BUILD_DIR/include" \
+              "-DCMAKE_C_FLAGS=-isystem $OPENSSL_SRC_DIR/include" \
               $LIBOQS_CONFIGURE_ARGS
   )
   (
     cd "$OPENSSL_BUILD_DIR"
-    rm -rf lib
+    rm -rf lib include/
     "$OPENSSL_SRC_DIR/config" \
         "--openssldir=$INSTALL_DIR" \
         "--prefix=$INSTALL_DIR" \
@@ -97,7 +100,6 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
     "$CMAKE" --build "$LIBOQS_BUILD_DIR" -j$NCORES
     "$CMAKE" --install "$LIBOQS_BUILD_DIR"
   )
-  set -x
   (
     cd "$OPENSSL_BUILD_DIR"
     mkdir -p oqs/lib oqs/lib64
