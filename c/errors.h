@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 /**
  * \file
- * \brief Enum Error in namespace Sandwich.
+ * \brief Sandwich errors specification
  */
 
 #pragma once
@@ -22,6 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /** \brief Enum Error. */
 enum SandwichError { 
@@ -61,6 +62,7 @@ enum SandwichError {
   SANDWICH_ERROR_UNSUPPORTED_PROTOCOL_VERSION = 33,
 };
 typedef enum SandwichError SandwichError;
+
 
 #ifdef __cplusplus
 } // end extern "C"

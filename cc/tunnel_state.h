@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
 
 ///
 /// \file
-/// \brief Enum State in namespace saq::sandwich::tunnel.
+/// \brief Sandwich tunnel states specification
 
 #pragma once
 
 namespace saq::sandwich::tunnel {
+
 
 /// \brief Enum State.
 enum class State : int { 
@@ -30,5 +31,6 @@ enum class State : int {
   kDisconnected = 5,
   kError = 6,
 };
+
 
 } // end namespace saq::sandwich::tunnel

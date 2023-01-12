@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
 
 ///
 /// \file
-/// \brief Enum IOError in namespace saq::sandwich::io.
+/// \brief Sandwich I/O errors specification
 
 #pragma once
 
 namespace saq::sandwich::io {
+
 
 /// \brief Enum IOError.
 enum class IOError : int { 
@@ -30,5 +31,6 @@ enum class IOError : int {
   kInvalid = 5,
   kUnknown = 6,
 };
+
 
 } // end namespace saq::sandwich::io

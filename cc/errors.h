@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
 
 ///
 /// \file
-/// \brief Enum Error in namespace saq::sandwich.
+/// \brief Sandwich errors specification
 
 #pragma once
 
 namespace saq::sandwich {
+
 
 /// \brief Enum Error.
 enum class Error : int { 
@@ -57,5 +58,6 @@ enum class Error : int {
   kUnsupportedPrivateKey = 32,
   kUnsupportedProtocolVersion = 33,
 };
+
 
 } // end namespace saq::sandwich

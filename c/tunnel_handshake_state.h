@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 /**
  * \file
- * \brief Enum HandshakeState in namespace SandwichTunnel.
+ * \brief Sandwich tunnel handshake states specification
  */
 
 #pragma once
@@ -22,6 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /** \brief Enum HandshakeState. */
 enum SandwichTunnelHandshakeState { 
@@ -32,6 +33,7 @@ enum SandwichTunnelHandshakeState {
   SANDWICH_TUNNEL_HANDSHAKESTATE_ERROR = 4,
 };
 typedef enum SandwichTunnelHandshakeState SandwichTunnelHandshakeState;
+
 
 #ifdef __cplusplus
 } // end extern "C"

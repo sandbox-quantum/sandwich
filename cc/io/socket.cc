@@ -41,7 +41,7 @@ extern "C" {
 
 #ifndef SOL_TCP
 #ifndef IPPROTO_TCP
-#error "Failed to find SOL_TCP or IPPROTO_TCP
+#error "Failed to find SOL_TCP or IPPROTO_TCP"
 #endif
 #define SOL_TCP IPPROTO_TCP
 #endif

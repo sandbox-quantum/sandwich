@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
 
 ///
 /// \file
-/// \brief Enum HandshakeState in namespace saq::sandwich::tunnel.
+/// \brief Sandwich tunnel handshake states specification
 
 #pragma once
 
 namespace saq::sandwich::tunnel {
+
 
 /// \brief Enum HandshakeState.
 enum class HandshakeState : int { 
@@ -28,5 +29,6 @@ enum class HandshakeState : int {
   kWantWrite = 3,
   kError = 4,
 };
+
 
 } // end namespace saq::sandwich::tunnel
