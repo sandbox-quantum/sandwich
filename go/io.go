@@ -20,7 +20,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	pb "github.com/sandbox-quantum/sandwich/proto/sandwich"
+	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 )
 
 /*

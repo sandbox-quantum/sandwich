@@ -70,7 +70,7 @@ py_proto_library(
 
 go_proto_library(
     name = "sandwich_go_proto",
-    importpath = "github.com/sandbox-quantum/sandwich/proto/sandwich",
+    importpath = "github.com/sandbox-quantum/sandwich/go/proto/sandwich",
     protos = [
         ":errors_proto",
         ":io_proto",

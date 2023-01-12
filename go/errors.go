@@ -19,7 +19,7 @@ package sandwich
 import (
 	"fmt"
 
-	pb "github.com/sandbox-quantum/sandwich/proto/sandwich"
+	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 )
 
 // Error represents the interface for all Sandwich errors.
