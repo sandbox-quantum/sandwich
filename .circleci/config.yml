@@ -17,6 +17,18 @@ jobs:
             bazelisk test --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
               --google_default_credentials \
               //...
+      - run:
+          name: "Build the Go bindings natively"
+          command: |
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+            bazelisk build --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
+              --google_default_credentials \
+              c/...
+            export CC=clang-13
+            export CXX=clang++-13
+            cd go && go build
+
 
 workflows:
   presubmit:
