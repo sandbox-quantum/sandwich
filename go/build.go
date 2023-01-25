@@ -1,5 +1,5 @@
 package sandwich
 
 // #cgo CFLAGS: -I${SRCDIR}/..
-// #cgo LDFLAGS: -shared -L${SRCDIR}/../bazel-bin/c/libsandwich_shared.so.runfiles/sandwich/c -lsandwich_shared
+// #cgo LDFLAGS: -L${SRCDIR}/../bazel-bin/c/ -lcontext -ltunnel -lio
 import "C"
