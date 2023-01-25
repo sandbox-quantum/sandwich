@@ -32,8 +32,10 @@ SANDWICH_API enum ::SandwichError sandwich_context_new(
                                        n);
   auto res = saq::sandwich::Context::FromSerializedConfiguration(msg);
   if (res) {
-    *ctx = reinterpret_cast<std::remove_pointer_t<decltype(ctx)>>(
-        res.Get().release());
+    if (ctx != nullptr) {
+      *ctx = reinterpret_cast<std::remove_pointer_t<decltype(ctx)>>(
+          res.Get().release());
+    }
     return SANDWICH_ERROR_OK;
   }
   return static_cast<enum ::SandwichError>(res.GetError());
