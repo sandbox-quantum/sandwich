@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,20 +44,26 @@ auto Context::FromConfiguration(const ProtoConfiguration &config)
   if (std::find(kSupportedImplementations.begin(),
                 kSupportedImplementations.end(),
                 config.impl()) == kSupportedImplementations.end()) {
-    return Error::kUnsupportedImplementation;
+    return error::OpenSSLConfigurationError::kUnsupportedImplementation;
   }
 
+  std::optional<ContextResult> res = std::nullopt;
   switch (config.opts_case()) {
     case proto::api::v1::Configuration::OptsCase::kClient: {
-      return ClientContext::FromConfiguration(config);
-    }
+      res = ClientContext::FromConfiguration(config);
+    } break;
     case proto::api::v1::Configuration::OptsCase::kServer: {
-      return ServerContext::FromConfiguration(config);
-    }
+      res = ServerContext::FromConfiguration(config);
+    } break;
     default: {
-      return Error::kInvalidConfiguration;
+      return error::OpenSSLConfigurationError::kInvalidCase;
     }
   }
+
+  if (!*res) {
+    return res->GetError() >> error::OpenSSLConfigurationError::kInvalid;
+  }
+  return std::move(*res);
 }
 
 } // end namespace saq::sandwich::openssl

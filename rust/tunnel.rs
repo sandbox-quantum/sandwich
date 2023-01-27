@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,40 +40,38 @@ impl Tunnel {
     pub fn new<Io: io::IO>(
         context: &mut context::Context,
         ioint: &mut Io,
-    ) -> Result<Self, errors::GlobalError> {
+    ) -> Result<Self, errors::Error> {
         let mut iohandle = io::IOHandle::try_from(ioint)?;
         let context_c = context
             .handle_mut()
             .as_raw_mut()
-            .ok_or(errors::GlobalError::new(
-                sandwich_rust_proto::Error::ERROR_INVALID_CONTEXT,
+            .ok_or(errors::Error::from(
+                sandwich_rust_proto::SystemError::SYSTEMERROR_MEMORY,
             ))?;
         let ioint_c = iohandle
             .handle_mut()
             .as_raw_mut()
-            .ok_or(errors::GlobalError::new(
-                sandwich_rust_proto::Error::ERROR_INVALID_ARGUMENT,
+            .ok_or(errors::Error::from(
+                sandwich_rust_proto::SystemError::SYSTEMERROR_MEMORY,
             ))?;
 
         let mut handle = std::ptr::null_mut::<::sandwich_c::SandwichTunnel>();
-        let err = errors::GlobalError::from_c(unsafe {
-            sandwich_c::sandwich_tunnel_new(context_c, ioint_c, &mut handle)
-        });
-        if err.ok() {
+        let err = unsafe { sandwich_c::sandwich_tunnel_new(context_c, ioint_c, &mut handle) };
+        if err != std::ptr::null_mut() {
+            Err(errors::Error::from(errors::error_handle_c_from_raw(err)))
+        } else {
             iohandle.handle_mut().into_raw();
             Ok(Self(TunnelHandleC::from_raw(
                 handle,
                 Some(|ptr| unsafe { sandwich_c::sandwich_tunnel_free(ptr) }),
             )))
-        } else {
-            Err(err)
         }
     }
 
     /// Performs the handshake.
     pub fn handshake(&mut self) -> Result<(), errors::HandshakeState> {
         errors::HandshakeState::from_c_or(
-            unsafe { sandwich_c::sandwich_tunnel_handshake(self.0.as_raw_mut().unwrap()) },
+            unsafe { sandwich_c::sandwich_tunnel_handshake(self.0.as_raw_mut().unwrap()) } as i32,
             |_| {},
             (),
         )
@@ -83,7 +81,7 @@ impl Tunnel {
     pub fn state(&mut self) -> errors::State {
         errors::State::from_c(unsafe {
             sandwich_c::sandwich_tunnel_state(self.0.as_raw_mut().unwrap())
-        })
+        } as i32)
     }
 
     /// Reads some data from the tunnel.
@@ -97,7 +95,7 @@ impl Tunnel {
                     buf.len() as u64,
                     &mut r,
                 )
-            },
+            } as i32,
             |re| -> usize { *re as usize },
             &r,
         )
@@ -114,7 +112,7 @@ impl Tunnel {
                     buf.len() as u64,
                     &mut r,
                 )
-            },
+            } as i32,
             |re| -> usize { *re as usize },
             &r,
         )

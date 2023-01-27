@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,16 +27,23 @@ auto Context::FromConfiguration(const ProtoConfiguration &config)
     -> ContextResult {
   if (!Implementation_IsValid(config.impl()) ||
       (config.impl() == proto::api::v1::Implementation::IMPL_UNSPECIFIED)) {
-    return Error::kInvalidConfiguration;
+    return error::ConfigurationError::kInvalidImplementation >>
+           error::APIError::kConfiguration;
   }
 
   switch (config.impl()) {
     case proto::api::v1::Implementation::IMPL_OPENSSL1_1_1:
     case proto::api::v1::Implementation::IMPL_OPENSSL1_1_1_OQS: {
-      return openssl::Context::FromConfiguration(config);
+      auto res = openssl::Context::FromConfiguration(config);
+      if (!res) {
+        return res.GetError() >> error::ConfigurationError::kInvalid >>
+               error::APIError::kConfiguration;
+      }
+      return res;
     };
     default: {
-      __builtin_unreachable();
+      return error::ConfigurationError::kInvalidImplementation >>
+             error::APIError::kConfiguration;
     };
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 #include <memory>
 #include <span>
 
-#include "cc/errors.h"
+#include "cc/error.h"
 #include "cc/exports.h"
 #include "cc/io/io.h"
 #include "cc/result.h"
@@ -46,10 +46,10 @@ namespace saq::sandwich {
 class SANDWICH_CC_API Context {
  public:
   /// \brief A result, wrapping a Context or an error.
-  using ContextResult = Result<std::unique_ptr<Context>, Error>;
+  using ContextResult = Result<std::unique_ptr<Context>, error::Error>;
 
   /// \brief A result, wrapping a Tunnel or an error.
-  using TunnelResult = Result<std::unique_ptr<Tunnel>, Error>;
+  using TunnelResult = Result<std::unique_ptr<Tunnel>, error::Error>;
 
   /// \brief Alias for the configuration in Protobuf.
   using ProtoConfiguration = proto::api::v1::Configuration;
@@ -73,17 +73,18 @@ class SANDWICH_CC_API Context {
   [[nodiscard]] static auto FromSerializedConfiguration(
       std::span<const Byte> sconfig) -> ContextResult {
     if (sconfig.empty()) {
-      return Error::kInvalidConfiguration;
+      return error::ProtobufError::kEmpty >> error::APIError::kConfiguration;
     }
 
     if (sconfig.size() > INT_MAX) {
-      return Error::kIntegerOverflow;
+      return error::ProtobufError::kTooBig >> error::APIError::kConfiguration;
     }
 
     ProtoConfiguration proto;
     if (!proto.ParseFromArray(static_cast<const void *>(sconfig.data()),
                               static_cast<int>(sconfig.size()))) {
-      return Error::kProtobuf;
+      return error::ProtobufError::kParseFailed >>
+             error::APIError::kConfiguration;
     }
     return Context::FromConfiguration(proto);
   }

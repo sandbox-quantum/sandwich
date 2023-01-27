@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ extern "C" {
 
 } // end extern "C"
 
-#include "cc/errors.h"
+#include "cc/error.h"
 #include "cc/result.h"
 #include "proto/sandwich.pb.h"
 
@@ -73,7 +73,7 @@ namespace saq::sandwich::openssl {
 class TLSHandle {
  public:
   /// \brief Alias for a TLSHandle result.
-  using TLSHandleResult = Result<TLSHandle, Error>;
+  using TLSHandleResult = Result<TLSHandle, error::Error>;
 
   /// \brief Copy constructor, deleted.
   TLSHandle(const TLSHandle &) noexcept = delete;
@@ -147,7 +147,7 @@ class TLSHandle {
 class TLSContext {
  public:
   /// \brief Alias for a TLSContext result.
-  using TLSContextResult = Result<TLSContext, Error>;
+  using TLSContextResult = Result<TLSContext, error::Error>;
 
   /// \brief Factory for an SSL_CTX.
   ///
@@ -183,7 +183,7 @@ class TLSContext {
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto AddOrSetCertificate(const std::string_view pathname,
                                          proto::api::v1::ASN1EncodingFormat fmt)
-      -> Error;
+      -> error::Error;
 
   /// \brief Appends or sets the certificate using a buffer.
   ///
@@ -193,7 +193,7 @@ class TLSContext {
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto AddOrSetCertificate(std::span<const std::byte> buffer,
                                          proto::api::v1::ASN1EncodingFormat fmt)
-      -> Error;
+      -> error::Error;
 
   /// \brief Appends or sets the certificate using the protobuf type.
   ///
@@ -201,7 +201,7 @@ class TLSContext {
   ///
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto AddOrSetCertificate(
-      const proto::api::v1::Certificate &cert) -> Error;
+      const proto::api::v1::Certificate &cert) -> error::Error;
 
   /// \brief Appends or sets the certificate using an OpenSSL BIO object.
   ///
@@ -211,7 +211,7 @@ class TLSContext {
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto AddOrSetCertificate(::BIO *bio,
                                          proto::api::v1::ASN1EncodingFormat fmt)
-      -> Error;
+      -> error::Error;
 
   /// \brief Sets the private key.
   ///
@@ -223,7 +223,7 @@ class TLSContext {
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto SetPrivateKey(const std::string_view pathname,
                                    proto::api::v1::ASN1EncodingFormat fmt)
-      -> Error;
+      -> error::Error;
 
   /// \brief Sets the private key using a buffer.
   ///
@@ -233,7 +233,7 @@ class TLSContext {
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto SetPrivateKey(std::span<const std::byte> buffer,
                                    proto::api::v1::ASN1EncodingFormat fmt)
-      -> Error;
+      -> error::Error;
 
   /// \brief Sets the private key using the protobuf type.
   ///
@@ -241,7 +241,7 @@ class TLSContext {
   ///
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto SetPrivateKey(const proto::api::v1::PrivateKey &pkey)
-      -> Error;
+      -> error::Error;
 
   /// \brief Sets the private key using an OpenSSL BIO object.
   ///
@@ -251,7 +251,7 @@ class TLSContext {
   /// \return Error::ERROR_OK if success, else an error code.
   [[nodiscard]] auto SetPrivateKey(::BIO *bio,
                                    proto::api::v1::ASN1EncodingFormat fmt)
-      -> Error;
+      -> error::Error;
 
   /// \brief Adds a supported key encapsulation mechanism (KEM).
   ///
@@ -260,12 +260,13 @@ class TLSContext {
   /// Note: A call to `ApplyKems` is mandatory.
   ///
   /// \return Error::ERROR_OK if success, else an error code.
-  [[nodiscard]] auto AddSupportedKem(const std::string &kem) noexcept -> Error;
+  [[nodiscard]] auto AddSupportedKem(const std::string &kem) noexcept
+      -> error::Error;
 
   /// \brief Apply the list of key encapsulation mechanisms (KEM)
   ///
   /// \return Error::ERROR_OK if success, else an error code.
-  [[nodiscard]] auto ApplyKems() noexcept -> Error;
+  [[nodiscard]] auto ApplyKems() noexcept -> error::Error;
 
   /// \brief Casts to a ::SSL_CTX*.
   inline operator ::SSL_CTX *() noexcept { return ctx_; }
@@ -288,7 +289,7 @@ class TLSContext {
   /// \brief Creates a new SSL session.
   ///
   /// \return New SSL* session, or an error.
-  [[nodiscard]] auto NewSession() noexcept -> Result<TLSHandle, Error>;
+  [[nodiscard]] auto NewSession() noexcept -> TLSHandle::TLSHandleResult;
 
   /// \brief Set the verify mode, using `SSL_CTX_set_verify`.
   ///
@@ -327,6 +328,6 @@ class TLSContext {
     const proto::api::v1::Configuration &configuration)
     -> Result<
         std::optional<std::reference_wrapper<const proto::api::v1::TLSOptions>>,
-        Error>;
+        error::Error>;
 
 } // end namespace saq::sandwich::openssl

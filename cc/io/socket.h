@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 #include <iterator>
 #include <string>
 
-#include "cc/errors.h"
+#include "cc/error.h"
 #include "cc/io/io.h"
 #include "cc/result.h"
 #include "proto/sandwich.pb.h"
@@ -53,7 +53,7 @@ class FileDescriptor {
   ///
   /// \return A FileDescriptor, or an error.
   [[nodiscard]] static auto New(int fdesc)
-      -> Result<FileDescriptor, sandwich::Error>;
+      -> Result<FileDescriptor, error::Error>;
 
   /// \brief Casts to the file descriptor.
   ///
@@ -125,7 +125,7 @@ class Socket : public IO {
   ///
   /// \return A socket, or an error.
   [[nodiscard]] static auto FromFd(int fdesc)
-      -> Result<std::unique_ptr<IO>, sandwich::Error>;
+      -> Result<std::unique_ptr<IO>, error::Error>;
 
   /// \brief Create a socket from a file descriptor wrapper.
   ///
@@ -133,7 +133,7 @@ class Socket : public IO {
   ///
   /// \return A socket, or an error.
   [[nodiscard]] static auto FromFd(FileDescriptor fdesc)
-      -> Result<std::unique_ptr<IO>, sandwich::Error>;
+      -> Result<std::unique_ptr<IO>, error::Error>;
 
   /// \brief Copy constructor.
   Socket(const Socket &) noexcept = delete;
@@ -202,7 +202,7 @@ class Socket : public IO {
   ///
   /// \return The socket error.
   [[nodiscard]] auto GetSocketError() const noexcept
-      -> Result<int, sandwich::Error>;
+      -> Result<int, error::Error>;
 
   /// \brief The underlying socket.
   FileDescriptor fd_;

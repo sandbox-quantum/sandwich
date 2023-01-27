@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,12 @@
 
 #pragma once
 
+#include <optional>
+#include <type_traits>
+#include <utility>
 #include <variant>
+
+#include "cc/error.h"
 
 namespace saq::sandwich {
 
@@ -81,11 +86,64 @@ class Result {
   /// \param e Error to move.
   Result(E &&e) : value_{std::in_place_index<kErrorIndex>, std::move(e)} {}
 
-  /// \brief Construct a Result fron an object, by moving its value (success
+  /// \brief Construct a Result from an object, by moving its value (success
   /// case).
   ///
   // \param o Object to move.
   Result(T &&o) : value_{std::in_place_index<kResultIndex>, std::move(o)} {}
+
+  /// \brief Construct a Result from a std::nullopt.
+  ///
+  /// This constructor only works if T is an std::optional.
+  ///
+  /// \param n
+  template <typename V>
+    requires(std::is_same_v<T, std::optional<V>>)
+  Result(const std::nullopt_t n)
+      : value_{std::in_place_index<kResultIndex>, {n}} {}
+
+  /// \brief Construct a Result from an enum error type.
+  ///
+  /// This constructor only works if E is error::Error.
+  ///
+  /// \tparam Enum Enum type.
+  ///
+  /// \param ecode Enum code.
+  template <error::ErrorCodeEnum Enum>
+  Result(const Enum ecode)
+      : value_{std::in_place_index<kErrorIndex>, error::Error{ecode}} {}
+
+  /// \brief Construct a Result from an error code.
+  ///
+  /// This constructor only works if E is error::Error.
+  ///
+  /// \param E error type.
+  template <typename U = E>
+    requires(std::is_same_v<U, E>)
+  Result(error::ErrorCode *e) noexcept
+      : value_{std::in_place_index<kErrorIndex>, error::Error{e}} {}
+
+  /// \brief Construct a Result from an enum error type.
+  ///
+  /// This constructor only works if E is error::Error.
+  ///
+  /// \tparam Enum Enum type.
+  ///
+  /// \param ecode Enum code.
+  template <error::ErrorCodeEnum Enum>
+    requires(std::is_same_v<E, error::Error>)
+  Result(std::initializer_list<Enum> ecodel)
+      : value_{std::in_place_index<kErrorIndex>,
+               error::Error{*ecodel.begin()}} {}
+
+  /// \brief Construct a Result from an error.
+  ///
+  /// This constructor only works if E is error::Error.
+  ///
+  /// \param err Error.
+  template <typename U = E>
+    requires(std::is_same_v<U, E>)
+  Result(U &err) : value_{std::in_place_index<kErrorIndex>, std::move(err)} {}
 
   /// \brief Copy constructor, default.
   Result(const Result &) = default;
@@ -156,23 +214,23 @@ class Result {
   /// \param index Index.
   Result(const T &value, std::size_t index) {
     if (index == kResultIndex) {
-      value_.emplace<kResultIndex>(value);
+      value_.template emplace<kResultIndex>(value);
     }
   }
   Result(T &&value, std::size_t index) {
     if (index == kResultIndex) {
-      value_.emplace<kResultIndex>(std::move(value));
+      value_.template emplace<kResultIndex>(std::move(value));
     }
   }
 
   Result(const E &value, std::size_t index) {
     if (index == kErrorIndex) {
-      value_.emplace<kErrorIndex>(value);
+      value_.template emplace<kErrorIndex>(value);
     }
   }
   Result(E &&value, std::size_t index) {
     if (index == kErrorIndex) {
-      value_.emplace<kErrorIndex>(std::move(value));
+      value_.template emplace<kErrorIndex>(std::move(value));
     }
   }
 

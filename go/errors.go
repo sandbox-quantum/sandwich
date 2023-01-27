@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,10 +28,17 @@ type Error interface {
 	error
 	// `Code` returns the error code, defined in the protobuf.
 	Code() int32
+	// `SetDetails` sets the encapsulated error.
+	setDetails(e Error)
+	// `Unwrap` unwraps the next error. It is meant to be used with the `errors`
+	// package.
+	Unwrap() error
 }
 
 // BaseError represents the base structure for all Sandwich errors.
 type BaseError struct {
+	// details holds the encapsulated error.
+	details Error
 	// msg holds the error string.
 	msg string
 	// code holds the error code, which comes from the protobuf. It is compatible
@@ -44,79 +51,430 @@ func (err *BaseError) Code() int32 {
 	return err.code
 }
 
+// SetDetails implements the Error interface.
+func (err *BaseError) setDetails(e Error) {
+	err.details = e
+}
+
+// Unwrap implements the Error interface.
+func (err *BaseError) Unwrap() error {
+	return err.details
+}
+
 // Error implements the error interface.
 func (err *BaseError) Error() string {
 	return err.msg
 }
 
-// globalErrorMap is a map code -> string for global errors defined in
-// `errors.proto`.
-var globalErrorMap = map[int32]string{
-	int32(pb.Error_ERROR_OK):                               "no error",
-	int32(pb.Error_ERROR_INVALID_ARGUMENT):                 "invalid argument",
-	int32(pb.Error_ERROR_MEMORY):                           "memory error",
-	int32(pb.Error_ERROR_IO):                               "i/O error",
-	int32(pb.Error_ERROR_UNKNOWN):                          "unknown error",
-	int32(pb.Error_ERROR_INVALID_CONFIGURATION):            "invalid configuration",
-	int32(pb.Error_ERROR_UNSUPPORTED_IMPLEMENTATION):       "unsupported implementation",
-	int32(pb.Error_ERROR_UNSUPPORTED_PROTOCOL):             "unsupported protocol",
-	int32(pb.Error_ERROR_IMPLEMENTATION_PROTOCOL_MISMATCH): "implementation and protocol mismatch",
-	int32(pb.Error_ERROR_PROTOBUF):                         "protobuf serialization or deserialization error",
-	int32(pb.Error_ERROR_NETWORK_INVALID_ADDRESS):          "invalid network address",
-	int32(pb.Error_ERROR_NETWORK_INVALID_PORT):             "invalid network port",
-	int32(pb.Error_ERROR_INVALID_CONTEXT):                  "invalid context",
-	int32(pb.Error_ERROR_BAD_FD):                           "bad file descriptor",
-	int32(pb.Error_ERROR_UNSUPPORTED_TUNNEL_METHOD):        "unsupported tunnel method",
-	int32(pb.Error_ERROR_INTEGER_OVERFLOW):                 "integer overflow",
-	int32(pb.Error_ERROR_MEMORY_OVERFLOW):                  "memory overflow",
-	int32(pb.Error_ERROR_IMPLEMENTATION):                   "implementation error",
-	int32(pb.Error_ERROR_INVALID_TUNNEL):                   "invalid tunnel",
-	int32(pb.Error_ERROR_INVALID_KEM):                      "invalid KEM",
-	int32(pb.Error_ERROR_TIMEOUT):                          "tineout reached",
-	int32(pb.Error_ERROR_NETWORK_ADDRESS_RESOLVE):          "failed to resolve network address",
-	int32(pb.Error_ERROR_NETWORK_CONNECT):                  "failed to connect",
-	int32(pb.Error_ERROR_SOCKET_FAILED):                    "failed to create socket",
-	int32(pb.Error_ERROR_SOCKET_OPT_FAILED):                "`getsockopt`/`setsockopt` failed",
-	int32(pb.Error_ERROR_SOCKET_INVALID_AI_FAMILY):         "invalid socket AI family",
-	int32(pb.Error_ERROR_CONNECTION_REFUSED):               "connection refused",
-	int32(pb.Error_ERROR_NETWORK_UNREACHABLE):              "network unreachable",
-	int32(pb.Error_ERROR_SOCKET_POLL_FAILED):               "socket poll failed",
-	int32(pb.Error_ERROR_INVALID_CERTIFICATE):              "invalid certificate",
-	int32(pb.Error_ERROR_UNSUPPORTED_CERTIFICATE):          "unsupported certificate",
-	int32(pb.Error_ERROR_INVALID_PRIVATE_KEY):              "invalid private key",
-	int32(pb.Error_ERROR_UNSUPPORTED_PRIVATE_KEY):          "unsupported private key",
-	int32(pb.Error_ERROR_UNSUPPORTED_PROTOCOL_VERSION):     "unsupported protocol version",
+// errorKindMap is a map code -> string for error kinds, defined in
+// `errors.proto`, enum `ErrorKind`.
+var errorKindMap = map[pb.ErrorKind]string{
+	pb.ErrorKind_ERRORKIND_API:                          "API error",
+	pb.ErrorKind_ERRORKIND_CONFIGURATION:                "configuration error",
+	pb.ErrorKind_ERRORKIND_OPENSSL_CONFIGURATION:        "OpenSSL configuration error",
+	pb.ErrorKind_ERRORKIND_OPENSSL_CLIENT_CONFIGURATION: "OpenSSL client configuration error",
+	pb.ErrorKind_ERRORKIND_OPENSSL_SERVER_CONFIGURATION: "OpenSSL server configuration error",
+	pb.ErrorKind_ERRORKIND_CERTIFICATE:                  "certificate error",
+	pb.ErrorKind_ERRORKIND_SYSTEM:                       "system error",
+	pb.ErrorKind_ERRORKIND_SOCKET:                       "socket error",
+	pb.ErrorKind_ERRORKIND_PROTOBUF:                     "protobuf error",
+	pb.ErrorKind_ERRORKIND_PRIVATE_KEY:                  "private key error",
+	pb.ErrorKind_ERRORKIND_ASN1:                         "ASN.1 error",
+	pb.ErrorKind_ERRORKIND_DATA_SOURCE:                  "DataSource error",
+	pb.ErrorKind_ERRORKIND_KEM:                          "KEM error",
 }
 
-// GlobalError defines the global errors.
-// These errors are defined by the enum `Error` in `errors.proto`.
-// They are used all across the library.
-type GlobalError struct {
+// APIError defines the first-class API errors, such as Context errors,
+// Socket errors and Tunnel errors.
+type APIError struct {
 	BaseError
 }
 
-// newGlobalError creates an error from an error code.
-// The error code is supposed to match a key in `globalErrorMap`, defined above.
-func newGlobalError(code int32) *GlobalError {
-	if val, ok := globalErrorMap[code]; ok {
-		return &GlobalError{
-			BaseError{
-				msg:  val,
-				code: code,
-			},
-		}
+// apiErrorMap is a map code -> string for API errors.
+var apiErrorMap = map[pb.APIError]string{
+	pb.APIError_APIERROR_CONFIGURATION: "invalid configuration",
+	pb.APIError_APIERROR_SOCKET:        "socket error",
+	pb.APIError_APIERROR_TUNNEL:        "tunnel error",
+}
+
+// newAPIError creates an APIError from an error code.
+func newAPIError(code pb.APIError) *APIError {
+	var msg string
+	if val, ok := apiErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown API error code %d", int32(code))
 	}
-	return &GlobalError{
+	return &APIError{
 		BaseError{
-			msg:  fmt.Sprintf("unknown GlobalError code %d", code),
-			code: code,
+			msg:  msg,
+			code: int32(code),
 		},
 	}
 }
 
-// newGlobalErrorFromEnum creates an error from a value from the enum pb.Error.
-func newGlobalErrorFromEnum(err pb.Error) *GlobalError {
-	return newGlobalError(int32(err))
+// ConfigurationError defines an error that may occur when a protobuf
+// configuration is malformed.
+type ConfigurationError struct {
+	BaseError
+}
+
+// configurationErrorMap is a map code -> string for configuration errors.
+var configurationErrorMap = map[pb.ConfigurationError]string{
+	pb.ConfigurationError_CONFIGURATIONERROR_INVALID_IMPLEMENTATION:     "invalid implementation",
+	pb.ConfigurationError_CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION: "unsupported implementation",
+	pb.ConfigurationError_CONFIGURATIONERROR_INVALID:                    "invalid configuration",
+}
+
+// newConfigurationError creates a ConfigurationError from an error code.
+func newConfigurationError(code pb.ConfigurationError) *ConfigurationError {
+	var msg string
+	if val, ok := configurationErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown configuration error code %d", int32(code))
+	}
+	return &ConfigurationError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// OpenSSLConfigurationError defines an error that may occur when a protobuf
+// configuration using the OpenSSL implementation is malformed.
+type OpenSSLConfigurationError struct {
+	BaseError
+}
+
+// openSSLConfigurationErrorMap is a map code -> string for OpenSSL configuration errors.
+var openSSLConfigurationErrorMap = map[pb.OpenSSLConfigurationError]string{
+	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION:   "unsupported implementation",
+	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: "invalid TLS version",
+	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_EMPTY:                        "empty configuration",
+	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_INVALID_CASE:                 "invalid oneof case",
+	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_INVALID:                      "invalid OpenSSL configuration",
+}
+
+// newOpenSSLConfigurationError creates a OpenSSLConfigurationError from an error code.
+func newOpenSSLConfigurationError(code pb.OpenSSLConfigurationError) *OpenSSLConfigurationError {
+	var msg string
+	if val, ok := openSSLConfigurationErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown OpenSSL configuration error code %d", int32(code))
+	}
+	return &OpenSSLConfigurationError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// OpenSSLClientConfigurationError defines an error that may occur when a
+// protobuf configuration using the OpenSSL implementation in client mode
+// is malformed.
+type OpenSSLClientConfigurationError struct {
+	BaseError
+}
+
+// openSSLClientConfigurationErrorMap is a map code -> string for OpenSSL client configuration errors.
+var openSSLClientConfigurationErrorMap = map[pb.OpenSSLClientConfigurationError]string{
+	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_EMPTY:          "empty configuration",
+	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE:    "certificate error",
+	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_SSL_CTX_FAILED: "SSL_CTX* creation failed",
+	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_KEM:            "KEM error",
+	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_FLAGS:          "flags error",
+	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_SSL_FAILED:     "SSL* creation failed",
+	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED:     "BIO* creation failed",
+}
+
+// newOpenSSLClientConfigurationError creates a OpenSSLClientConfigurationError from an error code.
+func newOpenSSLClientConfigurationError(code pb.OpenSSLClientConfigurationError) *OpenSSLClientConfigurationError {
+	var msg string
+	if val, ok := openSSLClientConfigurationErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown OpenSSL client configuration error code %d", int32(code))
+	}
+	return &OpenSSLClientConfigurationError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// OpenSSLServerConfigurationError defines an error that may occur when a
+// protobuf configuration using the OpenSSL implementation in server mode
+// is malformed.
+type OpenSSLServerConfigurationError struct {
+	BaseError
+}
+
+// openSSLServerConfigurationErrorMap is a map code -> string for OpenSSL server configuration errors.
+var openSSLServerConfigurationErrorMap = map[pb.OpenSSLServerConfigurationError]string{
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_EMPTY:          "empty configuration",
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE:    "certificate error",
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED: "SSL_CTX* creation failed",
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_KEM:            "KEM error",
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_FLAGS:          "flags error",
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY:    "private key error",
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_SSL_FAILED:     "SSL* creation failed",
+	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_BIO_FAILED:     "BIO* creation failed",
+}
+
+// newOpenSSLServerConfigurationError creates a OpenSSLServerConfigurationError from an error code.
+func newOpenSSLServerConfigurationError(code pb.OpenSSLServerConfigurationError) *OpenSSLServerConfigurationError {
+	var msg string
+	if val, ok := openSSLServerConfigurationErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown OpenSSL server configuration error code %d", int32(code))
+	}
+	return &OpenSSLServerConfigurationError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// CertificateError defines an error that may occur when a configuration supplies
+// a certificate that is malformed.
+type CertificateError struct {
+	BaseError
+}
+
+// certificateErrorMap is a map code -> string for certificate errors.
+var certificateErrorMap = map[pb.CertificateError]string{
+	pb.CertificateError_CERTIFICATEERROR_MALFORMED:   "certificate malformed",
+	pb.CertificateError_CERTIFICATEERROR_EXPIRED:     "certificate expired",
+	pb.CertificateError_CERTIFICATEERROR_NOT_FOUND:   "certificate not found on disk",
+	pb.CertificateError_CERTIFICATEERROR_UNKNOWN:     "unknown error",
+	pb.CertificateError_CERTIFICATEERROR_UNSUPPORTED: "certificate not supported by underlying implementation",
+}
+
+// newCertificateError creates a CertificateError from an error code.
+func newCertificateError(code pb.CertificateError) *CertificateError {
+	var msg string
+	if val, ok := certificateErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown certificate error code %d", int32(code))
+	}
+	return &CertificateError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// PrivateKeyError defines an error that may occur when a configuration supplies
+// a private key that is malformed.
+type PrivateKeyError struct {
+	BaseError
+}
+
+// privateKeyErrorMap is a map code -> string for private key errors.
+var privateKeyErrorMap = map[pb.PrivateKeyError]string{
+	pb.PrivateKeyError_PRIVATEKEYERROR_MALFORMED:   "private key malformed",
+	pb.PrivateKeyError_PRIVATEKEYERROR_NOT_FOUND:   "private key not found on disk",
+	pb.PrivateKeyError_PRIVATEKEYERROR_UNKNOWN:     "unknown error",
+	pb.PrivateKeyError_PRIVATEKEYERROR_UNSUPPORTED: "private key not supported by underlying implementation",
+	pb.PrivateKeyError_PRIVATEKEYERROR_NOT_SERVER:  "not a server configuration",
+}
+
+// newPrivateKeyError creates a PrivateKeyError from an error code.
+func newPrivateKeyError(code pb.PrivateKeyError) *PrivateKeyError {
+	var msg string
+	if val, ok := privateKeyErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown private key error code %d", int32(code))
+	}
+	return &PrivateKeyError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// ProtobufError defines an error that may occur when the protobuf message
+// is malformed.
+type ProtobufError struct {
+	BaseError
+}
+
+// ErrorMap is a map code -> string for protobuf errors.
+var protobufErrorMap = map[pb.ProtobufError]string{
+	pb.ProtobufError_PROTOBUFERROR_EMPTY:        "empty message",
+	pb.ProtobufError_PROTOBUFERROR_TOO_BIG:      "message too large",
+	pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED: "message parsing failed",
+}
+
+// newProtobufError creates a ProtobufError from an error code.
+func newProtobufError(code pb.ProtobufError) *ProtobufError {
+	var msg string
+	if val, ok := protobufErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown protobuf error code %d", int32(code))
+	}
+	return &ProtobufError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// ASN1Error defines an error that may occur when a malformed ASN.1 document
+// is provided.
+type ASN1Error struct {
+	BaseError
+}
+
+// ErrorMap is a map code -> string for ASN.1 errors.
+var asn1ErrorMap = map[pb.ASN1Error]string{
+	pb.ASN1Error_ASN1ERROR_INVALID_FORMAT: "invalid format",
+}
+
+// newASN1Error creates a ASN1Error from an error code.
+func newASN1Error(code pb.ASN1Error) *ASN1Error {
+	var msg string
+	if val, ok := asn1ErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown ASN.1 error code %d", int32(code))
+	}
+	return &ASN1Error{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// DataSourceError defines an error that may occur when a configuration
+// provided a malformed DataSource.
+type DataSourceError struct {
+	BaseError
+}
+
+// ErrorMap is a map code -> string for DataSource errors.
+var dataSourceErrorMap = map[pb.DataSourceError]string{
+	pb.DataSourceError_DATASOURCEERROR_EMPTY:        "empty DataSource",
+	pb.DataSourceError_DATASOURCEERROR_INVALID_CASE: "invalid oneof case",
+}
+
+// newDataSourceError creates a DataSourceError from an error code.
+func newDataSourceError(code pb.DataSourceError) *DataSourceError {
+	var msg string
+	if val, ok := dataSourceErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown DataSource error code %d", int32(code))
+	}
+	return &DataSourceError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// KEMError defines an error that may occur when a KEM is invalid or unsupported.
+type KEMError struct {
+	BaseError
+}
+
+// ErrorMap is a map code -> string for KEM errors.
+var kEMErrorMap = map[pb.KEMError]string{
+	pb.KEMError_KEMERROR_INVALID:  "invalid or unsupported KEM",
+	pb.KEMError_KEMERROR_TOO_MANY: "too many KEMs",
+}
+
+// newKEMError creates a KEMError from an error code.
+func newKEMError(code pb.KEMError) *KEMError {
+	var msg string
+	if val, ok := kEMErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown KEM error code %d", int32(code))
+	}
+	return &KEMError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// SystemError defines an error that may occur when a system error is
+// encountered, such as a memory allocation failure.
+type SystemError struct {
+	BaseError
+}
+
+// ErrorMap is a map code -> string for system errors.
+var systemErrorMap = map[pb.SystemError]string{
+	pb.SystemError_SYSTEMERROR_MEMORY:           "memory error",
+	pb.SystemError_SYSTEMERROR_INTEGER_OVERFLOW: "integer overflow",
+}
+
+// newSystemError creates a SystemError from an error code.
+func newSystemError(code pb.SystemError) *SystemError {
+	var msg string
+	if val, ok := systemErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown system error code %d", int32(code))
+	}
+	return &SystemError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
+}
+
+// SocketError defines an error that may occur in the I/O socket interface.
+type SocketError struct {
+	BaseError
+}
+
+// ErrorMap is a map code -> string for socket errors.
+var socketErrorMap = map[pb.SocketError]string{
+	pb.SocketError_SOCKETERROR_BAD_FD:             "bad file descriptor",
+	pb.SocketError_SOCKETERROR_CREATION_FAILED:    "socket creation failed",
+	pb.SocketError_SOCKETERROR_BAD_NETADDR:        "bad network address",
+	pb.SocketError_SOCKETERROR_NETADDR_UNKNOWN:    "network address resolution failed",
+	pb.SocketError_SOCKETERROR_FSTAT_FAILED:       "fstat failed",
+	pb.SocketError_SOCKETERROR_NOT_SOCK:           "not a socket",
+	pb.SocketError_SOCKETERROR_GETSOCKNAME_FAILED: "getsockname failed",
+	pb.SocketError_SOCKETERROR_SETSOCKOPT_FAILED:  "setsockopt failed",
+	pb.SocketError_SOCKETERROR_INVALID_AI_FAMILY:  "invalid AI family",
+}
+
+// newSocketError creates a SocketError from an error code.
+func newSocketError(code pb.SocketError) *SocketError {
+	var msg string
+	if val, ok := socketErrorMap[code]; ok {
+		msg = val
+	} else {
+		msg = fmt.Sprintf("unknown socket error code %d", int32(code))
+	}
+	return &SocketError{
+		BaseError{
+			msg:  msg,
+			code: int32(code),
+		},
+	}
 }
 
 // handshakeErrorMap is a map code -> string for errors regarding the handshake

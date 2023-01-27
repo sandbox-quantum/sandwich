@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -138,23 +138,21 @@ pub struct IOHandle(IOHandleC);
 
 impl IOHandle {
     /// Creates an IOHandle from an IO interface.
-    pub(crate) fn try_from<Io: IO>(io: &mut Io) -> Result<Self, errors::GlobalError> {
+    pub(crate) fn try_from<Io: IO>(io: &mut Io) -> Result<Self, errors::Error> {
         let settings = create_c_settings(io);
 
         let mut handle = std::ptr::null_mut::<::sandwich_c::SandwichCIO>();
 
-        let err = errors::GlobalError::from_c(unsafe {
-            sandwich_c::sandwich_io_new(&settings, &mut handle)
-        });
-        if err.ok() {
+        let err = unsafe { sandwich_c::sandwich_io_new(&settings, &mut handle) };
+        if err != std::ptr::null_mut() {
+            Err(errors::Error::from(errors::error_handle_c_from_raw(err)))
+        } else {
             Ok(Self(IOHandleC::from_raw(
                 handle,
                 Some(|ptr| unsafe {
                     sandwich_c::sandwich_io_free(ptr);
                 }),
             )))
-        } else {
-            Err(err)
         }
     }
 

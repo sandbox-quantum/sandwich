@@ -1,4 +1,4 @@
-# Copyright 2022 SandboxAQ
+# Copyright 2023 SandboxAQ
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -134,7 +134,34 @@ def _find_sandwich_dll(extension=".so") -> typing.Optional[pathlib.Path]:
     return pathlib.Path(ret)
 
 
-Error = errors.SandwichGlobalException
+Error = errors.SandwichException
+
+
+class _ErrorC(ctypes.Structure):
+    """SandwichError structure."""
+
+    _fields_ = [
+        ("details", ctypes.c_void_p),
+        ("kind", ctypes.c_int),
+        ("code", ctypes.c_int),
+    ]
+
+
+def _error_code_to_exception(ptr: ctypes.c_void_p):
+    ec = ctypes.cast(ptr, ctypes.POINTER(_ErrorC))
+
+    chain = None
+    current_excp = None
+    while ec:
+        excp = Error.new(ec.contents.kind, ec.contents.code)
+        if chain == None:
+            chain = excp
+            current_excp = excp
+        else:
+            current_excp.__cause__ = excp
+            current_excp = excp
+        ec = ctypes.cast(ec.contents.details, ctypes.POINTER(_ErrorC))
+    return chain
 
 
 class Context:
@@ -177,8 +204,11 @@ class Context:
             ctypes.byref(self._handle),
         )
         err = self._sandwich.c_call("sandwich_context_new", *args)
-        if err != errors.SandwichGlobalException.ERROR_OK:
-            raise errors.SandwichGlobalException.new(err)
+        err = ctypes.cast(err, ctypes.c_void_p)
+        if err.value != None:
+            excp = _error_code_to_exception(err)
+            self._sandwich.c_call("sandwich_error_free", err)
+            raise excp
 
     def implementation(self) -> SandwichAPI.Implementation:
         """The selected implementation."""
@@ -256,19 +286,23 @@ class Tunnel:
         err = self._C.c_call(
             "sandwich_io_new", ctypes.byref(self._settings), io_handle.ref()
         )
-        if err != errors.SandwichGlobalException.ERROR_OK:
-            raise errors.SandwichGlobalException.new(err)
+        err = ctypes.cast(err, ctypes.c_void_p)
+        if err.value != None:
+            excp = _error_code_to_exception(err)
+            self._sandwich.c_call("sandwich_error_free", err)
+            raise excp
 
-        ret = self._C.c_call(
+        err = self._C.c_call(
             "sandwich_tunnel_new",
             self._ctx._handle,
             io_handle.release(),
             ctypes.byref(self._handle),
         )
-        if err != 0:
-            raise errors.SandwichGlobalException.new(
-                err, f"Failed to construct a Sandwich tunnel"
-            )
+        err = ctypes.cast(err, ctypes.c_void_p)
+        if err.value != None:
+            excp = _error_code_to_exception(err)
+            self._sandwich.c_call("sandwich_error_free", err)
+            raise excp
 
     def state(self) -> State:
         """Returns the state of the tunnel.
@@ -422,7 +456,7 @@ class Tunnel:
                 Pointer to an IOError, to set.
 
         Raises:
-            errors.IOException
+            SandwichIO.IOException
 
         Returns:
             Amount of bytes read from the I/O interface.
@@ -430,10 +464,10 @@ class Tunnel:
         data = None
         try:
             data = self._io.read(count, tunnel_state)
-        except errors.IOException as e:
+        except SandwichIO.IOException as e:
             err[0] = e.code
             return 0
-        err[0] = errors.IOException.ERROR_OK
+        err[0] = SandwichIO.IOException.ERROR_OK
         l = len(data)
         assert l <= count
         ctypes.memmove(buf, data, len(data))
@@ -470,10 +504,10 @@ class Tunnel:
                 bytes(ctypes.cast(buf, ctypes.POINTER(ctypes.c_ubyte))[:count]),
                 tunnel_state,
             )
-        except errors.IOException as e:
+        except SandwichIO.IOException as e:
             err[0] = e.code()
             return 0
-        err[0] = errors.IOException.ERROR_OK
+        err[0] = SandwichIO.IOException.ERROR_OK
         return w
 
     def __del__(self):

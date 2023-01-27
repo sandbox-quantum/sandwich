@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,14 +69,15 @@ class Context : protected sandwich::Context {
   /// \param config Configuration.
   ///
   /// \return Error::ERROR_OK if success, else an error code.
-  [[nodiscard]] auto SetKems(const ProtoConfiguration &config) -> Error;
+  [[nodiscard]] auto SetKems(const ProtoConfiguration &config) -> error::Error;
 
   /// \brief Apply flags from configuration (see `proto::TLSFlags`).
   ///
   /// \param config Configuration.
   ///
   /// \return Error::ERROR_OK if success, else an error code.
-  [[nodiscard]] auto ApplyFlags(const ProtoConfiguration &config) -> Error;
+  [[nodiscard]] auto ApplyFlags(const ProtoConfiguration &config)
+      -> error::Error;
 
   /// \brief Constructor from a configuration and a SSL_CTX object.
   ///

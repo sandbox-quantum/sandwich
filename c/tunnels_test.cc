@@ -103,9 +103,9 @@ auto CreateClientContext()
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
   struct ::SandwichContext *ctx = nullptr;
-  const auto err = ::sandwich_context_new(encoded_configuration.data(),
-                                          encoded_configuration.size(), &ctx);
-  sandwich_assert(err == SANDWICH_ERROR_OK);
+  const auto *err = ::sandwich_context_new(encoded_configuration.data(),
+                                           encoded_configuration.size(), &ctx);
+  sandwich_assert(err == nullptr);
 
   return {ctx, [](struct ::SandwichContext *c) { ::sandwich_context_free(c); }};
 }
@@ -142,9 +142,9 @@ auto CreateServerContext()
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
   struct ::SandwichContext *ctx = nullptr;
-  const auto err = ::sandwich_context_new(encoded_configuration.data(),
-                                          encoded_configuration.size(), &ctx);
-  sandwich_assert(err == SANDWICH_ERROR_OK);
+  const auto *err = ::sandwich_context_new(encoded_configuration.data(),
+                                           encoded_configuration.size(), &ctx);
+  sandwich_assert(err == nullptr);
 
   return {ctx, [](struct ::SandwichContext *c) { ::sandwich_context_free(c); }};
 }
@@ -289,13 +289,13 @@ struct IOPair {
   auto settings = SandwichSocketCIOSettings;
 
   settings.uarg = reinterpret_cast<void *>(fds[0]);
-  auto err{::sandwich_io_new(&settings, &pair.client)};
-  sandwich_assert(err == SANDWICH_ERROR_OK);
+  auto *err{::sandwich_io_new(&settings, &pair.client)};
+  sandwich_assert(err == nullptr);
   sandwich_assert(pair.client != nullptr);
 
   settings.uarg = reinterpret_cast<void *>(fds[1]);
   err = ::sandwich_io_new(&settings, &pair.server);
-  sandwich_assert(err == SANDWICH_ERROR_OK);
+  sandwich_assert(err == nullptr);
   sandwich_assert(pair.server != nullptr);
 
   return pair;
@@ -316,8 +316,8 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
                                 struct ::SandwichCIO *ioint)
     -> std::unique_ptr<struct ::SandwichTunnel, SandwichTunnelDeleter> {
   struct ::SandwichTunnel *tun{nullptr};
-  const auto err{::sandwich_tunnel_new(ctx, ioint, &tun)};
-  sandwich_assert(err == SANDWICH_ERROR_OK);
+  const auto *err{::sandwich_tunnel_new(ctx, ioint, &tun)};
+  sandwich_assert(err == nullptr);
   sandwich_assert(tun != nullptr);
 
   return {tun, [](struct ::SandwichTunnel *t) { ::sandwich_tunnel_free(t); }};

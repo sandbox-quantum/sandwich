@@ -1,4 +1,4 @@
-# Copyright 2022 SandboxAQ
+# Copyright 2023 SandboxAQ
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ An I/O interface is an object requiring the following methods:
 
 All methods should either return the corresponding value (the read bytes
 for `read` and the amount of successfully written bytes for `write`), or
-raise an exception of type `errors.IOException`.
-See `errors.py` for more information about `IOException`.
+raise an exception of type `IOException`.
 
 The user has to define a class extending `IO`.
 An example can be found in `tunnel_test.py`.
@@ -39,6 +38,92 @@ import ctypes
 import proto.io_pb2 as SandwichIOProto
 import proto.tunnel_pb2 as SandwichTunnelProto
 from pysandwich import errors
+
+
+class IOException(errors.SandwichException):
+    """Exception base class for I/O interface.
+    Errors are defined in the protobuf `io.proto`, `enum IOError`.
+    This exception handles the following cases:
+        * IOERROR_IN_PROGRESS
+        * IOERROR_WOULD_BLOCK
+        * IOERROR_REFUSED
+        * IOERROR_CLOSED
+        * IOERROR_INVALID
+        * IOERROR_UNKNOWN
+    """
+
+    """The no-error error."""
+    ERROR_OK = SandwichIOProto.IOERROR_OK
+
+    """Map from the protobuf enum `IOError` to error string and subclass exception."""
+    _ERRORS_MAP = {
+        SandwichIOProto.IOERROR_IN_PROGRESS: {
+            "msg": "The I/O interface is still connecting to the remote peer",
+            "cls": lambda: IOInProgressException,
+        },
+        SandwichIOProto.IOERROR_WOULD_BLOCK: {
+            "msg": "The I/O operation would block, but the I/O interface is non-blocking",
+            "cls": lambda: IOWouldBlockException,
+        },
+        SandwichIOProto.IOERROR_REFUSED: {
+            "msg": "The I/O interface has been refused connection",
+            "cls": lambda: IORefusedException,
+        },
+        SandwichIOProto.IOERROR_CLOSED: {
+            "msg": "This I/O interface is closed",
+            "cls": lambda: IOClosedException,
+        },
+        SandwichIOProto.IOERROR_INVALID: {
+            "msg": "This I/O interface isn't valid",
+            "cls": lambda: IOInvalidException,
+        },
+        SandwichIOProto.IOERROR_UNKNOWN: {
+            "msg": "This I/O interface raised an unknown error",
+            "cls": lambda: IOUnknownException,
+        },
+    }
+
+
+class IOInProgressException(IOException):
+    """In progress exception."""
+
+    def __init__(self, *kargs, **kwargs):
+        super().__init__(code=SandwichIOProto.IOERROR_IN_PROGRESS, *kargs, **kwargs)
+
+
+class IOWouldBlockException(IOException):
+    """Would block exception."""
+
+    def __init__(self, *kargs, **kwargs):
+        super().__init__(code=SandwichIOProto.IOERROR_WOULD_BLOCK, *kargs, **kwargs)
+
+
+class IORefusedException(IOException):
+    """Connection refused exception."""
+
+    def __init__(self, *kargs, **kwargs):
+        super().__init__(code=SandwichIOProto.IOERROR_REFUSED, *kargs, **kwargs)
+
+
+class IOClosedException(IOException):
+    """Closed pipe exception."""
+
+    def __init__(self, *kargs, **kwargs):
+        super().__init__(code=SandwichIOProto.IOERROR_CLOSED, *kargs, **kwargs)
+
+
+class IOInvalidException(IOException):
+    """Invalid I/O interface exception."""
+
+    def __init__(self, *kargs, **kwargs):
+        super().__init__(code=SandwichIOProto.IOERROR_INVALID, *kargs, **kwargs)
+
+
+class IOUnknownException(IOException):
+    """Unknown I/O exception."""
+
+    def __init__(self, *kargs, **kwargs):
+        super().__init__(code=SandwichIOProto.IOERROR_UNKNOWN, *kargs, **kwargs)
 
 
 class IO(abc.ABC):
@@ -110,7 +195,7 @@ class IO(abc.ABC):
                 Amount of bytes to read.
 
         Raises:
-            errors.IOException.
+            IOException.
 
         Returns:
             Bytes successfully read.
@@ -126,7 +211,7 @@ class IO(abc.ABC):
                 Buffer to write.
 
         Raises:
-            errors.IOException.
+            IOException.
 
         Returns:
             Amount of successfully written bytes.
@@ -138,7 +223,7 @@ class IO(abc.ABC):
         """Close function.
 
         Raises:
-            errors.IOException.
+            IOException.
         """
         pass
 

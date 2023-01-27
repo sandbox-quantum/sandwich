@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,41 +34,41 @@ pub struct Context(ContextHandleC);
 
 /// Implements a constructor from a borrowed protobuf configuration.
 impl TryFrom<&api::Configuration> for Context {
-    type Error = errors::GlobalError;
+    type Error = errors::Error;
 
     /// Constructs a ContextHandle from a borrowed protobuf configuration.
     fn try_from(configuration: &api::Configuration) -> Result<Self, Self::Error> {
         let data = <api::Configuration as protobuf::Message>::write_to_bytes(configuration)
             .or_else(|_| {
-                Err(errors::GlobalError::new(
-                    sandwich_rust_proto::Error::ERROR_PROTOBUF,
+                Err(Self::Error::from(
+                    sandwich_rust_proto::ProtobufError::PROTOBUFERROR_PARSE_FAILED,
                 ))
             })?;
         let mut handle = std::ptr::null_mut::<::sandwich_c::SandwichContext>();
 
-        let err = errors::GlobalError::from_c(unsafe {
+        let err = unsafe {
             sandwich_c::sandwich_context_new(
                 std::mem::transmute::<*const u8, *const std::ffi::c_void>(data.as_ptr()),
                 data.len() as u64,
                 &mut handle,
             )
-        });
-        if err.ok() {
+        };
+        if err != std::ptr::null_mut() {
+            Err(Self::Error::from(errors::error_handle_c_from_raw(err)))
+        } else {
             Ok(Self(ContextHandleC::from_raw(
                 handle,
                 Some(|ptr| unsafe {
                     sandwich_c::sandwich_context_free(ptr);
                 }),
             )))
-        } else {
-            Err(err)
         }
     }
 }
 
 /// Implements a constructor from a owned protobuf configuration.
 impl TryFrom<api::Configuration> for Context {
-    type Error = errors::GlobalError;
+    type Error = errors::Error;
 
     /// Constructs a ContextHandle from a owned protobuf configuration.
     fn try_from(configuration: api::Configuration) -> Result<Self, Self::Error> {

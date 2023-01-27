@@ -10,13 +10,32 @@ cc_library(
 )
 
 cc_library(
-    name = "errors",
-    hdrs = ["errors.h"],
+    name = "error",
+    srcs = ["error.cc"],
+    hdrs = [
+        "error.h",
+        "error_codes.h",
+    ],
     copts = [
         "--std=c++20",
     ],
     visibility = [
         "//visibility:public",
+    ],
+)
+
+cc_test(
+    name = "error_test",
+    timeout = "short",
+    srcs = ["error_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    linkstatic = True,
+    deps = [
+        ":error",
+        ":error_strings",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -42,7 +61,7 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-        ":errors",
+        ":error",
         ":result",
         "//proto/api/v1:api_cc_proto",
     ],
@@ -59,7 +78,7 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-        ":errors",
+        ":error",
         ":exports",
         ":result",
         ":tunnel",
@@ -121,7 +140,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":errors",
+        ":error",
         ":exports",
         ":tunnel_handshake_state",
         ":tunnel_record_errors",
@@ -142,7 +161,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":errors",
+        ":error",
         ":tunnel_handshake_state",
         ":tunnel_record_errors",
         ":tunnel_state",

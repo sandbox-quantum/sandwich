@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
 #define SANDWICH_API
 #endif
 
-#include "c/errors.h"
+#include "c/error_codes.h"
 #include "c/ioerrors.h"
 #include "c/tunnel_handshake_state.h"
 #include "c/tunnel_record_errors.h"
@@ -48,6 +48,18 @@ struct SandwichContext;
 
 /// \brief A Sandwich tunnel (PIMPL).
 struct SandwichTunnel;
+
+/// \brief An error code. Copy of error.h:ErrorCode.
+struct SandwichError {
+  /// \brief The encapsulated error.
+  struct SandwichError *details;
+
+  /// \brief The error kind. See error::ErrorKind enum.
+  SandwichErrorKind kind;
+
+  /// \brief The error code.
+  int code;
+};
 
 /// \brief Read function for the I/O interface.
 ///
@@ -101,13 +113,18 @@ struct SandwichCIOSettings {
   void *uarg;
 };
 
+/// \brief Free an error chain.
+///
+/// \param chain Error chain.
+SANDWICH_API void sandwich_error_free(struct SandwichError *chain);
+
 /// \brief Create an I/O interface.
 ///
 /// \param[in] cioset Settings for the I/O interface.
 /// \param[out] cio The new CIO object.
 ///
-/// \return SANDWICH_ERROR_OK on success, else an error code.
-SANDWICH_API enum SandwichError sandwich_io_new(
+/// \return NULL if no error occured, else a chain of errors.
+SANDWICH_API struct SandwichError *sandwich_io_new(
     const struct SandwichCIOSettings *cioset, struct SandwichCIO **cio);
 
 /// \brief Free an I/O interface.
@@ -125,8 +142,8 @@ SANDWICH_API void sandwich_io_free(struct SandwichCIO *cio);
 /// \param n Size of the source buffer.
 /// \param[out] ctx The new Sandwich context object.
 ///
-/// \return SANDWICH_ERROR_OK on success, else an error code.
-SANDWICH_API enum SandwichError sandwich_context_new(
+/// \return NULL if no error occured, else a chain of errors.
+SANDWICH_API struct SandwichError *sandwich_context_new(
     const void *src, size_t n, struct SandwichContext **ctx);
 
 /// \brief Free a Sandwich context.
@@ -148,8 +165,8 @@ SANDWICH_API void sandwich_context_free(struct SandwichContext *ctx);
 /// \param[in,out] cio I/O interface to use for creating the tunnel.
 /// \param[out] tun The new Sandwich tunnel object.
 ///
-/// \return The tunnel, or NULL if an error occurred.
-SANDWICH_API enum SandwichError sandwich_tunnel_new(
+/// \return NULL if no error occured, else a chain of errors.
+SANDWICH_API struct SandwichError *sandwich_tunnel_new(
     struct SandwichContext *ctx, struct SandwichCIO *cio,
     struct SandwichTunnel **tun);
 
@@ -198,14 +215,6 @@ SANDWICH_API void sandwich_tunnel_close(struct SandwichTunnel *tun);
 ///
 /// \return The state of the tunnel.
 SANDWICH_API enum SandwichTunnelState sandwich_tunnel_state(
-    const struct SandwichTunnel *tun);
-
-/// \brief Get the last recorded error that occurred in the tunnel.
-///
-/// \param[in] tun Tunnel.
-///
-/// \return The last recorded error of the tunnel.
-SANDWICH_API enum SandwichError sandwich_tunnel_last_error(
     const struct SandwichTunnel *tun);
 
 /// \brief Release the I/O interface from the tunnel.

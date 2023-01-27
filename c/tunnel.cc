@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-SANDWICH_API enum ::SandwichError sandwich_tunnel_new(
+SANDWICH_API struct ::SandwichError *sandwich_tunnel_new(
     struct SandwichContext *ctx, struct SandwichCIO *cio,
     struct SandwichTunnel **tun) {
   auto *ctx_cc = reinterpret_cast<saq::sandwich::Context *>(ctx);
@@ -37,9 +37,9 @@ SANDWICH_API enum ::SandwichError sandwich_tunnel_new(
   if (res) {
     *tun = reinterpret_cast<std::remove_pointer_t<decltype(tun)>>(
         res.Get().release());
-    return SANDWICH_ERROR_OK;
+    return nullptr;
   }
-  return static_cast<enum ::SandwichError>(res.GetError());
+  return reinterpret_cast<struct ::SandwichError *>(res.GetError().Release());
 }
 
 SANDWICH_API enum ::SandwichTunnelHandshakeState sandwich_tunnel_handshake(
@@ -91,12 +91,6 @@ SANDWICH_API enum ::SandwichTunnelState sandwich_tunnel_state(
     const struct SandwichTunnel *tun) {
   return static_cast<enum ::SandwichTunnelState>(
       reinterpret_cast<const saq::sandwich::Tunnel *>(tun)->GetState());
-}
-
-SANDWICH_API enum ::SandwichError sandwich_tunnel_last_error(
-    const struct SandwichTunnel *tun) {
-  return static_cast<enum ::SandwichError>(
-      reinterpret_cast<const saq::sandwich::Tunnel *>(tun)->GetError());
 }
 
 SANDWICH_API struct SandwichCIO *sandwich_tunnel_io_release(

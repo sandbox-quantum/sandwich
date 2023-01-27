@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 SandboxAQ
+# Copyright 2023 SandboxAQ
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,14 +51,14 @@ class Socket(SandwichIO.IO):
                 errno.EINPROGRESS,
                 errno.EINTR,
             ),
-            errors.IOInProgressException,
+            SandwichIO.IOInProgressException,
         ),
         (
             (
                 errno.EAGAIN,
                 errno.EWOULDBLOCK,
             ),
-            errors.IOWouldBlockException,
+            SandwichIO.IOWouldBlockException,
         ),
         (
             (
@@ -66,7 +66,7 @@ class Socket(SandwichIO.IO):
                 errno.EPROTOTYPE,
                 errno.EBADF,
             ),
-            errors.IOInvalidException,
+            SandwichIO.IOInvalidException,
         ),
         (
             (
@@ -76,7 +76,7 @@ class Socket(SandwichIO.IO):
                 errno.ENETUNREACH,
                 errno.ECONNREFUSED,
             ),
-            errors.IORefusedException,
+            SandwichIO.IORefusedException,
         ),
     )
 

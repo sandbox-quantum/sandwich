@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,11 +38,12 @@ namespace saq::sandwich::openssl {
 auto ClientContext::FromConfiguration(const ProtoConfiguration &config)
     -> ContextResult {
   if (!config.client().has_tls()) {
-    return Error::kInvalidConfiguration;
+    return error::OpenSSLClientConfigurationError::kEmpty;
   }
   auto result = TLSContext::New(proto::Mode::MODE_CLIENT);
   if (!result) {
-    return result.GetError();
+    return result.GetError() >>
+           error::OpenSSLClientConfigurationError::kSslCtxFailed;
   }
 
   auto tls_ctx = std::move(result.Get());
@@ -54,18 +55,18 @@ auto ClientContext::FromConfiguration(const ProtoConfiguration &config)
   for (int cert_index = 0; cert_index < certs_count; ++cert_index) {
     if (auto err = tls_ctx.AddOrSetCertificate(
             tls_client.trusted_certificates(cert_index));
-        err != Error::kOk) {
-      return err;
+        err) {
+      return err >> error::OpenSSLClientConfigurationError::kCertificate;
     }
   }
 
   std::unique_ptr<ClientContext> ctx{
       new ClientContext(config, std::move(tls_ctx))};
-  if (auto err = ctx->SetKems(config); err != Error::kOk) {
-    return err;
+  if (auto err = ctx->SetKems(config); err) {
+    return err >> error::OpenSSLClientConfigurationError::kKem;
   }
-  if (auto err = ctx->ApplyFlags(config); err != Error::kOk) {
-    return err;
+  if (auto err = ctx->ApplyFlags(config); err) {
+    return err >> error::OpenSSLClientConfigurationError::kFlags;
   }
 
   return std::unique_ptr<sandwich::Context>(ctx.release());
@@ -80,7 +81,9 @@ ClientContext::~ClientContext() = default;
 auto ClientContext::NewTunnel(std::unique_ptr<io::IO> ioint) -> TunnelResult {
   auto res = GetTLSContext().NewSession();
   if (!res) {
-    return res.GetError();
+    return res.GetError() >>
+           error::OpenSSLClientConfigurationError::kSslFailed >>
+           error::APIError::kTunnel;
   }
   auto tls_handle = std::move(res.Get());
 
@@ -88,10 +91,14 @@ auto ClientContext::NewTunnel(std::unique_ptr<io::IO> ioint) -> TunnelResult {
   if (const auto *meth = GetBIOMethod(); meth != nullptr) {
     bio = ::BIO_new(meth);
   } else {
-    return Error::kImplementation;
+    return error::SystemError::kMemory >>
+           error::OpenSSLClientConfigurationError::kBioFailed >>
+           error::APIError::kTunnel;
   }
   if (bio == nullptr) {
-    return Error::kImplementation;
+    return error::SystemError::kMemory >>
+           error::OpenSSLClientConfigurationError::kBioFailed >>
+           error::APIError::kTunnel;
   }
 
   return std::unique_ptr<sandwich::Tunnel>{

@@ -1,28 +1,3 @@
-cc_library(
-    name = "errors",
-    hdrs = [":errors.h"],
-)
-
-cc_library(
-    name = "ioerrors",
-    hdrs = [":ioerrors.h"],
-)
-
-cc_library(
-    name = "tunnel_state",
-    hdrs = [":tunnel_state.h"],
-)
-
-cc_library(
-    name = "tunnel_handshake_state",
-    hdrs = [":tunnel_handshake_state.h"],
-)
-
-cc_library(
-    name = "tunnel_record_errors",
-    hdrs = [":tunnel_record_errors.h"],
-)
-
 filegroup(
     name = "sandwich_hdrs_file",
     srcs = ["sandwich.h"],
@@ -34,17 +9,15 @@ filegroup(
 cc_library(
     name = "sandwich_hdrs",
     hdrs = [
+        "error_codes.h",
+        "ioerrors.h",
         "sandwich.h",
+        "tunnel_handshake_state.h",
+        "tunnel_record_errors.h",
+        "tunnel_state.h",
     ],
     visibility = [
         "//visibility:public",
-    ],
-    deps = [
-        ":errors",
-        ":ioerrors",
-        ":tunnel_handshake_state",
-        ":tunnel_record_errors",
-        ":tunnel_state",
     ],
 )
 
@@ -62,10 +35,29 @@ cc_library(
     ],
     deps = [
         ":sandwich_hdrs",
+        "//cc:error",
         "//cc:result",
         "//cc:tunnel_state",
         "//cc/io",
         "//proto/api/v1:api_cc_proto",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "error",
+    srcs = [
+        "error.cc",
+    ],
+    copts = [
+        "--std=c++20",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":sandwich_hdrs",
+        "//cc:error",
     ],
     alwayslink = True,
 )
@@ -109,6 +101,7 @@ cc_library(
     ],
     deps = [
         ":context",
+        ":error",
         ":io",
         ":sandwich_hdrs",
         ":tunnel",
@@ -133,6 +126,7 @@ cc_binary(
     ],
     deps = [
         ":context",
+        ":error",
         ":io",
         ":sandwich",
         ":sandwich_hdrs",

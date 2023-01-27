@@ -10,7 +10,7 @@ cc_library(
     ],
     deps = [
         "//cc:data_source",
-        "//cc:errors",
+        "//cc:error",
         "//cc:result",
         "//cc:tunnel",
         "//cc/io",

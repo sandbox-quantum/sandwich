@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
 #include <string_view>
 #include <variant>
 
-#include "cc/errors.h"
+#include "cc/error.h"
 #include "cc/result.h"
 #include "proto/api/v1/data_source.pb.h"
 
@@ -38,14 +38,14 @@ class DataSource {
  public:
   // \brief Create a DataSource object from a protobuf definition.
   static auto fromProto(const proto::api::v1::DataSource &proto)
-      -> Result<DataSource, Error>;
+      -> Result<DataSource, error::Error>;
 
   // \brief Create a DataSource object from a protobuf definition.
   //
   // It will release data away from `proto' (and prevents copying the
   // underlying data if they exist).
   static auto fromProto(proto::api::v1::DataSource &&proto)
-      -> Result<DataSource, Error>;
+      -> Result<DataSource, error::Error>;
 
   DataSource(const DataSource &) = default;
   DataSource(DataSource &&) = default;

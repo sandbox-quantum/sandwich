@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,11 +49,11 @@ extern "C" {
 namespace saq::sandwich::io {
 
 auto FileDescriptor::New(const int fdesc)
-    -> Result<FileDescriptor, sandwich::Error> {
+    -> Result<FileDescriptor, error::Error> {
   if (fdesc != kInvalidFd) {
     return FileDescriptor{fdesc};
   }
-  return sandwich::Error::kBadFd;
+  return error::SocketError::kBadFd;
 }
 
 FileDescriptor::FileDescriptor(int fdesc) noexcept : fd_{fdesc} {}
@@ -132,7 +132,7 @@ namespace {
 ///
 /// \return The created socket, or an error.
 [[nodiscard, maybe_unused]] auto NewNonBlockingSocket(const int af_inet)
-    -> Result<FileDescriptor, sandwich::Error> {
+    -> Result<FileDescriptor, error::Error> {
 #ifdef SOCK_NONBLOCK
   // NOLINTNEXTLINE(hicpp-signed-bitwise)
   auto sock = ::socket(af_inet, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -142,16 +142,16 @@ namespace {
     const int flags = ::fcntl(sock, F_GETFL, 0);
     if (flags == -1) {
       ::close(sock);
-      return sandwich::Error::kSocketOptFailed;
+      return error::Error::kSocketOptFailed;
     }
     if (fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
       ::close(sock);
-      return sandwich::Error::kSocketOptFailed;
+      return error::Error::kSocketOptFailed;
     }
   }
 #endif
   if (sock < 0) {
-    return sandwich::Error::kSocketFailed;
+    return error::SocketError::kCreationFailed;
   }
   int opt = 1;
   ::socklen_t len = sizeof(opt);
@@ -169,15 +169,15 @@ namespace {
 ///
 /// \return The resolved network address, or an error code.
 [[nodiscard, maybe_unused]] auto ResolveAddress(const std::string &netaddr)
-    -> Result<std::forward_list<NetworkAddress>, sandwich::Error> {
+    -> Result<std::forward_list<NetworkAddress>, error::Error> {
   if (netaddr.empty()) {
-    return sandwich::Error::kNetworkInvalidAddress;
+    return error::SocketError::kBadNetaddr;
   }
   struct ::addrinfo hints = {.ai_family = PF_UNSPEC,
                              .ai_socktype = SOCK_STREAM};
   struct ::addrinfo *tmp = nullptr;
   if (::getaddrinfo(netaddr.c_str(), nullptr, &hints, &tmp) != 0) {
-    return sandwich::Error::kNetworkAddressResolve;
+    return error::SocketError::kNetaddrUnknown;
   }
   std::unique_ptr<struct ::addrinfo, std::function<void(struct ::addrinfo *)>>
       list(tmp, [](struct ::addrinfo *list) {
@@ -217,18 +217,18 @@ void Socket::Close() {
   ::close(fd_.Release());
 }
 
-auto Socket::FromFd(int fdesc) -> Result<std::unique_ptr<IO>, sandwich::Error> {
+auto Socket::FromFd(int fdesc) -> Result<std::unique_ptr<IO>, error::Error> {
   if (fdesc <= FileDescriptor::kInvalidFd) {
-    return sandwich::Error::kBadFd;
+    return error::SocketError::kBadFd;
   }
 
   struct ::stat statbuf {};
   if (::fstat(fdesc, &statbuf) != 0) {
-    return sandwich::Error::kIo;
+    return error::SocketError::kFstatFailed;
   }
   // NOLINTNEXTLINE
   if (!S_ISSOCK(statbuf.st_mode)) {
-    return sandwich::Error::kInvalidArgument;
+    return error::SocketError::kNotSock;
   }
 
   auto res = FileDescriptor::New(fdesc);
@@ -239,14 +239,14 @@ auto Socket::FromFd(int fdesc) -> Result<std::unique_ptr<IO>, sandwich::Error> {
 }
 
 auto Socket::FromFd(FileDescriptor fdesc)
-    -> Result<std::unique_ptr<IO>, sandwich::Error> {
+    -> Result<std::unique_ptr<IO>, error::Error> {
   NetworkAddress addr{};
   // NOLINTNEXTLINE
   addr.len = sizeof(addr.addr.i6);
   // NOLINTNEXTLINE
   if (::getsockname(fdesc, reinterpret_cast<struct ::sockaddr *>(&addr.addr),
                     &addr.len) != 0) {
-    return sandwich::Error::kIo;
+    return error::SocketError::kGetsocknameFailed;
   }
   // NOLINTNEXTLINE
   addr.ai_family = reinterpret_cast<struct ::sockaddr *>(&addr.addr)->sa_family;
@@ -270,15 +270,15 @@ auto Socket::operator=(Socket &&other) noexcept -> Socket & {
 
 Socket::~Socket() = default;
 
-auto Socket::GetSocketError() const noexcept -> Result<int, sandwich::Error> {
+auto Socket::GetSocketError() const noexcept -> Result<int, error::Error> {
   int err = 0;
   ::socklen_t len = sizeof(err);
 
   if (::getsockopt(fd_, SOL_SOCKET, SO_ERROR, &err, &len) != 0) {
-    return sandwich::Error::kSocketOptFailed;
+    return error::SocketError::kSetsockoptFailed;
   }
   if (len != sizeof(err)) {
-    return sandwich::Error::kSocketOptFailed;
+    return error::SocketError::kSetsockoptFailed;
   }
   return err;
 }
@@ -343,7 +343,7 @@ namespace {
 /// \return Error::ERROR_OK if success, else an error code.
 [[nodiscard, maybe_unused]] auto AddressSetPort(NetworkAddress &address,
                                                 const uint16_t netport)
-    -> sandwich::Error {
+    -> error::Error {
   if (address.ai_family == AF_INET) {
     // NOLINTNEXTLINE
     address.addr.i4.sin_port = htons(netport);
@@ -351,9 +351,9 @@ namespace {
     // NOLINTNEXTLINE
     address.addr.i6.sin6_port = htons(netport);
   } else {
-    return sandwich::Error::kSocketInvalidAiFamily;
+    return error::SocketError::kInvalidAiFamily;
   }
-  return sandwich::Error::kOk;
+  return error::Ok;
 }
 
 } // end anonymous namespace

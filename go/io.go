@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -105,13 +105,15 @@ type cIOHandle struct {
 }
 
 // newcIOHandle creates a new cIOHandle from an IO interface.
-func newcIOHandle(handle *cIOHandle, io IO) *GlobalError {
+func newcIOHandle(handle *cIOHandle, io IO) error {
 	settings := createSettings(io)
 	defer C.free(unsafe.Pointer(settings))
 
-	err := C.sandwich_io_new(settings, &handle.handle)
-	if int32(err) != int32(pb.Error_ERROR_OK) {
-		return newGlobalError(int32(err))
+	errc := C.sandwich_io_new(settings, &handle.handle)
+	if errc != nil {
+		err := createError(errc)
+		C.sandwich_error_free(errc)
+		return err
 	}
 	handle.io = &io
 

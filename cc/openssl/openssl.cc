@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -120,11 +120,11 @@ auto TLSContext::New(const proto::Mode mode) -> TLSContextResult {
   }();
 
   if (!ctx.has_value()) {
-    return Error::kInvalidConfiguration;
+    return error::OpenSSLConfigurationError::kEmpty;
   }
 
   if (*ctx == nullptr) {
-    return Error::kMemory;
+    return error::SystemError::kMemory;
   }
 
   TLSContext tls_ctx(*ctx, mode);
@@ -135,7 +135,7 @@ auto TLSContext::New(const proto::Mode mode) -> TLSContextResult {
                                      SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2);
 
   if (::SSL_CTX_set_min_proto_version(tls_ctx, TLS1_3_VERSION) != 1) {
-    return Error::kUnsupportedProtocolVersion;
+    return error::OpenSSLConfigurationError::kUnsupportedProtocolVersion;
   }
 
   if (mode == proto::Mode::MODE_CLIENT) {
@@ -150,7 +150,7 @@ auto TLSContext::New(const proto::Mode mode) -> TLSContextResult {
       ::SSL_CTX_set_cert_store(tls_ctx, store);
       ::X509_STORE_set_trust(store, 1);
     } else {
-      return Error::kMemory;
+      return error::SystemError::kMemory;
     }
   }
 
@@ -177,9 +177,10 @@ TLSContext::~TLSContext() noexcept {
 
 auto TLSContext::AddOrSetCertificate(
     const std::string_view pathname,
-    const proto::api::v1::ASN1EncodingFormat fmt) -> Error {
+    const proto::api::v1::ASN1EncodingFormat fmt) -> error::Error {
   if (!proto::api::v1::ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::CertificateError::kMalformed;
   }
 
   if (auto bio = OpenSSLBIO(::BIO_new(::BIO_s_file()), BIODeleter);
@@ -188,20 +189,22 @@ auto TLSContext::AddOrSetCertificate(
     if (BIO_read_filename(bio.get(), std::string{pathname}.c_str()) == 1) {
       return AddOrSetCertificate(bio.get(), fmt);
     }
-    return Error::kInvalidCertificate;
+    return error::CertificateError::kNotFound;
   }
-  return Error::kImplementation;
+  return error::SystemError::kMemory >> error::CertificateError::kUnknown;
 }
 
 auto TLSContext::AddOrSetCertificate(
     std::span<const std::byte> buffer,
-    const proto::api::v1::ASN1EncodingFormat fmt) -> Error {
+    const proto::api::v1::ASN1EncodingFormat fmt) -> error::Error {
   if (!ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::CertificateError::kMalformed;
   }
 
   if (buffer.size() > INT_MAX) {
-    return Error::kIntegerOverflow;
+    return error::SystemError::kIntegerOverflow >>
+           error::CertificateError::kMalformed;
   }
 
   auto len = static_cast<int>(buffer.size());
@@ -209,24 +212,26 @@ auto TLSContext::AddOrSetCertificate(
       bio != nullptr) {
     return AddOrSetCertificate(bio.get(), fmt);
   }
-  return Error::kImplementation;
+  return error::SystemError::kMemory >> error::CertificateError::kUnknown;
 }
 
 auto TLSContext::AddOrSetCertificate(const proto::api::v1::Certificate &cert)
-    -> Error {
+    -> error::Error {
   if (!cert.has_static_()) {
-    return Error::kInvalidConfiguration;
+    return error::DataSourceError::kEmpty >>
+           error::CertificateError::kMalformed;
   }
   const auto &cert_static = cert.static_();
   const auto fmt = cert_static.format();
 
   if (!proto::api::v1::ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::CertificateError::kMalformed;
   }
 
-  const auto dataOrErr = DataSource::fromProto(cert_static.data());
+  auto dataOrErr = DataSource::fromProto(cert_static.data());
   if (!dataOrErr) {
-    return dataOrErr.GetError();
+    return dataOrErr.GetError() >> error::CertificateError::kMalformed;
   }
 
   const auto &data = dataOrErr.Get();
@@ -236,13 +241,15 @@ auto TLSContext::AddOrSetCertificate(const proto::api::v1::Certificate &cert)
   if (const auto optRawData = data.rawData()) {
     return AddOrSetCertificate(*optRawData, fmt);
   }
-  return Error::kInvalidConfiguration;
+  return error::DataSourceError::kInvalidCase >>
+         error::CertificateError::kMalformed;
 }
 
 auto TLSContext::AddOrSetCertificate(
-    ::BIO *bio, const proto::api::v1::ASN1EncodingFormat fmt) -> Error {
+    ::BIO *bio, const proto::api::v1::ASN1EncodingFormat fmt) -> error::Error {
   if (!proto::api::v1::ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::CertificateError::kMalformed;
   }
 
   OpenSSLX509 cert(nullptr, X509Deleter);
@@ -251,33 +258,35 @@ auto TLSContext::AddOrSetCertificate(
   } else if (fmt == proto::api::v1::ASN1EncodingFormat::ENCODING_FORMAT_DER) {
     cert.reset(::d2i_X509_bio(bio, nullptr));
   } else {
-    return Error::kInvalidCertificate;
+    return error::ASN1Error::kInvalidFormat >>
+           error::CertificateError::kMalformed;
   }
   if (cert == nullptr) {
-    return Error::kInvalidCertificate;
+    return error::CertificateError::kUnsupported;
   }
 
   if (mode_ == proto::Mode::MODE_CLIENT) {
     if (auto *store = ::SSL_CTX_get_cert_store(ctx_); store != nullptr) {
       ::X509_STORE_add_cert(store, cert.get());
     } else {
-      return Error::kImplementation;
+      return error::SystemError::kMemory >> error::CertificateError::kUnknown;
     }
   } else if (mode_ == proto::Mode::MODE_SERVER) {
     if (::SSL_CTX_use_certificate(ctx_, cert.get()) != 1) {
-      return Error::kUnsupportedCertificate;
+      return error::CertificateError::kUnsupported;
     }
   } else {
     __builtin_unreachable();
   }
-  return Error::kOk;
+  return error::Ok;
 }
 
 auto TLSContext::SetPrivateKey(const std::string_view pathname,
                                const proto::api::v1::ASN1EncodingFormat fmt)
-    -> Error {
+    -> error::Error {
   if (!proto::api::v1::ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::PrivateKeyError::kMalformed;
   }
 
   if (auto bio = OpenSSLBIO(::BIO_new(::BIO_s_file()), BIODeleter);
@@ -286,20 +295,22 @@ auto TLSContext::SetPrivateKey(const std::string_view pathname,
     if (BIO_read_filename(bio.get(), std::string{pathname}.c_str()) == 1) {
       return SetPrivateKey(bio.get(), fmt);
     }
-    return Error::kInvalidPrivateKey;
+    return error::PrivateKeyError::kNotFound;
   }
-  return Error::kImplementation;
+  return error::SystemError::kMemory >> error::PrivateKeyError::kUnknown;
 }
 
 auto TLSContext::SetPrivateKey(std::span<const std::byte> buffer,
                                const proto::api::v1::ASN1EncodingFormat fmt)
-    -> Error {
+    -> error::Error {
   if (!ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::PrivateKeyError::kMalformed;
   }
 
   if (buffer.size() > INT_MAX) {
-    return Error::kIntegerOverflow;
+    return error::SystemError::kIntegerOverflow >>
+           error::PrivateKeyError::kMalformed;
   }
 
   auto len = static_cast<int>(buffer.size());
@@ -307,25 +318,26 @@ auto TLSContext::SetPrivateKey(std::span<const std::byte> buffer,
       bio != nullptr) {
     return SetPrivateKey(bio.get(), fmt);
   }
-  return Error::kImplementation;
+  return error::SystemError::kMemory >> error::PrivateKeyError::kUnknown;
 }
 
 auto TLSContext::SetPrivateKey(const proto::api::v1::PrivateKey &pkey)
-    -> Error {
+    -> error::Error {
   if (!pkey.has_static_()) {
-    return Error::kInvalidConfiguration;
+    return error::DataSourceError::kEmpty >> error::PrivateKeyError::kMalformed;
   }
 
   const auto &pkey_static = pkey.static_();
   const auto fmt = pkey_static.format();
 
   if (!ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::PrivateKeyError::kMalformed;
   }
 
-  const auto dataOrErr = DataSource::fromProto(pkey_static.data());
+  auto dataOrErr = DataSource::fromProto(pkey_static.data());
   if (!dataOrErr) {
-    return dataOrErr.GetError();
+    return dataOrErr.GetError() >> error::PrivateKeyError::kMalformed;
   }
 
   const auto &data = dataOrErr.Get();
@@ -335,17 +347,19 @@ auto TLSContext::SetPrivateKey(const proto::api::v1::PrivateKey &pkey)
   if (const auto optData = data.rawData()) {
     return SetPrivateKey(*optData, fmt);
   }
-  return Error::kInvalidConfiguration;
+  return error::DataSourceError::kInvalidCase >>
+         error::PrivateKeyError::kMalformed;
 }
 
 auto TLSContext::SetPrivateKey(::BIO *bio,
                                const proto::api::v1::ASN1EncodingFormat fmt)
-    -> Error {
+    -> error::Error {
   if (!ASN1EncodingFormat_IsValid(fmt)) {
-    return Error::kInvalidConfiguration;
+    return error::ASN1Error::kInvalidFormat >>
+           error::PrivateKeyError::kMalformed;
   }
   if (mode_ != proto::Mode::MODE_SERVER) {
-    return Error::kInvalidContext;
+    return error::PrivateKeyError::kNotServer;
   }
 
   OpenSSLEVPPKEY pkey(nullptr, EVPPKEYDeleter);
@@ -354,47 +368,49 @@ auto TLSContext::SetPrivateKey(::BIO *bio,
   } else if (fmt == proto::api::v1::ASN1EncodingFormat::ENCODING_FORMAT_DER) {
     pkey.reset(::d2i_PrivateKey_bio(bio, nullptr));
   } else {
-    return Error::kInvalidPrivateKey;
+    return error::ASN1Error::kInvalidFormat >>
+           error::PrivateKeyError::kMalformed;
   }
   if (pkey == nullptr) {
-    return Error::kInvalidPrivateKey;
+    return error::PrivateKeyError::kUnsupported;
   }
 
   if (::SSL_CTX_use_PrivateKey(ctx_, pkey.get()) != 1) {
-    return Error::kUnsupportedPrivateKey;
+    return error::PrivateKeyError::kUnsupported;
   }
-  return Error::kOk;
+  return error::Ok;
 }
 
-auto TLSContext::AddSupportedKem(const std::string &kem) noexcept -> Error {
+auto TLSContext::AddSupportedKem(const std::string &kem) noexcept
+    -> error::Error {
   if (kem_nids_.size() >= INT_MAX) {
-    return Error::kIntegerOverflow;
+    return error::KEMError::kTooMany;
   }
   if (const auto nid = ::OBJ_txt2nid(kem.c_str()); nid != NID_undef) {
     kem_nids_.insert(nid);
-    return Error::kOk;
+    return error::Ok;
   }
-  return Error::kInvalidKem;
+  return error::KEMError::kInvalid;
 }
 
-auto TLSContext::ApplyKems() noexcept -> Error {
+auto TLSContext::ApplyKems() noexcept -> error::Error {
   if (kem_nids_.size() >= INT_MAX) {
-    return Error::kIntegerOverflow;
+    return error::KEMError::kTooMany;
   }
   std::vector<decltype(kem_nids_)::value_type> kems(kem_nids_.begin(),
                                                     kem_nids_.end());
   if (::SSL_CTX_set1_groups(ctx_, kems.data(),
                             static_cast<int>(kem_nids_.size())) == 1) {
-    return Error::kOk;
+    return error::Ok;
   }
-  return Error::kImplementation;
+  return error::KEMError::kInvalid;
 }
 
-auto TLSContext::NewSession() noexcept -> Result<TLSHandle, Error> {
+auto TLSContext::NewSession() noexcept -> TLSHandle::TLSHandleResult {
   if (auto *ssl = ::SSL_new(ctx_); ssl != nullptr) {
     return {{ssl, mode_}};
   }
-  return Error::kImplementation;
+  return error::SystemError::kMemory;
 }
 
 void TLSContext::SetVerifyMode(const int mode) noexcept {
@@ -534,11 +550,11 @@ constexpr ::bio_method_st SandwichBIOMethod = {.type = BIO_TYPE_SOCKET,
     const proto::api::v1::Configuration &configuration)
     -> Result<
         std::optional<std::reference_wrapper<const proto::api::v1::TLSOptions>>,
-        Error> {
+        error::Error> {
   switch (configuration.opts_case()) {
     case proto::api::v1::Configuration::OptsCase::kClient: {
       if (!configuration.client().has_tls()) {
-        return Error::kInvalidConfiguration;
+        return error::ConfigurationError::kInvalidImplementation;
       }
       if (!configuration.client().tls().has_common_options()) {
         return {std::nullopt};
@@ -547,7 +563,7 @@ constexpr ::bio_method_st SandwichBIOMethod = {.type = BIO_TYPE_SOCKET,
     }
     case proto::api::v1::Configuration::OptsCase::kServer: {
       if (!configuration.server().has_tls()) {
-        return Error::kInvalidConfiguration;
+        return error::ConfigurationError::kInvalidImplementation;
       }
       if (!configuration.server().tls().has_common_options()) {
         return {std::nullopt};
@@ -556,7 +572,7 @@ constexpr ::bio_method_st SandwichBIOMethod = {.type = BIO_TYPE_SOCKET,
     }
     case proto::api::v1::Configuration::OptsCase::OPTS_NOT_SET:
     default: {
-      return Error::kInvalidConfiguration;
+      return error::ConfigurationError::kInvalidImplementation;
     }
   }
 }

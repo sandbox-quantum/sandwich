@@ -1,4 +1,4 @@
-# Copyright 2022 SandboxAQ
+# Copyright 2023 SandboxAQ
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ class SandwichException(Exception):
         _code: The error code.
     """
 
-    def __init__(self, code, *kargs, **kwargs):
+    def __init__(self, code, kind=None, *kargs, **kwargs):
         """Constructs a Sandwich exception from an error code.
 
         Arguments:
@@ -67,7 +67,17 @@ class SandwichException(Exception):
         """
 
         super().__init__(self._resolve_error_string(code), *kwargs, **kwargs)
+        self._kind = kind
         self._code = code
+
+    @property
+    def kind(self):
+        """Returns the error kind.
+
+        Returns:
+            The error kind.
+        """
+        return self._kind
 
     @property
     def code(self):
@@ -89,176 +99,347 @@ class SandwichException(Exception):
         return f"Unknown error code {code}"
 
     @classmethod
-    def new(cls, code: int) -> "SandwichException":
+    def new(
+        cls, code: int, kind: SandwichErrorProto.ErrorKind = None
+    ) -> "SandwichException":
         """Constructs an exception from an error code.
 
         Returns:
             The most appropriate exception object.
         """
+        if target_cls := _ERROR_KIND_MAP.get(kind):
+            return target_cls(kind, code)
+
         errors_map = getattr(cls, "_ERRORS_MAP")
         if (
             (errors_map != None)
             and (code in errors_map)
-            and (errors_map[code].get("cls") != None)
+            and ((target_cls := errors_map[code].get("cls")) != None)
         ):
-            return errors_map[code]["cls"]()()
-        return SandwichException(code)
+            return target_cls()(kind=kind)
+
+        return SandwichException(code=code, kind=kind)
 
 
-class SandwichGlobalException(SandwichException):
-    """Sandwich global exceptions.
-
-    Global exceptions are defined by the enum `Error` in `errors.proto`.
-    They are used all across the library.
+class APIError(SandwichException):
+    """API errors.
+    This exception defines the first-class API errors, such as Context errors,
+    Socket errors and Tunnel errors.
     """
 
-    """The no-error error."""
-    ERROR_OK = SandwichErrorProto.ERROR_OK
-
-    """Map from the protobuf enum 'Error" to error string."""
     _ERRORS_MAP = {
-        SandwichErrorProto.ERROR_OK: {
-            "msg": "No error",
-            "cls": None,
+        SandwichErrorProto.APIERROR_CONFIGURATION: {
+            "msg": "invalid configuration",
         },
-        SandwichErrorProto.ERROR_INVALID_ARGUMENT: {
-            "msg": "Invalid argument",
-            "cls": None,
+        SandwichErrorProto.APIERROR_SOCKET: {
+            "msg": "socket error",
         },
-        SandwichErrorProto.ERROR_MEMORY: {
-            "msg": "Memory error",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_IO: {
-            "msg": "I/O error",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_UNKNOWN: {
-            "msg": "Unknown error",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_INVALID_CONFIGURATION: {
-            "msg": "Invalid configuration",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_UNSUPPORTED_IMPLEMENTATION: {
-            "msg": "Unsupported implementation",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_UNSUPPORTED_PROTOCOL: {
-            "msg": "Unsupported protocol",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_IMPLEMENTATION_PROTOCOL_MISMATCH: {
-            "msg": "Implementation and protocol mismatch",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_PROTOBUF: {
-            "msg": "Protobuf serialization or deserialization error",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_NETWORK_INVALID_ADDRESS: {
-            "msg": "Invalid network address",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_NETWORK_INVALID_PORT: {
-            "msg": "Invalid network port",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_INVALID_CONTEXT: {
-            "msg": "Invalid context",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_BAD_FD: {
-            "msg": "Bad file descriptor",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_UNSUPPORTED_TUNNEL_METHOD: {
-            "msg": "Unsupported tunnel method",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_INTEGER_OVERFLOW: {
-            "msg": "Integer overflow",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_MEMORY_OVERFLOW: {
-            "msg": "Memory overflow",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_IMPLEMENTATION: {
-            "msg": "Implementation error",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_INVALID_TUNNEL: {
-            "msg": "Invalid tunnel",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_INVALID_KEM: {
-            "msg": "Invalid KEM",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_TIMEOUT: {
-            "msg": "Timeout reached",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_NETWORK_ADDRESS_RESOLVE: {
-            "msg": "Failed to resolve network address",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_NETWORK_CONNECT: {
-            "msg": "Failed to connect",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_SOCKET_FAILED: {
-            "msg": "Failed to create socket",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_SOCKET_OPT_FAILED: {
-            "msg": "`getsockopt`/`setsockopt` failed",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_SOCKET_INVALID_AI_FAMILY: {
-            "msg": "Invalid socket AI family",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_CONNECTION_REFUSED: {
-            "msg": "Connection refused",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_NETWORK_UNREACHABLE: {
-            "msg": "Network unreachable",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_SOCKET_POLL_FAILED: {
-            "msg": "Socket poll failed",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_INVALID_CERTIFICATE: {
-            "msg": "Invalid certificate",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_UNSUPPORTED_CERTIFICATE: {
-            "msg": "Unsupported certificate",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_INVALID_PRIVATE_KEY: {
-            "msg": "Invalid private key",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_UNSUPPORTED_PRIVATE_KEY: {
-            "msg": "Unsupported private key",
-            "cls": None,
-        },
-        SandwichErrorProto.ERROR_UNSUPPORTED_PROTOCOL_VERSION: {
-            "msg": "Unsupported protocol version",
-            "cls": None,
+        SandwichErrorProto.APIERROR_TUNNEL: {
+            "msg": "tunnel error",
         },
     }
 
 
+class ConfigurationError(SandwichException):
+    """Configuration errors.
+    This exception may occur when a protobuf configuration is malformed.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.CONFIGURATIONERROR_INVALID_IMPLEMENTATION: {
+            "msg": "invalid implementation",
+        },
+        SandwichErrorProto.CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION: {
+            "msg": "unsupported implementation",
+        },
+        SandwichErrorProto.CONFIGURATIONERROR_INVALID: {
+            "msg": "invalid configuration",
+        },
+    }
+
+
+class OpenSSLConfigurationError(SandwichException):
+    """OpenSSL configuration errors.
+    This exception may occur when a protobuf configuration using the OpenSSL
+    implementation is malformed.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION: {
+            "msg": "unsupported implementation",
+        },
+        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: {
+            "msg": "unsupported TLS version",
+        },
+        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_EMPTY: {
+            "msg": "empty configuration",
+        },
+        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_INVALID_CASE: {
+            "msg": "invalid oneof case",
+        },
+        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_INVALID: {
+            "msg": "invalid OpenSSL configuration",
+        },
+    }
+
+
+class OpenSSLClientConfigurationError(SandwichException):
+    """OpenSSL client configuration errors.
+    This exception may occur when a protobuf configuration using the OpenSSL
+    implementation in client mode is malformed.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_EMPTY: {
+            "msg": "empty configuration",
+        },
+        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE: {
+            "msg": "certificate error",
+        },
+        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_SSL_CTX_FAILED: {
+            "msg": "SSL_CTX* creation failed",
+        },
+        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_KEM: {
+            "msg": "KEM error",
+        },
+        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_FLAGS: {
+            "msg": "flags error",
+        },
+        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_SSL_FAILED: {
+            "msg": "SSL* creation failed",
+        },
+        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED: {
+            "msg": "BIO* creation failed",
+        },
+    }
+
+
+class OpenSSLServerConfigurationError(SandwichException):
+    """OpenSSL server configuration errors.
+    This exception may occur when a protobuf configuration using the OpenSSL
+    implementation in server mode is malformed.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_EMPTY: {
+            "msg": "empty configuration",
+        },
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE: {
+            "msg": "certificate error",
+        },
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED: {
+            "msg": "SSL_CTX* creation failed",
+        },
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_KEM: {
+            "msg": "KEM error",
+        },
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_FLAGS: {
+            "msg": "flags error",
+        },
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY: {
+            "msg": "private key error",
+        },
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_SSL_FAILED: {
+            "msg": "SSL* creation failed",
+        },
+        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_BIO_FAILED: {
+            "msg": "BIO* creation failed",
+        },
+    }
+
+
+class CertificateError(SandwichException):
+    """Certificate errors.
+
+    This exception may occur when a configuration supplies a certificate
+    that is malformed.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.CERTIFICATEERROR_MALFORMED: {
+            "msg": "certificate malformed",
+        },
+        SandwichErrorProto.CERTIFICATEERROR_EXPIRED: {
+            "msg": "certificate expired",
+        },
+        SandwichErrorProto.CERTIFICATEERROR_NOT_FOUND: {
+            "msg": "certificate not found on disk",
+        },
+        SandwichErrorProto.CERTIFICATEERROR_UNKNOWN: {
+            "msg": "unknown error",
+        },
+        SandwichErrorProto.CERTIFICATEERROR_UNSUPPORTED: {
+            "msg": "certificate not supported by underlying implementation",
+        },
+    }
+
+
+class PrivateKeyError(SandwichException):
+    """Private key errors.
+
+    This exception may occur when a configuration supplies a private key
+    that is malformed.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.PRIVATEKEYERROR_MALFORMED: {
+            "msg": "private key malformed",
+        },
+        SandwichErrorProto.PRIVATEKEYERROR_NOT_FOUND: {
+            "msg": "private key not found on disk",
+        },
+        SandwichErrorProto.PRIVATEKEYERROR_UNKNOWN: {
+            "msg": "unknown error",
+        },
+        SandwichErrorProto.PRIVATEKEYERROR_UNSUPPORTED: {
+            "msg": "private key not supported by underlying implementation",
+        },
+        SandwichErrorProto.PRIVATEKEYERROR_NOT_SERVER: {
+            "msg": "not a server configuration",
+        },
+    }
+
+
+class ProtobufError(SandwichException):
+    """Protobuf errors.
+
+    This exception may occur when the protobuf message is malformed.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.PROTOBUFERROR_EMPTY: {
+            "msg": "empty message",
+        },
+        SandwichErrorProto.PROTOBUFERROR_TOO_BIG: {
+            "msg": "message too large",
+        },
+        SandwichErrorProto.PROTOBUFERROR_PARSE_FAILED: {
+            "msg": "message parsing failed",
+        },
+    }
+
+
+class ASN1Error(SandwichException):
+    """ASN.1 errors.
+
+    This exception may occur when a malformed ASN.1 document is provided.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.ASN1ERROR_INVALID_FORMAT: {
+            "msg": "invalid format",
+        },
+    }
+
+
+class DataSourceError(SandwichException):
+    """DataSource errors.
+
+    This exception may occur when a configuration provided a malformed
+    DataSource.
+    """
+
+    _ERRORS_MAP = (
+        {
+            SandwichErrorProto.DATASOURCEERROR_EMPTY: {
+                "msg": "empty DataSource",
+            },
+            SandwichErrorProto.DATASOURCEERROR_INVALID_CASE: {
+                "msg": "invalid oneof case",
+            },
+        },
+    )
+
+
+class KEMError(SandwichException):
+    """KEM errors.
+
+    This exception may occur when a KEM is invalid or unsupported.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.KEMERROR_INVALID: {
+            "msg": "invalid or unsupported KEM",
+        },
+        SandwichErrorProto.KEMERROR_TOO_MANY: {
+            "msg": "too many KEMs",
+        },
+    }
+
+
+class SystemError(SandwichException):
+    """System errors.
+
+    This exception may occur when a system error is encountered, such as
+    a memory allocation failure.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.SYSTEMERROR_MEMORY: {
+            "msg": "memory error",
+        },
+        SandwichErrorProto.SYSTEMERROR_INTEGER_OVERFLOW: {
+            "msg": "integer overflow",
+        },
+    }
+
+
+class SocketError(SandwichException):
+    """Socket errors.
+
+    This exception may occur in the I/O socket interface.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.SOCKETERROR_BAD_FD: {
+            "msg": "bad file descriptor",
+        },
+        SandwichErrorProto.SOCKETERROR_CREATION_FAILED: {
+            "msg": "socket creation failed",
+        },
+        SandwichErrorProto.SOCKETERROR_BAD_NETADDR: {
+            "msg": "bad network address",
+        },
+        SandwichErrorProto.SOCKETERROR_NETADDR_UNKNOWN: {
+            "msg": "network address resolution failed",
+        },
+        SandwichErrorProto.SOCKETERROR_FSTAT_FAILED: {
+            "msg": "fstat failed",
+        },
+        SandwichErrorProto.SOCKETERROR_NOT_SOCK: {
+            "msg": "not a socket",
+        },
+        SandwichErrorProto.SOCKETERROR_GETSOCKNAME_FAILED: {
+            "msg": "getsockname failed",
+        },
+        SandwichErrorProto.SOCKETERROR_SETSOCKOPT_FAILED: {
+            "msg": "setsockopt failed",
+        },
+        SandwichErrorProto.SOCKETERROR_INVALID_AI_FAMILY: {
+            "msg": "invalid AI family",
+        },
+    }
+
+
+_ERROR_KIND_MAP = {
+    SandwichErrorProto.ERRORKIND_API: APIError,
+    SandwichErrorProto.ERRORKIND_CONFIGURATION: ConfigurationError,
+    SandwichErrorProto.ERRORKIND_OPENSSL_CONFIGURATION: OpenSSLConfigurationError,
+    SandwichErrorProto.ERRORKIND_OPENSSL_CLIENT_CONFIGURATION: OpenSSLClientConfigurationError,
+    SandwichErrorProto.ERRORKIND_OPENSSL_SERVER_CONFIGURATION: OpenSSLServerConfigurationError,
+    SandwichErrorProto.ERRORKIND_CERTIFICATE: CertificateError,
+    SandwichErrorProto.ERRORKIND_SYSTEM: SystemError,
+    SandwichErrorProto.ERRORKIND_SOCKET: SocketError,
+    SandwichErrorProto.ERRORKIND_PROTOBUF: ProtobufError,
+    SandwichErrorProto.ERRORKIND_PRIVATE_KEY: PrivateKeyError,
+    SandwichErrorProto.ERRORKIND_ASN1: ASN1Error,
+    SandwichErrorProto.ERRORKIND_DATA_SOURCE: DataSourceError,
+    SandwichErrorProto.ERRORKIND_KEM: KEMError,
+}
+
+
 class HandshakeException(SandwichException):
     """Exception base class for the handshake state.
-
     This exception handles the following cases:
         * HANDSHAKESTATE_IN_PROGRESS
         * HANDSHAKESTATE_WANT_READ
@@ -328,9 +509,7 @@ class HandshakeErrorException(HandshakeException):
 
 class RecordPlaneException(SandwichException):
     """Exception base class for the record plane.
-
     Errors are defined in the protobuf, `enum RecordError`.
-
     This exception handles the following cases:
         * HANDSHAKESTATE_IN_PROGRESS
         * HANDSHAKESTATE_WANT_READ
@@ -405,91 +584,3 @@ class RecordPlaneUnknownErrorException(RecordPlaneException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(code=SandwichTunnelProto.RECORDERROR_UNKNOWN, *kargs, **kwargs)
-
-
-class IOException(SandwichException):
-    """Exception base class for I/O interface.
-
-    Errors are defined in the protobuf `io.proto`, `enum IOError`.
-
-    This exception handles the following cases:
-        * IOERROR_IN_PROGRESS
-        * IOERROR_WOULD_BLOCK
-        * IOERROR_REFUSED
-        * IOERROR_CLOSED
-        * IOERROR_INVALID
-        * IOERROR_UNKNOWN
-    """
-
-    """The no-error error."""
-    ERROR_OK = SandwichIOProto.IOERROR_OK
-
-    """Map from the protobuf enum `IOError` to error string and subclass exception."""
-    _ERRORS_MAP = {
-        SandwichIOProto.IOERROR_IN_PROGRESS: {
-            "msg": "The I/O interface is still connecting to the remote peer",
-            "cls": lambda: IOInProgressException,
-        },
-        SandwichIOProto.IOERROR_WOULD_BLOCK: {
-            "msg": "The I/O operation would block, but the I/O interface is non-blocking",
-            "cls": lambda: IOWouldBlockException,
-        },
-        SandwichIOProto.IOERROR_REFUSED: {
-            "msg": "The I/O interface has been refused connection",
-            "cls": lambda: IORefusedException,
-        },
-        SandwichIOProto.IOERROR_CLOSED: {
-            "msg": "This I/O interface is closed",
-            "cls": lambda: IOClosedException,
-        },
-        SandwichIOProto.IOERROR_INVALID: {
-            "msg": "This I/O interface isn't valid",
-            "cls": lambda: IOInvalidException,
-        },
-        SandwichIOProto.IOERROR_UNKNOWN: {
-            "msg": "This I/O interface raised an unknown error",
-            "cls": lambda: IOUnknownException,
-        },
-    }
-
-
-class IOInProgressException(IOException):
-    """In progress exception."""
-
-    def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_IN_PROGRESS, *kargs, **kwargs)
-
-
-class IOWouldBlockException(IOException):
-    """Would block exception."""
-
-    def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_WOULD_BLOCK, *kargs, **kwargs)
-
-
-class IORefusedException(IOException):
-    """Connection refused exception."""
-
-    def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_REFUSED, *kargs, **kwargs)
-
-
-class IOClosedException(IOException):
-    """Closed pipe exception."""
-
-    def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_CLOSED, *kargs, **kwargs)
-
-
-class IOInvalidException(IOException):
-    """Invalid I/O interface exception."""
-
-    def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_INVALID, *kargs, **kwargs)
-
-
-class IOUnknownException(IOException):
-    """Unknown I/O exception."""
-
-    def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_UNKNOWN, *kargs, **kwargs)

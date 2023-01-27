@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@
 
 #include <cassert>
 #include <memory>
+#include "c/sandwich.h"
+#include "cc/error.h"
 
 namespace saq::sandwich::c {
 
@@ -68,17 +70,19 @@ void CIO::Close() noexcept {
 extern "C" {
 #endif
 
-SANDWICH_API enum ::SandwichError sandwich_io_new(
+SANDWICH_API struct ::SandwichError *sandwich_io_new(
     const struct SandwichCIOSettings *cioset, struct SandwichCIO **cio) {
   saq::sandwich::c::CIO *cc = nullptr;
   if (auto c = saq::sandwich::c::CIO::New(*cioset); c != nullptr) {
     cc = c.release();
   } else {
-    return SANDWICH_ERROR_MEMORY;
+    return reinterpret_cast<struct ::SandwichError *>(
+        saq::sandwich::error::New(
+            saq::sandwich::error::SystemError::kMemory));
   }
 
   *cio = reinterpret_cast<std::remove_pointer_t<decltype(cio)>>(cc);
-  return SANDWICH_ERROR_OK;
+  return nullptr;
 }
 
 SANDWICH_API void sandwich_io_free(struct SandwichCIO *cio) {

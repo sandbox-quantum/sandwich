@@ -183,7 +183,7 @@ constexpr std::string_view SupportedKEM{"kyber1024"};
   if (!ioop) {
     return testing::AssertionFailure()
            << "Expected a successful client I/O op, got an error: "
-           << sandwich::GetStringError(ioop.GetError());
+           << error::GetStringError(ioop.GetError());
   }
   if (ioop.Get() != kPingMsg.size()) {
     return testing::AssertionFailure() << "Expected " << kPingMsg.size()
@@ -208,7 +208,7 @@ constexpr std::string_view SupportedKEM{"kyber1024"};
   if (!ioop) {
     return testing::AssertionFailure()
            << "Expected a successful server I/O op, got an error: "
-           << sandwich::GetStringError(ioop.GetError());
+           << error::GetStringError(ioop.GetError());
   }
   if (ioop.Get() != kPingMsg.size()) {
     return testing::AssertionFailure() << "Expected " << kPingMsg.size()
@@ -223,7 +223,7 @@ constexpr std::string_view SupportedKEM{"kyber1024"};
   if (!ioop) {
     return testing::AssertionFailure()
            << "Expected a successful server I/O op, got an error: "
-           << sandwich::GetStringError(ioop.GetError());
+           << error::GetStringError(ioop.GetError());
   }
   if (ioop.Get() != kPongMsg.size()) {
     return testing::AssertionFailure() << "Expected " << kPongMsg.size()
@@ -247,7 +247,7 @@ constexpr std::string_view SupportedKEM{"kyber1024"};
   if (!ioop) {
     return testing::AssertionFailure()
            << "Expected a successful client I/O op, got an error: "
-           << sandwich::GetStringError(ioop.GetError());
+           << error::GetStringError(ioop.GetError());
   }
   if (ioop.Get() != kPongMsg.size()) {
     return testing::AssertionFailure() << "Expected " << kPongMsg.size()
@@ -340,7 +340,7 @@ constexpr std::string_view SupportedKEM{"kyber1024"};
   if (!ioop) {
     return testing::AssertionFailure()
            << "Expected a successful client I/O op, got an error: "
-           << sandwich::GetStringError(ioop.GetError());
+           << error::GetStringError(ioop.GetError());
   }
 
   MsgBuffer buffer{};

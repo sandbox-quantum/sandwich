@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-SANDWICH_API enum ::SandwichError sandwich_context_new(
+SANDWICH_API struct ::SandwichError *sandwich_context_new(
     const void *src, size_t n, struct SandwichContext **ctx) {
   const std::span<const std::byte> msg(reinterpret_cast<const std::byte *>(src),
                                        n);
@@ -36,9 +36,9 @@ SANDWICH_API enum ::SandwichError sandwich_context_new(
       *ctx = reinterpret_cast<std::remove_pointer_t<decltype(ctx)>>(
           res.Get().release());
     }
-    return SANDWICH_ERROR_OK;
+    return nullptr;
   }
-  return static_cast<enum ::SandwichError>(res.GetError());
+  return reinterpret_cast<struct ::SandwichError *>(res.GetError().Release());
 }
 
 SANDWICH_API void sandwich_context_free(struct SandwichContext *ctx) {

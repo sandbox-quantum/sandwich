@@ -27,6 +27,7 @@
 #include "gtest/gtest.h"
 
 #include "cc/context.h"
+#include "cc/error.h"
 #include "cc/tunnel.h"
 #include "proto/api/v1/configuration.pb.h"
 
@@ -61,6 +62,9 @@ namespace sandwich_proto = sandwich::proto;
 
 /// \brief Alias to sandwich proto API.
 namespace sandwich_api = sandwich_proto::api::v1;
+
+/// \brief Alias to sandwich error.
+namespace error = sandwich::error;
 
 /// \brief Simple message buffer.
 using MsgBuffer = std::array<std::byte, 4>;
@@ -184,3 +188,25 @@ struct IOPair {
 /// and last file descriptor in `fds` is the server's
 [[nodiscard]] auto CreateSocketIOPair(const std::array<int, 2> &fds,
                                       IOPair *pair) -> testing::AssertionResult;
+
+/// \brief Verify that a given error chain matches another.
+///
+/// \param echain Error chain to verify.
+/// \param expected Expected chain.
+[[nodiscard]] auto VerifyErrorChain(const error::Error &echain,
+                                    const error::Error &expected) noexcept
+    -> testing::AssertionResult;
+
+/// \brief Create a chain of errors.
+///
+/// \tparam Errors Error types.
+///
+/// \param errors Error codes.
+///
+/// \return The error chain.
+template <error::ErrorCodeEnum... Errors>
+auto CreateErrorChain(const Errors... errors) {
+  error::Error e;
+  ([&] { e = e >> errors; }(), ...);
+  return e;
+}

@@ -40,8 +40,12 @@ TEST(ServerContextTests, InvalidProtocolTest) {
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
   ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
-  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidConfiguration)
-      << "Bad error code";
+  ASSERT_TRUE(VerifyErrorChain(
+      res.GetError(),
+      CreateErrorChain(error::OpenSSLServerConfigurationError::kEmpty,
+                       error::OpenSSLConfigurationError::kInvalid,
+                       error::ConfigurationError::kInvalid,
+                       error::APIError::kConfiguration)));
 }
 
 /// \brief Test with invalid KEM
@@ -56,8 +60,13 @@ TEST(ServerContextTests, InvalidKEMTest) {
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
   ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
-  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidKem)
-      << "Bad error code";
+  ASSERT_TRUE(VerifyErrorChain(
+      res.GetError(),
+      CreateErrorChain(error::KEMError::kInvalid,
+                       error::OpenSSLServerConfigurationError::kKem,
+                       error::OpenSSLConfigurationError::kInvalid,
+                       error::ConfigurationError::kInvalid,
+                       error::APIError::kConfiguration)));
 }
 
 /// \brief Test with no certificate or kems
@@ -85,8 +94,13 @@ TEST(ServerContextTests, InvalidCertBadPathTest) {
       sandwich_api::ASN1EncodingFormat::ENCODING_FORMAT_DER));
   auto res = saq::sandwich::Context::FromConfiguration(config);
   ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
-  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidCertificate)
-      << "Bad error code";
+  ASSERT_TRUE(VerifyErrorChain(
+      res.GetError(),
+      CreateErrorChain(error::CertificateError::kNotFound,
+                       error::OpenSSLServerConfigurationError::kCertificate,
+                       error::OpenSSLConfigurationError::kInvalid,
+                       error::ConfigurationError::kInvalid,
+                       error::APIError::kConfiguration)));
 }
 
 /// \brief Test with invalid certificate: neither path or buffer
@@ -107,8 +121,14 @@ TEST(ServerContextTests, InvalidCertEmptyTest) {
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
   ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
-  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidConfiguration)
-      << "Bad error code";
+  ASSERT_TRUE(VerifyErrorChain(
+      res.GetError(),
+      CreateErrorChain(error::DataSourceError::kEmpty,
+                       error::CertificateError::kMalformed,
+                       error::OpenSSLServerConfigurationError::kCertificate,
+                       error::OpenSSLConfigurationError::kInvalid,
+                       error::ConfigurationError::kInvalid,
+                       error::APIError::kConfiguration)));
 }
 
 /// \brief Test with invalid certificate: invalid encoding format
@@ -130,8 +150,14 @@ TEST(ServerContextTests, InvalidCertInvalidFormatTest) {
 
   auto res = saq::sandwich::Context::FromConfiguration(config);
   ASSERT_FALSE(res) << "Expected bad configuration, got good configuration";
-  ASSERT_EQ(res.GetError(), saq::sandwich::Error::kInvalidConfiguration)
-      << "Bad error code";
+  ASSERT_TRUE(VerifyErrorChain(
+      res.GetError(),
+      CreateErrorChain(error::ASN1Error::kInvalidFormat,
+                       error::CertificateError::kMalformed,
+                       error::OpenSSLServerConfigurationError::kCertificate,
+                       error::OpenSSLConfigurationError::kInvalid,
+                       error::ConfigurationError::kInvalid,
+                       error::APIError::kConfiguration)));
 }
 
 /// \brief Test with a valid KEM

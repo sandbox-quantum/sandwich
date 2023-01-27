@@ -214,7 +214,7 @@ auto CreateContext(const sandwich_api::Configuration &config,
   if (!res) {
     return testing::AssertionFailure()
            << "`Context::FromConfiguration` returned an error: "
-           << sandwich::GetStringError(res.GetError());
+           << error::GetStringError(res.GetError());
   }
   *context = std::move(res.Get());
   if ((*context)->Implementation() != config.impl()) {
@@ -235,9 +235,8 @@ auto CreateTunnel(std::unique_ptr<sandwich::Context> *context,
 
   auto res{(*context)->NewTunnel(std::move(ioint))};
   if (!res) {
-    return testing::AssertionFailure()
-           << "Failed to create the tunnel: "
-           << sandwich::GetStringError(res.GetError());
+    return testing::AssertionFailure() << "Failed to create the tunnel: "
+                                       << error::GetStringError(res.GetError());
   }
   *tun = std::move(res.Get());
 
@@ -310,19 +309,42 @@ auto CreateSocketIOPair(const std::array<int, 2> &fds, IOPair *pair)
     -> testing::AssertionResult {
   auto res{sandwich::io::Socket::FromFd(fds[0])};
   if (!res) {
-    return testing::AssertionFailure()
-           << "Failed to create the client socket: "
-           << sandwich::GetStringError(res.GetError());
+    return testing::AssertionFailure() << "Failed to create the client socket: "
+                                       << error::GetStringError(res.GetError());
   }
   pair->client = std::move(res.Get());
 
   res = sandwich::io::Socket::FromFd(fds[1]);
   if (!res) {
-    return testing::AssertionFailure()
-           << "Failed to create the client socket: "
-           << sandwich::GetStringError(res.GetError());
+    return testing::AssertionFailure() << "Failed to create the client socket: "
+                                       << error::GetStringError(res.GetError());
   }
   pair->server = std::move(res.Get());
+
+  return testing::AssertionSuccess();
+}
+
+auto VerifyErrorChain(const sandwich::error::Error &echain,
+                      const sandwich::error::Error &expected) noexcept
+    -> testing::AssertionResult {
+  auto it = echain.begin();
+  const auto end = echain.end();
+  auto eit = expected.begin();
+  std::size_t i = 0;
+  for (; (it != end) && (eit != end); ++it, ++eit, ++i) {
+    if (*it != *eit) {
+      return testing::AssertionFailure()
+             << "Element at index #" << i << " doesn't match. Expected '"
+             << *eit << ", got " << *it;
+    }
+  }
+  if (it != eit) {
+    return testing::AssertionFailure()
+           << "Iterators should be equal (equal to end())";
+  }
+  if (it != end) {
+    return testing::AssertionFailure() << "Iterators should be equal to end()";
+  }
 
   return testing::AssertionSuccess();
 }

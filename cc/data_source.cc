@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,37 +38,43 @@ auto DataSource::rawData() const -> std::optional<std::span<const std::byte>> {
 }
 
 auto DataSource::fromProto(proto::api::v1::DataSource &&proto)
-    -> Result<DataSource, Error> {
+    -> Result<DataSource, error::Error> {
   if (proto.has_filename()) {
-    return {Src{FilePath{proto.filename()}}};
+    return Result<DataSource, error::Error>::Ok(
+        Src{FilePath{proto.filename()}});
   }
 
   if (auto *str = proto.release_inline_bytes()) {
-    return {Src{RawData{std::move(*str)}}};
+    return Result<DataSource, error::Error>::Ok(
+        {Src{RawData{std::move(*str)}}});
   }
 
   if (auto *str = proto.release_inline_string()) {
-    return {Src{RawData{std::move(*str)}}};
+    return Result<DataSource, error::Error>::Ok(
+        {Src{RawData{std::move(*str)}}});
   }
 
-  return Error::kInvalidConfiguration;
+  return error::DataSourceError::kEmpty;
 }
 
 auto DataSource::fromProto(const proto::api::v1::DataSource &proto)
-    -> Result<DataSource, Error> {
+    -> Result<DataSource, error::Error> {
   if (proto.has_filename()) {
-    return {Src{FilePath{proto.filename()}}};
+    return Result<DataSource, error::Error>::Ok(
+        {Src{FilePath{proto.filename()}}});
   }
 
   if (proto.has_inline_bytes()) {
-    return {Src{RawData{proto.inline_bytes()}}};
+    return Result<DataSource, error::Error>::Ok(
+        {Src{RawData{proto.inline_bytes()}}});
   }
 
   if (proto.has_inline_string()) {
-    return {Src{RawData{proto.inline_string()}}};
+    return Result<DataSource, error::Error>::Ok(
+        {Src{RawData{proto.inline_string()}}});
   }
 
-  return Error::kInvalidConfiguration;
+  return error::DataSourceError::kEmpty;
 }
 
 } // namespace saq::sandwich

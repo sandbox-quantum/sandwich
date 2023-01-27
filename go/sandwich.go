@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,22 +36,72 @@ type Context struct {
 	handle *C.struct_SandwichContext
 }
 
+// createError creates a chain of errors, returned from Sandwich.
+func createError(chain *C.struct_SandwichError) error {
+	var root Error = nil
+	var cur Error = nil
+	for chain != nil {
+		if _, ok := pb.ErrorKind_name[int32(chain.kind)]; ok {
+			var e Error = nil
+			switch pb.ErrorKind(chain.kind) {
+			case pb.ErrorKind_ERRORKIND_API:
+				e = newAPIError(pb.APIError(chain.code))
+			case pb.ErrorKind_ERRORKIND_CONFIGURATION:
+				e = newConfigurationError(pb.ConfigurationError(chain.code))
+			case pb.ErrorKind_ERRORKIND_OPENSSL_CONFIGURATION:
+				e = newOpenSSLConfigurationError(pb.OpenSSLConfigurationError(chain.code))
+			case pb.ErrorKind_ERRORKIND_OPENSSL_CLIENT_CONFIGURATION:
+				e = newOpenSSLClientConfigurationError(pb.OpenSSLClientConfigurationError(chain.code))
+			case pb.ErrorKind_ERRORKIND_OPENSSL_SERVER_CONFIGURATION:
+				e = newOpenSSLServerConfigurationError(pb.OpenSSLServerConfigurationError(chain.code))
+			case pb.ErrorKind_ERRORKIND_CERTIFICATE:
+				e = newCertificateError(pb.CertificateError(chain.code))
+			case pb.ErrorKind_ERRORKIND_SYSTEM:
+				e = newSystemError(pb.SystemError(chain.code))
+			case pb.ErrorKind_ERRORKIND_SOCKET:
+				e = newSocketError(pb.SocketError(chain.code))
+			case pb.ErrorKind_ERRORKIND_PROTOBUF:
+				e = newProtobufError(pb.ProtobufError(chain.code))
+			case pb.ErrorKind_ERRORKIND_PRIVATE_KEY:
+				e = newPrivateKeyError(pb.PrivateKeyError(chain.code))
+			case pb.ErrorKind_ERRORKIND_ASN1:
+				e = newASN1Error(pb.ASN1Error(chain.code))
+			case pb.ErrorKind_ERRORKIND_DATA_SOURCE:
+				e = newDataSourceError(pb.DataSourceError(chain.code))
+			case pb.ErrorKind_ERRORKIND_KEM:
+				e = newKEMError(pb.KEMError(chain.code))
+			}
+			if root == nil {
+				root = e
+				cur = e
+			} else {
+				cur.setDetails(e)
+				cur = e
+			}
+			chain = chain.details
+		}
+	}
+	return root
+}
+
 // NewContext fills a Sandwich context from a protobuf configuration.
 func NewContext(configuration *api.Configuration) (*Context, error) {
 	out, err := proto.Marshal(configuration)
 	if err != nil {
-		return nil, newGlobalErrorFromEnum(pb.Error_ERROR_PROTOBUF)
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED)
 	}
 
 	n := len(out)
 	if n == 0 {
-		return nil, newGlobalErrorFromEnum(pb.Error_ERROR_PROTOBUF)
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_EMPTY)
 	}
 
 	ctx := new(Context)
 	errc := C.sandwich_context_new(unsafe.Pointer(&out[0]), C.size_t(n), &ctx.handle)
-	if int32(errc) != int32(pb.Error_ERROR_OK) {
-		return nil, newGlobalError(int32(errc))
+	if errc != nil {
+		err := createError(errc)
+		C.sandwich_error_free(errc)
+		return nil, err
 	}
 
 	runtime.SetFinalizer(ctx, (*Context).free)
@@ -82,10 +132,12 @@ func NewTunnel(ctx *Context, io IO) (*Tunnel, error) {
 	}
 
 	errc := C.sandwich_tunnel_new(ctx.handle, tun.ioHandle.handle, &tun.handle)
-
-	if int32(errc) != int32(pb.Error_ERROR_OK) {
-		return nil, newGlobalError(int32(errc))
+	if errc != nil {
+		err := createError(errc)
+		C.sandwich_error_free(errc)
+		return nil, err
 	}
+
 	runtime.SetFinalizer(tun, (*Tunnel).free)
 	return tun, nil
 }
@@ -94,16 +146,6 @@ func NewTunnel(ctx *Context, io IO) (*Tunnel, error) {
 func (tun *Tunnel) State() pb.State {
 	state := C.sandwich_tunnel_state(tun.handle)
 	return pb.State(state)
-}
-
-// Error returns the last saved error of the tunnel.
-// If nil is returned, it means no error occurred.
-func (tun *Tunnel) Error() *GlobalError {
-	err := C.sandwich_tunnel_last_error(tun.handle)
-	if int32(err) == int32(pb.Error_ERROR_OK) {
-		return nil
-	}
-	return newGlobalError(int32(err))
 }
 
 // Handshakes performs or resumes the handshake stage.

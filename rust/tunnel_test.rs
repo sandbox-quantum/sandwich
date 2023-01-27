@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ mod tests {
     static PONG_MSG: [u8; 4] = [0x50, 0x4f, 0x4e, 0x47];
 
     /// Creates the Context for the client.
-    fn create_client() -> Result<sandwich::Context, sandwich::errors::GlobalError> {
+    fn create_client() -> Result<sandwich::Context, sandwich::errors::Error> {
         let mut conf = SandwichAPI::Configuration::new();
         conf.field_impl = SandwichAPI::Implementation::IMPL_OPENSSL1_1_1_OQS;
         let tls_client = conf.mut_client().mut_tls();
@@ -95,7 +95,7 @@ mod tests {
     }
 
     /// Creates the Context for the server.
-    fn create_server() -> Result<sandwich::Context, sandwich::errors::GlobalError> {
+    fn create_server() -> Result<sandwich::Context, sandwich::errors::Error> {
         let mut conf = SandwichAPI::Configuration::new();
         conf.field_impl = SandwichAPI::Implementation::IMPL_OPENSSL1_1_1_OQS;
         let tls_server = conf.mut_server().mut_tls();

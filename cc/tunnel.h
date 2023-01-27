@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 SandboxAQ
+ * Copyright 2023 SandboxAQ
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 
 #include <span>
 
-#include "cc/errors.h"
+#include "cc/error.h"
 #include "cc/exports.h"
 #include "cc/io/io.h"
 #include "cc/result.h"
@@ -44,7 +44,7 @@ namespace saq::sandwich {
 class SANDWICH_CC_API Tunnel {
 public:
   /// \brief A result, wrapping a Tunnel or an error.
- using TunnelResult = Result<std::unique_ptr<Tunnel>, Error>;
+ using TunnelResult = Result<std::unique_ptr<Tunnel>, error::Error>;
 
  /// \brief Alias to saq::sandwich::tunnel::State.
  using State = saq::sandwich::tunnel::State;

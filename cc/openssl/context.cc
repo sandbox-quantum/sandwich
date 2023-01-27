@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,15 +39,16 @@ auto Context::NativeContext() const noexcept -> const void * {
   return static_cast<const void *>(tls_ctx_.Get());
 }
 
-auto Context::SetKems(const ProtoConfiguration &config) -> Error {
+auto Context::SetKems(const ProtoConfiguration &config) -> error::Error {
   auto common_opts = GetCommonOptionsFromConfiguration(config);
   if (!common_opts) {
-    return common_opts.GetError();
+    return common_opts.GetError() >>
+           error::OpenSSLClientConfigurationError::kEmpty;
   }
   {
     const auto &opts = common_opts.Get();
     if (!opts.has_value()) {
-      return Error::kInvalidConfiguration;
+      return error::OpenSSLClientConfigurationError::kEmpty;
     }
   }
   const auto &opts = common_opts->value().get();
@@ -57,34 +58,34 @@ auto Context::SetKems(const ProtoConfiguration &config) -> Error {
 
   // NOLINTNEXTLINE
   for (; kem_index < kem_count; ++kem_index) {
-    if (auto err = tls_ctx_.AddSupportedKem(opts.kem(kem_index));
-        err != Error::kOk) {
+    if (auto err = tls_ctx_.AddSupportedKem(opts.kem(kem_index)); err) {
       return err;
     }
   }
   if (kem_index > 0) {
-    if (auto err = tls_ctx_.ApplyKems(); err != Error::kOk) {
+    if (auto err = tls_ctx_.ApplyKems(); err) {
       return err;
     }
   }
-  return Error::kOk;
+  return error::Ok;
 }
 
-auto Context::ApplyFlags(const ProtoConfiguration &config) -> Error {
+auto Context::ApplyFlags(const ProtoConfiguration &config) -> error::Error {
   auto common_opts = GetCommonOptionsFromConfiguration(config);
   if (!common_opts) {
-    return common_opts.GetError();
+    return common_opts.GetError() >>
+           error::OpenSSLClientConfigurationError::kEmpty;
   }
   const auto &opts = common_opts.Get();
   if (!opts.has_value()) {
-    return Error::kOk;
+    return error::Ok;
   }
   const auto flags = opts->get().flags();
 
   if ((flags & proto::api::v1::TLSFlags::TLSFLAGS_SKIP_VERIFY) != 0) {
     tls_ctx_.SetVerifyMode(SSL_VERIFY_NONE);
   }
-  return Error::kOk;
+  return error::Ok;
 }
 
 } // end namespace saq::sandwich::openssl
