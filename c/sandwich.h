@@ -32,9 +32,7 @@
 
 #include "c/error_codes.h"
 #include "c/ioerrors.h"
-#include "c/tunnel_handshake_state.h"
-#include "c/tunnel_record_errors.h"
-#include "c/tunnel_state.h"
+#include "c/tunnel_types.h"
 
 #ifdef __cplusplus
 extern "C" {

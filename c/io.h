@@ -26,9 +26,9 @@
 #include <utility>
 
 #include "c/sandwich.h"
-#include "c/tunnel_state.h"
+#include "c/tunnel_types.h"
 #include "cc/io/io.h"
-#include "cc/tunnel_state.h"
+#include "cc/tunnel_types.h"
 
 namespace saq::sandwich::c {
 

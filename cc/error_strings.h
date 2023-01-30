@@ -27,9 +27,7 @@
 
 #include "cc/error.h"
 #include "cc/io/ioerrors.h"
-#include "cc/tunnel_handshake_state.h"
-#include "cc/tunnel_record_errors.h"
-#include "cc/tunnel_state.h"
+#include "cc/tunnel_types.h"
 
 namespace saq::sandwich::error {
 

@@ -14,7 +14,7 @@
 
 /**
  * \file
- * \brief Sandwich record errors specification
+ * \brief Sandwich tunnel types and states specification
  */
 
 #pragma once
@@ -23,6 +23,28 @@
 extern "C" {
 #endif
 
+
+/** \brief Enum State. */
+enum SandwichTunnelState { 
+  SANDWICH_TUNNEL_STATE_NOT_CONNECTED = 0,
+  SANDWICH_TUNNEL_STATE_CONNECTION_IN_PROGRESS = 1,
+  SANDWICH_TUNNEL_STATE_HANDSHAKE_IN_PROGRESS = 2,
+  SANDWICH_TUNNEL_STATE_HANDSHAKE_DONE = 3,
+  SANDWICH_TUNNEL_STATE_BEING_SHUTDOWN = 4,
+  SANDWICH_TUNNEL_STATE_DISCONNECTED = 5,
+  SANDWICH_TUNNEL_STATE_ERROR = 6,
+};
+typedef enum SandwichTunnelState SandwichTunnelState;
+
+/** \brief Enum HandshakeState. */
+enum SandwichTunnelHandshakeState { 
+  SANDWICH_TUNNEL_HANDSHAKESTATE_IN_PROGRESS = 0,
+  SANDWICH_TUNNEL_HANDSHAKESTATE_DONE = 1,
+  SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ = 2,
+  SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_WRITE = 3,
+  SANDWICH_TUNNEL_HANDSHAKESTATE_ERROR = 4,
+};
+typedef enum SandwichTunnelHandshakeState SandwichTunnelHandshakeState;
 
 /** \brief Enum RecordError. */
 enum SandwichTunnelRecordError { 

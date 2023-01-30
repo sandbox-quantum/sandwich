@@ -29,9 +29,9 @@
 #include <memory>
 #include <span>
 
-#include "cc/io/ioerrors.h"
 #include "cc/exports.h"
-#include "cc/tunnel_state.h"
+#include "cc/io/ioerrors.h"
+#include "cc/tunnel_types.h"
 
 namespace saq::sandwich::io {
 

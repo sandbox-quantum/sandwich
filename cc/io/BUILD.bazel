@@ -22,7 +22,7 @@ cc_library(
     deps = [
         ":io_errors",
         "//cc:exports",
-        "//cc:tunnel_state",
+        "//cc:tunnel_types",
     ],
 )
 

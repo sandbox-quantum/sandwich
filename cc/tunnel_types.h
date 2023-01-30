@@ -14,12 +14,32 @@
 
 ///
 /// \file
-/// \brief Sandwich record errors specification
+/// \brief Sandwich tunnel types and states specification.
 
 #pragma once
 
 namespace saq::sandwich::tunnel {
 
+
+/// \brief Enum State.
+enum class State : int { 
+  kNotConnected = 0,
+  kConnectionInProgress = 1,
+  kHandshakeInProgress = 2,
+  kHandshakeDone = 3,
+  kBeingShutdown = 4,
+  kDisconnected = 5,
+  kError = 6,
+};
+
+/// \brief Enum HandshakeState.
+enum class HandshakeState : int { 
+  kInProgress = 0,
+  kDone = 1,
+  kWantRead = 2,
+  kWantWrite = 3,
+  kError = 4,
+};
 
 /// \brief Enum RecordError.
 enum class RecordError : int { 

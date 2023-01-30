@@ -28,9 +28,7 @@
 #include "cc/exports.h"
 #include "cc/io/io.h"
 #include "cc/result.h"
-#include "cc/tunnel_handshake_state.h"
-#include "cc/tunnel_record_errors.h"
-#include "cc/tunnel_state.h"
+#include "cc/tunnel_types.h"
 
 namespace saq::sandwich {
 
