@@ -15,11 +15,11 @@
 package sandwich_test
 
 import (
+	"github.com/sandbox-quantum/sandwich/go/sandwich"
 	"encoding/base64"
 	"log"
 	"testing"
 
-	"github.com/sandbox-quantum/sandwich/go/sandwich"
 	"google.golang.org/protobuf/proto"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
@@ -57,7 +57,6 @@ func TestFuzzCases(t *testing.T) {
 		log.Println("Configuration: ", cfg.String())
 		if _, err := sandwich.NewContext(cfg); tc.wantSuccess != (err == nil) {
 			t.Errorf("sandwich.NewContext(%q) = _, %v, want error: %v", cfg.String(), err, !tc.wantSuccess)
-
 		}
 	}
 }

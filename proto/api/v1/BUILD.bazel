@@ -11,6 +11,9 @@ proto_library(
 proto_library(
     name = "data_source_proto",
     srcs = ["data_source.proto"],
+    visibility = [
+        "//visibility:public",
+    ],
     deps = [
         ":encoding_format_proto",
     ],
@@ -19,6 +22,9 @@ proto_library(
 proto_library(
     name = "certificate_proto",
     srcs = ["certificate.proto"],
+    visibility = [
+        "//visibility:public",
+    ],
     deps = [
         ":data_source_proto",
     ],

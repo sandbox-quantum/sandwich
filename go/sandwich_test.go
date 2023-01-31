@@ -16,18 +16,17 @@ package sandwich_test
 
 import (
 	"bytes"
+	"github.com/sandbox-quantum/sandwich/go/sandwich"
 	"testing"
 
-	"github.com/sandbox-quantum/sandwich/go/sandwich"
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
+
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 )
 
-var (
-	testCertPattern = "testdata/%s.cert.pem"
-)
+var testCertPattern = "testdata/%s.cert.pem"
 
 var (
 	pingMsg         = [...]byte{'P', 'I', 'N', 'G'}
@@ -151,7 +150,7 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 							},
 						},
 						TrustedCertificates: []*api.Certificate{
-							&api.Certificate{
+							{
 								Source: &api.Certificate_Static{
 									Static: &api.ASN1DataSource{
 										Data: &api.DataSource{
