@@ -1,4 +1,4 @@
-// Copyright 2022 SandboxAQ
+// Copyright 2023 SandboxAQ
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ syntax = "proto3";
 
 package saq.sandwich.proto.io;
 
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich";
 
 // Error code, throwable by an I/O interface.
 enum IOError {

@@ -23,6 +23,8 @@ syntax = "proto3";
 
 package saq.sandwich.proto;
 
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich";
+
 // API errors.
 // The following errors can occur during a call to the Context API.
 enum APIError {

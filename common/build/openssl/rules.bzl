@@ -1,5 +1,6 @@
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 
 _DEFAULT_OPENSSL_CONFIGURE_FLAGS = [
     "no-comp",
@@ -47,8 +48,8 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
 
   export CMAKE="$BASE_DIR/$1"
   export NINJA="$BASE_DIR/$2"
-  export CC="$3"
-  export CXX="$3"
+  export CC="$(realpath "$3")"
+  export CXX="$CC"
 
 
   export OPENSSL_SRC_DIR="$BASE_DIR/$4"
@@ -61,7 +62,10 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
 
   export INSTALL_DIR="$BASE_DIR/$8"
 
-  export NCORE=$(nproc) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
+  export DEVELOPER_DIR="$(/usr/bin/xcode-select -p)" || echo "nevermind"
+  export SDKROOT="$(/usr/bin/xcrun --show-sdk-path)" || echo "nevermind"
+
+  export NCORES=$(nproc) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
 
   mkdir -p "$OPENSSL_BUILD_DIR"
   (
@@ -278,6 +282,25 @@ def _create_cc_info(linking_context, include_dir):
         linking_context = linking_context,
     )
 
+def _find_cc_compiler(ctx):
+    """Finds the C/C++ compiler used by Bazel.
+
+    Args:
+      ctx:
+        Bazel rule context.
+
+    This routines find the cc compiler using the default cc_toolchain.
+
+    Returns:
+      File object pointing to the compiler, or None if not found.
+    """
+    cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
+    for f in cc_toolchain.all_files.to_list():
+        if f.path == cc_toolchain.compiler_executable:
+            return f
+
+    return cc_toolchain.compiler_executable
+
 def _find_cmake(ctx):
     """Finds the CMake binary used by Bazel.
 
@@ -320,6 +343,9 @@ def _find_ninja(ctx):
         if f.path == ninja_path:
             return f
 
+    if ninja_path.endswith("/bin/ninja"):
+        return ninja_path
+
     return None
 
 def _openssl_build_impl(ctx):
@@ -334,7 +360,7 @@ def _openssl_build_impl(ctx):
       * DefaultInfo: runfiles, needed for the OpenSSL cli. It is the OpenSSL
         configuration.
     """
-    compiler = find_cpp_toolchain(ctx).compiler_executable or fail("Failed to find the default compiler")
+    compiler = _find_cc_compiler(ctx) or fail("Failed to find the cc compiler")
     cmake = _find_cmake(ctx) or fail("Failed to find the `cmake` binary.")
     ninja = _find_ninja(ctx) or fail("Failed to find the `ninja` binary.")
 
@@ -354,7 +380,11 @@ def _openssl_build_impl(ctx):
     ctx.actions.run_shell(
         outputs = [install_dir, include_dir],
         inputs = ctx.attr.openssl_srcs.files.to_list() + ctx.attr.liboqs_srcs.files.to_list(),
-        tools = [cmake, ninja],
+        tools = [
+            cmake,
+            ctx.toolchains["@rules_foreign_cc//toolchains:ninja_toolchain"].data.target.files,
+            ctx.toolchains["@rules_foreign_cc//toolchains:cmake_toolchain"].data.target.files,
+        ],
         mnemonic = "opensslliboqsbuild",
         progress_message = "%{label}: Building OpenSSL to %{output}",
         use_default_shell_env = True,
