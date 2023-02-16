@@ -116,6 +116,9 @@ cc_binary(
     linkopts = [
         "-fno-rtti",
         "-fno-exceptions",
+        # This flag is very important, as it removes any static libraries' symbols
+        # from the final export table of the shared library (see above for the rational).
+        "-Wl,--exclude-libs,ALL",
     ],
     linkshared = True,
     linkstatic = True,

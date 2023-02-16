@@ -129,10 +129,13 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
     args.add(" ".join(openssl_configure_flags))  # $5
 
     args.add(liboqs_target.label.workspace_root)  # $6
+
+    liboqs_arg = ""
     if ctx.var["COMPILATION_MODE"] == "opt":
-        args.add("-DCMAKE_BUILD_TYPE=Release")  # $7
-    else:
-        args.add("")  # $7
+        liboqs_arg = "-DCMAKE_BUILD_TYPE=Release"
+    if ctx.attr.fpemu:
+        liboqs_arg += " -DOQS_ENABLE_SIG_falcon_1024_avx2=OFF -DOQS_ENABLE_SIG_falcon_512_avx2=OFF"
+    args.add(liboqs_arg)  # $7
 
     args.add(install_dir.path)  # $8
 
@@ -459,6 +462,7 @@ openssl_build = rule(
             mandatory = False,
             doc = "OpenSSL additional flags",
         ),
+        "fpemu": attr.bool(mandatory = False, default = False, doc = "disable fpemu in liboqs"),
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),

@@ -1,0 +1,274 @@
+// Copyright 2023 SandboxAQ
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This protobuf aims to describe any types of errors.
+// The idea is to be as accurate as possible. However, there may be overlaps
+// between multiple error codes, for instance `ERROR_INVALID_ARGUMENT` and
+// `ERROR_PROTOBUF`. The strategy is to choose the error that best fits the
+// case. New type of errors can be introduced if the existing ones are not
+// accurate enough.
+
+syntax = "proto3";
+
+package saq.sandwich.proto;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich";
+
+// API errors.
+// The following errors can occur during a call to the Context API.
+enum APIError {
+  // Configuration error.
+  APIERROR_CONFIGURATION = 0;
+
+  // Socket error.
+  APIERROR_SOCKET = 1;
+
+  // Tunnel error.
+  APIERROR_TUNNEL = 2;
+};
+
+// Errors regarding configurations.
+enum ConfigurationError {
+  // The selected implementation is invalid.
+  CONFIGURATIONERROR_INVALID_IMPLEMENTATION = 0;
+
+  // The selected implementation isn't supported.
+  CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION = 1;
+
+  // Invalid configuration.
+  CONFIGURATIONERROR_INVALID = 2;
+};
+
+// Errors regarding protobuf.
+enum ProtobufError {
+  // The protobuf message is empty.
+  PROTOBUFERROR_EMPTY = 0;
+
+  // The protobuf message is too large.
+  PROTOBUFERROR_TOO_BIG = 1;
+
+  // Failed to parse the protobuf message.
+  PROTOBUFERROR_PARSE_FAILED = 2;
+};
+
+// Errors regarding OpenSSL configurations.
+enum OpenSSLConfigurationError {
+  // The selected implementation isn't supported.
+  OPENSSLCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION = 0;
+
+  // The configuration case (client/server) isn't valid.
+  OPENSSLCONFIGURATIONERROR_INVALID_CASE = 1;
+
+  // The configuration is empty.
+  OPENSSLCONFIGURATIONERROR_EMPTY = 2;
+
+  // Unsupported protocol version error.
+  OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION = 3;
+
+  // Invalid configuration.
+  OPENSSLCONFIGURATIONERROR_INVALID = 4;
+};
+
+// Errors regarding OpenSSL client configuration.
+enum OpenSSLClientConfigurationError {
+  // The configuration is empty.
+  OPENSSLCLIENTCONFIGURATIONERROR_EMPTY = 0;
+
+  // OpenSSL failed to create a SSL_CTX*.
+  OPENSSLCLIENTCONFIGURATIONERROR_SSL_CTX_FAILED = 1;
+
+  // Failed to use a certificate.
+  OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE = 2;
+
+  // Failed to use a KEM.
+  OPENSSLCLIENTCONFIGURATIONERROR_KEM = 3;
+
+  // Failed to apply some flags.
+  OPENSSLCLIENTCONFIGURATIONERROR_FLAGS = 4;
+
+  // OpenSSL failed to create a SSL*.
+  OPENSSLCLIENTCONFIGURATIONERROR_SSL_FAILED = 5;
+
+  // OpenSSL failed to create the BIO object.
+  OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED = 6;
+};
+
+// Errors regarding OpenSSL server configuration.
+enum OpenSSLServerConfigurationError {
+  // The configuration is empty.
+  OPENSSLSERVERCONFIGURATIONERROR_EMPTY = 0;
+
+  // OpenSSL failed to create a SSL_CTX*.
+  OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED = 1;
+
+  // Failed to use a certificate.
+  OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE = 2;
+
+  // Failed to use a KEM.
+  OPENSSLSERVERCONFIGURATIONERROR_KEM = 3;
+
+  // Failed to apply some flags.
+  OPENSSLSERVERCONFIGURATIONERROR_FLAGS = 4;
+
+  // Failed to use the private key.
+  OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY = 5;
+
+  // OpenSSL failed to create a SSL*.
+  OPENSSLSERVERCONFIGURATIONERROR_SSL_FAILED = 6;
+
+  // OpenSSL failed to create the BIO object.
+  OPENSSLSERVERCONFIGURATIONERROR_BIO_FAILED = 7;
+};
+
+// Certificate errors.
+enum CertificateError {
+  // Malformed certificate.
+  CERTIFICATEERROR_MALFORMED = 0;
+
+  // Expired certificate.
+  CERTIFICATEERROR_EXPIRED = 1;
+
+  // Certificate not found.
+  CERTIFICATEERROR_NOT_FOUND = 2;
+
+  // Unknown error. Can wrap a SystemError.
+  CERTIFICATEERROR_UNKNOWN = 3;
+
+  // Certificate not supported by the underlying implementation.
+  CERTIFICATEERROR_UNSUPPORTED = 4;
+};
+
+// Private key errors.
+enum PrivateKeyError {
+  // Malformed private key.
+  PRIVATEKEYERROR_MALFORMED = 0;
+
+  // Private key not found.
+  PRIVATEKEYERROR_NOT_FOUND = 1;
+
+  // Unknown error. Can wrap a SystemError.
+  PRIVATEKEYERROR_UNKNOWN = 2;
+
+  // Certificate not supported by the underlying implementation.
+  PRIVATEKEYERROR_UNSUPPORTED = 3;
+
+  // Not a server configuration.
+  PRIVATEKEYERROR_NOT_SERVER = 4;
+};
+
+// ASN.1 errors.
+enum ASN1Error {
+  // Invalid format.
+  ASN1ERROR_INVALID_FORMAT = 0;
+};
+
+// DataSource errors.
+enum DataSourceError {
+  // Empty data source.
+  DATASOURCEERROR_EMPTY = 0;
+
+  // Invalid case for data source.
+  DATASOURCEERROR_INVALID_CASE = 1;
+};
+
+// KEM errors.
+enum KEMError {
+  // Invalid or unsupported KEM.
+  KEMERROR_INVALID = 0;
+
+  // Too many KEMs.
+  KEMERROR_TOO_MANY = 1;
+};
+
+// System errors.
+enum SystemError {
+  // Memory error (e.g. allocation failed).
+  SYSTEMERROR_MEMORY = 0;
+
+  // Integer overflow.
+  SYSTEMERROR_INTEGER_OVERFLOW = 1;
+};
+
+// Socket errors.
+// These errors are used in io/socket.
+enum SocketError {
+  // Bad file descriptor.
+  SOCKETERROR_BAD_FD = 0;
+
+  // Socket creation failed.
+  SOCKETERROR_CREATION_FAILED = 1;
+
+  // Invalid network address.
+  SOCKETERROR_BAD_NETADDR = 2;
+
+  // Failed to resolve network address.
+  SOCKETERROR_NETADDR_UNKNOWN = 3;
+
+  // Syscall `fstat` failed.
+  SOCKETERROR_FSTAT_FAILED = 4;
+
+  // File descriptor is not a socket.
+  SOCKETERROR_NOT_SOCK = 5;
+
+  // Syscall getsockname failed.
+  SOCKETERROR_GETSOCKNAME_FAILED = 6;
+
+  // Syscall setsockopt failed.
+  SOCKETERROR_SETSOCKOPT_FAILED = 7;
+
+  // Invalid AI family.
+  SOCKETERROR_INVALID_AI_FAMILY = 8;
+};
+
+// Error kinds.
+enum ErrorKind {
+  // API errors. See APIError.
+  ERRORKIND_API = 0;
+
+  // Configuration errors. See ConfigurationError.
+  ERRORKIND_CONFIGURATION = 1;
+
+  // OpenSSL configuration errors. See OpenSSLConfigurationError.
+  ERRORKIND_OPENSSL_CONFIGURATION = 2;
+
+  // OpenSSL client configuration errors. See OpenSSLClientConfigurationError.
+  ERRORKIND_OPENSSL_CLIENT_CONFIGURATION = 3;
+
+  // OpenSSL server configuration errors. See OpenSSLServerConfigurationError.
+  ERRORKIND_OPENSSL_SERVER_CONFIGURATION = 4;
+
+  // Certificate errors. See CertificateError.
+  ERRORKIND_CERTIFICATE = 5;
+
+  // System errors. See SystemError.
+  ERRORKIND_SYSTEM = 6;
+
+  // Socket errors. See SocketError.
+  ERRORKIND_SOCKET = 7;
+
+  // Protobuf errors. see ProtobufError.
+  ERRORKIND_PROTOBUF = 8;
+
+  // Private key errors. See PrivateKeyError.
+  ERRORKIND_PRIVATE_KEY = 9;
+
+  // ASN1 errors. See ASN1Error.
+  ERRORKIND_ASN1 = 10;
+
+  // DataSource errors. See DataSourceError.
+  ERRORKIND_DATA_SOURCE = 11;
+
+  // KEM errors. See KEMError.
+  ERRORKIND_KEM = 12;
+};
