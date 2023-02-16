@@ -142,11 +142,11 @@ namespace {
     const int flags = ::fcntl(sock, F_GETFL, 0);
     if (flags == -1) {
       ::close(sock);
-      return error::Error::kSocketOptFailed;
+      return error::SocketError::kSetsockoptFailed;
     }
     if (fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
       ::close(sock);
-      return error::Error::kSocketOptFailed;
+      return error::SocketError::kSetsockoptFailed;
     }
   }
 #endif

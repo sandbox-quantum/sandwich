@@ -416,10 +416,10 @@ TEST(OpenSSLTunnels, OpenSSLTunnels) {
                     << ::strerror(errno) << ')';
   for (auto fd : fds) {
     int flags = ::fcntl(fd, F_GETFL, 0);
-    ASSERT_NEQ(flag, -1) << "`fcntl` returned an error: " << flags << '('
+    ASSERT_NE(flags, -1) << "`fcntl` returned an error: " << flags << '('
                          << ::strerror(errno) << ')';
     flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    ASSERT_NEQ(flag, -1) << "`fcntl` returned an error: " << flags << '('
+    ASSERT_NE(flags, -1) << "`fcntl` returned an error: " << flags << '('
                          << ::strerror(errno) << ')';
   }
 #endif

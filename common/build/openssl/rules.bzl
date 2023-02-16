@@ -62,10 +62,10 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
 
   export INSTALL_DIR="$BASE_DIR/$8"
 
-  export DEVELOPER_DIR="$(/usr/bin/xcode-select -p)" || echo "nevermind"
-  export SDKROOT="$(/usr/bin/xcrun --show-sdk-path)" || echo "nevermind"
+  export DEVELOPER_DIR="$(/usr/bin/xcode-select -p 2>/dev/null)" || echo "nevermind"
+  export SDKROOT="$(/usr/bin/xcrun --show-sdk-path 2>/dev/null)" || echo "nevermind"
 
-  export NCORES=$(nproc) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
+  export NCORES=$(nproc 2>/dev/null) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
 
   mkdir -p "$OPENSSL_BUILD_DIR"
   (
@@ -285,19 +285,18 @@ def _create_cc_info(linking_context, include_dir):
         linking_context = linking_context,
     )
 
-def _find_cc_compiler(ctx):
+def _find_cc_compiler(cc_toolchain):
     """Finds the C/C++ compiler used by Bazel.
 
     Args:
-      ctx:
-        Bazel rule context.
+      cc_toolchain:
+        Toolchain for C/C++.
 
-    This routines find the cc compiler using the default cc_toolchain.
+    This routines find the cc compiler using the given cc_toolchain.
 
     Returns:
       File object pointing to the compiler, or None if not found.
     """
-    cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
     for f in cc_toolchain.all_files.to_list():
         if f.path == cc_toolchain.compiler_executable:
             return f
@@ -363,7 +362,8 @@ def _openssl_build_impl(ctx):
       * DefaultInfo: runfiles, needed for the OpenSSL cli. It is the OpenSSL
         configuration.
     """
-    compiler = _find_cc_compiler(ctx) or fail("Failed to find the cc compiler")
+    cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
+    compiler = _find_cc_compiler(cc_toolchain) or fail("Failed to find the cc compiler")
     cmake = _find_cmake(ctx) or fail("Failed to find the `cmake` binary.")
     ninja = _find_ninja(ctx) or fail("Failed to find the `ninja` binary.")
 
@@ -387,6 +387,7 @@ def _openssl_build_impl(ctx):
             cmake,
             ctx.toolchains["@rules_foreign_cc//toolchains:ninja_toolchain"].data.target.files,
             ctx.toolchains["@rules_foreign_cc//toolchains:cmake_toolchain"].data.target.files,
+            cc_toolchain.all_files,
         ],
         mnemonic = "opensslliboqsbuild",
         progress_message = "%{label}: Building OpenSSL to %{output}",

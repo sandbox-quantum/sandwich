@@ -284,7 +284,10 @@ TEST(StructuredError_Error, FreeChain) {
   auto *ec = chain.Release();
   ASSERT_NE(ec, nullptr);
   FreeChain(ec);
-  ASSERT_EQ(ec->details, nullptr);
+  // The following assert can't be verified, because `ec` gets `delete`
+  // therefore the allocator strategy may already rewrite something to the
+  // chunk.
+  // ASSERT_EQ(ec->details, nullptr);
 }
 
 /// \brief Test chaining with empty error.
