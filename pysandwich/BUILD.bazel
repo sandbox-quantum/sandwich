@@ -1,5 +1,6 @@
 load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 py_library(
     name = "errors",
@@ -82,4 +83,9 @@ py_wheel(
         "//pysandwich/proto/api/v1:private_key_python_proto",
         "//pysandwich/proto/api/v1:tls_python_proto",
     ],
+)
+
+build_test(
+    name = "wheel_build_test",
+    targets = [":wheel"],
 )
