@@ -1,6 +1,14 @@
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
+load(
+    "@rules_foreign_cc//foreign_cc/private:cc_toolchain_util.bzl",
+    "absolutize_path_in_str",
+    "get_env_vars",
+    "get_flags_info",
+    "get_tools_info",
+    "is_debug_mode",
+)
 
 _DEFAULT_OPENSSL_CONFIGURE_FLAGS = [
     "no-comp",
@@ -18,18 +26,269 @@ _DEFAULT_OPENSSL_CONFIGURE_FLAGS = [
     "-Wno-unused-but-set-variable",
 ]
 
-def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_target, install_dir):
-    """Generates the build command for OpenSSL and liboqs.
+_CMAKE_TOOLCHAIN = "@rules_foreign_cc//toolchains:cmake_toolchain"
+_NINJA_TOOLCHAIN = "@rules_foreign_cc//toolchains:ninja_toolchain"
+_MAKE_TOOLCHAIN = "@rules_foreign_cc//toolchains:make_toolchain"
+
+_BUILD_BASH_COMMAND = """
+set -e
+export BASE_DIR="${PWD}/"
+
+function _realpath() {
+  echo "$(cd "$(dirname "$1")" && echo "${PWD}")/$(basename "$1")"
+}
+
+export CMAKE="$(_realpath "${CMAKE}")"
+export NINJA="$(_realpath "${NINJA}")"
+export CC="$(_realpath "${CC}")"
+export CXX="$(_realpath "${CXX}")"
+export AR="$(_realpath "${AR}")"
+export MAKE="$(_realpath "${MAKE}")"
+
+export OPENSSL_SRC_DIR="$(_realpath "${OPENSSL_SRC_DIR}")"
+export OPENSSL_BUILD_DIR="$(_realpath "./openssl_build")"
+export LIBOQS_SRC_DIR="$(_realpath "${LIBOQS_SRC_DIR}")"
+export LIBOQS_BUILD_DIR="$(_realpath "./liboqs_build")"
+export INSTALL_DIR="$(_realpath "${INSTALL_DIR}")"
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  # Needed for macOS. See https://github.com/bazelbuild/bazel/blob/master/tools/objc/xcrunwrapper.sh
+  WRAPPER_DEVDIR="${DEVELOPER_DIR:-}"
+  if [[ -z "${WRAPPER_DEVDIR}" ]] ; then
+      WRAPPER_DEVDIR="$(xcode-select -p)"
+  fi
+  for ARG in CFLAGS CXXFLAGS ASFLAGS OPENSSL_CFLAGS; do
+      value="$(eval "echo \\$${ARG}")"
+      export ${ARG}="${value//__BAZEL_XCODE_DEVELOPER_DIR__/${WRAPPER_DEVDIR}}"
+      value="$(eval "echo \\$${ARG}")"
+      export ${ARG}="${value//__BAZEL_XCODE_SDKROOT__/${SDKROOT}}"
+  done
+fi
+
+export NCORES=$(nproc 2>/dev/null) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
+mkdir -p "${OPENSSL_BUILD_DIR}"
+(
+  cd "${OPENSSL_BUILD_DIR}"
+  mkdir lib/
+  mkdir -p include/openssl/
+  for f in include/openssl/ssl.h lib/libssl.a lib/libcrypto.a; do
+    echo "" > "$f"
+  done
+)
+mkdir -p "${LIBOQS_BUILD_DIR}"
+(
+  "$CMAKE"  -S "${LIBOQS_SRC_DIR}" \
+            -B "${LIBOQS_BUILD_DIR}" \
+            -G Ninja \
+            -Wno-dev \
+            "-DCMAKE_C_COMPILER=${CC}" \
+            "-DCMAKE_AR=${AR}" \
+            "-DCMAKE_ASM_FLAGS=${ASFLAGS}" \
+            "-DCMAKE_ASM_COMPILER=${CC}" \
+            "-DCMAKE_MAKE_PROGRAM=${NINJA}" \
+            "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}" \
+            "-DOPENSSL_ROOT_DIR=${OPENSSL_BUILD_DIR}" \
+            "-DOQS_BUILD_ONLY_LIB=ON" \
+            "-DCMAKE_HAVE_POSIX_MEMALIGN=ON" \
+            "-DCMAKE_C_FLAGS_INIT=${CFLAGS}" \
+            "-DCMAKE_EXE_LINKER_FLAGS_INIT=${LDFLAGS}" \
+            "-DCMAKE_SHARED_LINKER_FLAGS_INIT=${LDFLAGS}" \
+            "-DCMAKE_C_FLAGS=-isystem ${OPENSSL_SRC_DIR}/include" \
+            "-DCMAKE_C_ARCHIVE_CREATE=<CMAKE_AR> ${ARFLAGS} <TARGET> <OBJECTS>" \
+            ${LIBOQS_CONFIGURE_ARGS}
+)
+(
+  echo "${OPENSSL_SRC_DIR}"
+  echo "${OPENSSL_BUILD_DIR}"
+  cd "${OPENSSL_BUILD_DIR}"
+  rm -rf lib include/
+  unset AR
+  unset CFLAGS
+  export LDFLAGS="${OPENSSL_LDFLAGS}"
+  "${OPENSSL_SRC_DIR}/Configure" ${OPENSSL_OS_TARGET} \
+      "--openssldir=${INSTALL_DIR}" \
+      "--prefix=${INSTALL_DIR}" \
+      ${OPENSSL_CONFIGURE_ARGS} \
+      "-L${INSTALL_DIR}/lib" \
+      "-isystem ${LIBOQS_BUILD_DIR}/include" ${OPENSSL_CFLAGS}
+  "${MAKE}" build_generated || "${MAKE}" build_generated
+)
+(
+  "$CMAKE" --build "${LIBOQS_BUILD_DIR}" "-j${NCORES}"
+  "$CMAKE" --install "${LIBOQS_BUILD_DIR}"
+)
+(
+  cd "${OPENSSL_BUILD_DIR}"
+  mkdir -p oqs/lib oqs/lib64
+  "${MAKE}" "-j${NCORES}" -o test || "${MAKE}" "-j${NCORES}" -o test
+  "${MAKE}" install_sw
+)
+cp "${OPENSSL_SRC_DIR}/apps/openssl.cnf" "${INSTALL_DIR}/bin/"
+"""
+
+# Map between cpu name and OpenSSL platform name.
+# See `https://www.openssl.org/policies/general-supplemental/platforms.html`.
+# The cpu name is provided by the toolchain:
+# `bazel cquery --output=jsonproto '@local_config_cc//:toolchain' --starlark:expr="providers(target)['CcToolchainConfigInfo']"`
+_OPENSSL_OS_MAP = {
+    "ios_arm64": "ios64-xcrun",
+    "ios_arm64e": "ios64-xcrun",
+    "ios_armv7": "ios-xcrun",
+    "darwin_x86_64": "darwin64-x86_64-cc",
+    "darwin_arm64": "darwin64-arm64-cc",
+    "darwin_arm64e": "darwin64-arm64-cc",
+    "k8": "linux-x86_64-clang",
+}
+
+def _generate_openssl_configure_args(ctx):
+    """Generates the arguments for the `configure` step of OpenSSL.
 
     Args:
       ctx:
         Bazel rule context.
-      cmake:
-        File object pointing to the cmake binary.
-      ninja:
-        File object pointing to the ninja binary.
-      compiler:
-        Path to the compiler used by the current toolchain.
+
+    Returns:
+      List of OpenSSL configure arguments.
+    """
+
+    args = ctx.attr.configure_flags[:]
+
+    if is_debug_mode(ctx):
+        args.insert(0, "-d")
+
+    for flag in ctx.attr.additional_configure_flags:
+        args.append(flag)
+
+    return args
+
+def _pick_openssl_Configure_os(ctx):
+    cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
+
+    if cc_toolchain.cpu in _OPENSSL_OS_MAP:
+        return _OPENSSL_OS_MAP[cc_toolchain.cpu]
+    else:
+        return "linux-x86_64"
+
+def _generate_liboqs_configure_args(ctx):
+    """Generates the arguments for the `cmake` step of liboqs.
+
+    Args:
+      ctx:
+        Bazel rule context.
+
+    Returns:
+      List of liboqs CMake arguments.
+    """
+
+    args = []
+
+    if not is_debug_mode(ctx):
+        args.append("-DCMAKE_BUILD_TYPE=Release")
+
+    if ctx.attr.fpemu:
+        args += ["-DOQS_ENABLE_SIG_falcon_1024_avx2=OFF", "-DOQS_ENABLE_SIG_falcon_512_avx2=OFF"]
+
+    return args
+
+def _generate_compilers_env(ctx):
+    """Generates the environment variables related to the compiler, aka the
+    cc toolchain.
+
+    This function exports at least the following variables:
+      * `CC`
+      * `CXX`
+      * `LD`
+      * `AR`
+      * `CFLAGS`
+      * `CXXFLAGS`
+      * 'ASFLAGS'
+      * `LDFLAGS`
+      * `PATH`
+
+    Args:
+      ctx:
+        Bazel rule context.
+
+    Returns:
+      Dictionary of environment variables for the compiler.
+    """
+
+    env = {
+        "CC": "",
+        "CXX": "",
+        "LD": "",
+        "AR": "",
+        "ASFLAGS": "",
+        "CFLAGS": "",
+        "CXXFLAGS": "",
+        "LDFLAGS": "",
+        "PATH": "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/local/sbin",
+    }
+
+    # Set PATH if available in ctx.configuration.default_shell_env.
+    # PATH is used for coreutils like `touch`.
+    if "PATH" in ctx.configuration.default_shell_env and \
+       ctx.configuration.default_shell_env["PATH"] != "":
+        env["PATH"] = ctx.configuration.default_shell_env["PATH"]
+
+    # Merge with environment variables required by the cc toolchain.
+    env.update(get_env_vars(ctx))
+
+    # Get paths to compilers
+    tinfo = get_tools_info(ctx)
+
+    env["CC"] = tinfo.cc
+    env["CXX"] = tinfo.cxx
+    env["LD"] = tinfo.cxx_linker_executable
+    env["AR"] = tinfo.cxx_linker_static
+
+    flags = get_flags_info(ctx)
+
+    ar_flags = flags.cxx_linker_static[:]
+    if env["AR"].endswith("libtool"):
+        # If libtool is used, `-o` has to be set.
+        # See https://github.com/bazelbuild/rules_foreign_cc/blob/main/foreign_cc/built_tools/make_build.bzl#L65
+        ar_flags += ["-D", "-static", "-o"]
+
+    env["ASFLAGS"] = " ".join(flags.assemble)
+    env["CFLAGS"] = " ".join(flags.cc)
+    env["CXXFLAGS"] = " ".join(flags.cxx)
+    env["LDFLAGS"] = " ".join(flags.cxx_linker_shared)
+    env["ARFLAGS"] = " ".join(ar_flags)
+
+    openssl_cflags = []
+    blacklist = ["-no-canonical-prefixes"]
+    target = ""
+    for i in range(len(flags.cc)):
+        f = flags.cc[i]
+        if f in openssl_cflags:
+            continue
+        if f in blacklist:
+            continue
+        if f == "-target":
+            target = flags.cc[i + 1]
+            i += 1
+            continue
+        openssl_cflags.append(f)
+
+    if target in openssl_cflags:
+        openssl_cflags.remove(target)
+
+    env["OPENSSL_CFLAGS"] = " ".join(openssl_cflags)
+
+    ldflags = flags.cxx_linker_shared[:]
+    if "-shared" in ldflags:
+        ldflags.remove("-shared")
+    env["OPENSSL_LDFLAGS"] = " ".join(ldflags)
+
+    return env
+
+def _generate_environ(ctx, openssl_target, liboqs_target, install_dir):
+    """Generates the environment variables dictionary for the command.
+
+    Args:
+      ctx:
+        Bazel rule context.
       openssl_target:
         Target object to the OpenSSL sources.
       liboqs_target:
@@ -38,108 +297,42 @@ def _generate_build_command(ctx, cmake, ninja, compiler, openssl_target, liboqs_
         File object pointing to the TreeArtifact install directory.
 
     Returns:
-      The tuple (cmd, args), where `cmd` is the string command, and `args` is
-      the Args object for the command `cmd`.
+      The environment variables dictionary.
     """
 
-    cmd = """
-  set -e
-  export BASE_DIR="$PWD/"
+    env = {}
 
-  export CMAKE="$BASE_DIR/$1"
-  export NINJA="$BASE_DIR/$2"
-  export CC="$(realpath "$3")"
-  export CXX="$CC"
+    env.update(_generate_compilers_env(ctx))
 
+    env["OPENSSL_SRC_DIR"] = openssl_target.label.workspace_root
+    env["LIBOQS_SRC_DIR"] = liboqs_target.label.workspace_root
+    env["INSTALL_DIR"] = install_dir.path
 
-  export OPENSSL_SRC_DIR="$BASE_DIR/$4"
-  export OPENSSL_BUILD_DIR="$PWD/openssl_build"
-  export OPENSSL_CONFIGURE_ARGS="$5"
+    env["OPENSSL_CONFIGURE_ARGS"] = " ".join(_generate_openssl_configure_args(ctx))
 
-  export LIBOQS_SRC_DIR="$BASE_DIR/$6"
-  export LIBOQS_BUILD_DIR="$PWD/liboqs_build"
-  export LIBOQS_CONFIGURE_ARGS="$7"
+    liboqs_args = _generate_liboqs_configure_args(ctx)
+    if "APPLE_SDK_PLATFORM" in env:
+        # see https://github.com/bazelbuild/rules_foreign_cc/blob/9acbb356916760192d4c16301a69267fe44e6dec/foreign_cc/private/framework.bzl#L307
+        liboqs_args.append("-DCMAKE_OSX_ARCHITECTURES={}".format(ctx.fragments.apple.single_arch_cpu))
 
-  export INSTALL_DIR="$BASE_DIR/$8"
+        # liboqs uses `SecRandomCopyBytes` for the iPhones, but forget to link against `Security` Framework
+        env["LDFLAGS"] += " -framework Security"
 
-  export DEVELOPER_DIR="$(/usr/bin/xcode-select -p 2>/dev/null)" || echo "nevermind"
-  export SDKROOT="$(/usr/bin/xcrun --show-sdk-path 2>/dev/null)" || echo "nevermind"
+    env["LIBOQS_CONFIGURE_ARGS"] = " ".join(liboqs_args)
 
-  export NCORES=$(nproc 2>/dev/null) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
+    env["MAKE"] = ctx.toolchains[_MAKE_TOOLCHAIN].data.path
+    env["NINJA"] = ctx.toolchains[_NINJA_TOOLCHAIN].data.path
 
-  mkdir -p "$OPENSSL_BUILD_DIR"
-  (
-    cd "$OPENSSL_BUILD_DIR"
-    mkdir lib/
-    mkdir -p include/openssl/
-    touch include/openssl/ssl.h
-    touch lib/libssl.a lib/libcrypto.a
-  )
-  mkdir -p "$LIBOQS_BUILD_DIR"
-  (
-    "$CMAKE"  -S "$LIBOQS_SRC_DIR" \
-              -B "$LIBOQS_BUILD_DIR" \
-              -G Ninja \
-              "-DCMAKE_C_COMPILER=$CC" \
-              "-DCMAKE_ASM_COMPILER=$CC" \
-              "-DCMAKE_MAKE_PROGRAM=$NINJA" \
-              "-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR" \
-              "-DOPENSSL_ROOT_DIR=$OPENSSL_BUILD_DIR" \
-              -DOQS_BUILD_ONLY_LIB=ON \
-              "-DCMAKE_C_FLAGS=-isystem $OPENSSL_SRC_DIR/include" \
-              $LIBOQS_CONFIGURE_ARGS
-  )
-  (
-    cd "$OPENSSL_BUILD_DIR"
-    rm -rf lib include/
-    "$OPENSSL_SRC_DIR/config" \
-        "--openssldir=$INSTALL_DIR" \
-        "--prefix=$INSTALL_DIR" \
-        $OPENSSL_CONFIGURE_ARGS \
-        "-L$INSTALL_DIR/lib" \
-        "-isystem $LIBOQS_BUILD_DIR/include"
-    make build_generated
-  )
-  (
-    "$CMAKE" --build "$LIBOQS_BUILD_DIR" -j$NCORES
-    "$CMAKE" --install "$LIBOQS_BUILD_DIR"
-  )
-  (
-    cd "$OPENSSL_BUILD_DIR"
-    mkdir -p oqs/lib oqs/lib64
-    make -j$NCORES -o test || make -j$NCORES 1 -o test
-    make install_sw
-  )
-  cp $OPENSSL_SRC_DIR/apps/openssl.cnf $INSTALL_DIR/bin/
-  """
+    env["CMAKE"] = None
+    for f in ctx.toolchains[_CMAKE_TOOLCHAIN].data.target.files.to_list():
+        if f.path.endswith(ctx.toolchains[_CMAKE_TOOLCHAIN].data.path):
+            env["CMAKE"] = f.path
+            break
 
-    args = ctx.actions.args()
+    env["CMAKE"] or fail("failed to find the cmake binary")
+    env["OPENSSL_OS_TARGET"] = _pick_openssl_Configure_os(ctx)
 
-    args.add(cmake)  # $1
-    args.add(ninja)  # $2
-    args.add(compiler)  # $3
-
-    args.add(openssl_target.label.workspace_root)  # $4
-    openssl_configure_flags = ctx.attr.configure_flags[:]
-    if ctx.var["COMPILATION_MODE"] != "opt":
-        openssl_configure_flags.insert(0, "-d")
-
-    for flag in ctx.attr.additional_configure_flags:
-        openssl_configure_flags.append(flag)
-    args.add(" ".join(openssl_configure_flags))  # $5
-
-    args.add(liboqs_target.label.workspace_root)  # $6
-
-    liboqs_arg = ""
-    if ctx.var["COMPILATION_MODE"] == "opt":
-        liboqs_arg = "-DCMAKE_BUILD_TYPE=Release"
-    if ctx.attr.fpemu:
-        liboqs_arg += " -DOQS_ENABLE_SIG_falcon_1024_avx2=OFF -DOQS_ENABLE_SIG_falcon_512_avx2=OFF"
-    args.add(liboqs_arg)  # $7
-
-    args.add(install_dir.path)  # $8
-
-    return cmd, args
+    return env
 
 def _copy_openssl_cli(ctx, install_dir):
     """Declares and copies the file `openssl`, which is the OpenSSL cli binary.
@@ -285,71 +478,6 @@ def _create_cc_info(linking_context, include_dir):
         linking_context = linking_context,
     )
 
-def _find_cc_compiler(cc_toolchain):
-    """Finds the C/C++ compiler used by Bazel.
-
-    Args:
-      cc_toolchain:
-        Toolchain for C/C++.
-
-    This routines find the cc compiler using the given cc_toolchain.
-
-    Returns:
-      File object pointing to the compiler, or None if not found.
-    """
-    for f in cc_toolchain.all_files.to_list():
-        if f.path == cc_toolchain.compiler_executable:
-            return f
-
-    return cc_toolchain.compiler_executable
-
-def _find_cmake(ctx):
-    """Finds the CMake binary used by Bazel.
-
-    Args:
-      ctx:
-        Bazel rule context.
-
-    This routines find the CMake binary fetched by Bazel through the default
-    toolchain `@rules_foreign_cc//toolchains:cmake_toolchain`.
-
-    Returns:
-      File object pointing to the CMake binary, or None if not found.
-    """
-    cmake_toolchain = ctx.toolchains["@rules_foreign_cc//toolchains:cmake_toolchain"]
-    cmake_path = "{}/{}".format(cmake_toolchain.data.target.label.workspace_root, cmake_toolchain.data.path)
-
-    for f in cmake_toolchain.data.target.files.to_list():
-        if f.path == cmake_path:
-            return f
-
-    return None
-
-def _find_ninja(ctx):
-    """Finds the ninjabuild binary used by Bazel.
-
-    Args:
-      ctx:
-        Bazel rule context.
-
-    This routines find the ninjabuild binary fetched by Bazel through the default
-    toolchain `@rules_foreign_cc//toolchains:ninja_toolchain`.
-
-    Returns:
-      File object pointing to the ninjabuild binary, or None if not found.
-    """
-    ninja_toolchain = ctx.toolchains["@rules_foreign_cc//toolchains:ninja_toolchain"]
-    ninja_path = ninja_toolchain.data.path
-
-    for f in ninja_toolchain.data.target.files.to_list():
-        if f.path == ninja_path:
-            return f
-
-    if ninja_path.endswith("/bin/ninja"):
-        return ninja_path
-
-    return None
-
 def _openssl_build_impl(ctx):
     """Implements the `openssl_build` rule.
 
@@ -363,18 +491,12 @@ def _openssl_build_impl(ctx):
         configuration.
     """
     cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
-    compiler = _find_cc_compiler(cc_toolchain) or fail("Failed to find the cc compiler")
-    cmake = _find_cmake(ctx) or fail("Failed to find the `cmake` binary.")
-    ninja = _find_ninja(ctx) or fail("Failed to find the `ninja` binary.")
 
     install_dir = ctx.actions.declare_directory("install/")
     include_dir = ctx.actions.declare_directory("install/include")
 
-    cmd, args = _generate_build_command(
+    env = _generate_environ(
         ctx = ctx,
-        cmake = cmake,
-        ninja = ninja,
-        compiler = compiler,
         openssl_target = ctx.attr.openssl_srcs,
         liboqs_target = ctx.attr.liboqs_srcs,
         install_dir = install_dir,
@@ -384,16 +506,17 @@ def _openssl_build_impl(ctx):
         outputs = [install_dir, include_dir],
         inputs = ctx.attr.openssl_srcs.files.to_list() + ctx.attr.liboqs_srcs.files.to_list(),
         tools = [
-            cmake,
-            ctx.toolchains["@rules_foreign_cc//toolchains:ninja_toolchain"].data.target.files,
-            ctx.toolchains["@rules_foreign_cc//toolchains:cmake_toolchain"].data.target.files,
+            ctx.toolchains[_NINJA_TOOLCHAIN].data.target.files,
+            ctx.toolchains[_CMAKE_TOOLCHAIN].data.target.files,
+            ctx.toolchains[_MAKE_TOOLCHAIN].data.target.files,
             cc_toolchain.all_files,
         ],
         mnemonic = "opensslliboqsbuild",
         progress_message = "%{label}: Building OpenSSL to %{output}",
-        use_default_shell_env = True,
-        arguments = [args],
-        command = cmd,
+        use_default_shell_env = False,
+        env = env,
+        arguments = [],
+        command = _BUILD_BASH_COMMAND,
     )
 
     openssl_cli = _copy_openssl_cli(
@@ -447,9 +570,9 @@ openssl_build = rule(
     implementation = _openssl_build_impl,
     output_to_genfiles = True,
     toolchains = [
-        "@rules_foreign_cc//toolchains:cmake_toolchain",
-        "@rules_foreign_cc//toolchains:ninja_toolchain",
-        "@rules_foreign_cc//toolchains:make_toolchain",
+        _CMAKE_TOOLCHAIN,
+        _NINJA_TOOLCHAIN,
+        _MAKE_TOOLCHAIN,
     ],
     attrs = {
         "openssl_srcs": attr.label(mandatory = True, doc = "OpenSSL source code"),
@@ -469,7 +592,7 @@ openssl_build = rule(
         ),
     },
     executable = True,
-    fragments = ["cpp"],
+    fragments = ["apple", "cpp"],
 )
 
 def gen_cert_key(name, alg, out_cert, out_key, out_format = "PEM", subject = "/CN=SandboxAQ TEST CA", expiration_days = "365", **kwargs):
