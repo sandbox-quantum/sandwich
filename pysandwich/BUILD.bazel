@@ -1,6 +1,7 @@
 load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 py_library(
     name = "errors",
@@ -63,9 +64,27 @@ copy_file(
     out = "libsandwich_shared.so",
 )
 
+selects.config_setting_group(
+    name = "linux_x86_64",
+    match_all = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
 py_wheel(
     name = "wheel",
     distribution = "pysandwich",
+    platform = select(
+        {
+            ":linux_x86_64": "manylinux2014_x86_64",
+            "//conditions:default": "foo",
+        },
+    ),
+    target_compatible_with = select({
+        ":linux_x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
     version = "0.0.1",
     deps = [
         ":errors",
