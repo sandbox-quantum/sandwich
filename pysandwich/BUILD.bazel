@@ -1,3 +1,6 @@
+load("@rules_python//python:packaging.bzl", "py_wheel")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+
 py_library(
     name = "errors",
     srcs = [
@@ -6,7 +9,7 @@ py_library(
     srcs_version = "PY3",
     visibility = ["//visibility:public"],
     deps = [
-        "//proto:sandwich_python_proto",
+        "//pysandwich/proto:sandwich_python_proto",
     ],
 )
 
@@ -35,8 +38,8 @@ py_library(
     deps = [
         ":errors",
         ":io",
-        "//proto:sandwich_python_proto",
-        "//proto/api/v1:api_python_proto",
+        "//pysandwich/proto:sandwich_python_proto",
+        "//pysandwich/proto/api/v1:api_python_proto",
         "@bazel_tools//tools/python/runfiles",
     ],
 )
@@ -50,5 +53,33 @@ py_test(
     ],
     deps = [
         ":python",
+    ],
+)
+
+copy_file(
+    name = "sandwich_c_lib",
+    src = "//c:sandwich_shared",
+    out = "libsandwich_shared.so",
+)
+
+py_wheel(
+    name = "wheel",
+    distribution = "pysandwich",
+    version = "0.0.1",
+    deps = [
+        ":errors",
+        ":io",
+        ":python",
+        ":sandwich_c_lib",
+        "//pysandwich/proto:errors_python_proto",
+        "//pysandwich/proto:io_python_proto",
+        "//pysandwich/proto:sandwich_python_proto",
+        "//pysandwich/proto:tunnel_python_proto",
+        "//pysandwich/proto/api/v1:api_python_proto",
+        "//pysandwich/proto/api/v1:certificate_python_proto",
+        "//pysandwich/proto/api/v1:data_source_python_proto",
+        "//pysandwich/proto/api/v1:encoding_format_python_proto",
+        "//pysandwich/proto/api/v1:private_key_python_proto",
+        "//pysandwich/proto/api/v1:tls_python_proto",
     ],
 )

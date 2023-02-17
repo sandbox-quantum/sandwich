@@ -21,10 +21,10 @@ import sys
 import threading
 import typing
 
-import proto.api.v1.configuration_pb2 as SandwichAPI
-import proto.api.v1.encoding_format_pb2 as EncodingFormat
-import proto.sandwich_pb2 as SandwichProto
-import proto.tunnel_pb2 as SandwichTunnelProto
+import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
+import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
+import pysandwich.proto.sandwich_pb2 as SandwichProto
+import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 from pysandwich.sandwich import Context, Sandwich, Tunnel

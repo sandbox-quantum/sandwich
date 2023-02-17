@@ -39,7 +39,7 @@ from pysandwich.sandwich import (
     errors,
     io
 )
-import proto.sandwich_pb2 as SandwichProto
+import pysandwich.proto.sandwich_pb2 as SandwichProto
 
 # Initialize a Sandwich handle
 sandwich_handle = Sandwich()
@@ -105,11 +105,9 @@ import pathlib
 import platform
 import typing
 
-from bazel_tools.tools.python.runfiles import runfiles
-
-import proto.api.v1.configuration_pb2 as SandwichAPI
-import proto.sandwich_pb2 as SandwichProto
-import proto.tunnel_pb2 as SandwichTunnelProto
+import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
+import pysandwich.proto.sandwich_pb2 as SandwichProto
+import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 
@@ -128,6 +126,11 @@ def _find_sandwich_dll(extension=".so") -> typing.Optional[pathlib.Path]:
         The path to `libsandwich_shared.so` or `libsandwich_shared.dylib` if
         it was successfully found, else None.
     """
+    _ext = {'Darwin': 'dylib', 'Windows': 'dll'}.get(platform.system(), "so")
+    libpath = pathlib.Path(__file__).parent / "libsandwich_shared.{}".format(_ext)
+    if libpath.exists():
+        return libpath
+    from bazel_tools.tools.python.runfiles import runfiles
     r = runfiles.Create()
     libpath = f"sandwich/c/libsandwich_shared.{extension}"
     ret = r.Rlocation(libpath)

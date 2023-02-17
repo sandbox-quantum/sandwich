@@ -41,9 +41,9 @@ Author: thb-sb
 
 import sys
 
-import proto.errors_pb2 as SandwichErrorProto
-import proto.io_pb2 as SandwichIOProto
-import proto.tunnel_pb2 as SandwichTunnelProto
+import pysandwich.proto.errors_pb2 as SandwichErrorProto
+import pysandwich.proto.io_pb2 as SandwichIOProto
+import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 
 
 class SandwichException(Exception):

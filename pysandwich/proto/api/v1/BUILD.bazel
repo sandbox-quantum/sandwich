@@ -67,6 +67,7 @@ py_proto_library(
     srcs = [
         "encoding_format.proto",
     ],
+    visibility = ["//visibility:public"],
 )
 
 py_proto_library(
@@ -74,6 +75,7 @@ py_proto_library(
     srcs = [
         "data_source.proto",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":encoding_format_python_proto",
     ],
@@ -84,6 +86,7 @@ py_proto_library(
     srcs = [
         "certificate.proto",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":data_source_python_proto",
     ],
@@ -94,6 +97,7 @@ py_proto_library(
     srcs = [
         "private_key.proto",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":data_source_python_proto",
     ],
@@ -104,6 +108,7 @@ py_proto_library(
     srcs = [
         "tls.proto",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":certificate_python_proto",
         ":private_key_python_proto",

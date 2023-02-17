@@ -35,8 +35,8 @@ Author: thb-sb
 import abc
 import ctypes
 
-import proto.io_pb2 as SandwichIOProto
-import proto.tunnel_pb2 as SandwichTunnelProto
+import pysandwich.proto.io_pb2 as SandwichIOProto
+import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 from pysandwich import errors
 
 

@@ -41,16 +41,19 @@ proto_library(
 py_proto_library(
     name = "errors_python_proto",
     srcs = ["errors.proto"],
+    visibility = ["//visibility:public"],
 )
 
 py_proto_library(
     name = "tunnel_python_proto",
     srcs = ["tunnel.proto"],
+    visibility = ["//visibility:public"],
 )
 
 py_proto_library(
     name = "io_python_proto",
     srcs = ["io.proto"],
+    visibility = ["//visibility:public"],
 )
 
 py_proto_library(
