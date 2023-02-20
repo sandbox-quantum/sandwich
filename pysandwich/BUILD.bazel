@@ -74,13 +74,15 @@ selects.config_setting_group(
 
 py_wheel(
     name = "wheel",
+    # See PEP 425 for the meaning of python_tag, platform and abi.
+    abi = "abi3",
     distribution = "pysandwich",
     platform = select(
         {
             ":linux_x86_64": "manylinux2014_x86_64",
-            "//conditions:default": "foo",
         },
     ),
+    python_tag = "cp3",
     target_compatible_with = select({
         ":linux_x86_64": [],
         "//conditions:default": ["@platforms//:incompatible"],
