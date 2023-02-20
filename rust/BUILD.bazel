@@ -4,6 +4,13 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 rust_bindgen_library(
     name = "sandwich_c",
     cc_lib = "//c:sandwich",
+    clang_flags = select({
+        "@platforms//os:ios": [
+            "-target",
+            "arm64-ios",
+        ],
+        "//conditions:default": [],
+    }),
     header = "//c:sandwich_hdrs_file",
     rustc_flags = [
         "-A",
