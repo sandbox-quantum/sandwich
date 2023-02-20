@@ -77,10 +77,14 @@ mkdir -p "${OPENSSL_BUILD_DIR}"
 )
 mkdir -p "${LIBOQS_BUILD_DIR}"
 (
+  echo "set(CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})" > cross.cmake
+  echo "set(CMAKE_SYSTEM_NAME ${CMAKE_SYSTEM_NAME})" >> cross.cmake
+  export CMAKE_TOOLCHAIN_FILE="${PWD}/cross.cmake"
   "$CMAKE"  -S "${LIBOQS_SRC_DIR}" \
             -B "${LIBOQS_BUILD_DIR}" \
             -G Ninja \
             -Wno-dev \
+            --toolchain "${PWD}/cross.cmake" \
             "-DCMAKE_C_COMPILER=${CC}" \
             "-DCMAKE_AR=${AR}" \
             "-DCMAKE_ASM_FLAGS=${ASFLAGS}" \
@@ -140,6 +144,25 @@ _OPENSSL_OS_MAP = {
     "k8": "linux-x86_64-clang",
 }
 
+# Map between cpu name and Cmake system name/processor.
+# See https://cmake.org/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_PROCESSOR.html#variable:CMAKE_HOST_SYSTEM_PROCESSOR
+_CMAKE_OS_MAP = {
+    "ios_arm64": ("Darwin", "arm64"),
+    "ios_arm64e": ("Darwin", "arm64"),
+    "ios_armv7": ("Darwin", "arm"),
+    "darwin_x86_64": ("Darwin", "x86_64"),
+    "darwin_arm64": ("Darwin", "arm64"),
+    "darwin_arm64e": ("Darwin", "arm64"),
+    "k8": ("Linux", "x86_64"),
+}
+
+def _is_target_apple(ctx):
+    """Returns true if the current target is apple."""
+    for ac in ctx.attr._apple_constraints:
+        if ctx.target_platform_has_constraint(ac[platform_common.ConstraintValueInfo]):
+            return True
+    return False
+
 def _generate_openssl_configure_args(ctx):
     """Generates the arguments for the `configure` step of OpenSSL.
 
@@ -168,6 +191,14 @@ def _pick_openssl_Configure_os(ctx):
         return _OPENSSL_OS_MAP[cc_toolchain.cpu]
     else:
         return "linux-x86_64"
+
+def _pick_cmake_system_processor(ctx):
+    cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
+
+    if cc_toolchain.cpu in _CMAKE_OS_MAP:
+        return _CMAKE_OS_MAP[cc_toolchain.cpu]
+    else:
+        return ("Linux", "x86_64")
 
 def _generate_liboqs_configure_args(ctx):
     """Generates the arguments for the `cmake` step of liboqs.
@@ -253,7 +284,15 @@ def _generate_compilers_env(ctx):
     env["ASFLAGS"] = " ".join(flags.assemble)
     env["CFLAGS"] = " ".join(flags.cc)
     env["CXXFLAGS"] = " ".join(flags.cxx)
-    env["LDFLAGS"] = " ".join(flags.cxx_linker_shared)
+
+    ldflags = []
+    blacklist = ["-shared"]
+    for f in flags.cxx_linker_shared:
+        if f in blacklist:
+            continue
+        ldflags.append(f)
+
+    env["LDFLAGS"] = " ".join(ldflags)
     env["ARFLAGS"] = " ".join(ar_flags)
 
     openssl_cflags = []
@@ -276,10 +315,9 @@ def _generate_compilers_env(ctx):
 
     env["OPENSSL_CFLAGS"] = " ".join(openssl_cflags)
 
-    ldflags = flags.cxx_linker_shared[:]
-    if "-shared" in ldflags:
-        ldflags.remove("-shared")
-    env["OPENSSL_LDFLAGS"] = " ".join(ldflags)
+    env["OPENSSL_LDFLAGS"] = env["LDFLAGS"]
+    if _is_target_apple(ctx):
+        env["OPENSSL_LDFLAGS"] += " -Wl,-framework,Security"
 
     return env
 
@@ -311,12 +349,15 @@ def _generate_environ(ctx, openssl_target, liboqs_target, install_dir):
     env["OPENSSL_CONFIGURE_ARGS"] = " ".join(_generate_openssl_configure_args(ctx))
 
     liboqs_args = _generate_liboqs_configure_args(ctx)
-    if "APPLE_SDK_PLATFORM" in env:
+    env["CMAKE_SYSTEM_NAME"], env["CMAKE_SYSTEM_PROCESSOR"] = _pick_cmake_system_processor(ctx)
+
+    if _is_target_apple(ctx):
         # see https://github.com/bazelbuild/rules_foreign_cc/blob/9acbb356916760192d4c16301a69267fe44e6dec/foreign_cc/private/framework.bzl#L307
         liboqs_args.append("-DCMAKE_OSX_ARCHITECTURES={}".format(ctx.fragments.apple.single_arch_cpu))
 
         # liboqs uses `SecRandomCopyBytes` for the iPhones, but forget to link against `Security` Framework
         env["LDFLAGS"] += " -framework Security"
+        env["OPENSSL_CFLAGS"] += " -framework Security"
 
     env["LIBOQS_CONFIGURE_ARGS"] = " ".join(liboqs_args)
 
@@ -420,10 +461,14 @@ def _create_linker_input(ctx, install_dir, libname):
         actions = ctx.actions,
         pic_static_library = lib,
     )
+
+    user_link_flags = ["-lpthread", "-ldl"]
+    if _is_target_apple(ctx):
+        user_link_flags += ["-framework", "Security"]
     linker_input = cc_common.create_linker_input(
         owner = ctx.label,
         libraries = depset([lib]),
-        user_link_flags = ["-lpthread", "-ldl"],
+        user_link_flags = user_link_flags,
     )
 
     return linker_input
@@ -573,6 +618,7 @@ openssl_build = rule(
         _CMAKE_TOOLCHAIN,
         _NINJA_TOOLCHAIN,
         _MAKE_TOOLCHAIN,
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
     attrs = {
         "openssl_srcs": attr.label(mandatory = True, doc = "OpenSSL source code"),
@@ -590,6 +636,7 @@ openssl_build = rule(
         "_cc_toolchain": attr.label(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
+        "_apple_constraints": attr.label_list(default = ["@platforms//os:macos", "@platforms//os:ios"]),
     },
     executable = True,
     fragments = ["apple", "cpp"],
