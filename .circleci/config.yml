@@ -28,7 +28,22 @@ jobs:
             export CC=clang-13
             export CXX=clang++-13
             cd go && go build
-
+  publish-doc:
+    docker:
+      - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
+        auth:
+          username: _json_key
+          password: $RUNNER_GCR_SA_KEY
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "cb:67:a0:71:3b:89:1b:19:d6:40:d5:b8:84:38:33:a4"
+      - run:
+          name: "Deploy documentation"
+          command: |
+            pip install mkdocs
+            mkdocs gh-deploy --config-file mkdocs.yml
 
 workflows:
   presubmit:
@@ -36,3 +51,8 @@ workflows:
       - run-all-tests:
           context:
           - bazel-cache
+      - publish-doc:
+          filters:
+            branches:
+              only:
+                - main
