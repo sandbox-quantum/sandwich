@@ -16,8 +16,6 @@
 /// \file
 /// \brief Unit tests for OpenSSL tunnels using the C frontend.
 ///
-/// This is a copy of //cc/openssl:tunnels_test.
-///
 /// \author thb-sb
 
 #include <array>
