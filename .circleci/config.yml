@@ -36,18 +36,18 @@ jobs:
           password: $RUNNER_GCR_SA_KEY
     steps:
       - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "cb:67:a0:71:3b:89:1b:19:d6:40:d5:b8:84:38:33:a4"
+      # - add_ssh_keys:
+      #     fingerprints:
+      #       - "cb:67:a0:71:3b:89:1b:19:d6:40:d5:b8:84:38:33:a4"
       - run:
           name: "Deploy documentation"
           command: |
-            pip install mkdocs
             export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
             echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
             bazelisk build --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
-              --google_default_credentials \
-              rust:doc
+              --google_default_credentials //rust:doc
+            pip install mkdocs
+            apt-get install -y unzip
             unzip bazel-bin/rust/doc.zip -d /tmp/rustdoc
             mv /tmp/rustdoc/rust/doc.rustdoc docs/rust
             mkdocs gh-deploy --config-file mkdocs.yml
@@ -63,3 +63,4 @@ workflows:
             branches:
               only:
                 - main
+                - pr3
