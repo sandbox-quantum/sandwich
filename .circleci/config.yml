@@ -42,12 +42,9 @@ jobs:
       - run:
           name: "Deploy documentation"
           command: |
+            bazelisk build //rust:doc
             pip install mkdocs
-            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
-            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
-            bazelisk build --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
-              --google_default_credentials \
-              rust:doc
+            apt-get install -y unzip
             unzip bazel-bin/rust/doc.zip -d /tmp/rustdoc
             mv /tmp/rustdoc/rust/doc.rustdoc docs/rust
             mkdocs gh-deploy --config-file mkdocs.yml
