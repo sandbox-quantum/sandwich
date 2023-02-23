@@ -113,17 +113,17 @@ import pysandwich.io as SandwichIO
 
 
 def _find_sandwich_dll(extension=".so") -> typing.Optional[pathlib.Path]:
-    """Finds the path to the libsandwich dll (`libsandwich_shared.so`, or
-    `libsandwich_shared.dylib`).
+    """Finds the path to the libsandwich dll (`libsandwich.so`, or
+    `libsandwich.dylib`).
 
-    Finds the path to the file `libsandwich_shared.so` or
-    `libsandwich_shared.dylib`, using a list of default path.
+    Finds the path to the file `libsandwich.so` or
+    `libsandwich.dylib`, using a list of default path.
 
     Args:
         extension:
             Library extension: `so` or `dylib`.
     Returns:
-        The path to `libsandwich_shared.so` or `libsandwich_shared.dylib` if
+        The path to `libsandwich.so` or `libsandwich.dylib` if
         it was successfully found, else None.
     """
     _ext = {'Darwin': 'dylib', 'Windows': 'dll'}.get(platform.system(), "so")
@@ -132,7 +132,7 @@ def _find_sandwich_dll(extension=".so") -> typing.Optional[pathlib.Path]:
         return libpath
     from bazel_tools.tools.python.runfiles import runfiles
     r = runfiles.Create()
-    libpath = f"sandwich/c/libsandwich_shared.{extension}"
+    libpath = f"sandwich/rust/libsandwich.{extension}"
     ret = r.Rlocation(libpath)
     return pathlib.Path(ret)
 

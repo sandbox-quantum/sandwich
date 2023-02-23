@@ -1,9 +1,20 @@
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_doc_test", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+cc_library(
+    name = "openssl-rust-bindgen",
+    hdrs = [
+        "bindgen.h",
+    ],
+    deps = [
+        "//vendor/github.com/open-quantum-safe/liboqs-openssl:openssl",
+    ],
+)
 
 rust_bindgen_library(
-    name = "sandwich_c",
-    cc_lib = "//c:sandwich",
+    name = "openssl",
+    cc_lib = ":openssl-rust-bindgen",
     clang_flags = select({
         "@platforms//os:ios": [
             "-target",
@@ -11,28 +22,145 @@ rust_bindgen_library(
         ],
         "//conditions:default": [],
     }),
-    header = "//c:sandwich_hdrs_file",
+    header = "bindgen.h",
     rustc_flags = [
         "-A",
         "non-camel-case-types",
         "-A",
         "non-upper-case-globals",
+        "-A",
+        "non_snake_case",
+        "-A",
+        "improper_ctypes",
     ],
 )
 
+_SANDWICH_LIB_SRCS = [
+    "context.rs",
+    "data_source.rs",
+    "io.rs",
+    "lib.rs",
+    "pimpl.rs",
+    "tunnel.rs",
+]
+
+_SANDWICH_ERROR_MOD_SRCS = [
+    "error/code.rs",
+    "error/mod.rs",
+]
+
+_SANDWICH_FFI_MOD_SRCS = [
+    "ffi/context.rs",
+    "ffi/error.rs",
+    "ffi/io.rs",
+    "ffi/mod.rs",
+    "ffi/tunnel.rs",
+]
+
+_SANDWICH_OPENSSL_MOD_SRCS = [
+    "openssl/bio.rs",
+    "openssl/certificate.rs",
+    "openssl/client.rs",
+    "openssl/context.rs",
+    "openssl/io.rs",
+    "openssl/mod.rs",
+    "openssl/private_key.rs",
+    "openssl/server.rs",
+    "openssl/tunnel.rs",
+]
+
+_SANDWICH_SRCS = \
+    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_ERROR_MOD_SRCS + \
+    _SANDWICH_FFI_MOD_SRCS + \
+    _SANDWICH_OPENSSL_MOD_SRCS
+
 rust_library(
     name = "sandwich",
-    srcs = [
-        "context.rs",
-        "errors.rs",
-        "io.rs",
-        "lib.rs",
-        "pimpl.rs",
-        "tunnel.rs",
-    ],
+    srcs = _SANDWICH_SRCS,
     crate_name = "sandwich",
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
     deps = [
-        ":sandwich_c",
+        ":openssl",
+        "//proto:sandwich_rust_proto",
+        "//proto/api/v1:api_rust_proto",
+        "@rules_rust//proto/3rdparty/crates:protobuf",
+    ],
+)
+
+rust_clippy(
+    name = "clippy",
+    testonly = True,
+    deps = [
+        ":sandwich",
+        ":sandwich_test",
+    ],
+)
+
+build_test(
+    name = "clippy_build_test",
+    targets = [
+        ":clippy",
+    ],
+)
+
+rust_doc(
+    name = "doc",
+    crate = ":sandwich",
+    rustc_flags = [
+        "-A",
+        "rustdoc::private_intra_doc_links",
+    ],
+)
+
+rust_doc(
+    name = "doc_internals",
+    crate = ":sandwich",
+    rustc_flags = [
+        "--document-private-items",
+        "-A",
+        "rustdoc::private_intra_doc_links",
+    ],
+)
+
+rust_doc_test(
+    name = "doc_test",
+    crate = ":sandwich",
+    tags = ["manual"],
+    deps = [
+        ":openssl",
+        "//proto:sandwich_rust_proto",
+        "//proto/api/v1:api_rust_proto",
+        "@rules_rust//proto/3rdparty/crates:protobuf",
+    ],
+)
+
+rust_static_library(
+    name = "sandwich_ffi",
+    srcs = _SANDWICH_SRCS,
+    crate_features = ["ffi"],
+    crate_name = "sandwich",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":openssl",
+        "//proto:sandwich_rust_proto",
+        "//proto/api/v1:api_rust_proto",
+        "@rules_rust//proto/3rdparty/crates:protobuf",
+    ],
+)
+
+rust_shared_library(
+    name = "sandwich_ffi_shared",
+    srcs = _SANDWICH_SRCS,
+    crate_features = ["ffi"],
+    crate_name = "sandwich",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":openssl",
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
         "@rules_rust//proto/3rdparty/crates:protobuf",
@@ -40,16 +168,9 @@ rust_library(
 )
 
 rust_test(
-    name = "tunnel_test",
+    name = "sandwich_test",
     timeout = "short",
-    srcs = ["tunnel_test.rs"],
-    data = [
-        "//testdata:tests_data",
-    ],
-    deps = [
-        ":sandwich",
-        "//proto:sandwich_rust_proto",
-        "//proto/api/v1:api_rust_proto",
-        "@rules_rust//proto/3rdparty/crates:protobuf",
-    ],
+    crate = ":sandwich",
+    crate_features = ["ffi"],
+    data = ["//testdata:tests_data"],
 )

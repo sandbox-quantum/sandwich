@@ -106,6 +106,7 @@ typedef enum SandwichPrivateKeyError SandwichPrivateKeyError;
 /** \brief Enum ASN1Error. */
 enum SandwichASN1Error { 
   SANDWICH_ASN1ERROR_INVALID_FORMAT = 0,
+  SANDWICH_ASN1ERROR_MALFORMED = 1,
 };
 typedef enum SandwichASN1Error SandwichASN1Error;
 
@@ -113,6 +114,7 @@ typedef enum SandwichASN1Error SandwichASN1Error;
 enum SandwichDataSourceError { 
   SANDWICH_DATASOURCEERROR_EMPTY = 0,
   SANDWICH_DATASOURCEERROR_INVALID_CASE = 1,
+  SANDWICH_DATASOURCEERROR_NOT_FOUND = 2,
 };
 typedef enum SandwichDataSourceError SandwichDataSourceError;
 

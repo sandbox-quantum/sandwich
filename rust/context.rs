@@ -12,79 +12,259 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Sandwich Context.
+//! Defines [`Context`] trait.
 //!
-//! This API provides a wrapper of `saq::sandwich::Context`.
+//! ## [`Context`] trait
+//!
+//! [`Context`] trait is the entrypoint for Sandwich. It is created
+//! from a protobuf configuration (see `proto/api/v1`).
+//!
+//! A [`Context`] is tied to a specific underlying implementation and a
+//! protocol. From it, developers may spawn tunnels (see [`crate::Tunnel`].
+//! Any objects derived from a [`Context`] will use its configuration.
 //!
 //! Author: thb-sb
 
-extern crate api_rust_proto as api;
-extern crate protobuf;
-extern crate sandwich_c;
-extern crate sandwich_rust_proto;
-
-use super::errors;
-use super::pimpl;
-
-/// `struct SandwichContext` wrapper.
-type ContextHandleC = pimpl::Pimpl<sandwich_c::SandwichContext>;
+/// Mode for a [`Context`].
+///
+/// A [`Context`] is either a context for client-side applications or
+/// server-side applications.
+#[derive(PartialEq, Eq)]
+pub(crate) enum Mode {
+    /// Client mode.
+    Client,
+    /// Server mode.
+    Server,
+}
 
 /// A Sandwich context.
-pub struct Context(ContextHandleC);
+/// A Sandwich context is usually instantiated from a protobuf [`api_rust_proto::Configuration`].
+pub trait Context<'ctx>: std::fmt::Debug {
+    /// Creates a new tunnel from an I/O interface. See [`crate::IO`] from [`crate::io`] module.
+    ///
+    /// The I/O interface must outlive the tunnel, as the tunnel makes use
+    /// of it to send and receive data.
+    fn new_tunnel<'io: 'tun, 'tun>(
+        &mut self,
+        io: &'io mut (dyn crate::IO + 'io),
+    ) -> crate::Result<Box<dyn crate::Tunnel<'io, 'tun> + 'tun>>
+    where
+        'ctx: 'tun;
+}
 
-/// Implements a constructor from a borrowed protobuf configuration.
-impl TryFrom<&api::Configuration> for Context {
-    type Error = errors::Error;
+/// Instantiates a [`Context`] from a protobuf configuration message.
+///
+/// # Examples
+///
+/// ## Constructs a configuration in Rust.
+/// ```
+/// use api_rust_proto as pb_api;
+///
+/// // Creates a protobuf configuration
+/// let mut configuration = pb_api::Configuration::new();
 
-    /// Constructs a ContextHandle from a borrowed protobuf configuration.
-    fn try_from(configuration: &api::Configuration) -> Result<Self, Self::Error> {
-        let data = <api::Configuration as protobuf::Message>::write_to_bytes(configuration)
-            .or_else(|_| {
-                Err(Self::Error::from(
-                    sandwich_rust_proto::ProtobufError::PROTOBUFERROR_PARSE_FAILED,
-                ))
-            })?;
-        let mut handle = std::ptr::null_mut::<::sandwich_c::SandwichContext>();
-
-        let err = unsafe {
-            sandwich_c::sandwich_context_new(
-                std::mem::transmute::<*const u8, *const std::ffi::c_void>(data.as_ptr()),
-                data.len() as u64,
-                &mut handle,
-            )
-        };
-        if err != std::ptr::null_mut() {
-            Err(Self::Error::from(errors::error_handle_c_from_raw(err)))
-        } else {
-            Ok(Self(ContextHandleC::from_raw(
-                handle,
-                Some(|ptr| unsafe {
-                    sandwich_c::sandwich_context_free(ptr);
-                }),
-            )))
+/// // Sets the implementation to be used by Sandwich. Here it's OpenSSL 1.1.1
+/// // with liboqs.
+/// configuration.set_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
+///
+/// // Sets the client or server configuration according to the implementation
+/// // and the protocol.
+/// // …
+///
+/// // Creates the Sandwich context that will make use of the supplied
+/// // configuration.
+/// match sandwich::context::try_from(&configuration) {
+///     Err(e) => eprintln!("Failed to instantiate a Sandwich context: {}", e),
+///     Ok(context) => {
+///         // Do something with `context`.
+///     }
+/// };
+///
+/// ```
+pub fn try_from<'ctx>(
+    configuration: &pb_api::Configuration,
+) -> crate::Result<Box<dyn Context<'ctx> + 'ctx>> {
+    match configuration.get_field_impl() {
+        pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS
+        | pb_api::Implementation::IMPL_OPENSSL1_1_1 => {
+            crate::openssl::context::try_from(configuration)
+        }
+        pb_api::Implementation::IMPL_UNSPECIFIED => {
+            Err(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION.into())
         }
     }
+    .map_err(|e| {
+        e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID
+            >> pb::APIError::APIERROR_CONFIGURATION
+    })
 }
 
-/// Implements a constructor from a owned protobuf configuration.
-impl TryFrom<api::Configuration> for Context {
-    type Error = errors::Error;
+#[cfg(test)]
+pub(crate) mod test {
+    /// The following tests target the OpenSSL 1.1.1 + liboqs Implementation
+    /// (`api_rust_proto::Implementation::IMPL_OPENSSL1_1_1_OQS`).
+    pub(crate) mod openssl {
+        /// Creates a [`pb_api::Certificate`].
+        pub(crate) fn create_cert(
+            path: &'static str,
+            fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
+        ) -> pb_api::Certificate {
+            let mut cert = pb_api::Certificate::new();
+            let src = cert.mut_field_static();
+            if let Some(f) = fmt {
+                src.set_format(f);
+            }
+            let ds = src.mut_data();
+            ds.set_filename(path.to_string());
+            cert
+        }
 
-    /// Constructs a ContextHandle from a owned protobuf configuration.
-    fn try_from(configuration: api::Configuration) -> Result<Self, Self::Error> {
-        Self::try_from(&configuration)
-    }
-}
+        /// Creates a [`pb_api::PrivateKey`].
+        pub(crate) fn create_pkey(
+            path: &'static str,
+            fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
+        ) -> pb_api::PrivateKey {
+            let mut pkey = pb_api::PrivateKey::new();
+            let src = pkey.mut_field_static();
+            if let Some(f) = fmt {
+                src.set_format(f);
+            }
+            let ds = src.mut_data();
+            ds.set_filename(path.to_string());
+            pkey
+        }
 
-impl Context {
-    /// Borrows the C handle.
-    #[allow(dead_code)]
-    pub(crate) fn handle(&self) -> &ContextHandleC {
-        &self.0
-    }
+        /// Creates a [`api_rust_proto::Configuration`] for TLS 1.3.
+        pub(crate) fn create_configuration(
+            mode: crate::Mode,
+            skip_impl: bool,
+        ) -> pb_api::Configuration {
+            let mut conf = pb_api::Configuration::new();
+            match mode {
+                crate::Mode::Client => conf.mut_client().mut_tls(),
+                crate::Mode::Server => conf.mut_client().mut_tls(),
+            };
+            if !skip_impl {
+                conf.set_field_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
+            }
+            conf
+        }
 
-    /// Borrows the C handle.
-    pub(crate) fn handle_mut(&mut self) -> &mut ContextHandleC {
-        &mut self.0
+        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL.
+        #[test]
+        fn test_configuration() {
+            let mut config = create_configuration(crate::Mode::Client, false);
+            config
+                .mut_client()
+                .mut_tls()
+                .mut_trusted_certificates()
+                .push(create_cert(
+                    crate::openssl::test::CERT_PEM_PATH,
+                    Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
+                ));
+            config
+                .mut_client()
+                .mut_tls()
+                .mut_common_options()
+                .mut_kem()
+                .push("kyber1024".to_string());
+            let ctx = super::super::try_from(&config);
+            ctx.unwrap();
+        }
+
+        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but
+        /// but with missing implementation field.
+        #[test]
+        fn test_configuration_no_impl() {
+            let mut config = create_configuration(crate::Mode::Client, true);
+            config
+                .mut_client()
+                .mut_tls()
+                .mut_trusted_certificates()
+                .push(create_cert(
+                    crate::openssl::test::CERT_PEM_PATH,
+                    Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
+                ));
+            config
+                .mut_client()
+                .mut_tls()
+                .mut_common_options()
+                .mut_kem()
+                .push("kyber1024".to_string());
+            let ctx = super::super::try_from(&config);
+            assert!(ctx.is_err());
+            assert_eq!(
+                ctx.unwrap_err(),
+                errors! {pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID => pb::APIError::APIERROR_CONFIGURATION}
+            );
+        }
+
+        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
+        /// an certificate supplied.
+        #[test]
+        fn test_configuration_bad_cert() {
+            let mut config = create_configuration(crate::Mode::Client, false);
+            config
+                .mut_client()
+                .mut_tls()
+                .mut_trusted_certificates()
+                .push(create_cert(
+                    crate::openssl::test::CERT_PEM_PATH,
+                    Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
+                ));
+            config
+                .mut_client()
+                .mut_tls()
+                .mut_common_options()
+                .mut_kem()
+                .push("kyber1024".to_string());
+            let ctx = super::super::try_from(&config);
+            assert!(ctx.is_err());
+            assert_eq!(
+                ctx.unwrap_err(),
+                errors! {
+                    pb::ASN1Error::ASN1ERROR_MALFORMED
+                        => pb::CertificateError::CERTIFICATEERROR_MALFORMED
+                            => pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE
+                                => pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
+                                    => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
+                                        => pb::APIError::APIERROR_CONFIGURATION
+                }
+            );
+        }
+
+        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
+        /// an invalid private key supplied.
+        #[test]
+        fn test_configuration_bad_pkey() {
+            let mut config = create_configuration(crate::Mode::Server, false);
+            config.mut_server().mut_tls().set_certificate(create_cert(
+                crate::openssl::test::CERT_DER_PATH,
+                Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
+            ));
+            config.mut_server().mut_tls().set_private_key(create_pkey(
+                crate::openssl::test::PKEY_PATH,
+                Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
+            ));
+            config
+                .mut_server()
+                .mut_tls()
+                .mut_common_options()
+                .mut_kem()
+                .push("kyber1024".to_string());
+            let ctx = super::super::try_from(&config);
+            assert!(ctx.is_err());
+            assert_eq!(
+                ctx.unwrap_err(),
+                errors! {
+                    pb::ASN1Error::ASN1ERROR_MALFORMED
+                        => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED
+                            => pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY
+                                => pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
+                                    => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
+                                        => pb::APIError::APIERROR_CONFIGURATION
+                }
+            );
+        }
     }
 }

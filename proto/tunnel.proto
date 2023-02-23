@@ -101,8 +101,11 @@ enum RecordError {
   // interface is closed.
   RECORDERROR_CLOSED = 4;
 
+  // The content to read or write is too large.
+  RECORDERROR_TOO_BIG = 5;
+
   // An unknown error occurred.
-  RECORDERROR_UNKNOWN = 5;
+  RECORDERROR_UNKNOWN = 6;
 
   // Next id: 6
 }

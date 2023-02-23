@@ -27,13 +27,18 @@ py_library(
     ],
 )
 
+filegroup(
+    name = "sandwich_ffi",
+    srcs = ["//rust:sandwich_ffi_shared"],
+)
+
 py_library(
     name = "python",
     srcs = [
         "sandwich.py",
     ],
     data = [
-        "//c:sandwich_shared",
+        ":sandwich_ffi",
     ],
     srcs_version = "PY3",
     visibility = ["//visibility:public"],
@@ -60,7 +65,7 @@ py_test(
 
 copy_file(
     name = "sandwich_c_lib",
-    src = "//c:sandwich_shared",
+    src = "//rust:sandwich_ffi_shared",
     out = "libsandwich_shared.so",
 )
 

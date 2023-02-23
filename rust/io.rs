@@ -12,158 +12,170 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Sandwich IO interface.
+//! Defines [`IO`] trait.
 //!
-//! This API provides the required abstraction for the Sandwich IO interface,
-//! defined by saq::sandwich::io::IO.
+//! This module provides the definition of an I/O interface.
+//!
+//! An [`IO`] trait must implements the following methods:
+//!  * `Read`
+//!  * `Write`
+//!  * `Close`
+//!
+//! Each of these methods may return an [`Error`], such as `ConnectionRefused`
+//! or `WouldBlock`.
+//!
+//! I/O interfaces are used to abstract the I/O plane.
 //!
 //! Author: thb-sb
 
-extern crate protobuf;
-extern crate sandwich_c;
-extern crate sandwich_rust_proto;
+/// An I/O error.
+/// To see the list of I/O errors, see [`sandwich_rust_proto::IOError`].
+pub struct Error(pb::IOError);
 
-use super::errors;
-use super::pimpl;
+/// Implements [`std::fmt::Display`] for [`Error`].
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "ioerror: {}",
+            match self.0 {
+                pb::IOError::IOERROR_OK => "no error",
+                pb::IOError::IOERROR_IN_PROGRESS => "in progress",
+                pb::IOError::IOERROR_WOULD_BLOCK => "would block",
+                pb::IOError::IOERROR_REFUSED => "refused",
+                pb::IOError::IOERROR_CLOSED => "closed",
+                pb::IOError::IOERROR_INVALID => "invalid I/O plane",
+                pb::IOError::IOERROR_UNKNOWN => "unknown error",
+            }
+        )
+    }
+}
 
-/// An IO result.
-pub type IOResult<T> = Result<T, errors::IOError>;
+/// Instantiates an [`Error`] with an enum value from the
+/// [`sandwich_rust_proto::IOError`] enum.
+impl std::convert::From<pb::IOError> for Error {
+    fn from(e: pb::IOError) -> Self {
+        Self(e)
+    }
+}
 
-/// The Sandwich I/O interface.
+/// Consumes an [`Error`] back into the the [`sandwich_rust_proto::IOError`]
+/// enum value.
+impl std::convert::From<Error> for pb::IOError {
+    fn from(e: Error) -> Self {
+        e.0
+    }
+}
+
+/// A Result from an I/O operation.
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// An I/O interface.
+///
+/// # Example
+///
+/// ```
+///
+/// use sandwich_rust_proto as pb;
+/// use sandwich::io::Result as IOResult;
+///
+/// /// A simple variable-sized buffer.
+/// type Buffer = std::vec::Vec<u8>;
+///
+/// /// A stream backed by `std::sync::mpsc::channel`.
+/// struct BufferedChannel {
+///     outs: Option<std::sync::mpsc::Sender<Buffer>>,
+///     ins: Option<std::sync::mpsc::Receiver<Buffer>>,
+///     buffer: Buffer,
+/// }
+///
+/// /// Implements `BufferedChannel`.
+/// impl BufferedChannel {
+///     /// Instantiates a `BufferedChannel` and returns the sender to
+///     /// itself.
+///     fn new() -> Self {
+///         Self{
+///             outs: None,
+///             ins: None,
+///             buffer: Buffer::with_capacity(4096usize),
+///         }
+///     }
+///
+///     /// Links two `BufferedChannel` together.
+///     fn link(a: &mut Self, b: &mut Self) {
+///         (a.outs, b.ins) = { let (s, r) = std::sync::mpsc::channel(); (Some(s), Some(r)) };
+///         (b.outs, a.ins) = { let (s, r) = std::sync::mpsc::channel(); (Some(s), Some(r)) };
+///     }
+/// }
+///
+/// /// Implements `sandwich::IO` for `BufferedChannel`.
+/// impl sandwich::IO for BufferedChannel {
+///     fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
+///         let n = std::cmp::min(buf.len(), self.buffer.len());
+///         if n > 0 {
+///             buf.copy_from_slice(&self.buffer[0 .. n]);
+///             self.buffer.drain(0..n);
+///         }
+///         let r = buf.len() - n;
+///         if r == 0 {
+///             return Ok(n);
+///         }
+///         let mut it = &mut buf[n..];
+///         let bread = n;
+///
+///         let e = match self.ins {
+///             Some(ref ins) => match ins.try_recv() {
+///                 Ok(v) => {
+///                     self.buffer.extend(v);
+///                     Ok(self.buffer.len())
+///                 },
+///                 Err(std::sync::mpsc::TryRecvError::Empty) => Err(pb::IOError::IOERROR_WOULD_BLOCK),
+///                 Err(std::sync::mpsc::TryRecvError::Disconnected) => Err(pb::IOError::IOERROR_CLOSED),
+///             },
+///             None => Err(pb::IOError::IOERROR_IN_PROGRESS),
+///         };
+///         match e {
+///             Ok(s) => {
+///                 let n = std::cmp::min(it.len(), s);
+///                 Ok(bread + if n > 0 {
+///                     it.copy_from_slice(&self.buffer[0 .. n]);
+///                     self.buffer.drain(0..n);
+///                     n
+///                 } else {
+///                     0
+///                 })
+///             },
+///             Err(e) => match bread {
+///                 0 => Err(e.into()),
+///                 _ => Ok(bread)
+///             }
+///         }
+///     }
+///
+///     fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
+///         match self.outs {
+///             Some(ref s) => match s.send(buf.into()) {
+///                 Ok(_) => Ok(buf.len()),
+///                 Err(_) => Err(pb::IOError::IOERROR_CLOSED.into()),
+///             },
+///             None => Err(pb::IOError::IOERROR_IN_PROGRESS.into()),
+///         }
+///     }
+///
+///     fn close(&mut self) -> IOResult<()> {
+///         self.ins = None;
+///         self.outs = None;
+///         Ok(())
+///     }
+/// }
+/// ```
 pub trait IO {
-    /// Reads some bytes from the I/O interface.
-    fn read(&mut self, buf: &mut [u8], tunnel_state: sandwich_rust_proto::State)
-        -> IOResult<usize>;
+    /// Reads some bytes from the I/O plane.
+    fn read(&mut self, buf: &mut [u8], state: pb::State) -> Result<usize>;
 
-    /// Write some bytes to the I/O interface.
-    fn write(&mut self, buf: &[u8], tunnel_state: sandwich_rust_proto::State) -> IOResult<usize>;
+    /// Writes some bytes to the I/O plane.
+    fn write(&mut self, buf: &[u8], state: pb::State) -> Result<usize>;
 
-    /// Close the I/O interface.
-    fn close(&mut self);
-}
-
-/// Bridge function between C and Rust for Read i/o.
-extern "C" fn c_io_read<Io: IO>(
-    uarg: *mut std::os::raw::c_void,
-    buf: *mut std::os::raw::c_void,
-    size: u64,
-    tunnel_state: u32,
-    err: *mut u32,
-) -> u64 {
-    let (io, ioerr) = unsafe {
-        (
-            &mut *std::mem::transmute::<*mut std::os::raw::c_void, *mut Io>(uarg),
-            &mut *err,
-        )
-    };
-    let slice = unsafe {
-        std::slice::from_raw_parts_mut(
-            std::mem::transmute::<*mut std::os::raw::c_void, *mut u8>(buf),
-            size as usize,
-        )
-    };
-    match io.read(
-        slice,
-        <sandwich_rust_proto::State as protobuf::ProtobufEnum>::from_i32(tunnel_state as i32)
-            .unwrap(),
-    ) {
-        Ok(n) => {
-            *ioerr = sandwich_rust_proto::IOError::IOERROR_OK as u32;
-            n as u64
-        }
-        Err(e) => {
-            *ioerr = <errors::IOError as Into<u32>>::into(e);
-            0u64
-        }
-    }
-}
-
-/// Bridge function between C and Rust for Write i/o.
-extern "C" fn c_io_write<Io: IO>(
-    uarg: *mut std::os::raw::c_void,
-    buf: *const std::os::raw::c_void,
-    size: u64,
-    tunnel_state: u32,
-    err: *mut u32,
-) -> u64 {
-    let (io, ioerr) = unsafe {
-        (
-            &mut *std::mem::transmute::<*mut std::os::raw::c_void, *mut Io>(uarg),
-            &mut *err,
-        )
-    };
-    let slice = unsafe {
-        std::slice::from_raw_parts(
-            std::mem::transmute::<*const std::os::raw::c_void, *const u8>(buf),
-            size as usize,
-        )
-    };
-    match io.write(
-        slice,
-        <sandwich_rust_proto::State as protobuf::ProtobufEnum>::from_i32(tunnel_state as i32)
-            .unwrap(),
-    ) {
-        Ok(n) => {
-            *ioerr = sandwich_rust_proto::IOError::IOERROR_OK as u32;
-            n as u64
-        }
-        Err(e) => {
-            *ioerr = <errors::IOError as Into<u32>>::into(e);
-            0u64
-        }
-    }
-}
-
-/// Bridge function between C and Rust for Close i/o.
-extern "C" fn c_io_close<Io: IO>(uarg: *mut std::os::raw::c_void) {
-    let io = unsafe { &mut *std::mem::transmute::<*mut std::os::raw::c_void, *mut Io>(uarg) };
-    io.close()
-}
-
-/// Create a `struct SandwichCIOSettings` from a borrowed I/O trait.
-fn create_c_settings<Io: IO>(io: &Io) -> sandwich_c::SandwichCIOSettings {
-    sandwich_c::SandwichCIOSettings {
-        read: Some(c_io_read::<Io>),
-        write: Some(c_io_write::<Io>),
-        close: Some(c_io_close::<Io>),
-        uarg: unsafe { std::mem::transmute(io) },
-    }
-}
-
-/// `struct SandwichCIO` wrapper.
-type IOHandleC = pimpl::Pimpl<sandwich_c::SandwichCIO>;
-
-/// Wrapper around struct SandwichCIO.
-pub struct IOHandle(IOHandleC);
-
-impl IOHandle {
-    /// Creates an IOHandle from an IO interface.
-    pub(crate) fn try_from<Io: IO>(io: &mut Io) -> Result<Self, errors::Error> {
-        let settings = create_c_settings(io);
-
-        let mut handle = std::ptr::null_mut::<::sandwich_c::SandwichCIO>();
-
-        let err = unsafe { sandwich_c::sandwich_io_new(&settings, &mut handle) };
-        if err != std::ptr::null_mut() {
-            Err(errors::Error::from(errors::error_handle_c_from_raw(err)))
-        } else {
-            Ok(Self(IOHandleC::from_raw(
-                handle,
-                Some(|ptr| unsafe {
-                    sandwich_c::sandwich_io_free(ptr);
-                }),
-            )))
-        }
-    }
-
-    /// Borrows the C handle.
-    #[allow(dead_code)]
-    pub(crate) fn handle(&self) -> &IOHandleC {
-        &self.0
-    }
-
-    /// Borrows the C handle.
-    pub(crate) fn handle_mut(&mut self) -> &mut IOHandleC {
-        &mut self.0
-    }
+    /// Closes the I/O plane.
+    fn close(&mut self) -> Result<()>;
 }

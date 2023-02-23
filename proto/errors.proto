@@ -171,6 +171,9 @@ enum PrivateKeyError {
 enum ASN1Error {
   // Invalid format.
   ASN1ERROR_INVALID_FORMAT = 0;
+
+  // Malformed ASN.1 document.
+  ASN1ERROR_MALFORMED = 1;
 };
 
 // DataSource errors.
@@ -180,6 +183,9 @@ enum DataSourceError {
 
   // Invalid case for data source.
   DATASOURCEERROR_INVALID_CASE = 1;
+
+  // Data not found on local filesystem.
+  DATASOURCEERROR_NOT_FOUND = 2;
 };
 
 // KEM errors.

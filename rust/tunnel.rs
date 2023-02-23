@@ -12,116 +12,191 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Sandwich tunnel
+//! Defines [`Tunnel`] trait.
 //!
-//! This API provides a wrapper of `saq::sandwich::Tunnel.
+//! This module defines the trait [`Tunnel`].
+//!
+//! A Tunnel is created from a Sandwich context. See [`crate::Context`] for more
+//! information.
 //!
 //! Author: thb-sb
 
-extern crate sandwich_c;
-extern crate sandwich_rust_proto;
+/// Structure for states and errors based on protobuf definitions.
+pub struct ProtoStateErrorBase<Enum: protobuf::ProtobufEnum>(Enum, Option<crate::Error>);
 
-use super::context;
-use super::errors;
-use super::io;
-use super::pimpl;
+/// Implements [`std::cmp::PartialEq`] with Enum for [`ProtoStateErrorBase`].
+impl<Enum: protobuf::ProtobufEnum> std::cmp::PartialEq<Enum> for ProtoStateErrorBase<Enum> {
+    fn eq(&self, other: &Enum) -> bool {
+        self.0 == *other
+    }
+}
 
-/// `struct SandwichTunnel` wrapper.
-type TunnelHandleC = pimpl::Pimpl<sandwich_c::SandwichTunnel>;
+/// Implements [`std::fmt::Debug`] for [`ProtoStateErrorBase`].
+impl<Enum: protobuf::ProtobufEnum> std::fmt::Debug for ProtoStateErrorBase<Enum>
+where
+    Self: std::fmt::Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{} (code {})",
+            self,
+            <Enum as protobuf::ProtobufEnum>::value(&self.0)
+        )
+    }
+}
+
+/// Converts a [`ProtoStateErrorBase`] to a [`crate::Error`].
+impl<Enum: protobuf::ProtobufEnum> std::convert::From<ProtoStateErrorBase<Enum>> for crate::Error {
+    fn from(e: ProtoStateErrorBase<Enum>) -> crate::Error {
+        e.1.unwrap()
+    }
+}
+
+/// Converts an enum value to a [`ProtoStateErrorBase`].
+impl<Enum: protobuf::ProtobufEnum> std::convert::From<Enum> for ProtoStateErrorBase<Enum> {
+    fn from(e: Enum) -> Self {
+        Self(e, None)
+    }
+}
+
+/// Converts an enum value and a [`crate::Error`] to a [`ProtoStateErrorBase`].
+impl<Enum: protobuf::ProtobufEnum> std::convert::From<(Enum, crate::Error)>
+    for ProtoStateErrorBase<Enum>
+{
+    fn from(p: (Enum, crate::Error)) -> Self {
+        Self(p.0, Some(p.1))
+    }
+}
+
+/// Implements [`ProtoStateErrorBase`].
+impl<Enum: protobuf::ProtobufEnum> ProtoStateErrorBase<Enum> {
+    /// Returns true if an error occurred.
+    pub fn is_err(&self) -> bool {
+        self.1.is_some()
+    }
+
+    /// Returns the enum value.
+    pub fn value(&self) -> Enum {
+        self.0
+    }
+}
+
+/// The state of a tunnel.
+pub type State = ProtoStateErrorBase<pb::State>;
+
+/// Implements [`std::fmt::Display`] for [`State`].
+impl std::fmt::Display for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                pb::State::STATE_NOT_CONNECTED => "not connected",
+                pb::State::STATE_CONNECTION_IN_PROGRESS => "connection in progress",
+                pb::State::STATE_HANDSHAKE_IN_PROGRESS => "handshake in progress",
+                pb::State::STATE_HANDSHAKE_DONE => "handshake done",
+                pb::State::STATE_BEING_SHUTDOWN => "being shutdown",
+                pb::State::STATE_DISCONNECTED => "disconnected",
+                pb::State::STATE_ERROR => "error",
+            }
+        )
+    }
+}
+
+/// The state of an handshake operation.
+pub type HandshakeState = ProtoStateErrorBase<pb::HandshakeState>;
+
+/// Implements [`std::fmt::Display`] for [`HandshakeState`].
+impl std::fmt::Display for HandshakeState {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS => "in progress",
+                pb::HandshakeState::HANDSHAKESTATE_DONE => "done",
+                pb::HandshakeState::HANDSHAKESTATE_WANT_READ => "wants to read",
+                pb::HandshakeState::HANDSHAKESTATE_WANT_WRITE => "wants to write",
+                pb::HandshakeState::HANDSHAKESTATE_ERROR => "error",
+            }
+        )
+    }
+}
+
+/// A record error.
+/// A record error may occur during a record plane operation: read and write.
+pub type RecordError = ProtoStateErrorBase<pb::RecordError>;
+
+/// Implements [`std::fmt::Display`] for [`RecordError`].
+impl std::fmt::Display for RecordError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                pb::RecordError::RECORDERROR_OK => "no error",
+                pb::RecordError::RECORDERROR_WANT_READ => "want read",
+                pb::RecordError::RECORDERROR_WANT_WRITE => "want write",
+                pb::RecordError::RECORDERROR_BEING_SHUTDOWN => "being shutdown",
+                pb::RecordError::RECORDERROR_CLOSED => "closed",
+                pb::RecordError::RECORDERROR_TOO_BIG => "too big",
+                pb::RecordError::RECORDERROR_UNKNOWN => "unknown error",
+            }
+        )
+    }
+}
 
 /// A record result.
-pub type RecordResult = Result<usize, errors::RecordPlaneError>;
+/// A record result is either an amount of bytes read or written, nothing
+/// or a record error.
+pub type RecordResult<T> = Result<T, RecordError>;
 
-/// A Tunnel.
-pub struct Tunnel(TunnelHandleC);
-
-impl Tunnel {
-    /// Constructs a tunnel from a borrowed context and a borrowed I/O interface.
-    pub fn new<Io: io::IO>(
-        context: &mut context::Context,
-        ioint: &mut Io,
-    ) -> Result<Self, errors::Error> {
-        let mut iohandle = io::IOHandle::try_from(ioint)?;
-        let context_c = context
-            .handle_mut()
-            .as_raw_mut()
-            .ok_or(errors::Error::from(
-                sandwich_rust_proto::SystemError::SYSTEMERROR_MEMORY,
-            ))?;
-        let ioint_c = iohandle
-            .handle_mut()
-            .as_raw_mut()
-            .ok_or(errors::Error::from(
-                sandwich_rust_proto::SystemError::SYSTEMERROR_MEMORY,
-            ))?;
-
-        let mut handle = std::ptr::null_mut::<::sandwich_c::SandwichTunnel>();
-        let err = unsafe { sandwich_c::sandwich_tunnel_new(context_c, ioint_c, &mut handle) };
-        if err != std::ptr::null_mut() {
-            Err(errors::Error::from(errors::error_handle_c_from_raw(err)))
-        } else {
-            iohandle.handle_mut().into_raw();
-            Ok(Self(TunnelHandleC::from_raw(
-                handle,
-                Some(|ptr| unsafe { sandwich_c::sandwich_tunnel_free(ptr) }),
-            )))
-        }
-    }
+/// A tunnel.
+/// A tunnel is tied with a Context, using the 'ctx lifetime.
+/// A tunnel is also tied with an I/O interface.
+pub trait Tunnel<'io: 'ctx, 'ctx> {
+    /// Returns the state of the tunnel.
+    fn state(&self) -> State;
 
     /// Performs the handshake.
-    pub fn handshake(&mut self) -> Result<(), errors::HandshakeState> {
-        errors::HandshakeState::from_c_or(
-            unsafe { sandwich_c::sandwich_tunnel_handshake(self.0.as_raw_mut().unwrap()) } as i32,
-            |_| {},
-            (),
-        )
+    ///
+    /// Depending on the return value, this method may need to be called
+    /// more than once.
+    fn handshake(&mut self) -> HandshakeState;
+
+    /// Writes data to the tunnel.
+    fn write(&mut self, buf: &[u8]) -> RecordResult<usize>;
+
+    /// Reads data from the tunnel.
+    fn read(&mut self, buf: &mut [u8]) -> RecordResult<usize>;
+
+    /// Closes the tunnel.
+    fn close(&mut self) -> RecordResult<()>;
+}
+
+#[cfg(test)]
+mod test {
+    use super::State;
+
+    /// Tests [`ProtoStateErrorBase`].
+    #[test]
+    fn test_state() {
+        let s = State::from(pb::State::STATE_DISCONNECTED);
+        assert!(!s.is_err());
+        assert_eq!(s, pb::State::STATE_DISCONNECTED);
     }
 
-    /// Returns the state of the tunnel.
-    pub fn state(&mut self) -> errors::State {
-        errors::State::from_c(unsafe {
-            sandwich_c::sandwich_tunnel_state(self.0.as_raw_mut().unwrap())
-        } as i32)
-    }
-
-    /// Reads some data from the tunnel.
-    pub fn read(&mut self, buf: &mut [u8]) -> RecordResult {
-        let mut r = 0u64;
-        errors::RecordPlaneError::from_c_or(
-            unsafe {
-                sandwich_c::sandwich_tunnel_read(
-                    self.0.as_raw_mut().unwrap(),
-                    std::mem::transmute::<*mut u8, *mut std::ffi::c_void>(buf.as_mut_ptr()),
-                    buf.len() as u64,
-                    &mut r,
-                )
-            } as i32,
-            |re| -> usize { *re as usize },
-            &r,
-        )
-    }
-
-    /// Write some data to the tunnel.
-    pub fn write(&mut self, buf: &[u8]) -> RecordResult {
-        let mut r = 0u64;
-        errors::RecordPlaneError::from_c_or(
-            unsafe {
-                sandwich_c::sandwich_tunnel_write(
-                    self.0.as_raw_mut().unwrap(),
-                    std::mem::transmute::<*const u8, *const std::ffi::c_void>(buf.as_ptr()),
-                    buf.len() as u64,
-                    &mut r,
-                )
-            } as i32,
-            |re| -> usize { *re as usize },
-            &r,
-        )
-    }
-
-    /// Close the tunnel.
-    pub fn close(&mut self) {
-        unsafe {
-            sandwich_c::sandwich_tunnel_close(self.0.as_raw_mut().unwrap());
-        }
+    /// Tests [`ProtoStateErrorBase`] with an error.
+    #[test]
+    fn test_state_error() {
+        let s = State::from((
+            pb::State::STATE_DISCONNECTED,
+            errors! {pb::APIError::APIERROR_SOCKET},
+        ));
+        assert!(s.is_err());
+        assert_eq!(s, pb::State::STATE_DISCONNECTED);
+        let e: crate::Error = s.into();
+        assert_eq!(e, pb::APIError::APIERROR_SOCKET);
     }
 }

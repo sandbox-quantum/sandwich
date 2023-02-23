@@ -23,7 +23,6 @@
 #include <array>
 #include <thread>
 
-#include "c/tests_utils.h"
 #include "proto/api/v1/configuration.pb.h"
 #include "proto/sandwich.pb.h"
 
@@ -38,6 +37,19 @@ extern "C" {
 #ifndef SOCK_NONBLOCK
 #include <fcntl.h>
 #endif
+
+#ifndef __FILE_NAME__
+#define __FILE_NAME__ __FILE__
+#endif
+
+/** \brief Prints sandwich error and abort on condition.
+ *
+ * \param e The condition. */
+#define sandwich_assert(e)                                               \
+  ((void)((e) ? ((void)0)                                                \
+              : ((void)fprintf(stderr, "%s:%d: failed assertion '%s'\n", \
+                               __FILE_NAME__, __LINE__, #e),             \
+                 abort())))
 
 } // end extern "C"
 
