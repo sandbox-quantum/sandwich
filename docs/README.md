@@ -1,3 +1,3 @@
 # Sandwich
 
-Here be dragons.
+[Rust API](/rust/sandwich/).
