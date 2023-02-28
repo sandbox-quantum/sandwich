@@ -107,7 +107,7 @@ impl std::ops::Shr<ErrorCode> for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for e in self.0.iter() {
-            write!(f, "{}", e)?;
+            write!(f, "{e}")?;
         }
         Ok(())
     }
@@ -120,7 +120,7 @@ impl std::fmt::Debug for Error {
             for _ in 0..i {
                 write!(f, "\t")?;
             }
-            writeln!(f, "~>#{}: {}", i, e)?;
+            writeln!(f, "~>#{i}: {e}")?;
         }
         Ok(())
     }
