@@ -82,8 +82,8 @@ fn set_bio_close(bio: *mut openssl::bio_st) {
 unsafe extern "C" fn bio_write(
     bio: *mut openssl::bio_st,
     data: *const i8,
-    len: u64,
-    written: *mut u64,
+    len: usize,
+    written: *mut usize,
 ) -> i32 {
     clear_bio_retry_flags(bio);
     let tun = &mut *(openssl::BIO_get_data(bio) as *mut super::tunnel::SSLHandle);
@@ -101,11 +101,11 @@ unsafe extern "C" fn bio_write(
 
     (tun.io)
         .write(
-            std::slice::from_raw_parts(data as *const u8, len as usize),
+            std::slice::from_raw_parts(data as *const u8, len),
             tun.state,
         )
         .map(|n| {
-            *written = n as u64;
+            *written = n;
             1
         })
         .unwrap_or_else(|e| match e.into() {
@@ -125,8 +125,8 @@ unsafe extern "C" fn bio_write(
 unsafe extern "C" fn bio_read(
     bio: *mut openssl::bio_st,
     data: *mut i8,
-    len: u64,
-    read: *mut u64,
+    len: usize,
+    read: *mut usize,
 ) -> i32 {
     clear_bio_retry_flags(bio);
     let tun = &mut *(openssl::BIO_get_data(bio) as *mut super::tunnel::SSLHandle);
@@ -144,11 +144,11 @@ unsafe extern "C" fn bio_read(
 
     (tun.io)
         .read(
-            std::slice::from_raw_parts_mut(data as *mut u8, len as usize),
+            std::slice::from_raw_parts_mut(data as *mut u8, len),
             tun.state,
         )
         .map(|n| {
-            *read = n as u64;
+            *read = n;
             1
         })
         .unwrap_or_else(|e| match e.into() {

@@ -14,6 +14,9 @@ cc_library(
 
 rust_bindgen_library(
     name = "openssl",
+    bindgen_flags = [
+        "--size_t-is-usize",
+    ],
     cc_lib = ":openssl-rust-bindgen",
     clang_flags = select({
         "@platforms//os:ios": [
