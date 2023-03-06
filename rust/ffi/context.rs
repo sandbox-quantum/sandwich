@@ -20,7 +20,7 @@
 ///
 /// # Errors
 ///
-/// See constructors of [`Context`].
+/// See constructors of [`crate::Context`].
 #[no_mangle]
 pub extern "C" fn sandwich_context_new(
     src: *const std::ffi::c_void,

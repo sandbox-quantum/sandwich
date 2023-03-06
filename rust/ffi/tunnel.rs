@@ -18,7 +18,7 @@
 
 /// Instantiates a new tunnel from a serialized protobuf configuration message.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_new(
+pub extern "C" fn sandwich_tunnel_new(
     ctx: *mut std::ffi::c_void,
     cio: *mut super::io::Settings,
     tun: *mut *mut std::ffi::c_void,
@@ -41,7 +41,7 @@ extern "C" fn sandwich_tunnel_new(
 
 /// Releases a tunnel.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_free(tun: *mut std::ffi::c_void) {
+pub extern "C" fn sandwich_tunnel_free(tun: *mut std::ffi::c_void) {
     if !tun.is_null() {
         let _: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(tun as *mut _) };
     }
@@ -49,7 +49,7 @@ extern "C" fn sandwich_tunnel_free(tun: *mut std::ffi::c_void) {
 
 /// Performs the handshake.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_handshake(tun: *mut std::ffi::c_void) -> i32 {
+pub extern "C" fn sandwich_tunnel_handshake(tun: *mut std::ffi::c_void) -> i32 {
     use protobuf::ProtobufEnum;
     let mut b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
     let r = b.handshake();
@@ -59,7 +59,7 @@ extern "C" fn sandwich_tunnel_handshake(tun: *mut std::ffi::c_void) -> i32 {
 
 /// Performs a read operation.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_read(
+pub extern "C" fn sandwich_tunnel_read(
     tun: *mut std::ffi::c_void,
     dst: *mut std::ffi::c_void,
     n: usize,
@@ -81,7 +81,7 @@ extern "C" fn sandwich_tunnel_read(
 
 /// Performs a write operation.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_write(
+pub extern "C" fn sandwich_tunnel_write(
     tun: *mut std::ffi::c_void,
     src: *const std::ffi::c_void,
     n: usize,
@@ -103,7 +103,7 @@ extern "C" fn sandwich_tunnel_write(
 
 /// Performs a close operation.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_close(tun: *mut std::ffi::c_void) {
+pub extern "C" fn sandwich_tunnel_close(tun: *mut std::ffi::c_void) {
     let mut b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
     let _ = b.close();
     Box::into_raw(b);
@@ -111,7 +111,7 @@ extern "C" fn sandwich_tunnel_close(tun: *mut std::ffi::c_void) {
 
 /// Returns the state of the tunnel.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_state(tun: *mut std::ffi::c_void) -> i32 {
+pub extern "C" fn sandwich_tunnel_state(tun: *mut std::ffi::c_void) -> i32 {
     use protobuf::ProtobufEnum;
     let b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
     let r = b.state();
@@ -122,4 +122,4 @@ extern "C" fn sandwich_tunnel_state(tun: *mut std::ffi::c_void) -> i32 {
 /// Releases the underlying I/O.
 /// This method is a no-op, as it is not safe.
 #[no_mangle]
-extern "C" fn sandwich_tunnel_io_release(_tun: *mut std::ffi::c_void) {}
+pub extern "C" fn sandwich_tunnel_io_release(_tun: *mut std::ffi::c_void) {}

@@ -36,10 +36,10 @@
 //!
 //! # Features
 //!
-//! This crate comes with one feature called `ffi`.
+//! This crate comes with one feature called [`ffi`].
 //!
-//! `ffi` enables the C interface, that can be used to use Sandwich from
-//! any language. See module `ffi` for more information.
+//! [`ffi`] enables the C interface, that can be used to use Sandwich from
+//! any language. See module [`ffi`] for more information.
 //!
 //! [SandboxAQ]: https://sandboxaq.com/
 //! [OpenSSL]: https://openssl.org/

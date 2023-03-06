@@ -17,7 +17,7 @@
 //! Author: thb-sb
 
 /// An error, for FFI.
-/// See module [`error`] for more information.
+/// See module [`crate::error`] for more information.
 #[repr(C)]
 pub struct Error {
     pub(self) details: *mut Error,

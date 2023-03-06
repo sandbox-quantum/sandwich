@@ -17,7 +17,7 @@
 //! Author: thb-sb
 
 /// A read function.
-type ReadFn = extern "C" fn(
+pub type ReadFn = extern "C" fn(
     uarg: *mut std::ffi::c_void,
     buf: *mut std::ffi::c_void,
     count: usize,
@@ -26,7 +26,7 @@ type ReadFn = extern "C" fn(
 ) -> usize;
 
 /// A write function.
-type WriteFn = extern "C" fn(
+pub type WriteFn = extern "C" fn(
     uarg: *mut std::ffi::c_void,
     buf: *const std::ffi::c_void,
     count: usize,
@@ -35,12 +35,12 @@ type WriteFn = extern "C" fn(
 ) -> usize;
 
 /// A close function.
-type CloseFn = extern "C" fn(uarg: *mut std::ffi::c_void);
+pub type CloseFn = extern "C" fn(uarg: *mut std::ffi::c_void);
 
 /// Settings for a generic I/O interface, using pointers.
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub(super) struct Settings {
+pub struct Settings {
     readfn: ReadFn,
     writefn: WriteFn,
     closefn: CloseFn,
@@ -91,7 +91,7 @@ impl crate::IO for Settings {
 
 /// Instantiates an new I/O interface from a struct [`Settings`].
 #[no_mangle]
-extern "C" fn sandwich_io_new(
+pub extern "C" fn sandwich_io_new(
     set: *const Settings,
     io: *mut *mut std::ffi::c_void,
 ) -> *mut super::Error {
@@ -104,7 +104,7 @@ extern "C" fn sandwich_io_new(
 
 /// Releases an I/O interface.
 #[no_mangle]
-extern "C" fn sandwich_io_free(io: *mut std::ffi::c_void) {
+pub extern "C" fn sandwich_io_free(io: *mut std::ffi::c_void) {
     if !io.is_null() {
         let _ = unsafe { Box::from_raw(io as *mut Settings) };
     }

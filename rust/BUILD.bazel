@@ -117,6 +117,8 @@ rust_doc(
     rustc_flags = [
         "-A",
         "rustdoc::private_intra_doc_links",
+        "--cfg",
+        'feature="ffi"',
     ],
 )
 
@@ -127,12 +129,15 @@ rust_doc(
         "--document-private-items",
         "-A",
         "rustdoc::private_intra_doc_links",
+        "--cfg",
+        'feature="ffi"',
     ],
 )
 
 rust_doc_test(
     name = "doc_test",
     crate = ":sandwich",
+    features = ["ffi"],
     tags = ["manual"],
     deps = [
         ":openssl",

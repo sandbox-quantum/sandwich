@@ -21,23 +21,23 @@
 //!
 //! The following APIs are defined:
 //!
-//!     * [`sandwich_context_new`]: creates a new context from a serialized
-//!       protobuf configuration message.
-//!     * [`sandwich_context_free`]: releases the memory occupied by a Context.
-//!     * [`sandwich_io_new`]: creates a new I/O interface from a set of
-//!       function pointers.
-//!     * [`sandwich_io_free`]: releases the memory occupied by an I/O
-//!       interface.
-//!     * [`sandwich_tunnel_new`]: creates a tunnel from a configuration.
-//!     * [`sandwich_tunnel_free`]: releases the memory occupied by a Tunnel.
-//!     * [`sandwich_tunnel_handshake`]: performs the handshake operation
-//!       on a Tunnel.
-//!     * [`sandwich_tunnel_read`]: reads data from the Tunnel.
-//!     * [`sandwich_tunnel_write`]: writes data to the Tunnel.
-//!     * [`sandwich_tunnel_state`]: returns the state of the Tunnel.
-//!     * [`sandwich_tunnel_close`]: closes the tunnel.
-//!     * [`sandwich_error_free`]: releases the memory occupied by an error
-//!       chain.
+//! - [`context::sandwich_context_new`]: creates a new context from a serialized
+//!   protobuf configuration message.
+//! - [`context::sandwich_context_free`]: releases the memory occupied by a Context.
+//! - [`io::sandwich_io_new`]: creates a new I/O interface from a set of
+//!   function pointers.
+//! - [`io::sandwich_io_free`]: releases the memory occupied by an I/O
+//!   interface.
+//! - [`tunnel::sandwich_tunnel_new`]: creates a tunnel from a configuration.
+//! - [`tunnel::sandwich_tunnel_free`]: releases the memory occupied by a Tunnel.
+//! - [`tunnel::sandwich_tunnel_handshake`]: performs the handshake operation
+//!   on a Tunnel.
+//! - [`tunnel::sandwich_tunnel_read`]: reads data from the Tunnel.
+//! - [`tunnel::sandwich_tunnel_write`]: writes data to the Tunnel.
+//! - [`tunnel::sandwich_tunnel_state`]: returns the state of the Tunnel.
+//! - [`tunnel::sandwich_tunnel_close`]: closes the tunnel.
+//! - [`error::sandwich_error_free`]: releases the memory occupied by an error
+//!   chain.
 //!
 //! Author: thb-sb
 
