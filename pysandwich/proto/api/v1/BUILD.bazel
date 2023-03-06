@@ -29,6 +29,14 @@ proto_library(
 )
 
 proto_library(
+    name = "compliance_proto",
+    srcs = ["compliance.proto"],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+proto_library(
     name = "private_key_proto",
     srcs = ["private_key.proto"],
     deps = [
@@ -52,6 +60,7 @@ proto_library(
         "//visibility:public",
     ],
     deps = [
+        ":compliance_proto",
         ":tls_proto",
     ],
 )
@@ -91,6 +100,17 @@ py_proto_library(
 )
 
 py_proto_library(
+    name = "compliance_python_proto",
+    srcs = [
+        "compliance.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":data_source_python_proto",
+    ],
+)
+
+py_proto_library(
     name = "private_key_python_proto",
     srcs = [
         "private_key.proto",
@@ -120,6 +140,7 @@ py_proto_library(
         "//visibility:public",
     ],
     deps = [
+        ":compliance_python_proto",
         ":tls_python_proto",
     ],
 )
