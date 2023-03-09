@@ -57,12 +57,12 @@ type IO interface {
 }
 
 // createSettings creates a C-compatible structure from an IO interface.
-func createSettings(io IO) *C.struct_SandwichCIOSettings {
+func createSettings(handle *cIOHandle) *C.struct_SandwichCIOSettings {
 	set := C.allocSandwichCIOSettings()
 	set.read = &C.sandwichGoIORead
 	set.write = &C.sandwichGoIOWrite
 	set.close = &C.sandwichGoIOClose
-	set.uarg = unsafe.Pointer(&io)
+	set.uarg = unsafe.Pointer(handle.io)
 	return set
 }
 
@@ -106,7 +106,8 @@ type cIOHandle struct {
 
 // newcIOHandle creates a new cIOHandle from an IO interface.
 func newcIOHandle(handle *cIOHandle, io IO) error {
-	settings := createSettings(io)
+	handle.io = &io
+	settings := createSettings(handle)
 	defer C.free(unsafe.Pointer(settings))
 
 	errc := C.sandwich_io_new(settings, &handle.handle)
@@ -115,7 +116,6 @@ func newcIOHandle(handle *cIOHandle, io IO) error {
 		C.sandwich_error_free(errc)
 		return err
 	}
-	handle.io = &io
 
 	runtime.SetFinalizer(handle, (*cIOHandle).free)
 	return nil

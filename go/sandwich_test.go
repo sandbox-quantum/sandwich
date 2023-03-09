@@ -17,6 +17,9 @@ package sandwich_test
 import (
 	"bytes"
 	"github.com/sandbox-quantum/sandwich/go/sandwich"
+	"crypto/rand"
+	"runtime"
+	"runtime/debug"
 	"testing"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
@@ -333,6 +336,87 @@ func TestTunnels(t *testing.T) {
 	}
 	if buf != pongMsg {
 		t.Errorf("Expected %v, got %v", pongMsg, buf)
+	}
+
+	clientTunnel.Close()
+	serverTunnel.Close()
+}
+
+func TestTunnelLargeReadWriteGC(t *testing.T) {
+	serverContext, err := createServerContext(t)
+	if err != nil {
+		t.Errorf("Failed to create Server context: %v", err)
+	}
+
+	clientContext, err := createClientContext(t)
+	if err != nil {
+		t.Errorf("Failed to create Client context: %v", err)
+	}
+
+	ioInterfaces := createIOs()
+
+	serverTunnel, err := createServerTunnel(t, serverContext, ioInterfaces.server)
+	if err != nil {
+		t.Errorf("Failed to create the server tunnel: %v", err)
+	}
+
+	clientTunnel, err := createClientTunnel(t, clientContext, ioInterfaces.client)
+	if err != nil {
+		t.Errorf("Failed to create the server tunnel: %v", err)
+	}
+
+	err = clientTunnel.Handshake()
+	if err == nil {
+		t.Errorf("Expected errHanshake not nil, got nil")
+	}
+	if handshakeErr, ok := err.(*sandwich.HandshakeError); ok {
+		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
+			t.Errorf("Expected WANT_READ, got %v", err)
+		}
+	} else {
+		t.Errorf("Bad type for `error`")
+	}
+
+	err = serverTunnel.Handshake()
+	if err == nil {
+		t.Errorf("Expected errHanshake not nil, got nil")
+	}
+	if handshakeErr, ok := err.(*sandwich.HandshakeError); ok {
+		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
+			t.Errorf("Expected WANT_READ, got %v", err)
+		}
+	} else {
+		t.Errorf("Bad type for `error`")
+	}
+
+	err = clientTunnel.Handshake()
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	err = serverTunnel.Handshake()
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	// We set the GC tolerance to be very low to make sure any potential zombie pointers are caught.
+	debug.SetGCPercent(1)
+
+	for i := 0; i < 1000; i++ {
+		data := make([]byte, 32768)
+		_, err = rand.Read(data)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		clientTunnel.Write(data)
+		serverTunnel.Write(data)
+
+		buf := make([]byte, 32768)
+		clientTunnel.Read(buf)
+		serverTunnel.Read(buf)
+
+		// Force garbage collection.
+		runtime.GC()
+		debug.FreeOSMemory()
 	}
 
 	clientTunnel.Close()
