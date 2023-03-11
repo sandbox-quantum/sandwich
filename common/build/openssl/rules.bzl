@@ -114,7 +114,7 @@ mkdir -p "${LIBOQS_BUILD_DIR}"
       "--prefix=${INSTALL_DIR}" \
       ${OPENSSL_CONFIGURE_ARGS} \
       "-L${INSTALL_DIR}/lib" \
-      "-isystem ${LIBOQS_BUILD_DIR}/include" ${OPENSSL_CFLAGS}
+      "-isystem ${LIBOQS_BUILD_DIR}/include" ${DEPS_FLAGS} ${OPENSSL_CFLAGS}
   "${MAKE}" build_generated || "${MAKE}" build_generated
 )
 (
@@ -162,6 +162,37 @@ def _is_target_apple(ctx):
         if ctx.target_platform_has_constraint(ac[platform_common.ConstraintValueInfo]):
             return True
     return False
+
+"""`LibraryToLink` attributes that define static libraries."""
+_STATIC_LIBRARIES_ATTRS = ("static_library", "pic_static_library")
+
+def _generate_link_flags_deps(ctx):
+    """Generates link flags for dependencies
+
+    Args:
+      ctx:
+        Bazel rule context.
+
+    Returns:
+      String for link flags, and additional files to include to the main
+      action.
+    """
+    outs = []
+    for dep in ctx.attr.deps:
+        lc = dep[CcInfo].linking_context
+        for linker_input in lc.linker_inputs.to_list():
+            for library in linker_input.libraries:
+                for a in _STATIC_LIBRARIES_ATTRS:
+                    l = getattr(library, a)
+                    if l != None and l not in outs:
+                        outs.append(l)
+
+    flags = []
+    for o in outs:
+        flags.append("-L../{}".format(o.dirname))
+        flags.append("-l{}".format(o.basename.replace("lib", "").replace(".a", "")))
+
+    return (flags, outs)
 
 def _generate_openssl_configure_args(ctx):
     """Generates the arguments for the `configure` step of OpenSSL.
@@ -473,7 +504,7 @@ def _create_linker_input(ctx, install_dir, libname):
 
     return linker_input
 
-def _create_linking_context(ctx, install_dir):
+def _create_linking_context(ctx, install_dir, deps):
     """Creates the LinkingContext object.
 
     Args:
@@ -481,6 +512,8 @@ def _create_linking_context(ctx, install_dir):
         Bazel rule context.
       install_dir:
         File object pointing to the TreeArtifact install directory.
+      deps:
+        External dependencies.
 
     The LinkingContext returned by this function describes the following
     libraries:
@@ -499,11 +532,18 @@ def _create_linking_context(ctx, install_dir):
             libname = l,
         ))
 
+    linker_input_deps = []
+    for dep in deps:
+        linker_input_deps.append(dep[CcInfo].linking_context.linker_inputs)
+
     return cc_common.create_linking_context(
-        linker_inputs = depset(linker_inputs),
+        linker_inputs = depset(
+            direct = linker_inputs,
+            transitive = linker_input_deps,
+        ),
     )
 
-def _create_cc_info(linking_context, include_dir):
+def _create_cc_info(linking_context, include_dir, deps = None):
     """Creates the CcInfo provider.
 
     Args:
@@ -511,15 +551,26 @@ def _create_cc_info(linking_context, include_dir):
         LinkingContext object describing the OpenSSL and liboqs libraries.
       include_dir:
         File object pointing to the TreeArtifact include directory.
+      deps:
+        External dependencies.
 
     Returns:
       CcInfo object.
     """
+    compilation_contexts = []
+    compilation_contexts.append(cc_common.create_compilation_context(
+        system_includes = depset(["{include_dir}/".format(include_dir = include_dir.path)]),
+        headers = depset([include_dir]),
+    ))
+    for dep in deps:
+        compilation_contexts.append(dep[CcInfo].compilation_context)
+
+    compilation_context = cc_common.merge_compilation_contexts(
+        compilation_contexts = compilation_contexts,
+    )
+
     return CcInfo(
-        compilation_context = cc_common.create_compilation_context(
-            system_includes = depset(["{include_dir}/".format(include_dir = include_dir.path)]),
-            headers = depset([include_dir]),
-        ),
+        compilation_context = compilation_context,
         linking_context = linking_context,
     )
 
@@ -547,9 +598,12 @@ def _openssl_build_impl(ctx):
         install_dir = install_dir,
     )
 
+    (deps_flags, deps_files) = _generate_link_flags_deps(ctx)
+    env["DEPS_FLAGS"] = " ".join(deps_flags)
+
     ctx.actions.run_shell(
         outputs = [install_dir, include_dir],
-        inputs = ctx.attr.openssl_srcs.files.to_list() + ctx.attr.liboqs_srcs.files.to_list(),
+        inputs = ctx.attr.openssl_srcs.files.to_list() + ctx.attr.liboqs_srcs.files.to_list() + deps_files,
         tools = [
             ctx.toolchains[_NINJA_TOOLCHAIN].data.target.files,
             ctx.toolchains[_CMAKE_TOOLCHAIN].data.target.files,
@@ -576,10 +630,12 @@ def _openssl_build_impl(ctx):
     linking_context = _create_linking_context(
         ctx = ctx,
         install_dir = install_dir,
+        deps = ctx.attr.deps,
     )
     cc_info = _create_cc_info(
         linking_context = linking_context,
         include_dir = include_dir,
+        deps = ctx.attr.deps,
     )
 
     default_info = DefaultInfo(
@@ -631,6 +687,10 @@ openssl_build = rule(
         "additional_configure_flags": attr.string_list(
             mandatory = False,
             doc = "OpenSSL additional flags",
+        ),
+        "deps": attr.label_list(
+            mandatory = False,
+            doc = "Libraries to link OpenSSL with",
         ),
         "fpemu": attr.bool(mandatory = False, default = False, doc = "disable fpemu in liboqs"),
         "_cc_toolchain": attr.label(
