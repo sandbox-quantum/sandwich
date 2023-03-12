@@ -84,19 +84,21 @@ pub trait Context<'ctx>: std::fmt::Debug {
 pub fn try_from<'ctx>(
     configuration: &pb_api::Configuration,
 ) -> crate::Result<Box<dyn Context<'ctx> + 'ctx>> {
-    match configuration.get_field_impl() {
-        pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS
-        | pb_api::Implementation::IMPL_OPENSSL1_1_1 => {
-            crate::openssl::context::try_from(configuration)
-        }
-        pb_api::Implementation::IMPL_UNSPECIFIED => {
-            Err(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION.into())
-        }
-    }
-    .map_err(|e| {
-        e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID
-            >> pb::APIError::APIERROR_CONFIGURATION
-    })
+    configuration
+        .impl_
+        .enum_value()
+        .map_err(|_| errors!{pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID})
+        .and_then(|v| match v {
+            pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS
+            | pb_api::Implementation::IMPL_OPENSSL1_1_1 => {
+                crate::openssl::context::try_from(configuration)
+                    .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
+            }
+            pb_api::Implementation::IMPL_UNSPECIFIED => Err(
+                errors!{pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID}
+            ),
+        })
+        .map_err(|e| e >> pb::APIError::APIERROR_CONFIGURATION)
 }
 
 #[cfg(test)]
@@ -110,11 +112,11 @@ pub(crate) mod test {
             fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
         ) -> pb_api::Certificate {
             let mut cert = pb_api::Certificate::new();
-            let src = cert.mut_field_static();
+            let src = cert.mut_static();
             if let Some(f) = fmt {
-                src.set_format(f);
+                src.format = f.into();
             }
-            let ds = src.mut_data();
+            let ds = src.data.mut_or_insert_default();
             ds.set_filename(path.to_string());
             cert
         }
@@ -125,11 +127,11 @@ pub(crate) mod test {
             fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
         ) -> pb_api::PrivateKey {
             let mut pkey = pb_api::PrivateKey::new();
-            let src = pkey.mut_field_static();
+            let src = pkey.mut_static();
             if let Some(f) = fmt {
-                src.set_format(f);
+                src.format = f.into();
             }
-            let ds = src.mut_data();
+            let ds = src.data.mut_or_insert_default();
             ds.set_filename(path.to_string());
             pkey
         }
@@ -145,7 +147,7 @@ pub(crate) mod test {
                 crate::Mode::Server => conf.mut_client().mut_tls(),
             };
             if !skip_impl {
-                conf.set_field_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
+                conf.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
             }
             conf
         }
@@ -157,7 +159,7 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .mut_trusted_certificates()
+                .trusted_certificates
                 .push(create_cert(
                     crate::openssl::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
@@ -165,8 +167,9 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .mut_common_options()
-                .mut_kem()
+                .common_options
+                .mut_or_insert_default()
+                .kem
                 .push("kyber1024".to_string());
             let ctx = super::super::try_from(&config);
             ctx.unwrap();
@@ -180,7 +183,7 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .mut_trusted_certificates()
+                .trusted_certificates
                 .push(create_cert(
                     crate::openssl::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
@@ -188,8 +191,9 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .mut_common_options()
-                .mut_kem()
+                .common_options
+                .mut_or_insert_default()
+                .kem
                 .push("kyber1024".to_string());
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
@@ -207,7 +211,7 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .mut_trusted_certificates()
+                .trusted_certificates
                 .push(create_cert(
                     crate::openssl::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
@@ -215,8 +219,9 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .mut_common_options()
-                .mut_kem()
+                .common_options
+                .mut_or_insert_default()
+                .kem
                 .push("kyber1024".to_string());
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
@@ -238,19 +243,22 @@ pub(crate) mod test {
         #[test]
         fn test_configuration_bad_pkey() {
             let mut config = create_configuration(crate::Mode::Server, false);
-            config.mut_server().mut_tls().set_certificate(create_cert(
+            config.mut_server().mut_tls().certificate = Some(create_cert(
                 crate::openssl::test::CERT_DER_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
-            ));
-            config.mut_server().mut_tls().set_private_key(create_pkey(
+            ))
+            .into();
+            config.mut_server().mut_tls().private_key = Some(create_pkey(
                 crate::openssl::test::PKEY_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
-            ));
+            ))
+            .into();
             config
                 .mut_server()
                 .mut_tls()
-                .mut_common_options()
-                .mut_kem()
+                .common_options
+                .mut_or_insert_default()
+                .kem
                 .push("kyber1024".to_string());
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());

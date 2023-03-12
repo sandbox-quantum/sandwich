@@ -55,9 +55,9 @@ impl<'conf, 'ctx> std::convert::TryFrom<&'conf pb_api::Configuration> for Contex
     type Error = crate::Error;
     fn try_from(configuration: &'conf pb_api::Configuration) -> crate::Result<Self> {
         let conf_tls = if configuration.has_server() {
-            let server = configuration.get_server();
+            let server = configuration.server();
             if server.has_tls() {
-                Ok(server.get_tls())
+                Ok(server.tls())
             } else {
                 Err(OPENSSLSERVERCONFIGURATIONERROR_EMPTY)
             }
@@ -67,15 +67,15 @@ impl<'conf, 'ctx> std::convert::TryFrom<&'conf pb_api::Configuration> for Contex
 
         let mut ctx = super::Context::try_from(configuration)?;
 
-        if conf_tls.has_certificate() {
+        if let Some(cert) = conf_tls.certificate.as_ref() {
             unwrap_or!(
-                ctx.push_cert(conf_tls.get_certificate()),
+                ctx.push_cert(cert),
                 OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE
             );
         }
 
-        if conf_tls.has_private_key() {
-            super::PrivateKey::try_from(conf_tls.get_private_key())
+        if let Some(pkey) = conf_tls.private_key.as_ref() {
+            super::PrivateKey::try_from(pkey)
                 .and_then(|mut pkey| {
                     match unsafe {
                         openssl::SSL_CTX_use_PrivateKey((&mut ctx).into(), pkey.as_mut_ptr())
@@ -118,9 +118,12 @@ pub(super) mod test {
         let mut config = pb_api::Configuration::new();
         let serv = config.mut_server().mut_tls();
 
-        serv.set_certificate(certificate::test::create_cert(certpath, certfmt));
-        serv.set_private_key(private_key::test::create_pkey(keypath, keyfmt));
-        serv.mut_common_options().mut_kem().push(kem.to_string());
+        serv.certificate = Some(certificate::test::create_cert(certpath, certfmt)).into();
+        serv.private_key = Some(private_key::test::create_pkey(keypath, keyfmt)).into();
+        serv.common_options
+            .mut_or_insert_default()
+            .kem
+            .push(kem.to_string());
         config
     }
 

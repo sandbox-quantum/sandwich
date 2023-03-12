@@ -22,55 +22,48 @@
 //! Author: thb-sb
 
 /// Structure for states and errors based on protobuf definitions.
-pub struct ProtoStateErrorBase<Enum: protobuf::ProtobufEnum>(Enum, Option<crate::Error>);
+pub struct ProtoStateErrorBase<Enum: protobuf::Enum>(Enum, Option<crate::Error>);
 
 /// Implements [`std::cmp::PartialEq`] with Enum for [`ProtoStateErrorBase`].
-impl<Enum: protobuf::ProtobufEnum> std::cmp::PartialEq<Enum> for ProtoStateErrorBase<Enum> {
+impl<Enum: protobuf::Enum> std::cmp::PartialEq<Enum> for ProtoStateErrorBase<Enum> {
     fn eq(&self, other: &Enum) -> bool {
         self.0 == *other
     }
 }
 
 /// Implements [`std::fmt::Debug`] for [`ProtoStateErrorBase`].
-impl<Enum: protobuf::ProtobufEnum> std::fmt::Debug for ProtoStateErrorBase<Enum>
+impl<Enum: protobuf::Enum> std::fmt::Debug for ProtoStateErrorBase<Enum>
 where
     Self: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{} (code {})",
-            self,
-            <Enum as protobuf::ProtobufEnum>::value(&self.0)
-        )
+        write!(f, "{} (code {})", self, self.0.value())
     }
 }
 
 /// Converts a [`ProtoStateErrorBase`] to a [`crate::Error`].
-impl<Enum: protobuf::ProtobufEnum> std::convert::From<ProtoStateErrorBase<Enum>> for crate::Error {
+impl<Enum: protobuf::Enum> std::convert::From<ProtoStateErrorBase<Enum>> for crate::Error {
     fn from(e: ProtoStateErrorBase<Enum>) -> crate::Error {
         e.1.unwrap()
     }
 }
 
 /// Converts an enum value to a [`ProtoStateErrorBase`].
-impl<Enum: protobuf::ProtobufEnum> std::convert::From<Enum> for ProtoStateErrorBase<Enum> {
+impl<Enum: protobuf::Enum> std::convert::From<Enum> for ProtoStateErrorBase<Enum> {
     fn from(e: Enum) -> Self {
         Self(e, None)
     }
 }
 
 /// Converts an enum value and a [`crate::Error`] to a [`ProtoStateErrorBase`].
-impl<Enum: protobuf::ProtobufEnum> std::convert::From<(Enum, crate::Error)>
-    for ProtoStateErrorBase<Enum>
-{
+impl<Enum: protobuf::Enum> std::convert::From<(Enum, crate::Error)> for ProtoStateErrorBase<Enum> {
     fn from(p: (Enum, crate::Error)) -> Self {
         Self(p.0, Some(p.1))
     }
 }
 
 /// Implements [`ProtoStateErrorBase`].
-impl<Enum: protobuf::ProtobufEnum> ProtoStateErrorBase<Enum> {
+impl<Enum: protobuf::Enum> ProtoStateErrorBase<Enum> {
     /// Returns true if an error occurred.
     pub fn is_err(&self) -> bool {
         self.1.is_some()

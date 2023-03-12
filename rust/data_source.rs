@@ -45,19 +45,21 @@ pub(crate) enum DataSource<'data> {
 impl<'ds: 'data, 'data> std::convert::TryFrom<&'ds pb_api::DataSource> for DataSource<'data> {
     type Error = crate::Error;
     fn try_from(ds: &'ds pb_api::DataSource) -> crate::Result<DataSource<'data>> {
+        use pb_api::data_source::data_source;
         ds.specifier
             .as_ref()
             .ok_or_else(|| DATASOURCEERROR_INVALID_CASE.into())
             .and_then(|oneof| match oneof {
-                pb_api::DataSource_oneof_specifier::filename(path) => Ok(Self::Fs(
+                data_source::Specifier::Filename(path) => Ok(Self::Fs(
                     std::fs::read(path).or(Err(DATASOURCEERROR_NOT_FOUND))?,
                 )),
-                pb_api::DataSource_oneof_specifier::inline_bytes(ref v) => {
+                data_source::Specifier::InlineBytes(ref v) => {
                     Ok(Self::Bytes(std::borrow::Cow::from(v)))
                 }
-                pb_api::DataSource_oneof_specifier::inline_string(ref v) => {
+                data_source::Specifier::InlineString(ref v) => {
                     Ok(Self::String(std::borrow::Cow::from(v)))
                 }
+                _ => Err(DATASOURCEERROR_INVALID_CASE.into()),
             })
     }
 }

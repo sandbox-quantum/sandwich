@@ -145,39 +145,39 @@ impl<'pimpl> std::convert::TryFrom<&pb_api::Configuration> for Context<'pimpl> {
     type Error = crate::Error;
 
     fn try_from(configuration: &pb_api::Configuration) -> crate::Result<Self> {
+        use pb_api::configuration::client_options as pb_client_options;
+        use pb_api::configuration::configuration as pb_configuration;
+        use pb_api::configuration::server_options as pb_server_options;
         let (mode, ssl_ctx, co) = configuration
             .opts
             .as_ref()
             .ok_or(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY)
             .and_then(|oneof| match oneof {
-                pb_api::Configuration_oneof_opts::client(co) => co
+                pb_configuration::Opts::Client(co) => co
                     .opts
                     .as_ref()
                     .ok_or(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY)
-                    .map(|oneof| match oneof {
-                        pb_api::ClientOptions_oneof_opts::tls(tls) => (
+                    .and_then(|oneof| match oneof {
+                        pb_client_options::Opts::Tls(tls) => Ok((
                             crate::Mode::Client,
                             SSLContext::try_from(crate::Mode::Client),
-                            match tls.has_common_options() {
-                                true => Some(tls.get_common_options()),
-                                false => None,
-                            },
-                        ),
+                            tls.common_options.as_ref(),
+                        )),
+                        _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY),
                     }),
-                pb_api::Configuration_oneof_opts::server(co) => co
+                pb_configuration::Opts::Server(co) => co
                     .opts
                     .as_ref()
                     .ok_or(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY)
-                    .map(|oneof| match oneof {
-                        pb_api::ServerOptions_oneof_opts::tls(tls) => (
+                    .and_then(|oneof| match oneof {
+                        pb_server_options::Opts::Tls(tls) => Ok((
                             crate::Mode::Server,
                             SSLContext::try_from(crate::Mode::Server),
-                            match tls.has_common_options() {
-                                true => Some(tls.get_common_options()),
-                                false => None,
-                            },
-                        ),
+                            tls.common_options.as_ref(),
+                        )),
+                        _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY),
                     }),
+                _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY),
             })?;
         let mut ssl_ctx = ssl_ctx.map_err(|e|
                 e >> match mode {
@@ -204,17 +204,14 @@ impl<'pimpl> std::convert::TryFrom<&pb_api::Configuration> for Context<'pimpl> {
             _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION)
         }?;
 
-        let flags = match co {
-            Some(c) => c.get_flags(),
-            None => 0,
-        };
+        let flags = co.map(|co| co.flags).unwrap_or(0);
 
         if mode == crate::Mode::Client {
             unsafe {
                 openssl::SSL_CTX_set_verify(
                     (&mut ssl_ctx).into(),
                     if (flags
-                        & <pb_api::TLSFlags as protobuf::ProtobufEnum>::value(
+                        & <pb_api::TLSFlags as protobuf::Enum>::value(
                             &pb_api::TLSFlags::TLSFLAGS_SKIP_VERIFY,
                         ))
                         != 0
@@ -247,7 +244,7 @@ impl<'pimpl> std::convert::TryFrom<&pb_api::Configuration> for Context<'pimpl> {
 
         let mut ctx = Self(ssl_ctx);
         if let Some(co) = co {
-            if let Err(r) = ctx.set_kems(co.get_kem().iter()) {
+            if let Err(r) = ctx.set_kems(co.kem.iter()) {
                 return Err(r >> match mode {
                     crate::Mode::Client => crate::ErrorCode::from(
                         pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_KEM,
@@ -336,19 +333,21 @@ impl<'pimpl> Context<'pimpl> {
 pub(crate) fn try_from<'ctx>(
     configuration: &pb_api::Configuration,
 ) -> crate::Result<Box<dyn crate::Context<'ctx> + 'ctx>> {
+    use pb_api::configuration::configuration as pb_configuration;
     configuration
         .opts
         .as_ref()
         .ok_or_else(|| pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE.into())
         .and_then::<Box<dyn crate::Context<'ctx> + 'ctx>, _>(|oneof| match oneof {
-            pb_api::Configuration_oneof_opts::client(_) => Ok(Box::new(unwrap_or!(
+            pb_configuration::Opts::Client(_) => Ok(Box::new(unwrap_or!(
                 super::client::Context::try_from(configuration),
                 pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
             ))),
-            pb_api::Configuration_oneof_opts::server(_) => Ok(Box::new(unwrap_or!(
+            pb_configuration::Opts::Server(_) => Ok(Box::new(unwrap_or!(
                 super::server::Context::try_from(configuration),
                 pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
             ))),
+            _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE.into()),
         })
 }
 

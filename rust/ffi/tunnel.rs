@@ -50,7 +50,7 @@ pub extern "C" fn sandwich_tunnel_free(tun: *mut std::ffi::c_void) {
 /// Performs the handshake.
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_handshake(tun: *mut std::ffi::c_void) -> i32 {
-    use protobuf::ProtobufEnum;
+    use protobuf::Enum;
     let mut b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
     let r = b.handshake();
     Box::into_raw(b);
@@ -65,7 +65,7 @@ pub extern "C" fn sandwich_tunnel_read(
     n: usize,
     r: *mut usize,
 ) -> i32 {
-    use protobuf::ProtobufEnum;
+    use protobuf::Enum;
     let mut b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
     let res = b.read(unsafe { std::slice::from_raw_parts_mut(dst as *mut u8, n) });
     Box::into_raw(b);
@@ -87,7 +87,7 @@ pub extern "C" fn sandwich_tunnel_write(
     n: usize,
     w: *mut usize,
 ) -> i32 {
-    use protobuf::ProtobufEnum;
+    use protobuf::Enum;
     let mut b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
     let res = b.write(unsafe { std::slice::from_raw_parts(src as *const u8, n) });
     Box::into_raw(b);
@@ -112,7 +112,7 @@ pub extern "C" fn sandwich_tunnel_close(tun: *mut std::ffi::c_void) {
 /// Returns the state of the tunnel.
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_state(tun: *mut std::ffi::c_void) -> i32 {
-    use protobuf::ProtobufEnum;
+    use protobuf::Enum;
     let b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
     let r = b.state();
     Box::into_raw(b);

@@ -49,23 +49,28 @@ impl<'pkey: 'ds, 'ds> std::convert::TryFrom<&'pkey pb_api::PrivateKey>
     type Error = crate::Error;
 
     fn try_from(pkey: &'pkey pb_api::PrivateKey) -> crate::Result<Self> {
+        use pb_api::private_key::private_key;
         pkey.source
             .as_ref()
             .ok_or_else(|| pb::DataSourceError::DATASOURCEERROR_EMPTY.into())
             .and_then(|oneof| match oneof {
-                pb_api::PrivateKey_oneof_source::field_static(ref asn1ds) => {
-                    if asn1ds.has_data() {
-                        crate::DataSource::try_from(asn1ds.get_data()).and_then(|ds| {
-                            if ds.len() <= (std::i32::MAX as usize) {
-                                Ok(PrivateKeyASN1Source(asn1ds.get_format(), ds))
-                            } else {
-                                Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW)?
-                            }
-                        })
-                    } else {
-                        Err(pb::DataSourceError::DATASOURCEERROR_EMPTY)?
-                    }
-                }
+                private_key::Source::Static(ref asn1ds) => asn1ds
+                    .data
+                    .as_ref()
+                    .ok_or_else(|| pb::DataSourceError::DATASOURCEERROR_EMPTY.into())
+                    .and_then(crate::DataSource::try_from)
+                    .and_then(|ds| {
+                        if ds.len() <= (std::i32::MAX as usize) {
+                            asn1ds
+                                .format
+                                .enum_value()
+                                .map_err(|_| pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into())
+                                .map(|f| PrivateKeyASN1Source(f, ds))
+                        } else {
+                            Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW.into())
+                        }
+                    }),
+                _ => Err(pb::DataSourceError::DATASOURCEERROR_EMPTY.into()),
             })
     }
 }
@@ -126,11 +131,11 @@ pub(super) mod test {
         fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
     ) -> pb_api::PrivateKey {
         let mut pkey = pb_api::PrivateKey::new();
-        let src = pkey.mut_field_static();
+        let src = pkey.mut_static();
         if let Some(f) = fmt {
-            src.set_format(f);
+            src.format = f.into();
         }
-        let ds = src.mut_data();
+        let ds = src.data.mut_or_insert_default();
         ds.set_filename(path.to_string());
         pkey
     }

@@ -114,11 +114,27 @@ rust_register_toolchains(
     edition = "2021",
 )
 
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies()
+
+load("//common/build/rust:deps.bzl", "rust_deps")
+
+rust_deps()
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()
+
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
 rust_bindgen_dependencies()
 
 rust_bindgen_register_toolchains()
+
+load("//common/build/rust/proto:toolchains.bzl", "common_build_rust_proto_register_toolchains")
+
+common_build_rust_proto_register_toolchains()
 
 load("@rules_rust//proto:repositories.bzl", "rust_proto_repositories")
 

@@ -139,7 +139,7 @@ macro_rules! GenErrorCode {
         /// The first `i32` is the error kind, the second one is the error code.
         impl std::convert::From<ErrorCode> for (i32, i32) {
             fn from(ec: ErrorCode) -> Self {
-                use protobuf::ProtobufEnum;
+                use protobuf::Enum;
                 match ec {
                     $(
                         ErrorCode::$sym(e) => (sandwich_rust_proto::ErrorKind::$kind.value(),  e.value()),
@@ -158,7 +158,7 @@ macro_rules! GenErrorCode {
             /// and the soundness of error kind and pair (i32,i32).
             #[test]
             fn $sym() {
-                use protobuf::ProtobufEnum;
+                use protobuf::Enum;
                 $(
                     let e = ErrorCode::from(pb::$sym::$vsym);
                     assert_eq!(std::convert::Into::<pb::ErrorKind>::into(e), pb::ErrorKind::$kind);

@@ -126,11 +126,12 @@ def _find_sandwich_dll(extension=".so") -> typing.Optional[pathlib.Path]:
         The path to `libsandwich.so` or `libsandwich.dylib` if
         it was successfully found, else None.
     """
-    _ext = {'Darwin': 'dylib', 'Windows': 'dll'}.get(platform.system(), "so")
+    _ext = {"Darwin": "dylib", "Windows": "dll"}.get(platform.system(), "so")
     libpath = pathlib.Path(__file__).parent / "libsandwich_shared.{}".format(_ext)
     if libpath.exists():
         return libpath
     from bazel_tools.tools.python.runfiles import runfiles
+
     r = runfiles.Create()
     libpath = f"sandwich/rust/libsandwich.{extension}"
     ret = r.Rlocation(libpath)

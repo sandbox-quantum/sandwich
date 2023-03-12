@@ -440,7 +440,7 @@ mod test {
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber512",
         );
-        config.set_field_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut ctx = crate::context::try_from(&config).unwrap();
         let mut io = IOBuffer::new();
         let tun = ctx.new_tunnel(&mut io);
@@ -462,7 +462,7 @@ mod test {
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber512",
         );
-        config.set_field_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut ctx = crate::context::try_from(&config).unwrap();
         let mut io = IOBuffer::new();
         let tun = ctx.new_tunnel(&mut io);
@@ -484,7 +484,7 @@ mod test {
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber512",
         );
-        config.set_field_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut client_ctx = crate::context::try_from(&config).unwrap();
         let mut client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -495,7 +495,7 @@ mod test {
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber512",
         );
-        config.set_field_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut server_ctx = crate::context::try_from(&config).unwrap();
         let mut server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 

@@ -63,19 +63,18 @@ mod test {
 
         let mut config =
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
-        config
-            .mut_client()
-            .mut_tls()
-            .mut_trusted_certificates()
-            .push(crate::context::test::openssl::create_cert(
+        config.mut_client().mut_tls().trusted_certificates.push(
+            crate::context::test::openssl::create_cert(
                 crate::openssl::test::CERT_PEM_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            ));
+            ),
+        );
         config
             .mut_client()
             .mut_tls()
-            .mut_common_options()
-            .mut_kem()
+            .common_options
+            .mut_or_insert_default()
+            .kem
             .push("kyber1024".to_string());
 
         let encoded = config.write_to_bytes().unwrap();
@@ -98,19 +97,18 @@ mod test {
 
         let mut config =
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
-        config
-            .mut_client()
-            .mut_tls()
-            .mut_trusted_certificates()
-            .push(crate::context::test::openssl::create_cert(
+        config.mut_client().mut_tls().trusted_certificates.push(
+            crate::context::test::openssl::create_cert(
                 crate::openssl::test::CERT_PEM_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            ));
+            ),
+        );
         config
             .mut_client()
             .mut_tls()
-            .mut_common_options()
-            .mut_kem()
+            .common_options
+            .mut_or_insert_default()
+            .kem
             .push("kyber1023".to_string());
 
         let encoded = config.write_to_bytes().unwrap();

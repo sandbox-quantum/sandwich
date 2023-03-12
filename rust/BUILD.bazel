@@ -91,7 +91,7 @@ rust_library(
         ":openssl",
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
-        "@rules_rust//proto/3rdparty/crates:protobuf",
+        "@crate_index//:protobuf",
     ],
 )
 
@@ -143,7 +143,7 @@ rust_doc_test(
         ":openssl",
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
-        "@rules_rust//proto/3rdparty/crates:protobuf",
+        "@crate_index//:protobuf",
     ],
 )
 
@@ -157,7 +157,7 @@ rust_static_library(
         ":openssl",
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
-        "@rules_rust//proto/3rdparty/crates:protobuf",
+        "@crate_index//:protobuf",
     ],
 )
 
@@ -171,7 +171,7 @@ rust_shared_library(
         ":openssl",
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
-        "@rules_rust//proto/3rdparty/crates:protobuf",
+        "@crate_index//:protobuf",
     ],
 )
 
@@ -181,4 +181,7 @@ rust_test(
     crate = ":sandwich",
     crate_features = ["ffi"],
     data = ["//testdata:tests_data"],
+    deps = [
+        "@crate_index//:protobuf",
+    ],
 )

@@ -55,9 +55,9 @@ impl<'conf, 'ctx> std::convert::TryFrom<&'conf pb_api::Configuration> for Contex
     type Error = crate::Error;
     fn try_from(configuration: &'conf pb_api::Configuration) -> crate::Result<Self> {
         let conf_tls = if configuration.has_client() {
-            let client = configuration.get_client();
+            let client = configuration.client();
             if client.has_tls() {
-                Ok(client.get_tls())
+                Ok(client.tls())
             } else {
                 Err(OPENSSLCLIENTCONFIGURATIONERROR_EMPTY)
             }
@@ -78,7 +78,7 @@ impl<'conf, 'ctx> std::convert::TryFrom<&'conf pb_api::Configuration> for Contex
             openssl::X509_STORE_set_trust(ptr, 1);
         }
 
-        for c in conf_tls.get_trusted_certificates().iter() {
+        for c in conf_tls.trusted_certificates.iter() {
             unwrap_or!(
                 ctx.push_cert(c),
                 OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE
@@ -104,8 +104,11 @@ pub(super) mod test {
         let mut config = pb_api::Configuration::new();
         let cli = config.mut_client().mut_tls();
 
-        cli.mut_trusted_certificates().push(cert);
-        cli.mut_common_options().mut_kem().push(kem.to_string());
+        cli.trusted_certificates.push(cert);
+        cli.common_options
+            .mut_or_insert_default()
+            .kem
+            .push(kem.to_string());
         config
     }
 

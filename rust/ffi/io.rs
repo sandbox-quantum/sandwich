@@ -50,7 +50,7 @@ pub struct Settings {
 /// Implements [`crate::IO`] for [`Settings`].
 impl crate::IO for Settings {
     fn read(&mut self, buf: &mut [u8], tunnel_state: pb::State) -> crate::io::Result<usize> {
-        use protobuf::ProtobufEnum;
+        use protobuf::Enum;
 
         let mut err = pb::IOError::IOERROR_UNKNOWN.value();
         let n = (self.readfn)(
@@ -67,7 +67,7 @@ impl crate::IO for Settings {
         }
     }
     fn write(&mut self, buf: &[u8], tunnel_state: pb::State) -> crate::io::Result<usize> {
-        use protobuf::ProtobufEnum;
+        use protobuf::Enum;
 
         let mut err = pb::IOError::IOERROR_UNKNOWN.value();
         let n = (self.writefn)(
