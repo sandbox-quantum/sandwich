@@ -43,7 +43,6 @@ jobs:
           name: "Deploy documentation"
           command: |
             bazelisk build //rust:doc
-            pip install mkdocs
             apt-get install -y unzip
             unzip bazel-bin/rust/doc.zip -d /tmp/rustdoc
             mv /tmp/rustdoc/rust/doc.rustdoc docs/rust
