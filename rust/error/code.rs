@@ -68,7 +68,7 @@ macro_rules! GenErrorCode {
         /// An error code.
         /// An error code holds one of the error described in `errors.proto`
         /// and listed in `ErrorKind`.
-        #[derive(Clone,Copy,Eq,PartialEq,Debug)]
+        #[derive(Clone,Eq,PartialEq,Debug)]
         pub enum ErrorCode {
             $(
                 #[doc=$desc]
@@ -107,8 +107,8 @@ macro_rules! GenErrorCode {
         )*
 
         /// Implements `std::convert::Into<sandwich_rust_proto::ErrorKind>` for [`ErrorCode`].
-        impl std::convert::From<ErrorCode> for sandwich_rust_proto::ErrorKind {
-            fn from(ec: ErrorCode) -> Self {
+        impl std::convert::From<&ErrorCode> for sandwich_rust_proto::ErrorKind {
+            fn from(ec: &ErrorCode) -> Self {
                 match ec {
                     $(
                         ErrorCode::$sym(_) => sandwich_rust_proto::ErrorKind::$kind,
@@ -135,8 +135,8 @@ macro_rules! GenErrorCode {
 
         /// Implements [`std::convert::Into<(i32, i32)>`] for [`ErrorCode`].
         /// The first `i32` is the error kind, the second one is the error code.
-        impl std::convert::From<ErrorCode> for (i32, i32) {
-            fn from(ec: ErrorCode) -> Self {
+        impl std::convert::From<&ErrorCode> for (i32, i32) {
+            fn from(ec: &ErrorCode) -> Self {
                 use protobuf::Enum;
                 match ec {
                     $(
@@ -159,8 +159,8 @@ macro_rules! GenErrorCode {
                 use protobuf::Enum;
                 $(
                     let e = ErrorCode::from(pb::$sym::$vsym);
-                    assert_eq!(std::convert::Into::<pb::ErrorKind>::into(e), pb::ErrorKind::$kind);
-                    let pair = std::convert::Into::<(i32,i32)>::into(e);
+                    assert_eq!(std::convert::Into::<pb::ErrorKind>::into(&e), pb::ErrorKind::$kind);
+                    let pair = std::convert::Into::<(i32,i32)>::into(&e);
                     assert_eq!(pair.0, pb::ErrorKind::$kind.value());
                     assert_eq!(pair.1, pb::$sym::$vsym.value());
                     assert_eq!(ErrorCode::from(pb::$sym::$vsym), pb::$sym::$vsym);
@@ -330,7 +330,7 @@ where
     ErrorCode: From<T>,
 {
     fn eq(&self, other: &T) -> bool {
-        *self == ErrorCode::from(*other)
+        self == ErrorCode::from(*other)
     }
 }
 
@@ -374,7 +374,7 @@ mod test {
     #[test]
     pub fn test_comparison_error_code_error_code() {
         let e0 = ErrorCode::from(pb::APIError::APIERROR_SOCKET);
-        let e1 = e0;
+        let e1 = e0.clone();
         assert_eq!(e0, e1);
         assert_eq!(e0, &e1);
         assert_eq!(&e0, e1);

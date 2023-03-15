@@ -32,7 +32,7 @@ impl std::convert::From<crate::Error> for *mut Error {
         let mut cur: *mut Error = std::ptr::null_mut();
 
         for ec in e.iter().rev() {
-            let (kind, code) = <crate::ErrorCode as std::convert::Into<(i32, i32)>>::into(*ec);
+            let (kind, code) = <_ as std::convert::Into<(i32, i32)>>::into(ec);
             let e_c = Box::<Error>::new(Error {
                 details: std::ptr::null_mut(),
                 kind,
