@@ -89,21 +89,19 @@ macro_rules! GenErrorCode {
             impl AllowedErrorCodeEnum for &pb::$sym {}
 
             /// Implements comparison operator between [`ErrorCode`] and the current error enum.
-            impl PartialEq<ErrorCode> for sandwich_rust_proto::$sym where ErrorCode: From<Self>{
+            impl PartialEq<ErrorCode> for sandwich_rust_proto::$sym {
                 fn eq(&self, other: &ErrorCode) -> bool {
-                    ErrorCode::from(*other) == *self
+                    match other {
+                        ErrorCode::$sym(ec) => ec == self,
+                        _ => false,
+                    }
                 }
             }
 
             /// Implements comparison operator between [`ErrorCode`] and the current error enum.
-            impl PartialEq<sandwich_rust_proto::$sym> for &ErrorCode where ErrorCode: From<sandwich_rust_proto::$sym> {
+            impl PartialEq<sandwich_rust_proto::$sym> for &ErrorCode {
                 fn eq(&self, other: &sandwich_rust_proto::$sym) -> bool {
-                    ErrorCode::from(*other) == **self
-                }
-            }
-            impl PartialEq<&ErrorCode> for sandwich_rust_proto::$sym where ErrorCode: From<Self>{
-                fn eq(&self, other: &&ErrorCode) -> bool {
-                    ErrorCode::from(**other) == *self
+                    return &other == self
                 }
             }
         )*
