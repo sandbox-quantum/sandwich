@@ -197,7 +197,7 @@ pub(super) mod test {
         let c: crate::Result<Certificate> = (&cert).try_into();
         assert!(c.is_err());
         let e = c.unwrap_err();
-        assert_eq!(e, pb::ASN1Error::ASN1ERROR_MALFORMED);
+        assert!(e.is(&errors!{pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED}));
     }
 
     /// Tests [`std::convert::TryFrom<&pb_api::Certificate>`] for [`Certificate`] using
@@ -211,6 +211,6 @@ pub(super) mod test {
         let c: crate::Result<Certificate> = (&cert).try_into();
         assert!(c.is_err());
         let e = c.unwrap_err();
-        assert_eq!(e, pb::ASN1Error::ASN1ERROR_MALFORMED);
+        assert!(e.is(&errors!{pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED}));
     }
 }

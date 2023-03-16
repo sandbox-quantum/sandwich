@@ -190,6 +190,6 @@ mod test {
         assert!(s.is_err());
         assert_eq!(s, pb::State::STATE_DISCONNECTED);
         let e: crate::Error = s.into();
-        assert_eq!(e, pb::APIError::APIERROR_SOCKET);
+        assert!(e.is(&errors! {pb::APIError::APIERROR_SOCKET}));
     }
 }

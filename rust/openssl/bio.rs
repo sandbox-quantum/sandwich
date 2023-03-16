@@ -91,9 +91,8 @@ mod test {
         let vec = vec![0u8; (std::i32::MAX as usize) + 1usize];
         let b = Bio::try_from(vec.as_ref());
         assert!(b.is_err());
-        assert_eq!(
-            b.unwrap_err(),
+        assert!(b.unwrap_err().is(&errors! {
             pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW
-        );
+        }));
     }
 }

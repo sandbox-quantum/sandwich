@@ -661,10 +661,10 @@ mod test {
         let r = ctx.push_cert(&cert);
         assert!(r.is_err());
         let e = r.unwrap_err();
-        assert_eq!(
-            e,
+        assert!(
+            e.is(&
             errors! {pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED}
-        );
+        ));
     }
 
     /// Tests set KEM and invalid KEM.
@@ -716,10 +716,10 @@ mod test {
         );
         let r = super::try_from(&ctx);
         assert!(r.is_err());
-        assert_eq!(
-            r.unwrap_err(),
+        assert!(
+            r.unwrap_err().is(&
             errors! {pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED => pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE => pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID}
-        );
+        ));
     }
 
     /// Tests `try_from` with a server and an invalid private key format.
@@ -734,10 +734,10 @@ mod test {
         );
         let r = super::try_from(&ctx);
         assert!(r.is_err());
-        assert_eq!(
-            r.unwrap_err(),
+        assert!(
+            r.unwrap_err().is(&
             errors! {pb::ASN1Error::ASN1ERROR_MALFORMED => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED => pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY => pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID}
-        );
+        ));
     }
 
     /// Tests the default compliance: it accepts post quantum and hybrid.

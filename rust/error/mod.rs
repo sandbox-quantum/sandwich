@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Defines [`Error`] struct and [`ErrorCode`] enum.
+//! Defines [`Error`] struct and [`ProtoBasedErrorCode`] enum.
 //!
 //! When an error occurred in Sandwich, an [`Error`] is returned, usually
 //! through the Sandwich [`crate::Result`]. An [`Error`] is a chain
-//! of [`ErrorCode`], where the first element of the chain is the most general
+//! of [`ProtoBasedErrorCode`], where the first element of the chain is the most general
 //! error, and the last element is the most precise error.
 //!
 //! For instance, a TLS configuration specifying a malformed ASN.1 certificate
@@ -36,20 +36,84 @@
 //! Author: thb-sb
 
 pub mod code;
-pub use code::ErrorCode;
+pub use code::{ErrorCode, ProtoBasedErrorCode};
 
 /// An error.
-/// An [`Error`] holds a chain of [`ErrorCode`].
-#[derive(Eq, PartialEq)]
+/// An [`Error`] holds a chain of [`ProtoBasedErrorCode`].
 pub struct Error(std::vec::Vec<ErrorCode>);
 
 /// Instantiates an [`Error`] from an enum value.
-impl<ErrorEnum: code::AllowedErrorCodeEnum> std::convert::From<ErrorEnum> for Error
+impl<ErrorEnum: code::AllowedProtoBasedErrorCodeEnum> std::convert::From<ErrorEnum> for Error
 where
     ErrorCode: std::convert::From<ErrorEnum>,
 {
     fn from(e: ErrorEnum) -> Self {
         Self(vec![ErrorCode::from(e)])
+    }
+}
+
+/// Instantiates an [`Error`] from an enum value and a string.
+impl<'s, ErrorEnum: code::AllowedProtoBasedErrorCodeEnum, S> std::convert::From<(ErrorEnum, &'s S)>
+    for Error
+where
+    S: std::convert::AsRef<str> + 's,
+    ErrorCode: From<(ErrorEnum, &'s S)>,
+{
+    fn from((e, s): (ErrorEnum, &'s S)) -> Self {
+        Self(vec![ErrorCode::from((e, s))])
+    }
+}
+
+/// Instantiates an [`Error`] from an enum value and a string.
+impl<'s, ErrorEnum: code::AllowedProtoBasedErrorCodeEnum> std::convert::From<(ErrorEnum, &'s str)>
+    for Error
+where
+    ErrorCode: From<(ErrorEnum, &'s str)>,
+{
+    fn from((e, s): (ErrorEnum, &'s str)) -> Self {
+        Self(vec![ErrorCode::from((e, s))])
+    }
+}
+
+/// Instantiates an [`Error`] from an enum value and a string.
+impl<ErrorEnum: code::AllowedProtoBasedErrorCodeEnum>
+    std::convert::From<(ErrorEnum, std::string::String)> for Error
+where
+    ErrorCode: From<(ErrorEnum, std::string::String)>,
+{
+    fn from((e, s): (ErrorEnum, std::string::String)) -> Self {
+        Self(vec![ErrorCode::from((e, s))])
+    }
+}
+
+/// Instantiates an [`Error`] from an [`ProtoBasedErrorCode`].
+impl std::convert::From<ProtoBasedErrorCode> for Error {
+    fn from(e: ProtoBasedErrorCode) -> Self {
+        Self(vec![ErrorCode::from(e)])
+    }
+}
+
+/// Instantiates an [`Error`] from an enum value and a string.
+impl<S> std::convert::From<(ProtoBasedErrorCode, &S)> for Error
+where
+    S: std::convert::AsRef<str>,
+{
+    fn from((e, s): (ProtoBasedErrorCode, &S)) -> Self {
+        Self(vec![ErrorCode::from((e, s))])
+    }
+}
+
+/// Instantiates an [`Error`] from an enum value and a string.
+impl std::convert::From<(ProtoBasedErrorCode, &str)> for Error {
+    fn from((e, s): (ProtoBasedErrorCode, &str)) -> Self {
+        Self(vec![ErrorCode::from((e, s))])
+    }
+}
+
+/// Instantiates an [`Error`] from an enum value and a string.
+impl std::convert::From<(ProtoBasedErrorCode, std::string::String)> for Error {
+    fn from((e, s): (ProtoBasedErrorCode, std::string::String)) -> Self {
+        Self(vec![ErrorCode::from((e, s))])
     }
 }
 
@@ -79,7 +143,7 @@ impl std::convert::From<ErrorCode> for Error {
 ///   // It is read as "a certificate error occurred: malformed certificate,
 ///   // because: an ASN.1 error occurred: invalid format".
 /// ```
-impl<ErrorEnum: code::AllowedErrorCodeEnum> std::ops::Shr<ErrorEnum> for Error
+impl<ErrorEnum: code::AllowedProtoBasedErrorCodeEnum> std::ops::Shr<ErrorEnum> for Error
 where
     ErrorCode: std::convert::From<ErrorEnum>,
 {
@@ -88,6 +152,99 @@ where
     fn shr(self, e: ErrorEnum) -> Self::Output {
         let mut n = Self(self.0);
         n.0.push(ErrorCode::from(e));
+        n
+    }
+}
+
+/// Appends an [`Error`] into the chain, using the `>>` operator and a string.
+impl<'s, ErrorEnum: code::AllowedProtoBasedErrorCodeEnum, S> std::ops::Shr<(ErrorEnum, &'s S)>
+    for Error
+where
+    ErrorCode: std::convert::From<(ErrorEnum, &'s S)>,
+    S: std::convert::AsRef<str> + 's,
+{
+    type Output = Self;
+
+    fn shr(self, (e, s): (ErrorEnum, &'s S)) -> Self::Output {
+        let mut n = Self(self.0);
+        n.0.push(ErrorCode::from((e, s)));
+        n
+    }
+}
+
+/// Appends an [`Error`] into the chain, using the `>>` operator and a string.
+impl<'s, ErrorEnum: code::AllowedProtoBasedErrorCodeEnum> std::ops::Shr<(ErrorEnum, &'s str)>
+    for Error
+where
+    ErrorCode: std::convert::From<(ErrorEnum, &'s str)>,
+{
+    type Output = Self;
+
+    fn shr(self, (e, s): (ErrorEnum, &'s str)) -> Self::Output {
+        let mut n = Self(self.0);
+        n.0.push(ErrorCode::from((e, s)));
+        n
+    }
+}
+
+/// Appends an [`Error`] into the chain, using the `>>` operator and a string.
+impl<ErrorEnum: code::AllowedProtoBasedErrorCodeEnum>
+    std::ops::Shr<(ErrorEnum, std::string::String)> for Error
+where
+    ErrorCode: std::convert::From<(ErrorEnum, std::string::String)>,
+{
+    type Output = Self;
+
+    fn shr(self, (e, s): (ErrorEnum, std::string::String)) -> Self::Output {
+        let mut n = Self(self.0);
+        n.0.push(ErrorCode::from((e, s)));
+        n
+    }
+}
+
+/// Appends an [`Error`] into the chain, using the `>>` operator.
+impl std::ops::Shr<ProtoBasedErrorCode> for Error {
+    type Output = Self;
+
+    fn shr(self, e: ProtoBasedErrorCode) -> Self::Output {
+        let mut n = Self(self.0);
+        n.0.push(ErrorCode::from(e));
+        n
+    }
+}
+
+/// Appends an [`Error`] into the chain, using the `>>` operator and a string.
+impl<S> std::ops::Shr<(ProtoBasedErrorCode, &S)> for Error
+where
+    S: std::convert::AsRef<str>,
+{
+    type Output = Self;
+
+    fn shr(self, (e, s): (ProtoBasedErrorCode, &S)) -> Self::Output {
+        let mut n = Self(self.0);
+        n.0.push(ErrorCode::from((e, s)));
+        n
+    }
+}
+
+/// Appends an [`Error`] into the chain, using the `>>` operator and a string.
+impl std::ops::Shr<(ProtoBasedErrorCode, &str)> for Error {
+    type Output = Self;
+
+    fn shr(self, (e, s): (ProtoBasedErrorCode, &str)) -> Self::Output {
+        let mut n = Self(self.0);
+        n.0.push(ErrorCode::from((e, s)));
+        n
+    }
+}
+
+/// Appends an [`Error`] into the chain, using the `>>` operator.
+impl std::ops::Shr<(ProtoBasedErrorCode, std::string::String)> for Error {
+    type Output = Self;
+
+    fn shr(self, (e, s): (ProtoBasedErrorCode, std::string::String)) -> Self::Output {
+        let mut n = Self(self.0);
+        n.0.push(ErrorCode::from((e, s)));
         n
     }
 }
@@ -123,20 +280,6 @@ impl std::fmt::Debug for Error {
             writeln!(f, "~>#{i}: {e}")?;
         }
         Ok(())
-    }
-}
-
-/// Implements [`std::cmp::PartialEq`] between an [`Error`] and a error enum value.
-impl<T: code::AllowedErrorCodeEnum> PartialEq<T> for Error
-where
-    T: code::AllowedErrorCodeEnum,
-    ErrorCode: From<T>,
-{
-    fn eq(&self, other: &T) -> bool {
-        match self.0.len() {
-            0 => false,
-            _ => self.0[0] == *other,
-        }
     }
 }
 
@@ -186,7 +329,7 @@ impl Error {
     pub(crate) fn new() -> Error {
         Error(std::vec::Vec::<ErrorCode>::new())
     }
-    /// Returns an iterator over the [`ErrorCode`] from the chain.
+    /// Returns an iterator over the [`ProtoBasedErrorCode`] from the chain.
     pub fn iter(&self) -> std::slice::Iter<ErrorCode> {
         self.0.iter()
     }
@@ -199,6 +342,19 @@ impl Error {
     /// Returns the emptiness of the chain.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    /// Verifies that two [`Error`] share the same protobuf based error codes.
+    pub fn is(&self, other: &Self) -> bool {
+        if self.0.len() != other.0.len() {
+            return false;
+        }
+        for (i, ec) in self.0.iter().enumerate() {
+            if !ec.is(&other.0[i]) {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -215,7 +371,7 @@ impl std::ops::Shr<ErrorCode> for ErrorCode {
 #[cfg(test)]
 mod test {
     extern crate sandwich_rust_proto as pb;
-    use super::{Error, ErrorCode};
+    use super::{Error, ErrorCode, ProtoBasedErrorCode};
 
     /// Tests the constructor of [`Error`] from an error enum.
     #[test]
@@ -224,10 +380,10 @@ mod test {
         assert_eq!(e.len(), 1);
     }
 
-    /// Tests the constructor of [`Error`] from an [`ErrorCode`].
+    /// Tests the constructor of [`Error`] from an [`ProtoBasedErrorCode`].
     #[test]
     fn test_constructor_from_error_code() {
-        let e = ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
+        let e = ProtoBasedErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
         let e = Error::from(e);
         assert_eq!(e.len(), 1);
     }
@@ -240,22 +396,57 @@ mod test {
         assert_eq!(f.len(), 2);
     }
 
+    /// Tests the `>>` operator with an error enum and a string.
+    #[test]
+    fn test_operator_shr_from_error_enum_and_string() {
+        let e = Error::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
+        let f = e >> (pb::CertificateError::CERTIFICATEERROR_MALFORMED, &"bla");
+        assert_eq!(f.len(), 2);
+    }
+
+    /// Tests the `>>` operator with an error enum and a as ref string.
+    #[test]
+    fn test_operator_shr_from_error_enum_and_as_ref_string() {
+        let msg = "msg".to_string();
+        let e = Error::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
+        let f = e >> (pb::CertificateError::CERTIFICATEERROR_MALFORMED, &msg);
+        assert_eq!(f.len(), 2);
+    }
+
+    /// Tests the `>>` operator with an error enum and a moved string.
+    #[test]
+    fn test_operator_shr_from_error_enum_and_moved_string() {
+        let e = Error::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
+        let i = 32i32;
+        let f = e
+            >> (
+                pb::CertificateError::CERTIFICATEERROR_MALFORMED,
+                format!("msg {i}"),
+            );
+        assert_eq!(f.len(), 2);
+    }
+
+    /// Tests the `>>` operator with an error enum and a &str.
+    #[test]
+    fn test_operator_shr_from_error_enum_and_str() {
+        let e = Error::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
+        let f = e
+            >> (
+                pb::CertificateError::CERTIFICATEERROR_MALFORMED,
+                "error cert",
+            );
+        assert_eq!(f.len(), 2);
+    }
+
     /// Tests the `>>` operator with an error code.
     #[test]
     fn test_operator_shr_from_error_code() {
         let e = Error::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)
-            >> ErrorCode::from(pb::CertificateError::CERTIFICATEERROR_MALFORMED);
+            >> ProtoBasedErrorCode::from(pb::CertificateError::CERTIFICATEERROR_MALFORMED);
         assert_eq!(e.len(), 2);
     }
 
-    /// Tests the [`PartialEq`] between an [`Error`] and an error enum value.
-    #[test]
-    fn test_partialeq_error_enum() {
-        let e: Error = pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into();
-        assert_eq!(e, pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
-    }
-
-    /// Tests the order of the [`ErrorCode`] inside an [`Error`].
+    /// Tests the order of the [`ProtoBasedErrorCode`] inside an [`Error`].
     #[test]
     fn test_error_code_order() {
         let p0 = pb::ASN1Error::ASN1ERROR_INVALID_FORMAT;
@@ -265,10 +456,10 @@ mod test {
         assert_eq!(e.len(), 3);
 
         let mut it = e.iter();
-        assert_eq!(it.next(), Some(&ErrorCode::from(p0)));
-        assert_eq!(it.next(), Some(&ErrorCode::from(p1)));
-        assert_eq!(it.next(), Some(&ErrorCode::from(p2)));
-        assert_eq!(it.next(), None);
+        assert!(it.next().as_ref().unwrap().is(&ErrorCode::from(p0)));
+        assert!(it.next().as_ref().unwrap().is(&ErrorCode::from(p1)));
+        assert!(it.next().as_ref().unwrap().is(&ErrorCode::from(p2)));
+        assert!(matches!(it.next(), None));
     }
 
     /// Tests macro errors.
@@ -277,16 +468,13 @@ mod test {
         let e = errors! {pb::ASN1Error::ASN1ERROR_INVALID_FORMAT => pb::CertificateError::CERTIFICATEERROR_MALFORMED};
         assert_eq!(e.len(), 2);
         let mut it = e.iter();
-        assert_eq!(
-            it.next(),
-            Some(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT))
-        );
-        assert_eq!(
-            it.next(),
-            Some(&ErrorCode::from(
-                pb::CertificateError::CERTIFICATEERROR_MALFORMED
-            ))
-        );
-        assert_eq!(it.next(), None);
+        it.next()
+            .as_ref()
+            .unwrap()
+            .is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT));
+        it.next().as_ref().unwrap().is(&ErrorCode::from(
+            pb::CertificateError::CERTIFICATEERROR_MALFORMED,
+        ));
+        assert!(matches!(it.next(), None));
     }
 }

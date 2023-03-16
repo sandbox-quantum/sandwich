@@ -197,10 +197,10 @@ pub(crate) mod test {
                 .push("kyber1024".to_string());
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
-            assert_eq!(
-                ctx.unwrap_err(),
-                errors! {pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID => pb::APIError::APIERROR_CONFIGURATION}
-            );
+            assert!(
+                ctx.unwrap_err().is(
+                &errors! {pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID => pb::APIError::APIERROR_CONFIGURATION}
+            ));
         }
 
         /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
@@ -225,8 +225,8 @@ pub(crate) mod test {
                 .push("kyber1024".to_string());
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
-            assert_eq!(
-                ctx.unwrap_err(),
+            assert!(
+                ctx.unwrap_err().is(&
                 errors! {
                     pb::ASN1Error::ASN1ERROR_MALFORMED
                         => pb::CertificateError::CERTIFICATEERROR_MALFORMED
@@ -235,7 +235,7 @@ pub(crate) mod test {
                                     => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
                                         => pb::APIError::APIERROR_CONFIGURATION
                 }
-            );
+            ));
         }
 
         /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
@@ -262,9 +262,9 @@ pub(crate) mod test {
                 .push("kyber1024".to_string());
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
-            assert_eq!(
-                ctx.unwrap_err(),
-                errors! {
+            assert!(
+                ctx.unwrap_err().is(
+                &errors! {
                     pb::ASN1Error::ASN1ERROR_MALFORMED
                         => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED
                             => pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY
@@ -272,7 +272,7 @@ pub(crate) mod test {
                                     => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
                                         => pb::APIError::APIERROR_CONFIGURATION
                 }
-            );
+            ));
         }
     }
 }

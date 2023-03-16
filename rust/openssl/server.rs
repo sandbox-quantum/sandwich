@@ -153,10 +153,10 @@ pub(super) mod test {
         );
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(
+            ctx.unwrap_err().is(&
             errors! {pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED => pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE}
-        );
+        ));
     }
 
     /// Tests constructor of [`Context`] from a configuration with an invalid KEM.
@@ -172,10 +172,10 @@ pub(super) mod test {
 
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(
+            ctx.unwrap_err().is(&
             errors! {pb::KEMError::KEMERROR_INVALID => pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_KEM}
-        );
+        ));
     }
 
     /// Tests constructor of [`Context`] from a configuration without any server configuration.
@@ -185,10 +185,9 @@ pub(super) mod test {
 
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(ctx.unwrap_err().is(&errors! {
             pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_EMPTY
-        );
+        }));
     }
 
     /// Tests constructor of [`Context`] from a configuration without any TLS configuration.
@@ -199,10 +198,9 @@ pub(super) mod test {
 
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(ctx.unwrap_err().is(&errors! {
             pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_EMPTY
-        );
+        }));
     }
 
     /// Tests `Into<Box<Self>>` for [`Context`].

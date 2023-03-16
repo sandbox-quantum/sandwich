@@ -134,10 +134,10 @@ pub(super) mod test {
         );
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(
+            ctx.unwrap_err().is(&
             errors! {pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED => pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE}
-        );
+        ));
     }
 
     /// Tests constructor of [`Context`] from a configuration with an invalid KEM.
@@ -151,10 +151,10 @@ pub(super) mod test {
 
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(
+            ctx.unwrap_err().is(&
             errors! {pb::KEMError::KEMERROR_INVALID => pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_KEM}
-        );
+        ));
     }
 
     /// Tests constructor of [`Context`] from a configuration without any client configuration.
@@ -164,10 +164,9 @@ pub(super) mod test {
 
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(ctx.unwrap_err().is(&errors! {
             pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_EMPTY
-        );
+        }));
     }
 
     /// Tests constructor of [`Context`] from a configuration without any TLS configuration.
@@ -178,10 +177,9 @@ pub(super) mod test {
 
         let ctx = Context::try_from(&config);
         assert!(ctx.is_err());
-        assert_eq!(
-            ctx.unwrap_err(),
+        assert!(ctx.unwrap_err().is(&errors! {
             pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_EMPTY
-        );
+        }));
     }
 
     /// Tests [`std::convert::Into<Box<Self>>`] for [`Context`].

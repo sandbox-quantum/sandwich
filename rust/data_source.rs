@@ -145,10 +145,9 @@ mod test {
         ds.set_filename("/non/existent/file".to_string());
         let ds = DataSource::try_from(&ds);
         assert!(ds.is_err());
-        assert_eq!(
-            ds.unwrap_err(),
+        assert!(ds.unwrap_err().is(&errors! {
             pb::DataSourceError::DATASOURCEERROR_NOT_FOUND
-        );
+        }));
     }
 
     /// Tests [`DataSource`] constructor from a protobuf [`DataSource`] message

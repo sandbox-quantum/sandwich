@@ -175,6 +175,6 @@ pub(super) mod test {
         let c: crate::Result<PrivateKey> = (&pkey).try_into();
         assert!(c.is_err());
         let e = c.unwrap_err();
-        assert_eq!(e, pb::ASN1Error::ASN1ERROR_MALFORMED);
+        assert!(e.is(&errors!{ pb::ASN1Error::ASN1ERROR_MALFORMED => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED}));
     }
 }
