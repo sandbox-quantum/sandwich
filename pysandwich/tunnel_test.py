@@ -15,6 +15,8 @@
 
 
 import errno
+
+# TODO(a/https://app.asana.com/0/1202169159685842/1204216522006749/f): Those imports are unused
 import pathlib
 import socket
 import sys
@@ -90,13 +92,13 @@ class Socket(SandwichIO.IO):
         try:
             return self._sock.recv(n)
         except OSError as e:
-            raise self._errno_to_exception(e.errno)
+            raise self._errno_to_exception(e.errno) from e
 
     def write(self, buf, tunnel_state: SandwichTunnelProto.State) -> int:
         try:
             return self._sock.send(buf)
         except Exception as e:
-            raise self._errno_to_exception(e.errno)
+            raise self._errno_to_exception(e.errno) from e
 
     def close(self):
         self._sock.close()
@@ -168,36 +170,36 @@ def main():
     e = None
     try:
         client.handshake()
-        assert False, "expected  WANT_READ, got None"
+        AssertionError("expected  WANT_READ, got None")
     except errors.HandshakeException as e:
         assert isinstance(
             e, errors.HandshakeWantReadException
         ), f"expected WANT_READ, got {e}"
     except Exception as e:
-        assert False, f"expected Tunnel.HandshakeWantReadException, got {e}"
+        AssertionError(f"expected Tunnel.HandshakeWantReadException, got {e}")
 
     e = None
     try:
         server.handshake()
-        assert False, "expected  WANT_READ, got None"
+        AssertionError("expected  WANT_READ, got None")
     except errors.HandshakeException as e:
         assert isinstance(
             e, errors.HandshakeWantReadException
         ), f"expected WANT_READ, got {e}"
     except Exception as e:
-        assert False, f"expected Tunnel.HandshakeWantReadException, got {e}"
+        AssertionError(f"expected Tunnel.HandshakeWantReadException, got {e}")
 
     e = None
     try:
         client.handshake()
     except Exception as e:
-        assert False, f"expected no error, got {e}"
+        AssertionError(f"expected no error, got {e}")
 
     e = None
     try:
         server.handshake()
     except Exception as e:
-        assert False, f"expected no error, got {e}"
+        AssertionError(f"expected no error, got {e}")
 
     state = client.state()
     assert (
@@ -213,13 +215,13 @@ def main():
     try:
         w = client.write(_PING_MSG)
     except errors.RecordPlaneException as e:
-        assert False, f"expected no error, got {e}"
+        AssertionError(f"expected no error, got {e}")
     assert w == len(_PING_MSG), f"Expected {len(_PING_MSG)} bytes written, got {w}"
 
     try:
         data = server.read(len(_PING_MSG))
     except errors.RecordPlaneException as e:
-        assert False, f"expected no error, got {e}"
+        AssertionError(f"expected no error, got {e}")
     assert len(data) == len(_PING_MSG), f"Expected {len(_PING_MSG)} bytes read, got {w}"
     assert data == _PING_MSG, f"Expected msg {_PING_MSG} from client, got {data}"
 
@@ -227,13 +229,13 @@ def main():
     try:
         w = server.write(_PONG_MSG)
     except errors.RecordPlaneException as e:
-        assert False, f"expected no error, got {e}"
+        AssertionError(f"expected no error, got {e}")
     assert w == len(_PONG_MSG), f"Expected {len(_PING_MSG)} bytes written, got {w}"
 
     try:
         data = client.read(len(_PONG_MSG))
     except errors.RecordPlaneException as e:
-        assert False, f"expected no error, got {e}"
+        AssertionError(f"expected no error, got {e}")
     assert len(data) == len(_PONG_MSG), f"Expected {len(_PING_MSG)} bytes read, got {w}"
     assert data == _PONG_MSG, f"Expected msg {_PING_MSG} from client, got {data}"
 
