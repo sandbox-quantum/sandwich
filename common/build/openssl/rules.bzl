@@ -1,9 +1,7 @@
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "C_COMPILE_ACTION_NAME")
 load(
     "@rules_foreign_cc//foreign_cc/private:cc_toolchain_util.bzl",
-    "absolutize_path_in_str",
     "get_env_vars",
     "get_flags_info",
     "get_tools_info",
