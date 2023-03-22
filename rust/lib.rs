@@ -81,6 +81,7 @@ pub use tunnel::Tunnel;
 pub(crate) mod ffi;
 
 pub(crate) mod data_source;
+#[cfg(feature = "openssl")]
 pub(crate) mod openssl;
 pub(crate) mod pimpl;
 

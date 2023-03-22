@@ -81,6 +81,7 @@ _SANDWICH_SRCS = \
 rust_library(
     name = "sandwich",
     srcs = _SANDWICH_SRCS,
+    crate_features = ["openssl"],
     crate_name = "sandwich",
     rustc_flags = [
         "-W",
@@ -89,6 +90,22 @@ rust_library(
     visibility = ["//visibility:public"],
     deps = [
         ":openssl",
+        "//proto:sandwich_rust_proto",
+        "//proto/api/v1:api_rust_proto",
+        "@crate_index//:protobuf",
+    ],
+)
+
+rust_library(
+    name = "sandwich-naked",
+    srcs = _SANDWICH_SRCS,
+    crate_name = "sandwich",
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
         "@crate_index//:protobuf",
@@ -119,6 +136,8 @@ rust_doc(
         "rustdoc::private_intra_doc_links",
         "--cfg",
         'feature="ffi"',
+        "--cfg",
+        'feature="openssl"',
     ],
 )
 
@@ -131,6 +150,8 @@ rust_doc(
         "rustdoc::private_intra_doc_links",
         "--cfg",
         'feature="ffi"',
+        "--cfg",
+        'feature="openssl"',
     ],
 )
 
@@ -150,7 +171,10 @@ rust_doc_test(
 rust_static_library(
     name = "sandwich_ffi",
     srcs = _SANDWICH_SRCS,
-    crate_features = ["ffi"],
+    crate_features = [
+        "ffi",
+        "openssl",
+    ],
     crate_name = "sandwich",
     visibility = ["//visibility:public"],
     deps = [
@@ -164,7 +188,10 @@ rust_static_library(
 rust_shared_library(
     name = "sandwich_ffi_shared",
     srcs = _SANDWICH_SRCS,
-    crate_features = ["ffi"],
+    crate_features = [
+        "ffi",
+        "openssl",
+    ],
     crate_name = "sandwich",
     visibility = ["//visibility:public"],
     deps = [
@@ -179,7 +206,10 @@ rust_test(
     name = "sandwich_test",
     timeout = "short",
     crate = ":sandwich",
-    crate_features = ["ffi"],
+    crate_features = [
+        "ffi",
+        "openssl",
+    ],
     data = ["//testdata:tests_data"],
     deps = [
         "@crate_index//:protobuf",

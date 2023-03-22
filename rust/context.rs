@@ -89,12 +89,13 @@ pub fn try_from<'ctx>(
         .enum_value()
         .map_err(|_| errors!{pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID})
         .and_then(|v| match v {
+            #[cfg(feature = "openssl")]
             pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS
             | pb_api::Implementation::IMPL_OPENSSL1_1_1 => {
                 crate::openssl::context::try_from(configuration)
                     .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
-            pb_api::Implementation::IMPL_UNSPECIFIED => Err(
+            _ => Err(
                 errors!{pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID}
             ),
         })
@@ -105,6 +106,7 @@ pub fn try_from<'ctx>(
 pub(crate) mod test {
     /// The following tests target the OpenSSL 1.1.1 + liboqs Implementation
     /// (`api_rust_proto::Implementation::IMPL_OPENSSL1_1_1_OQS`).
+    #[cfg(feature = "openssl")]
     pub(crate) mod openssl {
         /// Creates a [`pb_api::Certificate`].
         pub(crate) fn create_cert(
