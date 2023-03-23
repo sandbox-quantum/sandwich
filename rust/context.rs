@@ -90,8 +90,7 @@ pub fn try_from<'ctx>(
         .map_err(|_| errors!{pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID})
         .and_then(|v| match v {
             #[cfg(feature = "openssl")]
-            pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS
-            | pb_api::Implementation::IMPL_OPENSSL1_1_1 => {
+            pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS => {
                 crate::openssl::context::try_from(configuration)
                     .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
