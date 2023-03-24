@@ -74,11 +74,11 @@ impl<'conf, 'ctx> std::convert::TryFrom<&'conf pb_api::Configuration> for Contex
             );
         }
 
-        if let Some(pkey) = conf_tls.private_key.as_ref() {
-            super::PrivateKey::try_from(pkey)
-                .and_then(|mut pkey| {
+        if let Some(sk) = conf_tls.private_key.as_ref() {
+            super::PrivateKey::try_from(sk)
+                .and_then(|mut sk| {
                     match unsafe {
-                        openssl::SSL_CTX_use_PrivateKey((&mut ctx).into(), pkey.as_mut_ptr())
+                        openssl::SSL_CTX_use_PrivateKey((&mut ctx).into(), sk.as_mut_ptr())
                     } {
                         1 => Ok(()),
                         _ => Err(OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY.into()),
@@ -119,7 +119,7 @@ pub(super) mod test {
         let serv = config.mut_server().mut_tls();
 
         serv.certificate = Some(certificate::test::create_cert(certpath, certfmt)).into();
-        serv.private_key = Some(private_key::test::create_pkey(keypath, keyfmt)).into();
+        serv.private_key = Some(private_key::test::create_sk(keypath, keyfmt)).into();
         serv.common_options
             .mut_or_insert_default()
             .kem
@@ -133,7 +133,7 @@ pub(super) mod test {
         let config = create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber1024",
         );
@@ -147,7 +147,7 @@ pub(super) mod test {
         let config = create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber1024",
         );
@@ -165,7 +165,7 @@ pub(super) mod test {
         let config = create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber1023",
         );
@@ -209,7 +209,7 @@ pub(super) mod test {
         let config = create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber1024",
         );

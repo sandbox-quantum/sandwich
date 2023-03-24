@@ -123,18 +123,18 @@ pub(crate) mod test {
         }
 
         /// Creates a [`pb_api::PrivateKey`].
-        pub(crate) fn create_pkey(
+        pub(crate) fn create_sk(
             path: &'static str,
             fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
         ) -> pb_api::PrivateKey {
-            let mut pkey = pb_api::PrivateKey::new();
-            let src = pkey.mut_static();
+            let mut sk = pb_api::PrivateKey::new();
+            let src = sk.mut_static();
             if let Some(f) = fmt {
                 src.format = f.into();
             }
             let ds = src.data.mut_or_insert_default();
             ds.set_filename(path.to_string());
-            pkey
+            sk
         }
 
         /// Creates a [`api_rust_proto::Configuration`] for TLS 1.3.
@@ -242,15 +242,15 @@ pub(crate) mod test {
         /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
         /// an invalid private key supplied.
         #[test]
-        fn test_configuration_bad_pkey() {
+        fn test_configuration_bad_sk() {
             let mut config = create_configuration(crate::Mode::Server, false);
             config.mut_server().mut_tls().certificate = Some(create_cert(
                 crate::openssl::test::CERT_DER_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
             ))
             .into();
-            config.mut_server().mut_tls().private_key = Some(create_pkey(
-                crate::openssl::test::PKEY_PATH,
+            config.mut_server().mut_tls().private_key = Some(create_sk(
+                crate::openssl::test::SK_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
             ))
             .into();

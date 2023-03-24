@@ -41,5 +41,5 @@ pub(crate) mod test {
     pub(crate) const CERT_DER_PATH: &str = "testdata/cert.der";
 
     /// Path to a valid PEM private key.
-    pub(crate) const PKEY_PATH: &str = "testdata/key.pem";
+    pub(crate) const SK_PATH: &str = "testdata/key.pem";
 }

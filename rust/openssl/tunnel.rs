@@ -458,7 +458,7 @@ mod test {
         let mut config = crate::openssl::server::test::create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber512",
         );
@@ -491,7 +491,7 @@ mod test {
         let mut config = crate::openssl::server::test::create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber512",
         );

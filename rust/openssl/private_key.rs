@@ -43,14 +43,14 @@ impl<'pimpl> std::fmt::Debug for PrivateKey<'pimpl> {
 
 /// Extracts the private key format and its [`crate::DataSource`] from a protobuf
 /// private key message.
-impl<'pkey: 'ds, 'ds> std::convert::TryFrom<&'pkey pb_api::PrivateKey>
+impl<'sk: 'ds, 'ds> std::convert::TryFrom<&'sk pb_api::PrivateKey>
     for PrivateKeyASN1Source<'ds>
 {
     type Error = crate::Error;
 
-    fn try_from(pkey: &'pkey pb_api::PrivateKey) -> crate::Result<Self> {
+    fn try_from(sk: &'sk pb_api::PrivateKey) -> crate::Result<Self> {
         use pb_api::private_key::private_key;
-        pkey.source
+        sk.source
             .as_ref()
             .ok_or_else(|| pb::DataSourceError::DATASOURCEERROR_EMPTY.into())
             .and_then(|oneof| match oneof {
@@ -79,17 +79,17 @@ impl<'pkey: 'ds, 'ds> std::convert::TryFrom<&'pkey pb_api::PrivateKey>
 impl<'pimpl> std::convert::TryFrom<&pb_api::PrivateKey> for PrivateKey<'pimpl> {
     type Error = crate::Error;
 
-    fn try_from(pkey: &pb_api::PrivateKey) -> crate::Result<Self> {
-        let pkeyasn1 = unwrap_or!(
-            PrivateKeyASN1Source::try_from(pkey),
+    fn try_from(sk: &pb_api::PrivateKey) -> crate::Result<Self> {
+        let skasn1 = unwrap_or!(
+            PrivateKeyASN1Source::try_from(sk),
             pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED
         );
 
         let mut bio = unwrap_or!(
-            super::Bio::try_from(pkeyasn1.1.as_ref()),
+            super::Bio::try_from(skasn1.1.as_ref()),
             pb::PrivateKeyError::PRIVATEKEYERROR_UNKNOWN
         );
-        let x509 = match pkeyasn1.0 {
+        let x509 = match skasn1.0 {
             pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM => unsafe {
                 openssl::PEM_read_bio_PrivateKey(
                     bio.as_raw_mut(),
@@ -126,29 +126,29 @@ impl<'pimpl> std::convert::TryFrom<&pb_api::PrivateKey> for PrivateKey<'pimpl> {
 pub(super) mod test {
     use super::{PrivateKey, PrivateKeyASN1Source};
 
-    pub(in crate::openssl) fn create_pkey(
+    pub(in crate::openssl) fn create_sk(
         path: &'static str,
         fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
     ) -> pb_api::PrivateKey {
-        let mut pkey = pb_api::PrivateKey::new();
-        let src = pkey.mut_static();
+        let mut sk = pb_api::PrivateKey::new();
+        let src = sk.mut_static();
         if let Some(f) = fmt {
             src.format = f.into();
         }
         let ds = src.data.mut_or_insert_default();
         ds.set_filename(path.to_string());
-        pkey
+        sk
     }
 
     /// Tests [`std::convert::TryFrom<&pb_api::PrivateKey>`] for [`PrivateKeyASN1Source`] using
     /// a PEM private key.
     #[test]
     fn test_tryfrom_private_key_private_keyasn1source_pem() {
-        let pkey = create_pkey(
-            crate::openssl::test::PKEY_PATH,
+        let sk = create_sk(
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
         );
-        let asn1src: crate::Result<PrivateKeyASN1Source> = (&pkey).try_into();
+        let asn1src: crate::Result<PrivateKeyASN1Source> = (&sk).try_into();
         assert!(asn1src.is_ok());
     }
 
@@ -156,11 +156,11 @@ pub(super) mod test {
     /// a PEM private key.
     #[test]
     fn test_tryfrom_private_key_private_key_pem() {
-        let pkey = create_pkey(
-            crate::openssl::test::PKEY_PATH,
+        let sk = create_sk(
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
         );
-        let c: crate::Result<PrivateKey> = (&pkey).try_into();
+        let c: crate::Result<PrivateKey> = (&sk).try_into();
         assert!(c.is_ok());
     }
 
@@ -168,11 +168,11 @@ pub(super) mod test {
     /// a PEM private key as DER.
     #[test]
     fn test_tryfrom_private_key_private_key_pem_der() {
-        let pkey = create_pkey(
-            crate::openssl::test::PKEY_PATH,
+        let sk = create_sk(
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
         );
-        let c: crate::Result<PrivateKey> = (&pkey).try_into();
+        let c: crate::Result<PrivateKey> = (&sk).try_into();
         assert!(c.is_err());
         let e = c.unwrap_err();
         assert!(e.is(&errors!{ pb::ASN1Error::ASN1ERROR_MALFORMED => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED}));

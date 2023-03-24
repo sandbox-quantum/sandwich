@@ -641,7 +641,7 @@ mod test {
         let ctx = super::super::server::test::create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber1024",
         );
@@ -655,7 +655,7 @@ mod test {
         let ctx = super::super::server::test::create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             "kyber1024",
         );
@@ -669,11 +669,11 @@ mod test {
 
     /// Tests `try_from` with a server and an invalid private key format.
     #[test]
-    fn test_try_from_server_invalid_pkey() {
+    fn test_try_from_server_invalid_sk() {
         let ctx = super::super::server::test::create_basic_configuration(
             crate::openssl::test::CERT_PEM_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            crate::openssl::test::PKEY_PATH,
+            crate::openssl::test::SK_PATH,
             Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
             "kyber1024",
         );
