@@ -15,17 +15,10 @@
 
 
 import errno
-
-# TODO(a/https://app.asana.com/0/1202169159685842/1204216522006749/f): Those imports are unused
-import pathlib
 import socket
-import sys
-import threading
-import typing
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
-import pysandwich.proto.sandwich_pb2 as SandwichProto
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
@@ -152,22 +145,21 @@ def main():
     s = Sandwich()
 
     client_conf = create_client_conf(s)
-    assert client_conf != None
+    assert client_conf is not None
 
     server_conf = create_server_conf(s)
-    assert server_conf != None
+    assert server_conf is not None
 
     client_io, server_io = create_ios()
-    assert client_io != None
-    assert server_io != None
+    assert client_io is not None
+    assert server_io is not None
 
     server = Tunnel(server_conf, server_io)
-    assert server != None
+    assert server is not None
 
     client = Tunnel(client_conf, client_io)
-    assert client != None
+    assert client is not None
 
-    e = None
     try:
         client.handshake()
         AssertionError("expected  WANT_READ, got None")
@@ -178,7 +170,6 @@ def main():
     except Exception as e:
         AssertionError(f"expected Tunnel.HandshakeWantReadException, got {e}")
 
-    e = None
     try:
         server.handshake()
         AssertionError("expected  WANT_READ, got None")
@@ -189,13 +180,11 @@ def main():
     except Exception as e:
         AssertionError(f"expected Tunnel.HandshakeWantReadException, got {e}")
 
-    e = None
     try:
         client.handshake()
     except Exception as e:
         AssertionError(f"expected no error, got {e}")
 
-    e = None
     try:
         server.handshake()
     except Exception as e:

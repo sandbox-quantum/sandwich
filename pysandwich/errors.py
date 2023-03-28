@@ -39,10 +39,7 @@ This error code is compatible with the C++ library.
 Author: thb-sb
 """
 
-import sys
-
 import pysandwich.proto.errors_pb2 as SandwichErrorProto
-import pysandwich.proto.io_pb2 as SandwichIOProto
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 
 
@@ -91,10 +88,10 @@ class SandwichException(Exception):
     def _resolve_error_string(self, code):
         errors_map = None
         try:
-            errors_map = getattr(self, "_ERRORS_MAP")
-        except AttributeError as e:
+            errors_map = self._ERRORS_MAP
+        except AttributeError:
             pass
-        if (errors_map != None) and (code in errors_map):
+        if (errors_map is not None) and (code in errors_map):
             return errors_map[code]["msg"]
         return f"Unknown error code {code}"
 
@@ -110,11 +107,11 @@ class SandwichException(Exception):
         if target_cls := _ERROR_KIND_MAP.get(kind):
             return target_cls(kind, code)
 
-        errors_map = getattr(cls, "_ERRORS_MAP")
+        errors_map = cls._ERRORS_MAP
         if (
-            (errors_map != None)
+            (errors_map is not None)
             and (code in errors_map)
-            and ((target_cls := errors_map[code].get("cls")) != None)
+            and ((target_cls := errors_map[code].get("cls")) is not None)
         ):
             return target_cls()(kind=kind)
 
@@ -457,11 +454,17 @@ class HandshakeException(SandwichException):
             "cls": lambda: HandshakeInProgressException,
         },
         SandwichTunnelProto.HANDSHAKESTATE_WANT_READ: {
-            "msg": "The implementation wants to read from the wire, but the underlying I/O is non-blocking",
+            "msg": (
+                "The implementation wants to read from the wire, "
+                "but the underlying I/O is non-blocking"
+            ),
             "cls": lambda: HandshakeWantReadException,
         },
         SandwichTunnelProto.HANDSHAKESTATE_WANT_WRITE: {
-            "msg": "The implementation wants to write data to the wire, but the underlying I/O is non-blocking",
+            "msg": (
+                "The implementation wants to write data to the wire, "
+                "but the underlying I/O is non-blocking"
+            ),
             "cls": lambda: HandshakeWantWriteException,
         },
         SandwichTunnelProto.HANDSHAKESTATE_ERROR: {
@@ -523,11 +526,17 @@ class RecordPlaneException(SandwichException):
     """Map from the protobuf enum 'RecordError" to error string and subclass exception."""
     _ERRORS_MAP = {
         SandwichTunnelProto.RECORDERROR_WANT_READ: {
-            "msg": "Tunnel wants to read data, but the underlying I/O interface is non-blocking.",
+            "msg": (
+                "Tunnel wants to read data, but the underlying "
+                "I/O interface is non-blocking."
+            ),
             "cls": lambda: RecordPlaneWantReadException,
         },
         SandwichTunnelProto.RECORDERROR_WANT_WRITE: {
-            "msg": "Tunnel wants to write data, but the underlying I/O interface is non-blocking.",
+            "msg": (
+                "Tunnel wants to write data, but the underlying "
+                "I/O interface is non-blocking."
+            ),
             "cls": lambda: RecordPlaneWantWriteException,
         },
         SandwichTunnelProto.RECORDERROR_BEING_SHUTDOWN: {

@@ -187,7 +187,7 @@ class IO(abc.ABC):
         ]
 
     @abc.abstractmethod
-    def read(n, tunnel_state: SandwichTunnelProto.State) -> bytes:
+    def read(self, n, tunnel_state: SandwichTunnelProto.State) -> bytes:
         """Read function.
 
         Args:
@@ -203,7 +203,7 @@ class IO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def write(buf, tunnel_state: SandwichTunnelProto.State) -> int:
+    def write(self, buf, tunnel_state: SandwichTunnelProto.State) -> int:
         """Write function.
 
         Args:
@@ -219,7 +219,7 @@ class IO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def close():
+    def close(self):
         """Close function.
 
         Raises:
@@ -231,7 +231,9 @@ class IO(abc.ABC):
 class _IOHandle:
     """Wrapper around a `struct SandwichCIO`."""
 
-    def __init__(self, s: "Sandwich", handle=ctypes.c_void_p(0)):
+    _default_handle = ctypes.c_void_p(0)
+
+    def __init__(self, s, handle=_default_handle):
         """Constructs an _IOHandle from a void pointer.
 
         Args:

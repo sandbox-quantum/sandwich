@@ -98,15 +98,12 @@ tun.close()
 Author: sb
 """
 
-import abc
 import ctypes
-import os
 import pathlib
 import platform
 import typing
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
-import pysandwich.proto.sandwich_pb2 as SandwichProto
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
@@ -158,7 +155,7 @@ def _error_code_to_exception(ptr: ctypes.c_void_p):
     current_excp = None
     while ec:
         excp = Error.new(ec.contents.kind, ec.contents.code)
-        if chain == None:
+        if chain is None:
             chain = excp
             current_excp = excp
         else:
@@ -194,7 +191,8 @@ class Context:
                 Configuration for building a `SandwichContext` handle.
 
         Raises:
-            errors.SandwichGlobalException: The call to `sandwich_context_from_proto` returned an error.
+            errors.SandwichGlobalException: The call to `sandwich_context_from_proto`
+            returned an error.
         """
 
         self._sandwich = sandwich
@@ -209,7 +207,7 @@ class Context:
         )
         err = self._sandwich.c_call("sandwich_context_new", *args)
         err = ctypes.cast(err, ctypes.c_void_p)
-        if err.value != None:
+        if err.value is not None:
             excp = _error_code_to_exception(err)
             self._sandwich.c_call("sandwich_error_free", err)
             raise excp
@@ -291,7 +289,7 @@ class Tunnel:
             "sandwich_io_new", ctypes.byref(self._settings), io_handle.ref()
         )
         err = ctypes.cast(err, ctypes.c_void_p)
-        if err.value != None:
+        if err.value is not None:
             excp = _error_code_to_exception(err)
             self._sandwich.c_call("sandwich_error_free", err)
             raise excp
@@ -303,7 +301,7 @@ class Tunnel:
             ctypes.byref(self._handle),
         )
         err = ctypes.cast(err, ctypes.c_void_p)
-        if err.value != None:
+        if err.value is not None:
             excp = _error_code_to_exception(err)
             self._sandwich.c_call("sandwich_error_free", err)
             raise excp
@@ -472,10 +470,10 @@ class Tunnel:
             err[0] = e.code
             return 0
         err[0] = SandwichIO.IOException.ERROR_OK
-        l = len(data)
-        assert l <= count
-        ctypes.memmove(buf, data, len(data))
-        return l
+        bytes_read = len(data)
+        assert bytes_read <= count
+        ctypes.memmove(buf, data, bytes_read)
+        return bytes_read
 
     def _io_write(
         self,
@@ -554,9 +552,9 @@ class Sandwich:
             extension = "dylib"
 
         path: pathlib.Path = ""
-        if (path := dllpath) == None and (
+        if (path := dllpath) is None and (
             dllpath := _find_sandwich_dll(extension)
-        ) == None:
+        ) is None:
             raise FileNotFoundError(f"Failed to find `libsandwich.{extension}`")
 
         if isinstance(dllpath, pathlib.Path):
@@ -565,10 +563,10 @@ class Sandwich:
             else:
                 path = dllpath.absolute()
 
-        if Sandwich.lib == None:
+        if Sandwich.lib is None:
             Sandwich.lib = ctypes.cdll.LoadLibrary(path)
 
-        if Sandwich.syms == None:
+        if Sandwich.syms is None:
             Sandwich.syms = {}
 
     @staticmethod
@@ -609,5 +607,7 @@ class Sandwich:
 
         try:
             return getattr(Sandwich.lib, name)
-        except AttributeError as e:
-            raise AttributeError(f"Sandwich lib does not have symbol '{name}'")
+        except AttributeError:
+            raise AttributeError(
+                f"Sandwich lib does not have symbol {name!r}"
+            ) from None
