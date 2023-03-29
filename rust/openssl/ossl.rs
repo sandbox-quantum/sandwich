@@ -546,6 +546,7 @@ pub(crate) fn try_from<'ctx>(
 
 #[cfg(test)]
 mod test {
+    use super::super::assert_compliance;
     use super::Ossl;
 
     /// Certificate related tests.
@@ -892,6 +893,108 @@ mod test {
             let bio = Ossl::new_ssl_bio();
             let bio = bio.unwrap();
             assert!(!bio.as_ptr().is_null());
+        }
+    }
+
+    /// Compliance related tests.
+    mod compliance {
+        /// Tests the default compliance: it accepts post quantum and hybrid.
+        #[test]
+        fn test_default_compliance() {
+            use super::assert_compliance;
+            let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                "client <
+				  tls <
+					common_options <
+					  kem: \"kyber512\"
+					  kem: \"p256_kyber512\"
+					>
+				  >
+				>
+				",
+            )
+            .unwrap();
+            assert!(assert_compliance(&cfg).is_ok());
+        }
+
+        /// Tests the default compliance: it forbids purely classical kems.
+        #[test]
+        fn test_default_compliance_no_classical() {
+            use super::assert_compliance;
+            let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                "client <
+				  tls <
+					common_options <
+					  kem: \"prime256v1\"
+					  kem: \"kyber512\"
+					  kem: \"p256_kyber512\"
+					>
+				  >
+				>
+				",
+            )
+            .unwrap();
+            assert!(assert_compliance(&cfg).is_err());
+        }
+
+        #[test]
+        fn test_compliance_no_hybrid() {
+            use super::assert_compliance;
+            let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                "client <
+				  tls <
+					common_options <
+					  kem: \"p256_kyber512\"
+					>
+				  >
+				>
+				compliance <
+				  hybrid_choice: HYBRID_ALGORITHMS_FORBID
+				>
+				",
+            )
+            .unwrap();
+            assert!(assert_compliance(&cfg).is_err());
+        }
+
+        #[test]
+        fn test_compliance_bit_strength() {
+            use super::assert_compliance;
+            let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                "client <
+				  tls <
+					common_options <
+					  kem: \"p256_kyber512\"
+					>
+				  >
+				>
+				compliance <
+				  bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
+				>
+				",
+            )
+            .unwrap();
+            assert!(assert_compliance(&cfg).is_ok());
+        }
+
+        #[test]
+        fn test_compliance_insufficient_bit_strength() {
+            use super::assert_compliance;
+            let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                "client <
+				  tls <
+					common_options <
+					  kem: \"hqc192\"
+					>
+				  >
+				>
+				compliance <
+				  bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
+				>
+				",
+            )
+            .unwrap();
+            assert!(assert_compliance(&cfg).is_err());
         }
     }
 }
