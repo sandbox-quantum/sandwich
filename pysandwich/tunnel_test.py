@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import errno
 import socket
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
-import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 from pysandwich.sandwich import Context, Sandwich, Tunnel
@@ -34,67 +31,6 @@ _CERT_PATH = "testdata/cert.pem"
 _KEY_PATH = "testdata/key.pem"
 
 _DEFAULT_KEM = "kyber512"
-
-
-class Socket(SandwichIO.IO):
-    def __init__(self, sock: socket.socket):
-        self._sock = sock
-
-    _ERRNO_EXCEPTIONS_MAP = (
-        (
-            (
-                errno.EINPROGRESS,
-                errno.EINTR,
-            ),
-            SandwichIO.IOInProgressException,
-        ),
-        (
-            (
-                errno.EAGAIN,
-                errno.EWOULDBLOCK,
-            ),
-            SandwichIO.IOWouldBlockException,
-        ),
-        (
-            (
-                errno.ENOTSOCK,
-                errno.EPROTOTYPE,
-                errno.EBADF,
-            ),
-            SandwichIO.IOInvalidException,
-        ),
-        (
-            (
-                errno.EACCES,
-                errno.EPERM,
-                errno.ETIMEDOUT,
-                errno.ENETUNREACH,
-                errno.ECONNREFUSED,
-            ),
-            SandwichIO.IORefusedException,
-        ),
-    )
-
-    def _errno_to_exception(self, err):
-        for val in Socket._ERRNO_EXCEPTIONS_MAP:
-            if err in val[0]:
-                return val[1]()
-        return errors.IOUnknownException()
-
-    def read(self, n, tunnel_state: SandwichTunnelProto.State) -> bytes:
-        try:
-            return self._sock.recv(n)
-        except OSError as e:
-            raise self._errno_to_exception(e.errno) from e
-
-    def write(self, buf, tunnel_state: SandwichTunnelProto.State) -> int:
-        try:
-            return self._sock.send(buf)
-        except Exception as e:
-            raise self._errno_to_exception(e.errno) from e
-
-    def close(self):
-        self._sock.close()
 
 
 def create_server_conf(s: Sandwich) -> Context:
@@ -138,7 +74,7 @@ def create_ios() -> (SandwichIO.IO, SandwichIO.IO):
     s1, s2 = socket.socketpair(family=socket.AF_UNIX, type=socket.SOCK_STREAM)
     s1.setblocking(0)
     s2.setblocking(0)
-    return Socket(s1), Socket(s2)
+    return SandwichIO.Socket(s1), SandwichIO.Socket(s2)
 
 
 def main():

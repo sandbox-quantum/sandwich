@@ -80,6 +80,9 @@ pub use tunnel::Tunnel;
 #[cfg(feature = "ffi")]
 pub(crate) mod ffi;
 
+#[cfg(any(feature = "openssl"))]
+pub(crate) mod ossl;
+
 pub(crate) mod data_source;
 #[cfg(feature = "openssl")]
 pub(crate) mod openssl;

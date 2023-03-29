@@ -29,7 +29,7 @@
 ///
 /// A [`Context`] is either a context for client-side applications or
 /// server-side applications.
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub(crate) enum Mode {
     /// Client mode.
     Client,
@@ -91,7 +91,7 @@ pub fn try_from<'ctx>(
         .and_then(|v| match v {
             #[cfg(feature = "openssl")]
             pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS => {
-                crate::openssl::context::try_from(configuration)
+                crate::openssl::ossl::try_from(configuration)
                     .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
             _ => Err(

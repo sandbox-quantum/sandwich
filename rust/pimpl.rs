@@ -23,9 +23,10 @@
 pub(crate) type Deleter<T> = fn(*mut T);
 
 /// Wrapper around an raw pointer.
+#[derive(Debug)]
 pub(crate) struct Pimpl<'ptr, T> {
     /// The type to own.
-    obj: Box<T>,
+    obj: *mut T,
 
     /// The deleter to call on the type.
     del: Option<Deleter<T>>,
@@ -34,22 +35,11 @@ pub(crate) struct Pimpl<'ptr, T> {
     phantom: std::marker::PhantomData<&'ptr T>,
 }
 
-/// Instantiates a [`Pimpl`] from a owned [`std::boxed::Box`].
-impl<'ptr, T> From<Box<T>> for Pimpl<'ptr, T> {
-    fn from(obj: Box<T>) -> Self {
-        Self {
-            obj,
-            del: None,
-            phantom: std::marker::PhantomData,
-        }
-    }
-}
-
 /// Instantiates a [`Pimpl`] from a raw pointer to `T`.
 impl<'ptr, T> From<*mut T> for Pimpl<'ptr, T> {
-    fn from(ptr: *mut T) -> Self {
+    fn from(obj: *mut T) -> Self {
         Self {
-            obj: unsafe { Box::from_raw(ptr) },
+            obj,
             del: None,
             phantom: std::marker::PhantomData,
         }
@@ -76,21 +66,42 @@ impl<'ptr, T> Pimpl<'ptr, T> {
 
     /// Returns the raw pointer, or None if pointer is null.
     pub(crate) fn as_ptr(&self) -> *const T {
-        &*self.obj
+        self.obj
     }
 
     /// Returns raw pointer as mutable, or None if pointer is null.
     pub fn as_mut_ptr(&mut self) -> *mut T {
-        &mut *self.obj
+        self.obj
+    }
+
+    /// Returns the raw pointer by consuming the object.
+    pub fn into_raw(mut self) -> *mut T {
+        self.del = None;
+        let tmp = self.obj;
+        self.obj = std::ptr::null_mut();
+        tmp
     }
 }
 
 /// Implements the custom destructor for [`Pimpl`].
 impl<'ptr, T> Drop for Pimpl<'ptr, T> {
     fn drop(&mut self) {
-        let ptr = &mut *self.obj;
         if let Some(del) = self.del {
-            (del)(ptr);
+            (del)(self.obj);
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Pimpl;
+
+    /// Tests `Pimpl` using a pointer from the stack.
+    #[test]
+    fn test_from_stack() {
+        let mut a: i32 = 0;
+
+        let pimpl = Pimpl::from_raw(&mut a as *mut _, None);
+        drop(pimpl);
     }
 }

@@ -16,30 +16,28 @@
 //!
 //! Author: thb-sb
 
-pub(self) mod bio;
-pub(self) mod certificate;
-pub(self) mod client;
 pub(self) mod io;
-pub(self) mod private_key;
-pub(self) mod server;
-pub(self) mod tunnel;
+pub(crate) mod ossl;
+pub(self) mod security;
 
-pub(self) use bio::Bio;
-pub(self) use certificate::Certificate;
-pub(in crate::openssl) use context::Context;
 pub(self) use io::BIO_METH;
-pub(self) use private_key::PrivateKey;
-
-pub(crate) mod context;
+pub(self) use security::assert_compliance;
 
 #[cfg(test)]
 pub(crate) mod test {
     /// Path to a valid PEM certificate.
     pub(crate) const CERT_PEM_PATH: &str = "testdata/cert.pem";
 
+    /// Path to an invalid PEM certificate.
+    pub(crate) const CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH: &str =
+        "testdata/cert_unknown_sig_alg.der";
+
     /// Path to a valid DER certificate.
     pub(crate) const CERT_DER_PATH: &str = "testdata/cert.der";
 
     /// Path to a valid PEM private key.
     pub(crate) const SK_PATH: &str = "testdata/key.pem";
+
+    /// Path to a valid DER private key.
+    pub(crate) const SK_DER_PATH: &str = "testdata/key.der";
 }

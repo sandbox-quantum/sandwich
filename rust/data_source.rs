@@ -99,6 +99,7 @@ impl<'data> std::convert::From<&DataSource<'data>> for *const std::ffi::c_void {
 /// Implements [`DataSource`].
 impl<'data> DataSource<'data> {
     /// Returns the len of the data.
+    #[allow(dead_code)]
     pub fn len(&'data self) -> usize {
         self.as_ref().len()
     }

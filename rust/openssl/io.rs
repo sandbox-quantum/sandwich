@@ -86,7 +86,8 @@ unsafe extern "C" fn bio_write(
     written: *mut usize,
 ) -> i32 {
     clear_bio_retry_flags(bio);
-    let tun = &mut *(openssl::BIO_get_data(bio) as *mut super::tunnel::SSLHandle);
+    let tun = &mut *(openssl::BIO_get_data(bio)
+        as *mut crate::ossl::OsslTunnel<crate::openssl::ossl::Ossl>);
 
     debug_assert!(tun.bio.as_ptr() == bio);
 
@@ -129,7 +130,8 @@ unsafe extern "C" fn bio_read(
     read: *mut usize,
 ) -> i32 {
     clear_bio_retry_flags(bio);
-    let tun = &mut *(openssl::BIO_get_data(bio) as *mut super::tunnel::SSLHandle);
+    let tun = &mut *(openssl::BIO_get_data(bio)
+        as *mut crate::ossl::OsslTunnel<crate::openssl::ossl::Ossl>);
 
     debug_assert!(tun.bio.as_ptr() == bio);
 

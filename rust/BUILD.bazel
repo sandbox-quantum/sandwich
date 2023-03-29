@@ -43,6 +43,7 @@ _SANDWICH_LIB_SRCS = [
     "data_source.rs",
     "io.rs",
     "lib.rs",
+    "ossl.rs",
     "pimpl.rs",
     "tunnel.rs",
 ]
@@ -61,15 +62,10 @@ _SANDWICH_FFI_MOD_SRCS = [
 ]
 
 _SANDWICH_OPENSSL_MOD_SRCS = [
-    "openssl/bio.rs",
-    "openssl/certificate.rs",
-    "openssl/client.rs",
-    "openssl/context.rs",
     "openssl/io.rs",
     "openssl/mod.rs",
-    "openssl/private_key.rs",
-    "openssl/server.rs",
-    "openssl/tunnel.rs",
+    "openssl/ossl.rs",
+    "openssl/security.rs",
 ]
 
 _SANDWICH_SRCS = \
