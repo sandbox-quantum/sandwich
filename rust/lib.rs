@@ -48,10 +48,10 @@
 //! Author: thb-sb
 
 /// Protobuf definitions crate for Sandwich API.
-extern crate api_rust_proto as pb_api;
+pub extern crate api_rust_proto as pb_api;
 
 /// Protobuf definitions crate for Sandwich.
-extern crate sandwich_rust_proto as pb;
+pub extern crate sandwich_rust_proto as pb;
 
 /// A structured error around [`ErrorCode`].
 pub type Error = error::Error;
