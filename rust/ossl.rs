@@ -16,8 +16,6 @@
 //!
 //! This trait aims to ease the support of multiple OpenSSL-like implementations,
 //! such as BoringSSL, LibreSSL and OpenSSL.
-//!
-//! Author: thb-sb
 
 /// Trait that supports various OpenSSL-like implementations.
 pub(crate) trait Ossl {
@@ -445,7 +443,7 @@ where
     }
 }
 
-/// Implements [`crate::Tunnel`] for [`OssTunnel`].
+/// Implements [`crate::Tunnel`] for [`OsslTunnel`].
 impl<'io: 'tun, 'tun, OsslInterface> crate::Tunnel<'io, 'tun>
     for OsslTunnel<'io, 'tun, OsslInterface>
 where
@@ -554,4 +552,303 @@ where
         }
         state.unwrap_or(self.state)
     }
+}
+
+/// Generates generic unit tests for an OpenSSL interface ([`Ossl`]).
+macro_rules! GenOsslUnitTests {
+    ($ossl:item) => {
+        #[cfg(test)]
+        mod test {
+            $ossl
+            /// Certificate related tests.
+            mod certificates {
+                use super::Ossl;
+                use crate::ossl::Ossl as OsslTrait;
+
+                /// Tests [`Ossl::certificate_from_pem`] using a PEM certificate.
+                #[test]
+                fn test_certificate_from_pem_valid() {
+                    let cert = std::fs::read(crate::tls::test::CERT_PEM_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_pem(cert);
+                    let cert = cert.unwrap();
+                    assert!(!cert.as_ptr().is_null());
+                }
+
+                /// Tests [`Ossl::certificate_from_pem`] using a PEM certificate that is too large.
+                #[test]
+                fn test_certificate_from_pem_too_large() {
+                    let cert = vec![0u8; (std::i32::MAX as usize) + 1];
+                    let cert = Ossl::certificate_from_pem(cert);
+                    let err = cert.unwrap_err();
+                    assert!(err.is(&errors! {pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW}));
+                }
+
+                /// Tests [`Ossl::certificate_from_pem`] using a DER certificate.
+                #[test]
+                fn test_certificate_from_pem_with_der() {
+                    let cert = std::fs::read(crate::tls::test::CERT_DER_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_pem(cert);
+                    let err = cert.unwrap_err();
+                    assert!(err.is(&errors!{pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED}));
+                }
+
+                /// Tests [`Ossl::certificate_from_der`] using a DER certificate.
+                #[test]
+                fn test_certificate_from_der_valid() {
+                    let cert = std::fs::read(crate::tls::test::CERT_DER_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_der(cert);
+                    let cert = cert.unwrap();
+                    assert!(!cert.as_ptr().is_null());
+                }
+
+                /// Tests [`Ossl::certificate_from_der`] using a DER certificate that is too large.
+                #[test]
+                fn test_certificate_from_der_too_large() {
+                    let cert = vec![0u8; (std::i32::MAX as usize) + 1];
+                    let cert = Ossl::certificate_from_der(cert);
+                    let err = cert.unwrap_err();
+                    assert!(err.is(&errors! {pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW}));
+                }
+
+                /// Tests [`Ossl::certificate_from_der`] using a DER certificate that contains an invalid sig alg (invalid OID).
+                #[test]
+                fn test_certificate_from_der_with_invalid_der() {
+                    let cert = std::fs::read(crate::tls::test::CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_der(cert);
+                    let err = cert.unwrap_err();
+                    assert!(err.is(&errors!{pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED}));
+                }
+            }
+
+            /// Private keys related tests.
+            mod private_keys {
+                use super::Ossl;
+                use crate::ossl::Ossl as OsslTrait;
+
+                /// Tests [`Ossl::private_key_from_pem`] using a PEM private key.
+                #[test]
+                fn test_private_key_from_pem_valid() {
+                    let skey = std::fs::read(crate::tls::test::SK_PATH)
+                        .expect("failed to read the private key");
+                    let skey = Ossl::private_key_from_pem(skey);
+                    let skey = skey.unwrap();
+                    assert!(!skey.as_ptr().is_null());
+                }
+
+                /// Tests [`Ossl::private_key_from_pem`] using a PEM private key that is too large.
+                #[test]
+                fn test_private_key_from_pem_too_large() {
+                    let skey = vec![0u8; (std::i32::MAX as usize) + 1];
+                    let skey = Ossl::private_key_from_pem(skey);
+                    let err = skey.unwrap_err();
+                    assert!(err.is(&errors! {pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW}));
+                }
+
+                /// Tests [`Ossl::private_key_from_pem`] using a DER private key.
+                #[test]
+                fn test_private_key_from_pem_with_der() {
+                    let skey = std::fs::read(crate::tls::test::SK_DER_PATH)
+                        .expect("failed to read the private key");
+                    let skey = Ossl::private_key_from_pem(skey);
+                    let err = skey.unwrap_err();
+                    assert!(err.is(&errors!{pb::ASN1Error::ASN1ERROR_MALFORMED => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED}));
+                }
+
+                /// Tests [`Ossl::private_key_from_der`] using a DER private key.
+                #[test]
+                fn test_private_key_from_der_valid() {
+                    let skey = std::fs::read(crate::tls::test::SK_DER_PATH)
+                        .expect("failed to read the private key");
+                    let skey = Ossl::private_key_from_der(skey);
+                    let skey = skey.unwrap();
+                    assert!(!skey.as_ptr().is_null());
+                }
+
+                /// Tests [`Ossl::private_key_from_der`] using a DER private key that is too large.
+                #[test]
+                fn test_private_key_from_der_too_large() {
+                    let skey = vec![0u8; (std::i32::MAX as usize) + 1];
+                    let skey = Ossl::private_key_from_der(skey);
+                    let err = skey.unwrap_err();
+                    assert!(err.is(&errors! {pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW}));
+                }
+            }
+
+            /// SSL context related tests.
+            mod ssl_ctx {
+                use super::Ossl;
+                use crate::ossl::Ossl as OsslTrait;
+
+                /// Tests instantiates a [`SSL_CTX`] for a client.
+                #[test]
+                fn test_ssl_ctx_client() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+                }
+
+                /// Tests instantiates a [`SSL_CTX`] for a server.
+                #[test]
+                fn test_ssl_ctx_server() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+                }
+
+                /// Tests [`Ossl::ssl_context_set_kems`] with two valid KEMs.
+                #[test]
+                fn test_ssl_ctx_set_kems_valid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let kems = vec!["kyber512".into(), "X25519".into()];
+                    Ossl::ssl_context_set_kems(&mut ssl, kems.iter()).unwrap();
+
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    Ossl::ssl_context_set_kems(&mut ssl, kems.iter()).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_kems`] with one valid KEM and one invalid KEM.
+                #[test]
+                fn test_ssl_ctx_set_kems_invalid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let kems = vec!["kyber512".into(), "X1337".into()];
+                    let err = Ossl::ssl_context_set_kems(&mut ssl, kems.iter()).unwrap_err();
+                    assert!(err.is(&errors! {pb::KEMError::KEMERROR_INVALID}));
+                }
+
+                /// Tests [`Ossl::ssl_context_set_kems`] with no KEMs.
+                #[test]
+                fn test_ssl_ctx_set_kems_no_kems() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let kems = std::vec::Vec::<std::string::String>::new();
+                    Ossl::ssl_context_set_kems(&mut ssl, kems.iter()).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_certificate`] with a valid PEM certificate.
+                #[test]
+                fn test_ssl_ctx_set_certificate_pem_valid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let cert = std::fs::read(crate::tls::test::CERT_PEM_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_pem(cert);
+                    let cert = cert.unwrap();
+                    assert!(!cert.as_ptr().is_null());
+
+                    Ossl::ssl_context_set_certificate(&mut ssl, cert).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_certificate`] with a valid DER certificate.
+                #[test]
+                fn test_ssl_ctx_set_certificate_der_valid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let cert = std::fs::read(crate::tls::test::CERT_DER_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_der(cert);
+                    let cert = cert.unwrap();
+                    assert!(!cert.as_ptr().is_null());
+
+                    Ossl::ssl_context_set_certificate(&mut ssl, cert).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_private_key`] with a valid PEM private key.
+                #[test]
+                fn test_ssl_ctx_set_private_key_pem_valid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let skey = std::fs::read(crate::tls::test::SK_PATH)
+                        .expect("failed to read the private key");
+                    let skey = Ossl::private_key_from_pem(skey);
+                    let skey = skey.unwrap();
+                    assert!(!skey.as_ptr().is_null());
+
+                    Ossl::ssl_context_set_private_key(&mut ssl, skey).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_private_key`] with a valid DER private key.
+                #[test]
+                fn test_ssl_ctx_set_private_key_der_valid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let skey = std::fs::read(crate::tls::test::SK_DER_PATH)
+                        .expect("failed to read the private key");
+                    let skey = Ossl::private_key_from_der(skey);
+                    let skey = skey.unwrap();
+                    assert!(!skey.as_ptr().is_null());
+
+                    Ossl::ssl_context_set_private_key(&mut ssl, skey).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_append_certificate_to_trust_store`] with a valid PEM certificate.
+                #[test]
+                fn test_ssl_ctx_append_certificate_to_trust_store_pem_valid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let cert = std::fs::read(crate::tls::test::CERT_PEM_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_pem(cert);
+                    let cert = cert.unwrap();
+                    assert!(!cert.as_ptr().is_null());
+
+                    Ossl::ssl_context_append_certificate_to_trust_store(&ssl, cert).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_append_certificate_to_trust_store`] with a valid DER certificate.
+                #[test]
+                fn test_ssl_ctx_append_certificate_to_trust_store_der_valid() {
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let cert = std::fs::read(crate::tls::test::CERT_DER_PATH)
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_der(cert);
+                    let cert = cert.unwrap();
+                    assert!(!cert.as_ptr().is_null());
+
+                    Ossl::ssl_context_append_certificate_to_trust_store(&ssl, cert).unwrap();
+                }
+            }
+
+            /// BIO related tests.
+            mod ssl_bio {
+                use super::Ossl;
+                use crate::ossl::Ossl as OsslTrait;
+
+                /// Tests creation of SSL BIO.
+                #[test]
+                fn test_bio_creation() {
+                    let bio = Ossl::new_ssl_bio();
+                    let bio = bio.unwrap();
+                    assert!(!bio.as_ptr().is_null());
+                }
+            }
+        }
+    };
 }

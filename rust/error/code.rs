@@ -23,8 +23,6 @@
 //! lists all error kinds.
 //!
 //! Errors are defined in the `errors.proto` protobuf file by enums.
-//!
-//! Author: thb-sb
 
 extern crate protobuf;
 extern crate sandwich_rust_proto as pb;
@@ -311,6 +309,7 @@ GenProtoBasedErrorCode!(
             PROTOBUFERROR_EMPTY => "empty message",
             PROTOBUFERROR_TOO_BIG => "message too large",
             PROTOBUFERROR_PARSE_FAILED => "message parsing failed",
+            PROTOBUFERROR_NULLPTR => "null pointer",
         ],
     },
     {
@@ -373,10 +372,10 @@ GenProtoBasedErrorCode!(
 /// and an arbitrary string.
 #[derive(Debug)]
 pub struct ErrorCode {
-    /// \brief The error code, based on a protobuf enum.
+    /// The error code, based on a protobuf enum.
     ec: ProtoBasedErrorCode,
 
-    /// \brief An arbitrary string.
+    /// An arbitrary string.
     msg: Option<std::string::String>,
 }
 

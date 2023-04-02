@@ -38,8 +38,6 @@
 //! - [`tunnel::sandwich_tunnel_close`]: closes the tunnel.
 //! - [`error::sandwich_error_free`]: releases the memory occupied by an error
 //!   chain.
-//!
-//! Author: thb-sb
 
 pub(self) mod error;
 pub(self) use error::Error;

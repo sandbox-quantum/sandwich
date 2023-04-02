@@ -25,8 +25,6 @@
 //! or `WouldBlock`.
 //!
 //! I/O interfaces are used to abstract the I/O plane.
-//!
-//! Author: thb-sb
 
 /// An I/O error.
 /// To see the list of I/O errors, see [`sandwich_rust_proto::IOError`].

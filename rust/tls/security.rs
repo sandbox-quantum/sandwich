@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Defines [`BitStength`], [`AlgorithmQuantumness`] enums and [`assert_compliance`] methof.
-//!
-//! Author: lfousseaq
+//! Defines [`BitStrength`], [`AlgorithmQuantumness`] enums and [`assert_compliance`] methof.
 
 /// Extracts the list of allowed key exchange mechanisms (KEM) from the Configuration.
 fn get_kems(cfg: &pb_api::Configuration) -> crate::Result<&std::vec::Vec<std::string::String>> {
@@ -116,7 +114,7 @@ impl std::convert::TryFrom<&str> for AlgorithmQuantumness {
     }
 }
 
-/// It checks that the bit strength of the key is at least as strong as the desired strength
+/// Checks that the bit strength of the key is at least as strong as the desired strength.
 fn assert_bit_strength(
     bit_strength: BitStrength,
     desired_strength: pb_api::NISTSecurityStrengthBits,
@@ -141,9 +139,8 @@ fn assert_bit_strength(
     Ok(())
 }
 
-/// If the user has specified a compliance policy, then check that the policy is satisfied by the
-/// configuration
-pub(super) fn assert_compliance(cfg: &pb_api::Configuration) -> crate::Result<()> {
+/// Checks that the policy is satisfied by the configuration.
+pub(crate) fn assert_compliance(cfg: &pb_api::Configuration) -> crate::Result<()> {
     let kems = get_kems(cfg)?;
     let compliance = cfg.compliance.as_ref().unwrap_or_default();
     let hybrid_choice = compliance.hybrid_choice.enum_value_or_default();
@@ -173,4 +170,108 @@ pub(super) fn assert_compliance(cfg: &pb_api::Configuration) -> crate::Result<()
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use super::assert_compliance;
+
+    /// Tests the default compliance: it accepts post quantum and hybrid.
+    #[test]
+    fn test_default_compliance() {
+        let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                kem: "kyber512"
+                kem: "p256_kyber512"
+              >
+            >
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_ok());
+    }
+
+    /// Tests the default compliance: it forbids purely classical kems.
+    #[test]
+    fn test_default_compliance_no_classical() {
+        let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                kem: "prime256v1"
+                kem: "kyber512"
+                kem: "p256_kyber512"
+              >
+            >
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_err());
+    }
+
+    #[test]
+    fn test_compliance_no_hybrid() {
+        let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                kem: "p256_kyber512"
+              >
+            >
+          >
+          compliance <
+            hybrid_choice: HYBRID_ALGORITHMS_FORBID
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_err());
+    }
+
+    #[test]
+    fn test_compliance_bit_strength() {
+        let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                kem: "p256_kyber512"
+              >
+            >
+          >
+          compliance <
+            bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_ok());
+    }
+
+    #[test]
+    fn test_compliance_insufficient_bit_strength() {
+        let cfg = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                kem: "hqc192"
+              >
+            >
+          >
+          compliance <
+            bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_err());
+    }
 }

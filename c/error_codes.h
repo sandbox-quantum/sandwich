@@ -45,6 +45,7 @@ enum SandwichProtobufError {
   SANDWICH_PROTOBUFERROR_EMPTY = 0,
   SANDWICH_PROTOBUFERROR_TOO_BIG = 1,
   SANDWICH_PROTOBUFERROR_PARSE_FAILED = 2,
+  SANDWICH_PROTOBUFERROR_NULLPTR = 3,
 };
 typedef enum SandwichProtobufError SandwichProtobufError;
 

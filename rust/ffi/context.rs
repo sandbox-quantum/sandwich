@@ -13,8 +13,6 @@
 // limitations under the License.
 
 //! Sandwich context module for FFI.
-//!
-//! Author: thb-sb
 
 /// Instantiates a Sandwich context from a serialized configuration.
 ///
@@ -27,6 +25,10 @@ pub extern "C" fn sandwich_context_new(
     n: usize,
     out: *mut *mut std::ffi::c_void,
 ) -> *mut super::Error {
+    if src.is_null() {
+        return errors!{pb::ProtobufError::PROTOBUFERROR_NULLPTR => pb::APIError::APIERROR_CONFIGURATION}.into();
+    }
+
     let slice = unsafe { std::slice::from_raw_parts(src as *const u8, n) };
     let mut configuration = pb_api::Configuration::new();
 
@@ -65,7 +67,7 @@ mod test {
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
         config.mut_client().mut_tls().trusted_certificates.push(
             crate::context::test::openssl::create_cert(
-                crate::openssl::test::CERT_PEM_PATH,
+                crate::tls::test::CERT_PEM_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ),
         );
@@ -99,7 +101,7 @@ mod test {
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
         config.mut_client().mut_tls().trusted_certificates.push(
             crate::context::test::openssl::create_cert(
-                crate::openssl::test::CERT_PEM_PATH,
+                crate::tls::test::CERT_PEM_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ),
         );
@@ -117,6 +119,37 @@ mod test {
         let err = super::sandwich_context_new(
             encoded.as_ptr() as *const std::ffi::c_void,
             encoded.len(),
+            &mut ptr as *mut *mut std::ffi::c_void,
+        );
+        assert_eq!(ptr, std::ptr::null_mut());
+        super::sandwich_context_free(ptr);
+        super::super::error::sandwich_error_free(err);
+    }
+
+    /// Tests [`sandwich_context_new`] with a null pointer.
+    #[test]
+    fn test_context_ctor_nullptr() {
+        let mut ptr: *mut std::ffi::c_void = std::ptr::null_mut();
+        let err = super::sandwich_context_new(
+            std::ptr::null(),
+            0x41,
+            &mut ptr as *mut *mut std::ffi::c_void,
+        );
+        assert!(!err.is_null());
+        assert!(ptr.is_null());
+
+        crate::ffi::error::sandwich_error_free(err);
+    }
+
+    /// Tests [`sandwich_context_new`] with an invalid protobuf message.
+    #[test]
+    fn test_context_ctor_invalid_msg() {
+        let data = [0u8; 42];
+
+        let mut ptr: *mut std::ffi::c_void = std::ptr::null_mut();
+        let err = super::sandwich_context_new(
+            data.as_ptr() as *const std::ffi::c_void,
+            data.len(),
             &mut ptr as *mut *mut std::ffi::c_void,
         );
         assert_eq!(ptr, std::ptr::null_mut());

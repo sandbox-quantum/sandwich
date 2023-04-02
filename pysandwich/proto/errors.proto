@@ -60,6 +60,11 @@ enum ProtobufError {
 
   // Failed to parse the protobuf message.
   PROTOBUFERROR_PARSE_FAILED = 2;
+
+  /// A null pointer was supplied.
+  /// This error is thrown by `sandwich_context_new`, when the given source
+  /// buffer is a null pointer.
+  PROTOBUFERROR_NULLPTR = 3;
 };
 
 // Errors regarding OpenSSL configurations.

@@ -33,7 +33,6 @@
 //!
 //! Error codes that are being used by Sandwich are defined in the [`code`]
 //! module.
-//! Author: thb-sb
 
 pub mod code;
 pub use code::{ErrorCode, ProtoBasedErrorCode};

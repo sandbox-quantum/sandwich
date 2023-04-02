@@ -16,8 +16,6 @@
 //!
 //! [`Pimpl`] is a convenient and safe wrapper around a raw pointer, with
 //! a custom Drop function.
-//!
-//! Author: thb-sb
 
 /// A deleter.
 pub(crate) type Deleter<T> = fn(*mut T);

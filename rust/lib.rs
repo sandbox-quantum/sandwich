@@ -44,8 +44,6 @@
 //! [SandboxAQ]: https://sandboxaq.com/
 //! [OpenSSL]: https://openssl.org/
 //! [protobuf]: https://protobuf.dev/
-//!
-//! Author: thb-sb
 
 /// Protobuf definitions crate for Sandwich API.
 pub extern crate api_rust_proto as pb_api;
@@ -81,12 +79,16 @@ pub use tunnel::Tunnel;
 pub(crate) mod ffi;
 
 #[cfg(any(feature = "openssl"))]
+#[macro_use]
 pub(crate) mod ossl;
 
 pub(crate) mod data_source;
 #[cfg(feature = "openssl")]
 pub(crate) mod openssl;
 pub(crate) mod pimpl;
+
+#[cfg(any(feature = "openssl"))]
+pub(crate) mod tls;
 
 pub(crate) use context::Mode;
 pub(crate) use data_source::DataSource;

@@ -313,6 +313,9 @@ class ProtobufError(SandwichException):
         SandwichErrorProto.PROTOBUFERROR_PARSE_FAILED: {
             "msg": "message parsing failed",
         },
+        SandwichErrorProto.PROTOBUFERROR_NULLPTR: {
+            "msg": "null pointer",
+        },
     }
 
 

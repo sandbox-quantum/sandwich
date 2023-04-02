@@ -17,8 +17,6 @@
 //! A [`DataSource`] struct provides a way to retrieve materials from various
 //! sources. The source is given by the protobuf configuration (see
 //! [`api_rust_proto::DataSource`].
-//!
-//! Author: aguinetsb & thb-sb
 
 use pb::DataSourceError::*;
 

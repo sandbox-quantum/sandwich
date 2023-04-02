@@ -22,8 +22,6 @@
 //! A [`Context`] is tied to a specific underlying implementation and a
 //! protocol. From it, developers may spawn tunnels (see [`crate::Tunnel`].
 //! Any objects derived from a [`Context`] will use its configuration.
-//!
-//! Author: thb-sb
 
 /// Mode for a [`Context`].
 ///
@@ -162,7 +160,7 @@ pub(crate) mod test {
                 .mut_tls()
                 .trusted_certificates
                 .push(create_cert(
-                    crate::openssl::test::CERT_PEM_PATH,
+                    crate::tls::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
                 ));
             config
@@ -186,7 +184,7 @@ pub(crate) mod test {
                 .mut_tls()
                 .trusted_certificates
                 .push(create_cert(
-                    crate::openssl::test::CERT_PEM_PATH,
+                    crate::tls::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
                 ));
             config
@@ -214,7 +212,7 @@ pub(crate) mod test {
                 .mut_tls()
                 .trusted_certificates
                 .push(create_cert(
-                    crate::openssl::test::CERT_PEM_PATH,
+                    crate::tls::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
                 ));
             config
@@ -245,12 +243,12 @@ pub(crate) mod test {
         fn test_configuration_bad_sk() {
             let mut config = create_configuration(crate::Mode::Server, false);
             config.mut_server().mut_tls().certificate = Some(create_cert(
-                crate::openssl::test::CERT_DER_PATH,
+                crate::tls::test::CERT_DER_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
             ))
             .into();
             config.mut_server().mut_tls().private_key = Some(create_sk(
-                crate::openssl::test::SK_PATH,
+                crate::tls::test::SK_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
             ))
             .into();

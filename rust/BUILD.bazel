@@ -1,5 +1,5 @@
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
-load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_doc_test", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_doc_test", "rust_library", "rust_shared_library", "rust_static_library", "rust_test", "rustfmt_test")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 cc_library(
@@ -61,18 +61,23 @@ _SANDWICH_FFI_MOD_SRCS = [
     "ffi/tunnel.rs",
 ]
 
+_SANDWICH_TLS_MOD_SRCS = [
+    "tls/mod.rs",
+    "tls/security.rs",
+]
+
 _SANDWICH_OPENSSL_MOD_SRCS = [
     "openssl/io.rs",
     "openssl/mod.rs",
     "openssl/ossl.rs",
-    "openssl/security.rs",
 ]
 
 _SANDWICH_SRCS = \
     _SANDWICH_LIB_SRCS + \
     _SANDWICH_ERROR_MOD_SRCS + \
     _SANDWICH_FFI_MOD_SRCS + \
-    _SANDWICH_OPENSSL_MOD_SRCS
+    _SANDWICH_OPENSSL_MOD_SRCS + \
+    _SANDWICH_TLS_MOD_SRCS
 
 rust_library(
     name = "sandwich",
@@ -99,6 +104,12 @@ rust_library(
     rustc_flags = [
         "-W",
         "missing_docs",
+        "-A",
+        "dead_code",
+        "-A",
+        "unused_imports",
+        "-A",
+        "unused_macros",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -195,6 +206,14 @@ rust_shared_library(
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
         "@crate_index//:protobuf",
+    ],
+)
+
+rustfmt_test(
+    name = "rustfmt_test",
+    targets = [
+        ":sandwich",
+        ":sandwich_test",
     ],
 )
 

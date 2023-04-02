@@ -13,8 +13,6 @@
 // limitations under the License.
 
 //! Sandwich error module for FFI.
-//!
-//! Author: thb-sb
 
 /// An error, for FFI.
 /// See module [`crate::error`] for more information.
@@ -58,5 +56,55 @@ pub extern "C" fn sandwich_error_free(mut ptr: *mut Error) {
     while !ptr.is_null() {
         let b = unsafe { Box::from_raw(ptr) };
         ptr = b.details;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Error;
+
+    /// Tests conversion from [`crate::Error`] to [`super::Error`].
+    #[test]
+    fn test_error_ctor() {
+        use protobuf::Enum;
+        let err = errors! {
+        pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
+            => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
+                => pb::APIError::APIERROR_CONFIGURATION};
+        let ptr: *mut Error = err.into();
+        assert!(!ptr.is_null());
+        unsafe {
+            assert_eq!((*ptr).kind, pb::ErrorKind::ERRORKIND_API.value());
+            assert_eq!((*ptr).code, pb::APIError::APIERROR_CONFIGURATION.value());
+
+            let ptr = (*ptr).details;
+            assert!(!ptr.is_null());
+            assert_eq!((*ptr).kind, pb::ErrorKind::ERRORKIND_CONFIGURATION.value());
+            assert_eq!(
+                (*ptr).code,
+                pb::ConfigurationError::CONFIGURATIONERROR_INVALID.value()
+            );
+
+            let ptr = (*ptr).details;
+            assert!(!ptr.is_null());
+            assert_eq!(
+                (*ptr).kind,
+                pb::ErrorKind::ERRORKIND_OPENSSL_CONFIGURATION.value()
+            );
+            assert_eq!(
+                (*ptr).code,
+                pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID.value()
+            );
+
+            let ptr = (*ptr).details;
+            assert!(ptr.is_null());
+        }
+        super::sandwich_error_free(ptr);
+    }
+
+    /// Tests [`sandwich_error_free`] with a null pointer.
+    #[test]
+    fn test_error_free_null_ptr() {
+        super::sandwich_error_free(std::ptr::null_mut());
     }
 }

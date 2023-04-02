@@ -16,8 +16,6 @@
 //!
 //! This module defines the I/O implementation for OpenSSL, based on a
 //! custom BIO_METHOD.
-//!
-//! Author: thb-sb
 
 /// Clears the BIO retry flag.
 fn clear_bio_retry_flags(bio: *mut openssl::bio_st) {

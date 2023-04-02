@@ -13,8 +13,6 @@
 // limitations under the License.
 
 //! Sandwich tunnel module for FFI.
-//!
-//! Author: thb-sb
 
 /// Instantiates a new tunnel from a serialized protobuf configuration message.
 #[no_mangle]

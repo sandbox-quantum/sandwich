@@ -13,34 +13,14 @@
 // limitations under the License.
 
 //! Sandwich OpenSSL implementation module.
-//!
-//! Author: thb-sb
 
 pub(self) mod io;
 pub(crate) mod ossl;
-pub(self) mod security;
 
 pub(self) use io::BIO_METH;
-pub(self) use security::assert_compliance;
 
 #[cfg(test)]
 pub(crate) mod test {
-    /// Path to a valid PEM certificate.
-    pub(crate) const CERT_PEM_PATH: &str = "testdata/cert.pem";
-
-    /// Path to an invalid PEM certificate.
-    pub(crate) const CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH: &str =
-        "testdata/cert_unknown_sig_alg.der";
-
-    /// Path to a valid DER certificate.
-    pub(crate) const CERT_DER_PATH: &str = "testdata/cert.der";
-
-    /// Path to a valid PEM private key.
-    pub(crate) const SK_PATH: &str = "testdata/key.pem";
-
-    /// Path to a valid DER private key.
-    pub(crate) const SK_DER_PATH: &str = "testdata/key.der";
-
     /// A simple I/O interface.
     struct IOBuffer {
         pub(self) read: std::vec::Vec<u8>,
@@ -153,7 +133,8 @@ pub(crate) mod test {
     #[test]
     fn test_client() {
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
-            format!(r#"
+            format!(
+                r#"
             client <
               tls <
                 common_options <
@@ -170,7 +151,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::openssl::test::CERT_PEM_PATH
+                crate::tls::test::CERT_PEM_PATH
             )
             .as_str(),
         )
@@ -191,7 +172,8 @@ pub(crate) mod test {
     #[test]
     fn test_server() {
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
-            format!(r#"
+            format!(
+                r#"
             server <
               tls <
                 common_options <
@@ -216,8 +198,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::openssl::test::CERT_PEM_PATH,
-                crate::openssl::test::SK_PATH
+                crate::tls::test::CERT_PEM_PATH,
+                crate::tls::test::SK_PATH
             )
             .as_str(),
         )
@@ -240,7 +222,8 @@ pub(crate) mod test {
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
-            format!(r#"
+            format!(
+                r#"
             client <
               tls <
                 common_options <
@@ -257,7 +240,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::openssl::test::CERT_PEM_PATH
+                crate::tls::test::CERT_PEM_PATH
             )
             .as_str(),
         )
@@ -267,7 +250,8 @@ pub(crate) mod test {
         let mut client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
-            format!(r#"
+            format!(
+                r#"
             server <
               tls <
                 common_options <
@@ -292,8 +276,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::openssl::test::CERT_PEM_PATH,
-                crate::openssl::test::SK_PATH
+                crate::tls::test::CERT_PEM_PATH,
+                crate::tls::test::SK_PATH
             )
             .as_str(),
         )

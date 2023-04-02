@@ -18,8 +18,6 @@
 //!
 //! A Tunnel is created from a Sandwich context. See [`crate::Context`] for more
 //! information.
-//!
-//! Author: thb-sb
 
 /// Structure for states and errors based on protobuf definitions.
 pub struct ProtoStateErrorBase<Enum: protobuf::Enum>(Enum, Option<crate::Error>);

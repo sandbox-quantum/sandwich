@@ -315,6 +315,7 @@ var protobufErrorMap = map[pb.ProtobufError]string{
 	pb.ProtobufError_PROTOBUFERROR_EMPTY:        "empty message",
 	pb.ProtobufError_PROTOBUFERROR_TOO_BIG:      "message too large",
 	pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED: "message parsing failed",
+	pb.ProtobufError_PROTOBUFERROR_NULLPTR:      "null pointer",
 }
 
 // newProtobufError creates a ProtobufError from an error code.

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 //! Sandwich I/O module for FFI.
-//!
-//! Author: thb-sb
 
 /// A read function.
 pub type ReadFn = extern "C" fn(
@@ -107,5 +105,50 @@ pub extern "C" fn sandwich_io_new(
 pub extern "C" fn sandwich_io_free(io: *mut std::ffi::c_void) {
     if !io.is_null() {
         let _ = unsafe { Box::from_raw(io as *mut Settings) };
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Settings;
+
+    /// A function that matches [`super::ReadFn`].
+    extern "C" fn test_read_fn(
+        _uarg: *mut std::ffi::c_void,
+        _buf: *mut std::ffi::c_void,
+        _count: usize,
+        _tunnel_state: i32,
+        _err: *mut i32,
+    ) -> usize {
+        0
+    }
+
+    /// A function that matches [`super::WriteFn`].
+    extern "C" fn test_write_fn(
+        _uarg: *mut std::ffi::c_void,
+        _buf: *const std::ffi::c_void,
+        _count: usize,
+        _tunnel_state: i32,
+        _err: *mut i32,
+    ) -> usize {
+        0
+    }
+
+    /// A function that matches [`super::CloneFn`].
+    extern "C" fn test_close_fn(_uarg: *mut std::ffi::c_void) {}
+
+    /// Tests io constructor.
+    #[test]
+    fn test_io_ctor() {
+        let settings = Settings {
+            readfn: test_read_fn,
+            writefn: test_write_fn,
+            closefn: test_close_fn,
+            uarg: std::ptr::null_mut(),
+        };
+        let mut ptr: *mut std::ffi::c_void = std::ptr::null_mut();
+        let err = super::sandwich_io_new(&settings as *const _, &mut ptr as *mut *mut _);
+        assert!(err.is_null());
+        super::sandwich_io_free(ptr);
     }
 }
