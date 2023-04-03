@@ -92,6 +92,11 @@ pub fn try_from<'ctx>(
                 crate::openssl::ossl::try_from(configuration)
                     .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
+            #[cfg(feature = "boringssl")]
+            pb_api::Implementation::IMPL_BORINGSSL_OQS => {
+                crate::boringssl::ossl::try_from(configuration)
+                    .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
+            }
             _ => Err(
                 errors!{pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID}
             ),

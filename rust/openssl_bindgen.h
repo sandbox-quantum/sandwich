@@ -17,8 +17,6 @@
 ///
 /// \file
 /// \brief List of `#include` for rust bindgen.
-///
-/// \author thb-sb
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>

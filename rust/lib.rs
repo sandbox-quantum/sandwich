@@ -78,16 +78,20 @@ pub use tunnel::Tunnel;
 #[cfg(feature = "ffi")]
 pub(crate) mod ffi;
 
-#[cfg(any(feature = "openssl"))]
+#[cfg(any(feature = "openssl", feature = "boringssl"))]
 #[macro_use]
 pub(crate) mod ossl;
 
+#[cfg(feature = "boringssl")]
+pub(crate) mod boringssl;
+
 pub(crate) mod data_source;
+
 #[cfg(feature = "openssl")]
 pub(crate) mod openssl;
 pub(crate) mod pimpl;
 
-#[cfg(any(feature = "openssl"))]
+#[cfg(any(feature = "openssl", feature = "boringssl"))]
 pub(crate) mod tls;
 
 pub(crate) use context::Mode;

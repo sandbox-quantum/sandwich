@@ -27,6 +27,8 @@ enum Implementation {
   IMPL_UNSPECIFIED = 0;
   // OpenSSL 1.1.1 with liboqs.
   IMPL_OPENSSL1_1_1_OQS = 1;
+  // BoringSSL with liboqs.
+  IMPL_BORINGSSL_OQS = 2;
 }
 
 // Client options.

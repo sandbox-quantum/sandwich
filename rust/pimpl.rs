@@ -21,7 +21,6 @@
 pub(crate) type Deleter<T> = fn(*mut T);
 
 /// Wrapper around an raw pointer.
-#[derive(Debug)]
 pub(crate) struct Pimpl<'ptr, T> {
     /// The type to own.
     obj: *mut T,
@@ -31,6 +30,13 @@ pub(crate) struct Pimpl<'ptr, T> {
 
     /// A `PhantomData` to explicit the lifetime of the pointer.
     phantom: std::marker::PhantomData<&'ptr T>,
+}
+
+/// Implements [`std::fmt::Debug`] for [`Pimpl`].
+impl<T> std::fmt::Debug for Pimpl<'_, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "pimpl ptr={:?}", self.obj)
+    }
 }
 
 /// Instantiates a [`Pimpl`] from a raw pointer to `T`.
