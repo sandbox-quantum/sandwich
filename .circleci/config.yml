@@ -42,8 +42,8 @@ jobs:
       - run:
           name: "Deploy documentation"
           command: |
-            doczip=$(bazelisk cquery --output files //rust:doc)
-            bazelisk build //rust:doc
+            doczip=$(bazelisk cquery --output files //rust:sandwich_openssl_ffi_doc)
+            bazelisk build //rust:sandwich_openssl_ffi_doc
             cp -r ${doczip} docs/rust
             mkdocs gh-deploy --config-file mkdocs.yml
 
