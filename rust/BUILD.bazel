@@ -1,9 +1,140 @@
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
-load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_doc_test", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
 
+# Source files for various general definitions in Sandwich.
+_SANDWICH_LIB_SRCS = [
+    "context.rs",
+    "data_source.rs",
+    "io.rs",
+    "lib.rs",
+    "ossl.rs",
+    "pimpl.rs",
+    "tunnel.rs",
+]
+
+# Source files for the Sandwich error module.
+_SANDWICH_ERROR_MOD_SRCS = [
+    "error/code.rs",
+    "error/mod.rs",
+]
+
+# Source files for the Sandwich FFI module.
+_SANDWICH_FFI_MOD_SRCS = [
+    "ffi/context.rs",
+    "ffi/error.rs",
+    "ffi/io.rs",
+    "ffi/mod.rs",
+    "ffi/tunnel.rs",
+]
+
+# Source files for the Sandwich TLS module.
+_SANDWICH_TLS_MOD_SRCS = [
+    "tls/mod.rs",
+    "tls/security.rs",
+]
+
+# Protobuf dependencies for Sandwich.
+_SANDWICH_PROTOBUF_DEPS = [
+    "//proto:sandwich_rust_proto",
+    "//proto/api/v1:api_rust_proto",
+    "@crate_index//:protobuf",
+]
+
+# Sandwich "naked" variant.
+rust_library(
+    name = "sandwich_naked",
+    srcs = _SANDWICH_LIB_SRCS +
+           _SANDWICH_ERROR_MOD_SRCS +
+           _SANDWICH_TLS_MOD_SRCS,
+    crate_features = [],
+    crate_name = "sandwich",
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+        "-A",
+        "dead_code",
+        "-A",
+        "unused_imports",
+        "-A",
+        "unused_macros",
+    ],
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_test(
+    name = "sandwich_naked_test",
+    timeout = "short",
+    crate = ":sandwich_naked",
+    crate_features = [],
+    data = ["//testdata:tests_data"],
+    rustc_flags = [
+        "-A",
+        "dead_code",
+        "-A",
+        "unused_imports",
+        "-A",
+        "unused_macros",
+    ],
+    deps = _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_clippy(
+    name = "sandwich_naked_clippy",
+    testonly = True,
+    deps = [
+        ":sandwich_naked",
+        ":sandwich_naked_test",
+    ],
+)
+
+rust_doc(
+    name = "sandwich_naked_doc",
+    crate = ":sandwich_naked",
+    rustdoc_flags = [
+        "-A",
+        "rustdoc::private_intra_doc_links",
+        "-A",
+        "rustdoc::broken_intra_doc_links",
+    ],
+)
+
+rust_doc(
+    name = "sandwich_naked_internal_doc",
+    crate = ":sandwich_naked",
+    rustdoc_flags = [
+        "--document-private-items",
+        "-A",
+        "rustdoc::private_intra_doc_links",
+        "-A",
+        "rustdoc::broken_intra_doc_links",
+    ],
+)
+
+######################################
+### BEGIN OpenSSL related rules    ###
+###                                ###
+### The following rules enable the ###
+### support of OpenSSL in Sandwich.###
+######################################
+
+# Source files for the Sandwich OpenSSL module.
+_SANDWICH_OPENSSL_MOD_SRCS = [
+    "openssl/io.rs",
+    "openssl/mod.rs",
+    "openssl/ossl.rs",
+]
+
+# All source files for Sandwich OpenSSL variant.
+_SANDWICH_OPENSSL_VARIANT_SRCS = \
+    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_ERROR_MOD_SRCS + \
+    _SANDWICH_TLS_MOD_SRCS + \
+    _SANDWICH_OPENSSL_MOD_SRCS
+
+# C library to guide Rust-bindgen for generating OpenSSL bindings.
 cc_library(
-    name = "openssl-rust-bindgen",
+    name = "openssl_bindgen_library",
     hdrs = [
         "openssl_bindgen.h",
     ],
@@ -12,12 +143,10 @@ cc_library(
     ],
 )
 
+# OpenSSL bindings.
 rust_bindgen_library(
-    name = "openssl",
-    bindgen_flags = [
-        "--size_t-is-usize",
-    ],
-    cc_lib = ":openssl-rust-bindgen",
+    name = "openssl_bindgen",
+    cc_lib = ":openssl_bindgen_library",
     clang_flags = select({
         "@platforms//os:ios": [
             "-target",
@@ -25,6 +154,7 @@ rust_bindgen_library(
         ],
         "//conditions:default": [],
     }),
+    crate_name = "openssl",
     header = "openssl_bindgen.h",
     rustc_flags = [
         "-A",
@@ -38,49 +168,10 @@ rust_bindgen_library(
     ],
 )
 
-_SANDWICH_LIB_SRCS = [
-    "context.rs",
-    "data_source.rs",
-    "io.rs",
-    "lib.rs",
-    "ossl.rs",
-    "pimpl.rs",
-    "tunnel.rs",
-]
-
-_SANDWICH_ERROR_MOD_SRCS = [
-    "error/code.rs",
-    "error/mod.rs",
-]
-
-_SANDWICH_FFI_MOD_SRCS = [
-    "ffi/context.rs",
-    "ffi/error.rs",
-    "ffi/io.rs",
-    "ffi/mod.rs",
-    "ffi/tunnel.rs",
-]
-
-_SANDWICH_TLS_MOD_SRCS = [
-    "tls/mod.rs",
-    "tls/security.rs",
-]
-
-_SANDWICH_OPENSSL_MOD_SRCS = [
-    "openssl/io.rs",
-    "openssl/mod.rs",
-    "openssl/ossl.rs",
-]
-
-_SANDWICH_SRCS = \
-    _SANDWICH_LIB_SRCS + \
-    _SANDWICH_ERROR_MOD_SRCS + \
-    _SANDWICH_FFI_MOD_SRCS + \
-    _SANDWICH_TLS_MOD_SRCS
-
+# Sandwich OpenSSL variant.
 rust_library(
-    name = "sandwich",
-    srcs = _SANDWICH_SRCS + _SANDWICH_OPENSSL_MOD_SRCS,
+    name = "sandwich_openssl",
+    srcs = _SANDWICH_OPENSSL_VARIANT_SRCS,
     crate_features = ["openssl"],
     crate_name = "sandwich",
     rustc_flags = [
@@ -88,56 +179,89 @@ rust_library(
         "missing_docs",
     ],
     visibility = ["//visibility:public"],
-    deps = [
-        ":openssl",
-        "//proto:sandwich_rust_proto",
-        "//proto/api/v1:api_rust_proto",
-        "@crate_index//:protobuf",
-    ],
+    deps = ["openssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
 )
 
+# Sandwich OpenSSL+ffi variant.
 rust_library(
-    name = "sandwich-naked",
-    srcs = _SANDWICH_SRCS,
+    name = "sandwich_openssl_ffi",
+    srcs = _SANDWICH_OPENSSL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl",
+    ],
     crate_name = "sandwich",
     rustc_flags = [
         "-W",
         "missing_docs",
-        "-A",
-        "dead_code",
-        "-A",
-        "unused_imports",
-        "-A",
-        "unused_macros",
     ],
     visibility = ["//visibility:public"],
-    deps = [
-        "//proto:sandwich_rust_proto",
-        "//proto/api/v1:api_rust_proto",
-        "@crate_index//:protobuf",
+    deps = ["openssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+# Sandwich with OpenSSL and FFI.
+rust_static_library(
+    name = "sandwich_openssl_ffi_static",
+    srcs = _SANDWICH_OPENSSL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl",
     ],
+    crate_name = "sandwich_openssl",
+    visibility = ["//visibility:public"],
+    deps = [":openssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_openssl_ffi_shared",
+    srcs = _SANDWICH_OPENSSL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl",
+    ],
+    crate_name = "sandwich_openssl",
+    visibility = ["//visibility:public"],
+    deps = [":openssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+# Official C shared library for Python bindings.
+rust_shared_library(
+    name = "sandwich_openssl_ffi_py_shared",
+    srcs = _SANDWICH_OPENSSL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl",
+    ],
+    crate_name = "sandwich_shared",
+    visibility = ["//visibility:public"],
+    deps = [":openssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_test(
+    name = "sandwich_openssl_ffi_test",
+    timeout = "short",
+    crate = ":sandwich_openssl_ffi",
+    crate_features = [
+        "ffi",
+        "openssl",
+    ],
+    data = ["//testdata:tests_data"],
+    deps = _SANDWICH_PROTOBUF_DEPS,
 )
 
 rust_clippy(
-    name = "clippy",
+    name = "sandwich_openssl_ffi_clippy",
     testonly = True,
     deps = [
-        ":sandwich",
-        ":sandwich_test",
-    ],
-)
-
-build_test(
-    name = "clippy_build_test",
-    targets = [
-        ":clippy",
+        ":sandwich_openssl_ffi",
+        ":sandwich_openssl_ffi_test",
     ],
 )
 
 rust_doc(
-    name = "doc",
-    crate = ":sandwich",
-    rustc_flags = [
+    name = "sandwich_openssl_ffi_doc",
+    crate = ":sandwich_openssl_ffi",
+    rustdoc_flags = [
         "-A",
         "rustdoc::private_intra_doc_links",
         "--cfg",
@@ -148,9 +272,9 @@ rust_doc(
 )
 
 rust_doc(
-    name = "doc_internals",
-    crate = ":sandwich",
-    rustc_flags = [
+    name = "sandwich_openssl_ffi_internal_doc",
+    crate = ":sandwich_openssl_ffi",
+    rustdoc_flags = [
         "--document-private-items",
         "-A",
         "rustdoc::private_intra_doc_links",
@@ -161,63 +285,6 @@ rust_doc(
     ],
 )
 
-rust_doc_test(
-    name = "doc_test",
-    crate = ":sandwich",
-    features = ["ffi"],
-    tags = ["manual"],
-    deps = [
-        ":openssl",
-        "//proto:sandwich_rust_proto",
-        "//proto/api/v1:api_rust_proto",
-        "@crate_index//:protobuf",
-    ],
-)
-
-rust_static_library(
-    name = "sandwich_ffi",
-    srcs = _SANDWICH_SRCS + _SANDWICH_OPENSSL_MOD_SRCS,
-    crate_features = [
-        "ffi",
-        "openssl",
-    ],
-    crate_name = "sandwich",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":openssl",
-        "//proto:sandwich_rust_proto",
-        "//proto/api/v1:api_rust_proto",
-        "@crate_index//:protobuf",
-    ],
-)
-
-rust_shared_library(
-    name = "sandwich_ffi_shared",
-    srcs = _SANDWICH_SRCS + _SANDWICH_OPENSSL_MOD_SRCS,
-    crate_features = [
-        "ffi",
-        "openssl",
-    ],
-    crate_name = "sandwich",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":openssl",
-        "//proto:sandwich_rust_proto",
-        "//proto/api/v1:api_rust_proto",
-        "@crate_index//:protobuf",
-    ],
-)
-
-rust_test(
-    name = "sandwich_test",
-    timeout = "short",
-    crate = ":sandwich",
-    crate_features = [
-        "ffi",
-        "openssl",
-    ],
-    data = ["//testdata:tests_data"],
-    deps = [
-        "@crate_index//:protobuf",
-    ],
-)
+######################################
+### END OpenSSL related rules      ###
+######################################

@@ -1,0 +1,15 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "bindgen-cli",
+    srcs = glob(["**/*.rs"]),
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bindgen-cli_deps//:bindgen",
+        "@bindgen-cli_deps//:clap",
+        "@bindgen-cli_deps//:env_logger",
+        "@bindgen-cli_deps//:log",
+        "@bindgen-cli_deps//:shlex",
+    ],
+)

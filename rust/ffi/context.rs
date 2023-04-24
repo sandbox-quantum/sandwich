@@ -56,7 +56,7 @@ pub extern "C" fn sandwich_context_free(ctx: *mut std::ffi::c_void) {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "openssl"))]
 mod test {
     /// Tests [`sandwich_context_new`] and [`sandwich_context_free`].
     #[test]

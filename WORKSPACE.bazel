@@ -125,11 +125,26 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
+load("//common/build/rust/bindgen:toolchains.bzl", "common_build_rust_bindgen_fetch_toolchains", "common_build_rust_bindgen_register_toolchains")
+load("//common/build/rust/bindgen/cli:fetch.bzl", "common_build_rust_bindgen_cli_fetch_archive")
+
+common_build_rust_bindgen_fetch_toolchains()
+
+common_build_rust_bindgen_cli_fetch_archive()
+
+load("//common/build/rust/bindgen/cli:build.bzl", "common_build_rust_bindgen_cli_build")
+
+common_build_rust_bindgen_cli_build()
+
+load("@bindgen-cli_deps//:defs.bzl", bindgen_cli_deps = "crate_repositories")
+
+bindgen_cli_deps()
+
+load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies")
 
 rust_bindgen_dependencies()
 
-rust_bindgen_register_toolchains()
+common_build_rust_bindgen_register_toolchains()
 
 load("//common/build/rust/proto:toolchains.bzl", "common_build_rust_proto_register_toolchains")
 

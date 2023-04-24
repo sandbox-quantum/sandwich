@@ -29,7 +29,7 @@ py_library(
 
 filegroup(
     name = "sandwich_ffi",
-    srcs = ["//rust:sandwich_ffi_shared"],
+    srcs = ["//rust:sandwich_openssl_ffi_py_shared"],
 )
 
 py_library(
@@ -65,7 +65,7 @@ py_test(
 
 copy_file(
     name = "sandwich_c_lib",
-    src = "//rust:sandwich_ffi_shared",
+    src = "//rust:sandwich_openssl_ffi_shared",
     out = "libsandwich_shared.so",
 )
 
