@@ -160,3 +160,17 @@ http_archive(
     strip_prefix = "googletest-a4ab0abb93620ce26efad9de9296b73b16e88588",
     urls = ["https://github.com/google/googletest/archive/a4ab0abb93620ce26efad9de9296b73b16e88588.tar.gz"],
 )
+
+http_archive(
+    name = "com_sandboxquantum_bartleby",
+    sha256 = "1251298a1bcee576ad09b48152c73a0391dd91165e389b3cae710a0127da03fa",
+    urls = ["https://github.com/sandbox-quantum/bartleby/releases/download/0.2.0/bartleby-v0.2.0.tar.gz"],
+)
+
+load("@com_sandboxquantum_bartleby//bartleby:repositories.bzl", "bartleby_repositories")
+
+bartleby_repositories()
+
+load("@com_sandboxquantum_bartleby//bartleby:deps.bzl", "bartleby_deps")
+
+bartleby_deps()

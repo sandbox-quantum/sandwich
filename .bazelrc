@@ -9,3 +9,6 @@ build --noincompatible_use_platforms_repo_for_constraints
 build --config=clang
 
 test --test_output=errors
+
+# This flag is needed for building LLVM.
+build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17

@@ -1,5 +1,7 @@
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
 load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
+load("//common/build/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
+load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
 
 # Source files for various general definitions in Sandwich.
 _SANDWICH_LIB_SRCS = [
@@ -132,6 +134,15 @@ _SANDWICH_OPENSSL_VARIANT_SRCS = \
     _SANDWICH_TLS_MOD_SRCS + \
     _SANDWICH_OPENSSL_MOD_SRCS
 
+_OPENSSL_LINK_PREFIX = "__private_ossl_1_1_1_"
+
+# OpenSSL, prefixed with Bartleby.
+bartleby(
+    name = "openssl_bartleby",
+    srcs = ["//vendor/github.com/open-quantum-safe/liboqs-openssl:openssl"],
+    prefix = _OPENSSL_LINK_PREFIX,
+)
+
 # C library to guide Rust-bindgen for generating OpenSSL bindings.
 cc_library(
     name = "openssl_bindgen_library",
@@ -139,13 +150,14 @@ cc_library(
         "openssl_bindgen.h",
     ],
     deps = [
-        "//vendor/github.com/open-quantum-safe/liboqs-openssl:openssl",
+        ":openssl_bartleby",
     ],
 )
 
 # OpenSSL bindings.
 rust_bindgen_library(
     name = "openssl_bindgen",
+    bindgen_flags = bindgen_add_prefix_link_name(_OPENSSL_LINK_PREFIX),
     cc_lib = ":openssl_bindgen_library",
     clang_flags = select({
         "@platforms//os:ios": [
