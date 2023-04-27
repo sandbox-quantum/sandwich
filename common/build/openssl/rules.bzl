@@ -1,4 +1,3 @@
-load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load(
     "@rules_foreign_cc//foreign_cc/private:cc_toolchain_util.bzl",
@@ -699,40 +698,3 @@ openssl_build = rule(
     executable = True,
     fragments = ["apple", "cpp"],
 )
-
-def gen_cert_key(name, alg, out_cert, out_key, out_format = "PEM", subject = "/CN=SandboxAQ TEST CA", expiration_days = "365", **kwargs):
-    if out_format.lower() not in ("pem", "der"):
-        fail("Invalid out format: '{}'. Supported out format are 'pem' and 'der'".format(out_format))
-    cmd = [
-        "./$(execpath //vendor/github.com/open-quantum-safe/liboqs-openssl:openssl)",
-        "req",
-        "-x509",
-        "-new",
-        "-newkey",
-        shell.quote(alg),
-        "-keyout",
-        "$(location {})".format(out_key),
-        "-out",
-        "$(location {})".format(out_cert),
-        "-outform",
-        out_format,
-        "-nodes",
-        "-subj",
-        shell.quote(subject),
-        "-days",
-        "{}".format(expiration_days),
-        "-config",
-        "$(execpath //vendor/github.com/open-quantum-safe/liboqs-openssl:openssl).runfiles/$$(basename $$PWD)/$(rootpath //vendor/github.com/open-quantum-safe/liboqs-openssl:openssl).cnf",
-    ]
-
-    native.genrule(
-        name = name,
-        srcs = ["//vendor/github.com/open-quantum-safe/liboqs-openssl:openssl"],
-        outs = [out_cert, out_key],
-        cmd = " ".join(cmd),
-        tools = [
-            "//vendor/github.com/open-quantum-safe/liboqs-openssl:openssl",
-            "@bazel_tools//tools/bash/runfiles",
-        ],
-        **kwargs
-    )

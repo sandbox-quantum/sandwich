@@ -1,12 +1,4 @@
-load(":rules.bzl", "gen_cert_key", "openssl_build")
-
-gen_cert_key(
-    name = "cert_test",
-    alg = "falcon1024",
-    out_cert = "cert_test.crt",
-    out_key = "cert_test.key",
-    visibility = ["//visibility:private"],
-)
+load(":rules.bzl", "openssl_build")
 
 cc_library(
     name = "dep_test",
