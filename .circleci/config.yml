@@ -42,9 +42,13 @@ jobs:
       - run:
           name: "Deploy documentation"
           command: |
+            sudo apt-get update && sudo apt-get install -y zip unzip
             doczip=$(bazelisk cquery --output files //rust:sandwich_openssl_ffi_doc)
             bazelisk build //rust:sandwich_openssl_ffi_doc
             cp -r ${doczip} docs/rust
+            guidedoczip=$(bazelisk cquery --output files //docs/guide_doc:mdbook_html)
+            bazelisk build //docs/guide_doc:mdbook_html
+            unzip ${guidedoczip}
             mkdocs gh-deploy --config-file mkdocs.yml
 
 workflows:

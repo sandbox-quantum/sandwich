@@ -1,0 +1,88 @@
+load("@com_github_rust_lang_mdbook_crate//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "Cargo.toml",
+    "Cargo.lock",
+])
+
+_VERSION = "0.4.22"
+
+rust_binary(
+    name = "mdbook_bin",
+    srcs = ["src/main.rs"],
+    compile_data = glob(["src/**/*.rs"]),
+    crate_features = [
+        "default",
+        "serve",
+        "search",
+        "watch",
+    ],
+    crate_root = "src/main.rs",
+    edition = "2021",
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    version = _VERSION,
+    deps = all_crate_deps(
+        proc_macro = True,
+    ) + [
+        ":mdbook",
+        "@com_github_rust_lang_mdbook_crate//:anyhow",
+        "@com_github_rust_lang_mdbook_crate//:chrono",
+        "@com_github_rust_lang_mdbook_crate//:clap",
+        "@com_github_rust_lang_mdbook_crate//:clap_complete",
+        "@com_github_rust_lang_mdbook_crate//:env_logger",
+        "@com_github_rust_lang_mdbook_crate//:futures-util",
+        "@com_github_rust_lang_mdbook_crate//:gitignore",
+        "@com_github_rust_lang_mdbook_crate//:log",
+        "@com_github_rust_lang_mdbook_crate//:notify",
+        "@com_github_rust_lang_mdbook_crate//:opener",
+        "@com_github_rust_lang_mdbook_crate//:tokio",
+        "@com_github_rust_lang_mdbook_crate//:toml",
+        "@com_github_rust_lang_mdbook_crate//:warp",
+    ],
+)
+
+rust_library(
+    name = "mdbook",
+    srcs = glob(["src/**/*.rs"]),
+    compile_data = glob(["**"]),
+    crate_features = [
+        "default",
+        "serve",
+        "search",
+        "watch",
+    ],
+    edition = "2021",
+    version = _VERSION,
+    deps = all_crate_deps(
+        build = True,
+        normal = True,
+        proc_macro = True,
+    ) + [
+        "@com_github_rust_lang_mdbook_crate//:ammonia",
+        "@com_github_rust_lang_mdbook_crate//:anyhow",
+        "@com_github_rust_lang_mdbook_crate//:chrono",
+        "@com_github_rust_lang_mdbook_crate//:clap",
+        "@com_github_rust_lang_mdbook_crate//:clap_complete",
+        "@com_github_rust_lang_mdbook_crate//:elasticlunr-rs",
+        "@com_github_rust_lang_mdbook_crate//:gitignore",
+        "@com_github_rust_lang_mdbook_crate//:handlebars",
+        "@com_github_rust_lang_mdbook_crate//:log",
+        "@com_github_rust_lang_mdbook_crate//:memchr",
+        "@com_github_rust_lang_mdbook_crate//:notify",
+        "@com_github_rust_lang_mdbook_crate//:once_cell",
+        "@com_github_rust_lang_mdbook_crate//:opener",
+        "@com_github_rust_lang_mdbook_crate//:pulldown-cmark",
+        "@com_github_rust_lang_mdbook_crate//:regex",
+        "@com_github_rust_lang_mdbook_crate//:serde",
+        "@com_github_rust_lang_mdbook_crate//:serde_json",
+        "@com_github_rust_lang_mdbook_crate//:shlex",
+        "@com_github_rust_lang_mdbook_crate//:tempfile",
+        "@com_github_rust_lang_mdbook_crate//:toml",
+        "@com_github_rust_lang_mdbook_crate//:topological-sort",
+    ],
+)
