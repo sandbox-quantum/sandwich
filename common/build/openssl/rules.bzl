@@ -636,7 +636,7 @@ def _openssl_build_impl(ctx):
     )
 
     default_info = DefaultInfo(
-        files = depset(),
+        files = depset([openssl_conf]),
         runfiles = ctx.runfiles([openssl_conf]),
         executable = openssl_cli,
     )
