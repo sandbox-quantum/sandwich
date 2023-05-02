@@ -75,6 +75,12 @@ py_wheel(
     name = "wheel",
     # See PEP 425 for the meaning of python_tag, platform and abi.
     abi = "abi3",
+    author = "pysandwich",
+    author_email = "pysandwich@sandboxaq.com",
+    classifiers = [
+        "License :: OSI Approved :: Apache Software License",
+        "Intended Audience :: Developers",
+    ],
     distribution = "pysandwich",
     platform = select(
         {
