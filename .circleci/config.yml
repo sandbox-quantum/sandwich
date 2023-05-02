@@ -48,7 +48,7 @@ jobs:
             guidedoczip=$(bazelisk cquery --output files //docs/guide_doc:mdbook_html)
             bazelisk build //docs/guide_doc:mdbook_html
             unzip ${guidedoczip}
-            mkdocs gh-deploy --config-file mkdocs.yml
+            mkdocs gh-deploy --force --config-file mkdocs.yml
 
 workflows:
   presubmit:
