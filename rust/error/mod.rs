@@ -476,4 +476,194 @@ mod test {
         ));
         assert!(matches!(it.next(), None));
     }
+
+    /// Tests the [`Error`] constructor from an enum value and a string.
+    #[test]
+    fn test_error_constructor_with_enum_and_string() {
+        let e = Error::from((pb::ASN1Error::ASN1ERROR_INVALID_FORMAT, "invalid tag"));
+        assert_eq!(e.len(), 1);
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), Some("invalid tag"));
+
+        let e = Error::from((
+            pb::ASN1Error::ASN1ERROR_INVALID_FORMAT,
+            "invalid tag".to_string(),
+        ));
+        assert_eq!(e.len(), 1);
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), Some("invalid tag"));
+
+        let msg: std::string::String = "invalid tag".into();
+        let e = Error::from((pb::ASN1Error::ASN1ERROR_INVALID_FORMAT, &msg));
+        assert_eq!(e.len(), 1);
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), Some("invalid tag"));
+    }
+
+    /// Tests the [`Error`] constructor from a [`ProtoBasedErrorCode`] and a string.
+    #[test]
+    fn test_error_constructor_with_proto_based_error_code_and_string() {
+        let e = Error::from((
+            ProtoBasedErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT),
+            "invalid tag",
+        ));
+        assert_eq!(e.len(), 1);
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), Some("invalid tag"));
+
+        let e = Error::from((
+            ProtoBasedErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT),
+            "invalid tag".to_string(),
+        ));
+        assert_eq!(e.len(), 1);
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), Some("invalid tag"));
+
+        let msg: std::string::String = "invalid tag".into();
+        let e = Error::from((
+            ProtoBasedErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT),
+            &msg,
+        ));
+        assert_eq!(e.len(), 1);
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), Some("invalid tag"));
+    }
+
+    /// Tests the [`Error`] constructor from a [`ErrorCode`].
+    #[test]
+    fn test_error_constructor_with_an_error_code() {
+        let ec = ErrorCode::from((pb::ASN1Error::ASN1ERROR_INVALID_FORMAT, "invalid tag"));
+        let e: Error = ec.into();
+        assert_eq!(e.len(), 1);
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), Some("invalid tag"));
+    }
+
+    /// Tests the [`Error`] shr operation with a [`ProtoBasedErrorCode`] and a string.
+    #[test]
+    fn test_error_shr_proto_based_error_code_and_string() {
+        let e: Error = pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into();
+        let e = e
+            >> (
+                ProtoBasedErrorCode::from(pb::CertificateError::CERTIFICATEERROR_MALFORMED),
+                "cert err",
+            );
+        assert_eq!(e.len(), 2);
+
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), None);
+
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(
+            pb::CertificateError::CERTIFICATEERROR_MALFORMED
+        )));
+        assert_eq!(ec.msg(), Some("cert err"));
+
+        let e: Error = pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into();
+        let e = e
+            >> (
+                ProtoBasedErrorCode::from(pb::CertificateError::CERTIFICATEERROR_MALFORMED),
+                "cert err".to_string(),
+            );
+        assert_eq!(e.len(), 2);
+
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), None);
+
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(
+            pb::CertificateError::CERTIFICATEERROR_MALFORMED
+        )));
+        assert_eq!(ec.msg(), Some("cert err"));
+
+        let msg: std::string::String = "cert err".into();
+        let e: Error = pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into();
+        let e = e
+            >> (
+                ProtoBasedErrorCode::from(pb::CertificateError::CERTIFICATEERROR_MALFORMED),
+                &msg,
+            );
+        assert_eq!(e.len(), 2);
+
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), None);
+
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(
+            pb::CertificateError::CERTIFICATEERROR_MALFORMED
+        )));
+        assert_eq!(ec.msg(), Some("cert err"));
+    }
+
+    /// Tests the [`Error`] shr operation with an [`ErrorCode`].
+    #[test]
+    fn test_error_shr_error_code() {
+        let e: Error = pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into();
+        let e = e >> ErrorCode::from(pb::CertificateError::CERTIFICATEERROR_MALFORMED);
+        assert_eq!(e.len(), 2);
+
+        let mut it = e.iter();
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT)));
+        assert_eq!(ec.msg(), None);
+
+        let ec = it.next().expect("expected an error code");
+        assert!(ec.is(&ErrorCode::from(
+            pb::CertificateError::CERTIFICATEERROR_MALFORMED
+        )));
+        assert_eq!(ec.msg(), None);
+    }
+
+    /// Tests the [`ErrorCode`] shr operation with another [`ErrorCode`].
+    #[test]
+    fn test_error_code_shr_error_code() {
+        let e1 = ErrorCode::from(pb::ASN1Error::ASN1ERROR_INVALID_FORMAT);
+        let e2 = ErrorCode::from(pb::CertificateError::CERTIFICATEERROR_MALFORMED);
+
+        let e = e1 >> e2;
+        assert!(e.is(&errors!{ pb::ASN1Error::ASN1ERROR_INVALID_FORMAT => pb::CertificateError::CERTIFICATEERROR_MALFORMED}));
+    }
+
+    /// Tests the [`std::fmt::Display`] and [`std::fmt::Debug`] implementation for [`Error`].
+    #[test]
+    fn test_error_fmt_display_debug_impl() {
+        let e = errors! {pb::ASN1Error::ASN1ERROR_INVALID_FORMAT => pb::CertificateError::CERTIFICATEERROR_MALFORMED};
+        assert_eq!(
+            format!("{e}"),
+            "ASN.1 error: invalid formatcertificate error: certificate malformed"
+        );
+        assert_eq!(
+            format!("{e:?}"),
+            "~>#0: ASN.1 error: invalid format\n\t~>#1: certificate error: certificate malformed\n"
+        );
+    }
+
+    /// Tests the `is_empty` method of a chain.
+    #[test]
+    fn test_error_emptiness() {
+        let e: Error = Error::new();
+        assert!(e.is_empty());
+        let e = e >> pb::ASN1Error::ASN1ERROR_INVALID_FORMAT;
+        assert!(!e.is_empty());
+    }
 }
