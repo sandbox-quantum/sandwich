@@ -496,4 +496,75 @@ mod test {
         assert_eq!(e0, e1);
         assert_eq!(e0, e1);
     }
+
+    /// Tests the [`std::fmt::Display`] implementation of `ProtoBasedErrorCode`.
+    #[test]
+    pub fn test_display_impl_proto_based_error_code() {
+        let e = ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET);
+        let s = format!("{}", e);
+        assert_eq!(s, "api error: socket error");
+    }
+
+    /// Tests the [`std::fmt::Display`] and [`std::fmt::Debug`] implementations of `ErrorCode`.
+    #[test]
+    pub fn test_display_impl_error_code() {
+        let e = super::ErrorCode::from(pb::APIError::APIERROR_SOCKET);
+        let s = format!("{}", e);
+        assert_eq!(s, "api error: socket error");
+
+        let s = format!("{:?}", e);
+        assert_eq!(s, "ErrorCode { ec: APIError(APIERROR_SOCKET), msg: None }");
+    }
+
+    /// Tests that [`ErrorCode::code`] returns the correct error code.
+    #[test]
+    pub fn test_error_code_code_method() {
+        let e = super::ErrorCode::from(pb::APIError::APIERROR_SOCKET);
+        assert_eq!(
+            e.code(),
+            &ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET)
+        );
+    }
+
+    /// Tests the [`ErrorCode`] constructor from a [`ProtoBasedErrorCode`] and
+    /// an arbitrary string.
+    #[test]
+    pub fn test_error_code_constructor_arbitrary_string() {
+        let e = ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET);
+        let ec = super::ErrorCode::from((e, "port already in use"));
+        assert_eq!(
+            ec.code(),
+            &ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET)
+        );
+        assert_eq!(
+            format!("{}", ec),
+            "api error: socket error: port already in use"
+        );
+        assert_eq!(ec.msg(), Some("port already in use"));
+
+        let e = ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET);
+        let ec = super::ErrorCode::from((e, "port already in use".to_string()));
+        assert_eq!(
+            ec.code(),
+            &ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET)
+        );
+        assert_eq!(
+            format!("{}", ec),
+            "api error: socket error: port already in use"
+        );
+        assert_eq!(ec.msg(), Some("port already in use"));
+
+        let errstr: std::string::String = "port already in use".into();
+        let e = ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET);
+        let ec = super::ErrorCode::from((e, &errstr));
+        assert_eq!(
+            ec.code(),
+            &ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET)
+        );
+        assert_eq!(
+            format!("{}", ec),
+            "api error: socket error: port already in use"
+        );
+        assert_eq!(ec.msg(), Some("port already in use"));
+    }
 }
