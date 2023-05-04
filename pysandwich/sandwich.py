@@ -143,26 +143,27 @@ class _ErrorC(ctypes.Structure):
 
     _fields_ = [
         ("details", ctypes.c_void_p),
-        ("kind", ctypes.c_int),
-        ("code", ctypes.c_int),
+        ("kind", ctypes.c_int32),
+        ("code", ctypes.c_int32),
     ]
 
 
 def _error_code_to_exception(ptr: ctypes.c_void_p):
+    """Gather exceptions cause"""
     ec = ctypes.cast(ptr, ctypes.POINTER(_ErrorC))
 
-    chain = None
+    head_excp = None
     current_excp = None
     while ec:
         excp = Error.new(ec.contents.kind, ec.contents.code)
-        if chain is None:
-            chain = excp
+        if head_excp is None:
+            head_excp = excp
             current_excp = excp
         else:
             current_excp.__cause__ = excp
             current_excp = excp
         ec = ctypes.cast(ec.contents.details, ctypes.POINTER(_ErrorC))
-    return chain
+    return head_excp
 
 
 class Context:
@@ -200,14 +201,9 @@ class Context:
         self._handle = ctypes.c_void_p(0)
 
         serialized_conf = configuration.SerializeToString()
-        args: typing.Tuple[ctypes.c_char_p, ctypes.c_size_t, ctypes.c_void_p] = (
-            serialized_conf,
-            ctypes.c_size_t(len(serialized_conf)),
-            ctypes.byref(self._handle),
-        )
+        args = serialized_conf, len(serialized_conf), ctypes.byref(self._handle)
         err = self._sandwich.c_call("sandwich_context_new", *args)
-        err = ctypes.cast(err, ctypes.c_void_p)
-        if err.value is not None:
+        if err is not None:
             excp = _error_code_to_exception(err)
             self._sandwich.c_call("sandwich_error_free", err)
             raise excp
@@ -288,8 +284,7 @@ class Tunnel:
         err = self._C.c_call(
             "sandwich_io_new", ctypes.byref(self._settings), io_handle.ref()
         )
-        err = ctypes.cast(err, ctypes.c_void_p)
-        if err.value is not None:
+        if err is not None:
             excp = _error_code_to_exception(err)
             self._sandwich.c_call("sandwich_error_free", err)
             raise excp
@@ -300,8 +295,7 @@ class Tunnel:
             io_handle.release(),
             ctypes.byref(self._handle),
         )
-        err = ctypes.cast(err, ctypes.c_void_p)
-        if err.value is not None:
+        if err is not None:
             excp = _error_code_to_exception(err)
             self._sandwich.c_call("sandwich_error_free", err)
             raise excp
@@ -535,6 +529,77 @@ class Sandwich:
     lib: typing.Optional[ctypes.CDLL] = None
     syms: typing.Dict[str, typing.Callable] = {}
 
+    # TODO(a/1204527858313856): Check the c_int size in Rust and C, especially for enum
+    func_types = {
+        # void sandwich_error_free(struct SandwichError *chain)"""
+        "sandwich_error_free": ([ctypes.c_void_p], None),
+        # struct SandwichError *sandwich_io_new(
+        #       const struct SandwichCIOSettings *cioset,
+        #       struct SandwichCIO **cio);
+        "sandwich_io_new": ([ctypes.c_void_p, ctypes.c_void_p], ctypes.c_void_p),
+        # void sandwich_io_free(struct SandwichCIO *cio);
+        "sandwich_io_free": ([ctypes.c_void_p], None),
+        # struct SandwichError *sandwich_context_new(
+        #       const void *src,
+        #       size_t n,
+        #       struct SandwichContext **ctx);
+        "sandwich_context_new": (
+            [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p],
+            ctypes.c_void_p,
+        ),
+        # void sandwich_context_free(struct SandwichContext *ctx);
+        "sandwich_context_free": ([ctypes.c_void_p], None),
+        # struct SandwichError *sandwich_tunnel_new(
+        #       struct SandwichContext *ctx,
+        #       struct SandwichCIO *cio,
+        #       struct SandwichTunnel **tun);
+        "sandwich_tunnel_new": (
+            [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p],
+            ctypes.c_void_p,
+        ),
+        # enum SandwichTunnelHandshakeState sandwich_tunnel_handshake(
+        #       struct SandwichTunnel *tun);
+        "sandwich_tunnel_handshake": ([ctypes.c_void_p], ctypes.c_uint),
+        # enum SandwichTunnelRecordError sandwich_tunnel_read(
+        #       struct SandwichTunnel *tun,
+        #       void *dst,
+        #       size_t n,
+        #       size_t *r);
+        "sandwich_tunnel_read": (
+            [
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_size_t,
+                ctypes.POINTER(ctypes.c_size_t),
+            ],
+            ctypes.c_uint,
+        ),
+        # enum SandwichTunnelRecordError sandwich_tunnel_write(
+        #       struct SandwichTunnel *tun,
+        #       const void *src,
+        #       size_t n,
+        #       size_t *w);
+        "sandwich_tunnel_write": (
+            [
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_size_t,
+                ctypes.POINTER(ctypes.c_size_t),
+            ],
+            ctypes.c_uint,
+        ),
+        # void sandwich_tunnel_close(struct SandwichTunnel *tun);
+        "sandwich_tunnel_close": ([ctypes.c_void_p], None),
+        # enum SandwichTunnelState sandwich_tunnel_state(
+        #       const struct SandwichTunnel *tun);
+        "sandwich_tunnel_state": ([ctypes.c_void_p], ctypes.c_uint),
+        # struct SandwichCIO *sandwich_tunnel_io_release(
+        #       struct SandwichTunnel *tun);
+        "sandwich_tunnel_io_release": ([ctypes.c_void_p], ctypes.c_void_p),
+        # void sandwich_tunnel_free(struct SandwichTunnel *tun);
+        "sandwich_tunnel_free": ([ctypes.c_void_p], None),
+    }
+
     def __init__(self, dllpath: typing.Optional[pathlib.Path] = None):
         """Inits a Sandwich handle, optionally with a path to `libsandwich.so`.
 
@@ -589,6 +654,8 @@ class Sandwich:
         else:
             f = Sandwich.resolve(name)
             Sandwich.syms[name] = f
+
+        f.argtypes, f.restype = Sandwich.func_types[name]
         return f(*args)
 
     @staticmethod
