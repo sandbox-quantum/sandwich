@@ -6,6 +6,16 @@ load(
     "get_tools_info",
     "is_debug_mode",
 )
+load(
+    ":lib.bzl",
+    "copy_openssl_cli",
+    "copy_openssl_conf",
+    "create_cc_info",
+    "create_linker_input",
+    "create_linking_context",
+    "is_target_apple",
+    "pick_openssl_Configure_os",
+)
 
 _DEFAULT_OPENSSL_CONFIGURE_FLAGS = [
     "no-comp",
@@ -127,20 +137,6 @@ mkdir -p "${LIBOQS_BUILD_DIR}"
 cp "${OPENSSL_SRC_DIR}/apps/openssl.cnf" "${INSTALL_DIR}/bin/"
 """
 
-# Map between cpu name and OpenSSL platform name.
-# See `https://www.openssl.org/policies/general-supplemental/platforms.html`.
-# The cpu name is provided by the toolchain:
-# `bazel cquery --output=jsonproto '@local_config_cc//:toolchain' --starlark:expr="providers(target)['CcToolchainConfigInfo']"`
-_OPENSSL_OS_MAP = {
-    "ios_arm64": "ios64-xcrun",
-    "ios_arm64e": "ios64-xcrun",
-    "ios_armv7": "ios-xcrun",
-    "darwin_x86_64": "darwin64-x86_64-cc",
-    "darwin_arm64": "darwin64-arm64-cc",
-    "darwin_arm64e": "darwin64-arm64-cc",
-    "k8": "linux-x86_64-clang",
-}
-
 # Map between cpu name and Cmake system name/processor.
 # See https://cmake.org/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_PROCESSOR.html#variable:CMAKE_HOST_SYSTEM_PROCESSOR
 _CMAKE_OS_MAP = {
@@ -152,13 +148,6 @@ _CMAKE_OS_MAP = {
     "darwin_arm64e": ("Darwin", "arm64"),
     "k8": ("Linux", "x86_64"),
 }
-
-def _is_target_apple(ctx):
-    """Returns true if the current target is apple."""
-    for ac in ctx.attr._apple_constraints:
-        if ctx.target_platform_has_constraint(ac[platform_common.ConstraintValueInfo]):
-            return True
-    return False
 
 """`LibraryToLink` attributes that define static libraries."""
 _STATIC_LIBRARIES_ATTRS = ("static_library", "pic_static_library")
@@ -211,14 +200,6 @@ def _generate_openssl_configure_args(ctx):
         args.append(flag)
 
     return args
-
-def _pick_openssl_Configure_os(ctx):
-    cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
-
-    if cc_toolchain.cpu in _OPENSSL_OS_MAP:
-        return _OPENSSL_OS_MAP[cc_toolchain.cpu]
-    else:
-        return "linux-x86_64"
 
 def _pick_cmake_system_processor(ctx):
     cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
@@ -344,7 +325,7 @@ def _generate_compilers_env(ctx):
     env["OPENSSL_CFLAGS"] = " ".join(openssl_cflags)
 
     env["OPENSSL_LDFLAGS"] = env["LDFLAGS"]
-    if _is_target_apple(ctx):
+    if is_target_apple(ctx):
         env["OPENSSL_LDFLAGS"] += " -Wl,-framework,Security"
 
     return env
@@ -379,7 +360,7 @@ def _generate_environ(ctx, openssl_target, liboqs_target, install_dir):
     liboqs_args = _generate_liboqs_configure_args(ctx)
     env["CMAKE_SYSTEM_NAME"], env["CMAKE_SYSTEM_PROCESSOR"] = _pick_cmake_system_processor(ctx)
 
-    if _is_target_apple(ctx):
+    if is_target_apple(ctx):
         # see https://github.com/bazelbuild/rules_foreign_cc/blob/9acbb356916760192d4c16301a69267fe44e6dec/foreign_cc/private/framework.bzl#L307
         liboqs_args.append("-DCMAKE_OSX_ARCHITECTURES={}".format(ctx.fragments.apple.single_arch_cpu))
 
@@ -399,177 +380,9 @@ def _generate_environ(ctx, openssl_target, liboqs_target, install_dir):
             break
 
     env["CMAKE"] or fail("failed to find the cmake binary")
-    env["OPENSSL_OS_TARGET"] = _pick_openssl_Configure_os(ctx)
+    env["OPENSSL_OS_TARGET"] = pick_openssl_Configure_os(ctx)
 
     return env
-
-def _copy_openssl_cli(ctx, install_dir):
-    """Declares and copies the file `openssl`, which is the OpenSSL cli binary.
-
-    Args:
-      ctx:
-        Bazel rule context.
-      install_dir:
-        File object pointing to the TreeArtifact install directory.
-
-    Returns:
-      File object pointing to the OpenSSL cli binary.
-    """
-    openssl_cli = ctx.actions.declare_file("openssl")
-    args = ctx.actions.args()
-    args.add("{install_dir}/bin/openssl".format(install_dir = install_dir.path))
-    args.add(openssl_cli.path)
-    ctx.actions.run(
-        outputs = [openssl_cli],
-        inputs = [install_dir],
-        mnemonic = "exportopensslcli",
-        executable = "cp",
-        arguments = [args],
-    )
-
-    return openssl_cli
-
-def _copy_openssl_conf(ctx, install_dir):
-    """Declares and copies the file `openssl.cnf`, which is the OpenSSL
-    configuration, needed by the OpenSSL cli.
-
-    Args:
-      ctx:
-        Bazel rule context.
-      install_dir:
-        File object pointing to the TreeArtifact install directory.
-
-    Returns:
-      File object pointing to the OpenSSL configuration file.
-    """
-    openssl_conf = ctx.actions.declare_file("openssl.cnf")
-    args = ctx.actions.args()
-    args.add("{install_dir}/bin/openssl.cnf".format(install_dir = install_dir.path))
-    args.add(openssl_conf.path)
-    ctx.actions.run(
-        outputs = [openssl_conf],
-        inputs = [install_dir],
-        mnemonic = "exportopensslconf",
-        executable = "cp",
-        arguments = [args],
-    )
-
-    return openssl_conf
-
-def _create_linker_input(ctx, install_dir, libname):
-    """Creates a LinkerInput object for a given library.
-
-    Args:
-      ctx:
-        Bazel rule context.
-      install_dir:
-        File object pointing to the TreeArtifact install directory.
-      libname:
-        Name of the library.
-
-    The library specified by `libname` MUST exist under the directory
-    `install_dir/lib`.
-
-    Returns:
-      The LinkerInput object describing the library `libname`.
-    """
-    lib = ctx.actions.declare_file(libname)
-    args = ctx.actions.args()
-    args.add("{install_dir}/lib/{libname}".format(install_dir = install_dir.path, libname = libname))
-    args.add(lib.path)
-
-    ctx.actions.run(
-        outputs = [lib],
-        inputs = [install_dir],
-        mnemonic = "export{l}".format(l = libname.replace(".", "")),
-        executable = "cp",
-        arguments = [args],
-    )
-    lib = cc_common.create_library_to_link(
-        actions = ctx.actions,
-        pic_static_library = lib,
-    )
-
-    user_link_flags = ["-lpthread", "-ldl"]
-    if _is_target_apple(ctx):
-        user_link_flags += ["-framework", "Security"]
-    linker_input = cc_common.create_linker_input(
-        owner = ctx.label,
-        libraries = depset([lib]),
-        user_link_flags = user_link_flags,
-    )
-
-    return linker_input
-
-def _create_linking_context(ctx, install_dir, deps):
-    """Creates the LinkingContext object.
-
-    Args:
-      ctx:
-        Bazel rule context.
-      install_dir:
-        File object pointing to the TreeArtifact install directory.
-      deps:
-        External dependencies.
-
-    The LinkingContext returned by this function describes the following
-    libraries:
-      * `libssl.a`
-      * `libcrypto.a`
-      * `liboqs.a`.
-
-    Returns:
-      LinkingContext objects for OpenSSL and liboqs.
-    """
-    linker_inputs = []
-    for l in ("liboqs.a", "libcrypto.a", "libssl.a"):
-        linker_inputs.append(_create_linker_input(
-            ctx = ctx,
-            install_dir = install_dir,
-            libname = l,
-        ))
-
-    linker_input_deps = []
-    for dep in deps:
-        linker_input_deps.append(dep[CcInfo].linking_context.linker_inputs)
-
-    return cc_common.create_linking_context(
-        linker_inputs = depset(
-            direct = linker_inputs,
-            transitive = linker_input_deps,
-        ),
-    )
-
-def _create_cc_info(linking_context, include_dir, deps = None):
-    """Creates the CcInfo provider.
-
-    Args:
-      linking_context:
-        LinkingContext object describing the OpenSSL and liboqs libraries.
-      include_dir:
-        File object pointing to the TreeArtifact include directory.
-      deps:
-        External dependencies.
-
-    Returns:
-      CcInfo object.
-    """
-    compilation_contexts = []
-    compilation_contexts.append(cc_common.create_compilation_context(
-        system_includes = depset(["{include_dir}/".format(include_dir = include_dir.path)]),
-        headers = depset([include_dir]),
-    ))
-    for dep in deps:
-        compilation_contexts.append(dep[CcInfo].compilation_context)
-
-    compilation_context = cc_common.merge_compilation_contexts(
-        compilation_contexts = compilation_contexts,
-    )
-
-    return CcInfo(
-        compilation_context = compilation_context,
-        linking_context = linking_context,
-    )
 
 def _openssl_build_impl(ctx):
     """Implements the `openssl_build` rule.
@@ -615,21 +428,22 @@ def _openssl_build_impl(ctx):
         command = _BUILD_BASH_COMMAND,
     )
 
-    openssl_cli = _copy_openssl_cli(
+    openssl_cli = copy_openssl_cli(
         ctx = ctx,
         install_dir = install_dir,
     )
-    openssl_conf = _copy_openssl_conf(
+    openssl_conf = copy_openssl_conf(
         ctx = ctx,
         install_dir = install_dir,
     )
 
-    linking_context = _create_linking_context(
+    linking_context = create_linking_context(
         ctx = ctx,
         install_dir = install_dir,
+        libs = ["liboqs.a", "libssl.a", "libcrypto.a"],
         deps = ctx.attr.deps,
     )
-    cc_info = _create_cc_info(
+    cc_info = create_cc_info(
         linking_context = linking_context,
         include_dir = include_dir,
         deps = ctx.attr.deps,
