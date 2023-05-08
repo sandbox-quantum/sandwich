@@ -49,6 +49,25 @@ impl std::fmt::Display for Error {
     }
 }
 
+/// Implements [`std::fmt::Debug`] for [`Error`].
+impl std::fmt::Debug for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "ioerror: {}",
+            match self.0 {
+                pb::IOError::IOERROR_OK => "no error",
+                pb::IOError::IOERROR_IN_PROGRESS => "in progress",
+                pb::IOError::IOERROR_WOULD_BLOCK => "would block",
+                pb::IOError::IOERROR_REFUSED => "refused",
+                pb::IOError::IOERROR_CLOSED => "closed",
+                pb::IOError::IOERROR_INVALID => "invalid I/O plane",
+                pb::IOError::IOERROR_UNKNOWN => "unknown error",
+            }
+        )
+    }
+}
+
 /// Instantiates an [`Error`] with an enum value from the
 /// [`sandwich_rust_proto::IOError`] enum.
 impl std::convert::From<pb::IOError> for Error {
