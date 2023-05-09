@@ -182,7 +182,12 @@ class Context:
         _handle : C pointer to a `struct SandwichContext`. This is the main handle.
     """
 
-    def __init__(self, sandwich: "Sandwich", configuration: SandwichAPI.Configuration):
+    def __init__(
+        self,
+        sandwich: "Sandwich",
+        configuration: SandwichAPI.Configuration,
+        serialized_conf: bytes,
+    ):
         """Inits Context with a Sandwich handle and a protobuf configuration.
 
         Args:
@@ -199,19 +204,48 @@ class Context:
         self._sandwich = sandwich
         self._configuration = configuration
         self._handle = ctypes.c_void_p(0)
+        self._serialized_conf = serialized_conf
 
-        serialized_conf = configuration.SerializeToString()
-        args = serialized_conf, len(serialized_conf), ctypes.byref(self._handle)
+        args = (
+            self._serialized_conf,
+            len(self._serialized_conf),
+            ctypes.byref(self._handle),
+        )
         err = self._sandwich.c_call("sandwich_context_new", *args)
         if err is not None:
             excp = _error_code_to_exception(err)
             self._sandwich.c_call("sandwich_error_free", err)
             raise excp
 
+    @classmethod
+    def from_config(
+        cls, sandwich: "Sandwich", configuration: SandwichAPI.Configuration
+    ):
+        serialized_conf = configuration.SerializeToString()
+
+        return Context(sandwich, configuration, serialized_conf)
+
+    @classmethod
+    def from_bytes(cls, sandwich: "Sandwich", serialized_conf_bytestring: bytes):
+        configuration = SandwichAPI.Configuration()
+        configuration.ParseFromString(serialized_conf_bytestring)
+
+        return Context(sandwich, configuration, serialized_conf_bytestring)
+
     def implementation(self) -> SandwichAPI.Implementation:
         """The selected implementation."""
 
         return self._configuration.impl
+
+    @property
+    def serialized_config(self) -> bytes:
+        """Return serialized configuration"""
+        return self._serialized_conf
+
+    @property
+    def config(self) -> SandwichAPI.Implementation:
+        """Return configuration"""
+        return self._configuration
 
     def __del__(self):
         """Destructs the Context.

@@ -49,7 +49,7 @@ def create_server_conf(s: Sandwich) -> Context:
     conf.server.tls.private_key.static.data.filename = _KEY_PATH
     conf.server.tls.private_key.static.format = EncodingFormat.ENCODING_FORMAT_PEM
 
-    return Context(s, conf)
+    return Context.from_config(s, conf)
 
 
 def create_client_conf(s: Sandwich) -> Context:
@@ -67,7 +67,8 @@ def create_client_conf(s: Sandwich) -> Context:
     cert.data.filename = _CERT_PATH
     cert.format = EncodingFormat.ENCODING_FORMAT_PEM
 
-    return Context(s, conf)
+    buf = conf.SerializeToString()
+    return Context.from_bytes(s, buf)
 
 
 def create_ios() -> (SandwichIO.IO, SandwichIO.IO):
