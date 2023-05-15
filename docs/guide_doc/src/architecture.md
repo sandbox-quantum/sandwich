@@ -1,7 +1,5 @@
 # Sandwich Architecture
 
-![Sandwich Bindings](./sandwich_bindings.svg)
-
 ## Sandwich **Context** model
 
 Our mental model for Sandwich: **Context**
@@ -17,6 +15,8 @@ With that model in mind, you're good to use Sandwich API.
 
 ## Sandwich API
 
+<img src="./images/architecture_sandwich_bindings.png" alt="Sandwich Bindings" width="80%" text-align= center/>
+
 Sandwich API is collections of Sandwich binding to `Go, Python, C/C++` and `Rust` programming languages thanks to `Sandwich Backend`.
 
 At high-level Sandwich API, we provide:
@@ -29,7 +29,7 @@ What makes Sandwich distinct from other frameworks are the convenience of stabil
 
 ## Sandwich Backend
 
-![Sandwich Backend](./sandwich_backend.svg)
+<img src="./images/architecture_sandwich_backend.png" alt="Sandwich Backend" width="80%" text-align= center/>
 
 
 In our architecture, `Sandwich Backend` is an abtract layer around cryptography libraries written in Rust, Rust is chosen due to its strict, strongly typed system. In addition, Rust guarantees memory safety without the use of Garbage Collector which make Sandwich confident in cryptographic usage.

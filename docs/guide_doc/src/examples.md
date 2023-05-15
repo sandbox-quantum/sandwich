@@ -1,6 +1,6 @@
 # Examples
 
-![Sandwich Example](./sandwich_example.svg)
+![Sandwich Example](./images/examples_sandwich.svg)
 
 In Sandwich, our mental model is **Context**.
 

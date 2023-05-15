@@ -1,10 +1,10 @@
 # Sandwich - A friendly wrapper for cryptography libraries
 
-[Introduction](intro/intro.md)
-[Architecture](intro/howdoesitwork.md)
-[Motivation](intro/motivation.md)
-[Features](intro/features.md)
-[Examples](intro/examples.md)
+[Introduction](introduction.md)
+[Architecture](architecture.md)
+[Motivation](motivation.md)
+[Features](features.md)
+[Examples](examples.md)
 
 # User Guide
 

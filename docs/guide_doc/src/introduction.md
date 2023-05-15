@@ -1,12 +1,12 @@
 # Sandwich Introduction
 
 
-![Sandwich Architecture](./architecture_sketch.svg)
-
 ## What is Sandwich?
 
 - Sandwich is a **middleware** to interact with cryptographic libraries.
 - Sandwich **unifies** cryptographic libraries under the Sandwich API.
+
+<img src="./images/architecture_sketch.png" alt="Sandwich Architecture" width="80%" text-align= center/>
 
 ## Why use Sandwich instead of `$LIBRARY`?
 

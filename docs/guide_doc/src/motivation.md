@@ -1,6 +1,6 @@
 # Why Sandwich?
-<!-- TODO(ducnguyen-sb): What is the highest motivation of using Sandwich? -->
-> Layer your security with Sandwich: The crypto-agile library for a post-quantum world.
+
+> Sandwich library: Crypto-agility you will actually use
 
 Implementing cryptography in your code is hard and needs technical knowledge (understanding of protocols, mathematical proofs, algorithms and the trade-offs between them) and coding expertise (to implement the chosen cryptography).
 
