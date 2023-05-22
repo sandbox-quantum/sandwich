@@ -196,3 +196,10 @@ pub trait IO {
     /// Closes the I/O plane.
     fn close(&mut self) -> Result<()>;
 }
+
+/// Implements [`std::fmt::Debug`] for [`IO`].
+impl std::fmt::Debug for dyn IO {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "IO")
+    }
+}

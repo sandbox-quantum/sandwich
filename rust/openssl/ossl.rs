@@ -117,9 +117,11 @@ impl crate::ossl::Ossl for Ossl {
                     openssl::SSL_CTX_set_verify(
                         pimpl.as_mut_ptr(),
                         openssl::SSL_VERIFY_PEER as i32,
-                        None,
+                        Some(openssl_verify_callback),
                     )
                 };
+                //let verify_error = Box::into_raw(Box::new(openssl::X509_V_OK));
+
                 let ptr = unsafe { openssl::X509_STORE_new() };
                 if ptr.is_null() {
                     return Err(pb::SystemError::SYSTEMERROR_MEMORY)?;
@@ -150,7 +152,7 @@ impl crate::ossl::Ossl for Ossl {
                 } else {
                     openssl::SSL_VERIFY_PEER
                 } as i32,
-                None,
+                Some(openssl_verify_callback),
             );
         }
     }
@@ -409,41 +411,210 @@ impl crate::ossl::Ossl for Ossl {
         Ok(())
     }
 
+    fn ssl_set_verify_error(
+        ssl: *mut Self::NativeSsl,
+        verify_error_ptr: *mut std::ffi::c_int,
+    ) -> Result<(), pb::SystemError> {
+        if unsafe {
+            openssl::SSL_set_ex_data(
+                ssl,
+                crate::openssl::VERIFICATION_ERROR_INDEX,
+                verify_error_ptr as *mut std::ffi::c_void,
+            )
+        } as u64
+            == 0
+        {
+            return Err(pb::SystemError::SYSTEMERROR_MEMORY);
+        }
+        Ok(())
+    }
+
     fn ssl_handshake(
         ssl: *mut Self::NativeSsl,
         mode: crate::Mode,
-    ) -> (pb::tunnel::HandshakeState, Option<pb::State>) {
+    ) -> (crate::Result<pb::tunnel::HandshakeState>, Option<pb::State>) {
         let err = match mode {
             crate::Mode::Client => unsafe { openssl::SSL_connect(ssl) },
             crate::Mode::Server => unsafe { openssl::SSL_accept(ssl) },
         } as u32;
         if err == 1 {
             (
-                pb::HandshakeState::HANDSHAKESTATE_DONE,
+                Ok(pb::HandshakeState::HANDSHAKESTATE_DONE),
                 Some(pb::State::STATE_HANDSHAKE_DONE),
             )
         } else {
-            match unsafe { openssl::SSL_get_error(ssl, err as i32) } as u32 {
+            let e = unsafe { openssl::SSL_get_error(ssl, err as i32) } as u32;
+            match e {
                 openssl::SSL_ERROR_WANT_READ => (
-                    pb::HandshakeState::HANDSHAKESTATE_WANT_READ,
+                    Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_READ),
                     Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
                 ),
                 openssl::SSL_ERROR_WANT_WRITE => (
-                    pb::HandshakeState::HANDSHAKESTATE_WANT_WRITE,
+                    Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_WRITE),
                     Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
                 ),
                 openssl::SSL_ERROR_ZERO_RETURN => (
-                    pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS,
+                    Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
                     Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
                 ),
                 openssl::SSL_ERROR_WANT_ACCEPT | openssl::SSL_ERROR_WANT_CONNECT => (
-                    pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS,
+                    Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
                     Some(pb::State::STATE_NOT_CONNECTED),
                 ),
-                _ => (
-                    pb::HandshakeState::HANDSHAKESTATE_ERROR,
-                    Some(pb::State::STATE_ERROR),
-                ),
+                _ => {
+                    let err = unsafe { openssl::ERR_get_error() } as u32;
+                    let errlib = (err >> 24) & 0xFF;
+                    let e_r =
+                        unsafe { openssl::ERR_error_string(err as u64, std::ptr::null_mut()) };
+                    let err_cstring = unsafe { std::ffi::CStr::from_ptr(e_r) };
+                    let mut err_string: String = "OpenSSL error: ".into();
+                    if let Ok(s) = err_cstring.to_str() {
+                        err_string.push_str(s);
+                    } else {
+                        return (
+                            Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                            Some(pb::State::STATE_ERROR),
+                        );
+                    }
+                    if errlib != openssl::ERR_LIB_SSL {
+                        let verify_err;
+                        unsafe {
+                            let ve = openssl::SSL_get_ex_data(
+                                ssl,
+                                crate::openssl::VERIFICATION_ERROR_INDEX,
+                            ) as *const std::ffi::c_void;
+                            if (ve as *const std::ffi::c_void).is_null() {
+                                return (
+                                    Err(crate::Error::from((
+                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                        err_string,
+                                    ))),
+                                    Some(pb::State::STATE_ERROR),
+                                );
+                            }
+                            verify_err = *(ve as *const std::ffi::c_int) as u32;
+                        }
+                        let x_e_s =
+                            unsafe { openssl::X509_verify_cert_error_string(verify_err as i64) }
+                                as *mut i8;
+                        let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
+                        let mut x509_error_str = err_string + "; ";
+                        if let Ok(s) = x509_error_cstr.to_str() {
+                            x509_error_str.push_str(s);
+                        } else {
+                            return (
+                                Err(crate::Error::from((
+                                    pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                    x509_error_str,
+                                ))),
+                                Some(pb::State::STATE_ERROR),
+                            );
+                        }
+                        return match verify_err {
+                            openssl::X509_V_OK => {
+                                (
+                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, x509_error_str))),
+                                    Some(pb::State::STATE_ERROR),
+                                )
+                            }
+                            openssl::X509_V_ERR_CERT_HAS_EXPIRED => (
+                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED, x509_error_str))),
+                                Some(pb::State::STATE_ERROR),
+                            ),
+                            openssl::X509_V_ERR_CERT_REVOKED => (
+                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_REVOKED, x509_error_str))),
+                                Some(pb::State::STATE_ERROR),
+                            ),
+                            openssl::X509_V_ERR_CERT_SIGNATURE_FAILURE => (
+                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED, x509_error_str))),
+                                Some(pb::State::STATE_ERROR),
+                            ),
+                            openssl::X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY
+                            | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD
+                            | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD
+                            | openssl::X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN
+                            | openssl::X509_V_ERR_CERT_CHAIN_TOO_LONG
+                            | openssl::X509_V_ERR_INVALID_PURPOSE
+                            | openssl::X509_V_ERR_CERT_UNTRUSTED
+                            | openssl::X509_V_ERR_CERT_REJECTED => (
+                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_INVALID_CERTIFICATE, x509_error_str))),
+                                Some(pb::State::STATE_ERROR),
+                            ),
+                            _ => (
+                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED, x509_error_str))),
+                                Some(pb::State::STATE_ERROR),
+                                )
+                        };
+                    }
+                    match err & 0xFFF {
+                        openssl::SSL_R_CERTIFICATE_VERIFY_FAILED => {
+                            let verify_err;
+                            unsafe {
+                                let ve = openssl::SSL_get_ex_data(
+                                    ssl,
+                                    crate::openssl::VERIFICATION_ERROR_INDEX,
+                                )
+                                    as *const std::ffi::c_void;
+                                if (ve as *const std::ffi::c_void).is_null() {
+                                    return (
+                                    Err(pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED.into()),
+                                    Some(pb::State::STATE_ERROR),
+                                    );
+                                }
+                                verify_err = *(ve as *const std::ffi::c_int) as u32;
+                            }
+                            let x_e_s = unsafe {
+                                openssl::X509_verify_cert_error_string(verify_err as i64)
+                            } as *mut i8;
+                            let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
+                            let mut x509_error_str = err_string + "; ";
+                            if let Ok(s) = x509_error_cstr.to_str() {
+                                x509_error_str.push_str(s);
+                            } else {
+                                return (
+                                    Err(crate::Error::from((
+                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                        x509_error_str,
+                                    ))),
+                                    Some(pb::State::STATE_ERROR),
+                                );
+                            }
+                            match verify_err {
+                                openssl::X509_V_ERR_CERT_HAS_EXPIRED => (
+                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED, x509_error_str))),
+                                    Some(pb::State::STATE_ERROR),
+                                ),
+                                openssl::X509_V_ERR_CERT_REVOKED => (
+                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_REVOKED, x509_error_str))),
+                                    Some(pb::State::STATE_ERROR),
+                                ),
+                                openssl::X509_V_ERR_CERT_SIGNATURE_FAILURE => (
+                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED, x509_error_str))),
+                                    Some(pb::State::STATE_ERROR),
+                                ),
+                                openssl::X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY
+                                | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD
+                                | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD
+                                | openssl::X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN
+                                | openssl::X509_V_ERR_CERT_CHAIN_TOO_LONG
+                                | openssl::X509_V_ERR_INVALID_PURPOSE
+                                | openssl::X509_V_ERR_CERT_UNTRUSTED
+                                | openssl::X509_V_ERR_CERT_REJECTED => (
+                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_INVALID_CERTIFICATE, x509_error_str))),
+                                    Some(pb::State::STATE_ERROR),
+                                ),
+                                _ => (
+                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED, x509_error_str))),
+                                    Some(pb::State::STATE_ERROR),
+                                    ),
+                            }
+                        }
+                        _ => (
+                            Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                            Some(pb::State::STATE_ERROR),
+                        ),
+                    }
+                }
             }
         }
     }
@@ -540,6 +711,27 @@ pub(crate) fn try_from<'ctx>(
     Ok(Box::new(crate::ossl::OsslContext::<Ossl>::try_from(
         configuration,
     )?))
+}
+
+extern "C" fn openssl_verify_callback(
+    verify_ok: std::ffi::c_int,
+    ctx: *mut openssl::X509_STORE_CTX,
+) -> std::ffi::c_int {
+    if verify_ok == 0 {
+        unsafe {
+            let err = openssl::X509_STORE_CTX_get_error(ctx);
+            let ssl_idx = openssl::SSL_get_ex_data_X509_STORE_CTX_idx();
+            let ssl = openssl::X509_STORE_CTX_get_ex_data(ctx, ssl_idx) as *const openssl::ssl_st;
+            let verify_reason: *mut std::ffi::c_void =
+                openssl::SSL_get_ex_data(ssl, crate::openssl::VERIFICATION_ERROR_INDEX)
+                    as *mut std::ffi::c_void;
+            if (verify_reason as *const std::ffi::c_void).is_null() {
+                return verify_ok;
+            }
+            *(verify_reason as *mut std::ffi::c_int) = err;
+        }
+    }
+    verify_ok
 }
 
 GenOsslUnitTests!(

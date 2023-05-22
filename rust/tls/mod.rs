@@ -23,9 +23,12 @@ pub(crate) mod test {
     /// Path to a valid PEM certificate.
     pub(crate) const CERT_PEM_PATH: &str = "testdata/cert.pem";
 
-    /// Path to an invalid PEM certificate.
+    /// Path to an invalid DER certificate.
     pub(crate) const CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH: &str =
         "testdata/cert_unknown_sig_alg.der";
+
+    /// Path to an expired PEM certificate.
+    pub(crate) const CERT_EXPIRED_PEM_PATH: &str = "testdata/cert_expired.pem";
 
     /// Path to a valid DER certificate.
     pub(crate) const CERT_DER_PATH: &str = "testdata/cert.der";

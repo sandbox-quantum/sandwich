@@ -26,8 +26,3 @@ pub struct Settings {
 ```
 
 where `ReadFn, WriteFn, CloseFn` are predefined I/O functions in `Sandwich Backend` library.
-
-`I/O API` consists of 2 functions:
-
-- [`sandwich_io_new`](./io_new.md): Create an I/O object
-- [`sandwich_io_free`](./io_free.md): Free an I/O object

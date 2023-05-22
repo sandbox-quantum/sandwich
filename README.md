@@ -1,7 +1,7 @@
 # Sandwich Introduction
 
 
-![Sandwich Architecture](./docs/guide_doc/Intro/architecture_sketch.png)
+![Sandwich Architecture](./docs/guide_doc/src/images/architecture_sketch.png)
 
 ## What is Sandwich?
 

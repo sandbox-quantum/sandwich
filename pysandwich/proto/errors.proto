@@ -242,6 +242,29 @@ enum SocketError {
   SOCKETERROR_INVALID_AI_FAMILY = 8;
 };
 
+enum HandshakeError {
+  // Invalid Server Name.
+  HANDSHAKEERROR_INVALID_SERVER_NAME = 0;
+
+  // Certficate verification failed.
+  HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED = 1;
+
+  // Certificate has expired.
+  HANDSHAKEERROR_CERTIFICATE_EXPIRED = 2;
+
+  // Certificate was revoked.
+  HANDSHAKEERROR_CERTIFICATE_REVOKED = 3;
+
+  // Invalid Certificate.
+  HANDSHAKEERROR_INVALID_CERTIFICATE = 4;
+
+  // Signature verification error.
+  HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED = 5;
+
+  // Unknown handshake error.
+  HANDSHAKEERROR_UNKNOWN_ERROR = 6;
+};
+
 // Error kinds.
 enum ErrorKind {
   // API errors. See APIError.
@@ -282,4 +305,7 @@ enum ErrorKind {
 
   // KEM errors. See KEMError.
   ERRORKIND_KEM = 12;
+
+  // Handshake errors. See HandshakeError.
+  ERRORKIND_HANDSHAKE = 13;
 };

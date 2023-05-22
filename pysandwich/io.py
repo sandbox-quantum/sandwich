@@ -15,7 +15,7 @@
 """Sandwich I/O API.
 
 This API provides an I/O interface in Python, to use with Sandwich.
-It wraps a `struct SandwichCIO` and `struct SandwichCIOSettings`.
+It wraps a `struct SandwichCIOSettings`.
 
 An I/O interface is an object requiring the following methods:
     * read(n: int) -> bytes
@@ -228,58 +228,6 @@ class IO(abc.ABC):
             IOException.
         """
         pass
-
-
-class _IOHandle:
-    """Wrapper around a `struct SandwichCIO`."""
-
-    _default_handle = ctypes.c_void_p(0)
-
-    def __init__(self, s, handle=_default_handle):
-        """Constructs an _IOHandle from a void pointer.
-
-        Args:
-            s:
-                Sandwich handle.
-            handle:
-                Pointer to the `struct SandwichCIO` object.
-        """
-        self._s = s
-        self._handle = handle
-
-    def get(self):
-        """Returns the handle.
-
-        The handle is borrowed.
-
-        Returns:
-            The handle
-        """
-        return self._handle
-
-    def ref(self):
-        """Returns the pointer to the handle.
-
-
-        Returns:
-            Pointer to the handle
-        """
-        return ctypes.byref(self._handle)
-
-    def release(self):
-        """Releases the handle.
-
-        When the handle is released, this object is no longer its owner.
-
-        Returns:
-            The handle
-        """
-        tmp, self._handle = self._handle, ctypes.c_void_p(0)
-        return tmp
-
-    def __del__(self):
-        """Destructor."""
-        self._s.c_call("sandwich_io_free", self._handle)
 
 
 class Socket(IO):

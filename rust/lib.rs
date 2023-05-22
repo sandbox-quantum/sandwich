@@ -67,7 +67,7 @@ pub mod io;
 pub mod tunnel;
 
 /// A Sandwich context.
-pub use context::Context;
+pub use context::{Context, TunnelResult};
 
 /// An I/O abstraction.
 pub use io::IO;

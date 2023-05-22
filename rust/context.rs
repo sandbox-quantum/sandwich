@@ -35,6 +35,18 @@ pub(crate) enum Mode {
     Server,
 }
 
+/// The result type of [`Context::new_tunnel`].
+/// In case of success, [`Context::new_tunnel`] returns the tunnel.
+/// In case of error, [`Context::new_tunnel`] returns an error code
+/// ([`crate::Error`]) along with the I/O that was meant to be used to create
+/// the tunnel.
+/// Returning the I/O interface in case of error allows the caller to re-use it
+/// without having to create a new one.
+pub type TunnelResult<'io, 'tun> = std::result::Result<
+    Box<dyn crate::Tunnel<'io, 'tun> + 'tun>,
+    (crate::Error, Box<dyn crate::IO + 'io>),
+>;
+
 /// A Sandwich context.
 /// A Sandwich context is usually instantiated from a protobuf [`api_rust_proto::Configuration`].
 pub trait Context<'ctx>: std::fmt::Debug {
@@ -42,10 +54,12 @@ pub trait Context<'ctx>: std::fmt::Debug {
     ///
     /// The I/O interface must outlive the tunnel, as the tunnel makes use
     /// of it to send and receive data.
+    ///
+    /// If an error occured, the IO interface is returned to the user.
     fn new_tunnel<'io: 'tun, 'tun>(
         &mut self,
-        io: &'io mut (dyn crate::IO + 'io),
-    ) -> crate::Result<Box<dyn crate::Tunnel<'io, 'tun> + 'tun>>
+        io: Box<dyn crate::IO + 'io>,
+    ) -> TunnelResult<'io, 'tun>
     where
         'ctx: 'tun;
 }

@@ -18,11 +18,12 @@
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_new(
     ctx: *mut std::ffi::c_void,
-    cio: *mut super::io::Settings,
+    cio: *const super::io::Settings,
     tun: *mut *mut std::ffi::c_void,
 ) -> *mut super::Error {
     let mut b: Box<Box<dyn crate::context::Context>> = unsafe { Box::from_raw(ctx as *mut _) };
-    let r = b.new_tunnel(unsafe { &mut *cio });
+    let io: Box<dyn crate::IO> = Box::new(unsafe { *cio });
+    let r = b.new_tunnel(io);
     Box::into_raw(b);
     match r {
         Ok(t) => {
@@ -33,7 +34,7 @@ pub extern "C" fn sandwich_tunnel_new(
             }
             std::ptr::null_mut()
         }
-        Err(e) => e.into(),
+        Err((e, _)) => e.into(),
     }
 }
 
@@ -50,9 +51,11 @@ pub extern "C" fn sandwich_tunnel_free(tun: *mut std::ffi::c_void) {
 pub extern "C" fn sandwich_tunnel_handshake(tun: *mut std::ffi::c_void) -> i32 {
     use protobuf::Enum;
     let mut b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
-    let r = b.handshake();
+    let state = b
+        .handshake()
+        .unwrap_or(pb::HandshakeState::HANDSHAKESTATE_ERROR.into());
     Box::into_raw(b);
-    r.value().value()
+    state.value().value()
 }
 
 /// Performs a read operation.

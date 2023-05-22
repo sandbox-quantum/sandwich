@@ -106,11 +106,17 @@ pub(crate) trait Ossl {
         data: *mut std::ffi::c_void,
     ) -> crate::Result<()>;
 
+    /// Sets the verify_error location for an SSL context
+    fn ssl_set_verify_error(
+        ssl: *mut Self::NativeSsl,
+        verify_error_ptr: *mut std::ffi::c_int,
+    ) -> Result<(), pb::SystemError>;
+
     /// Performs the handshake.
     fn ssl_handshake(
         ssl: *mut Self::NativeSsl,
         mode: crate::Mode,
-    ) -> (pb::tunnel::HandshakeState, Option<pb::State>);
+    ) -> (crate::Result<pb::tunnel::HandshakeState>, Option<pb::State>);
 
     /// Reads from a SSL handle.
     fn ssl_read(ssl: *mut Self::NativeSsl, buf: &mut [u8]) -> crate::tunnel::RecordResult<usize>;
@@ -157,8 +163,8 @@ where
 {
     fn new_tunnel<'io, 'tun>(
         &mut self,
-        io: &'io mut (dyn crate::IO + 'io),
-    ) -> crate::Result<Box<dyn crate::Tunnel<'io, 'tun> + 'tun>>
+        io: Box<dyn crate::IO + 'io>,
+    ) -> crate::TunnelResult<'io, 'tun>
     where
         'io: 'tun,
         'ctx: 'tun,
@@ -391,7 +397,10 @@ where
     pub(crate) bio: crate::Pimpl<'tun, OsslInterface::NativeBio>,
 
     /// The IO.
-    pub(crate) io: &'io mut (dyn crate::IO + 'io),
+    pub(crate) io: Box<dyn crate::IO + 'io>,
+
+    /// Verification Errors.
+    pub(crate) verify_error: std::ffi::c_int,
 
     /// The state of the tunnel.
     pub(crate) state: pb::State,
@@ -411,33 +420,48 @@ where
 impl<'ctx, 'io, 'tun, OsslInterface>
     std::convert::TryFrom<(
         &mut OsslContext<'ctx, OsslInterface>,
-        &'io mut (dyn crate::IO + 'io),
+        Box<dyn crate::IO + 'io>,
     )> for OsslTunnel<'io, 'tun, OsslInterface>
 where
     'io: 'tun,
     'ctx: 'tun,
     OsslInterface: Ossl,
 {
-    type Error = crate::Error;
+    type Error = (crate::Error, Box<dyn crate::IO + 'io>);
 
     fn try_from(
         (ctx, io): (
             &mut OsslContext<'ctx, OsslInterface>,
-            &'io mut (dyn crate::IO + 'io),
+            Box<dyn crate::IO + 'io>,
         ),
-    ) -> crate::Result<OsslTunnel<'io, 'tun, OsslInterface>> {
+    ) -> std::result::Result<OsslTunnel<'io, 'tun, OsslInterface>, Self::Error> {
         use std::borrow::BorrowMut;
         let mode = match *ctx {
             OsslContext::Client(_) => crate::Mode::Client,
             OsslContext::Server(_) => crate::Mode::Server,
         };
-        let ssl = OsslInterface::new_ssl_handle(ctx.borrow_mut())?;
-        let bio = crate::Pimpl::from_raw(OsslInterface::new_ssl_bio()?.into_raw(), None);
+
+        let ssl = OsslInterface::new_ssl_handle(ctx.borrow_mut());
+        let ssl = if let Err(e) = ssl {
+            return Err((e, io));
+        } else {
+            ssl.unwrap()
+        };
+
+        let bio = OsslInterface::new_ssl_bio();
+        let bio = if let Err(e) = bio {
+            return Err((e, io));
+        } else {
+            bio.unwrap()
+        };
+        let bio = crate::Pimpl::from_raw(bio.into_raw(), None);
+
         Ok(Self {
             mode,
             ssl,
             bio,
             io,
+            verify_error: 0,
             state: pb::State::STATE_NOT_CONNECTED,
         })
     }
@@ -453,15 +477,15 @@ where
         self.state.into()
     }
 
-    fn handshake(&mut self) -> crate::tunnel::HandshakeState {
+    fn handshake(&mut self) -> crate::Result<crate::tunnel::HandshakeState> {
         if self.state == pb::State::STATE_HANDSHAKE_DONE {
-            return pb::HandshakeState::HANDSHAKESTATE_DONE.into();
+            return Ok(pb::HandshakeState::HANDSHAKESTATE_DONE.into());
         }
 
         let state = OsslInterface::ssl_get_handshake_state(self.ssl.as_ptr());
         if state == pb::HandshakeState::HANDSHAKESTATE_DONE {
             self.state = pb::State::STATE_HANDSHAKE_DONE;
-            return state.into();
+            return Ok(state.into());
         }
 
         let (handshake_state, tunnel_state) =
@@ -469,7 +493,10 @@ where
         if let Some(tunnel_state) = tunnel_state {
             self.state = tunnel_state;
         }
-        handshake_state.into()
+        match handshake_state {
+            Ok(state) => Ok(state.into()),
+            Err(state) => Err(state),
+        }
     }
 
     fn read(&mut self, buf: &mut [u8]) -> crate::tunnel::RecordResult<usize> {
@@ -528,18 +555,27 @@ where
     /// Instantiates a new [`OsslTunnel`] from a [`OsslContext`] and an IO interface.
     fn new_with_io<'ctx>(
         ctx: &mut OsslContext<'ctx, OsslInterface>,
-        io: &'io mut (dyn crate::IO + 'io),
-    ) -> crate::Result<Box<dyn crate::Tunnel<'io, 'tun> + 'tun>>
+        io: Box<dyn crate::IO + 'io>,
+    ) -> crate::TunnelResult<'io, 'tun>
     where
         'ctx: 'tun,
     {
         let mut tun: Box<OsslTunnel<'io, 'tun, OsslInterface>> =
             Box::new(Self::try_from((ctx, io))?);
-        OsslInterface::ssl_set_bio(
+        if let Err(e) = OsslInterface::ssl_set_bio(
             tun.bio.as_mut_ptr(),
             tun.ssl.as_mut_ptr(),
             (&mut *tun as *mut Self) as *mut std::ffi::c_void,
-        )?;
+        ) {
+            return Err((e, tun.io));
+        }
+
+        if let Err(e) = OsslInterface::ssl_set_verify_error(
+            tun.ssl.as_mut_ptr(),
+            &mut tun.verify_error as *mut std::ffi::c_int,
+        ) {
+            return Err((e.into(), tun.io));
+        }
         Ok(tun)
     }
 

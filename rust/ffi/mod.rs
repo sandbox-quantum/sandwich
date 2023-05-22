@@ -24,10 +24,6 @@
 //! - [`context::sandwich_context_new`]: creates a new context from a serialized
 //!   protobuf configuration message.
 //! - [`context::sandwich_context_free`]: releases the memory occupied by a Context.
-//! - [`io::sandwich_io_new`]: creates a new I/O interface from a set of
-//!   function pointers.
-//! - [`io::sandwich_io_free`]: releases the memory occupied by an I/O
-//!   interface.
 //! - [`tunnel::sandwich_tunnel_new`]: creates a tunnel from a configuration.
 //! - [`tunnel::sandwich_tunnel_free`]: releases the memory occupied by a Tunnel.
 //! - [`tunnel::sandwich_tunnel_handshake`]: performs the handshake operation

@@ -105,7 +105,7 @@ class SandwichException(Exception):
             The most appropriate exception object.
         """
         if target_cls := _ERROR_KIND_MAP.get(kind):
-            return target_cls(kind, code)
+            return target_cls(code, kind)
 
         errors_map = cls._ERRORS_MAP
         if (

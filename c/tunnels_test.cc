@@ -43,10 +43,10 @@ extern "C" {
 /** \brief Prints sandwich error and abort on condition.
  *
  * \param e The condition. */
-#define sandwich_assert(e)                                               \
-  ((void)((e) ? ((void)0)                                                \
-              : ((void)fprintf(stderr, "%s:%d: failed assertion '%s'\n", \
-                               __FILE_NAME__, __LINE__, #e),             \
+#define sandwich_assert(e)                                                     \
+  ((void)((e) ? ((void)0)                                                      \
+              : ((void)fprintf(stderr, "%s:%d: failed assertion '%s'\n",       \
+                               __FILE_NAME__, __LINE__, #e),                   \
                  abort())))
 
 } // end extern "C"
@@ -179,38 +179,38 @@ auto SandwichReadFromSocket(
   } while ((r == -1) && (errno == EINTR));
 
   switch (errno) {
-    case 0: {
-      return *err = SANDWICH_IOERROR_OK, 0;
-    }
-    case EINPROGRESS:
-    case EINTR: {
-      return *err = SANDWICH_IOERROR_IN_PROGRESS, 0;
-    }
+  case 0: {
+    return *err = SANDWICH_IOERROR_OK, 0;
+  }
+  case EINPROGRESS:
+  case EINTR: {
+    return *err = SANDWICH_IOERROR_IN_PROGRESS, 0;
+  }
 
-    case EWOULDBLOCK:
+  case EWOULDBLOCK:
 #if EWOULDBLOCK != EAGAIN
-    case EAGAIN:
+  case EAGAIN:
 #endif
-    {
-      return *err = SANDWICH_IOERROR_WOULD_BLOCK, 0;
-    }
+  {
+    return *err = SANDWICH_IOERROR_WOULD_BLOCK, 0;
+  }
 
-    case ENOTSOCK:
-    case EPROTOTYPE:
-    case EBADF: {
-      return *err = SANDWICH_IOERROR_INVALID, 0;
-    }
-    case EACCES:
-    case EPERM:
-    case ETIMEDOUT:
-    case ENETUNREACH:
-    case ECONNREFUSED: {
-      return *err = SANDWICH_IOERROR_REFUSED, 0;
-    }
+  case ENOTSOCK:
+  case EPROTOTYPE:
+  case EBADF: {
+    return *err = SANDWICH_IOERROR_INVALID, 0;
+  }
+  case EACCES:
+  case EPERM:
+  case ETIMEDOUT:
+  case ENETUNREACH:
+  case ECONNREFUSED: {
+    return *err = SANDWICH_IOERROR_REFUSED, 0;
+  }
 
-    default: {
-      return *err = SANDWICH_IOERROR_UNKNOWN, 0;
-    }
+  default: {
+    return *err = SANDWICH_IOERROR_UNKNOWN, 0;
+  }
   }
 }
 
@@ -234,29 +234,29 @@ auto SandwichWriteToSocket(
   } while ((w == -1) && (errno == EINTR));
 
   switch (errno) {
-    case 0: {
-      return *err = SANDWICH_IOERROR_OK, 0;
-    }
-    case EINPROGRESS:
-    case EINTR: {
-      return *err = SANDWICH_IOERROR_WOULD_BLOCK, 0;
-    }
-    case ENOTSOCK:
-    case EPROTOTYPE:
-    case EBADF: {
-      return *err = SANDWICH_IOERROR_INVALID, 0;
-    }
-    case EACCES:
-    case EPERM:
-    case ETIMEDOUT:
-    case ENETUNREACH:
-    case ECONNREFUSED: {
-      return *err = SANDWICH_IOERROR_REFUSED, 0;
-    }
+  case 0: {
+    return *err = SANDWICH_IOERROR_OK, 0;
+  }
+  case EINPROGRESS:
+  case EINTR: {
+    return *err = SANDWICH_IOERROR_WOULD_BLOCK, 0;
+  }
+  case ENOTSOCK:
+  case EPROTOTYPE:
+  case EBADF: {
+    return *err = SANDWICH_IOERROR_INVALID, 0;
+  }
+  case EACCES:
+  case EPERM:
+  case ETIMEDOUT:
+  case ENETUNREACH:
+  case ECONNREFUSED: {
+    return *err = SANDWICH_IOERROR_REFUSED, 0;
+  }
 
-    default: {
-      return *err = SANDWICH_IOERROR_UNKNOWN, 0;
-    }
+  default: {
+    return *err = SANDWICH_IOERROR_UNKNOWN, 0;
+  }
   }
 }
 
@@ -269,47 +269,11 @@ void SandwichCloseSocket(void *uarg) {
 }
 
 /// \brief Global CIO settings structure for sockets.
-constexpr struct ::SandwichCIOSettings SandwichSocketCIOSettings =
-    {.read = SandwichReadFromSocket,
-     .write = SandwichWriteToSocket,
-     .close = SandwichCloseSocket,
-     .uarg = nullptr};
-
-/// \brief Pair of I/O interfaces, one for the client, one for the server.
-struct IOPair {
-  /// \brief Client I/O interface.
-  struct ::SandwichCIO *client;
-
-  /// \brief Server I/O interface.
-  struct ::SandwichCIO *server;
-};
-
-/// \brief Create two connected I/O interfaces using
-/// saq::sandwich::io::Socket.
-///
-/// \param fds File descriptors.
-///
-/// The first file descriptor in `fds` is the client's.
-/// and last file descriptor in `fds` is the server's
-///
-/// This function succeed.
-[[nodiscard]] auto CreateIOs(const std::array<int, 2> &fds) -> IOPair {
-  IOPair pair{};
-
-  auto settings = SandwichSocketCIOSettings;
-
-  settings.uarg = reinterpret_cast<void *>(fds[0]);
-  auto *err{::sandwich_io_new(&settings, &pair.client)};
-  sandwich_assert(err == nullptr);
-  sandwich_assert(pair.client != nullptr);
-
-  settings.uarg = reinterpret_cast<void *>(fds[1]);
-  err = ::sandwich_io_new(&settings, &pair.server);
-  sandwich_assert(err == nullptr);
-  sandwich_assert(pair.server != nullptr);
-
-  return pair;
-}
+constexpr struct ::SandwichCIOSettings SandwichSocketCIOSettings = {
+    .read = SandwichReadFromSocket,
+    .write = SandwichWriteToSocket,
+    .close = SandwichCloseSocket,
+    .uarg = nullptr};
 
 /// \brief Deleter for Sandwich Tunnel.
 using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
@@ -317,16 +281,16 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 /// \brief Create a tunnel from a context and an I/O interface.
 ///
 /// \param ctx Context.
-/// \param ioint IO interface
+/// \param io IO interface.
 ///
 /// This function succeed.
 ///
 /// \return The tunnel.
 [[nodiscard]] auto CreateTunnel(struct ::SandwichContext *ctx,
-                                struct ::SandwichCIO *ioint)
+                                const struct ::SandwichCIOSettings &io)
     -> std::unique_ptr<struct ::SandwichTunnel, SandwichTunnelDeleter> {
   struct ::SandwichTunnel *tun{nullptr};
-  const auto *err{::sandwich_tunnel_new(ctx, ioint, &tun)};
+  const auto *err{::sandwich_tunnel_new(ctx, &io, &tun)};
   sandwich_assert(err == nullptr);
   sandwich_assert(tun != nullptr);
 
@@ -512,11 +476,16 @@ int main() {
 #endif
 
   // Create I/O interfaces for client and server.
-  auto ios{CreateIOs(fds)};
+
+  struct ::SandwichCIOSettings client_io = SandwichSocketCIOSettings;
+  client_io.uarg = reinterpret_cast<void *>(fds[0]);
+
+  struct ::SandwichCIOSettings server_io = SandwichSocketCIOSettings;
+  server_io.uarg = reinterpret_cast<void *>(fds[1]);
 
   // Create tunnels.
-  auto client_tunnel = CreateTunnel(&*client, ios.client);
-  auto server_tunnel = CreateTunnel(&*server, ios.server);
+  auto client_tunnel = CreateTunnel(&*client, client_io);
+  auto server_tunnel = CreateTunnel(&*server, server_io);
 
   // Client initiates the handshake.
   ClientInitiateHandshake(&*client_tunnel);

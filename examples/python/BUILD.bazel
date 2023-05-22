@@ -1,0 +1,90 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "test_plaintext",
+    timeout = "short",
+    srcs = [
+        "test_client_server.py",
+    ],
+    args = [
+        "--client_bin",
+        "$(location //examples/python/plaintext_socket:client)",
+        "--server_bin",
+        "$(location //examples/python/plaintext_socket:server)",
+    ],
+    main = "test_client_server.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/python/plaintext_socket:client",
+        "//examples/python/plaintext_socket:server",
+    ],
+)
+
+py_test(
+    name = "test_tls_asyncio",
+    timeout = "short",
+    srcs = [
+        "test_client_server.py",
+    ],
+    args = [
+        "--client_bin",
+        "$(location //examples/python/tls_asyncio:client)",
+        "--server_bin",
+        "$(location //examples/python/tls_asyncio:server)",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    main = "test_client_server.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/python/tls_asyncio:client",
+        "//examples/python/tls_asyncio:server",
+    ],
+)
+
+py_test(
+    name = "test_tls_socket",
+    timeout = "short",
+    srcs = [
+        "test_client_server.py",
+    ],
+    args = [
+        "--client_bin",
+        "$(location //examples/python/tls_socket:client)",
+        "--server_bin",
+        "$(location //examples/python/tls_socket:server)",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    main = "test_client_server.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/python/tls_socket:client",
+        "//examples/python/tls_socket:server",
+    ],
+)
+
+py_test(
+    name = "test_tls_sandwich",
+    timeout = "short",
+    srcs = [
+        "test_client_server.py",
+    ],
+    args = [
+        "--client_bin",
+        "$(location //examples/python/tls_sandwich:client)",
+        "--server_bin",
+        "$(location //examples/python/tls_sandwich:server)",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    main = "test_client_server.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/python/tls_sandwich:client",
+        "//examples/python/tls_sandwich:server",
+    ],
+)

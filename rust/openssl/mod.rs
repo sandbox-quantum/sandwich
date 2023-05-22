@@ -19,6 +19,8 @@ pub(crate) mod ossl;
 
 pub(self) use io::BIO_METH;
 
+pub(crate) const VERIFICATION_ERROR_INDEX: i32 = 0;
+
 #[cfg(test)]
 pub(crate) mod test {
     /// A simple I/O interface.
@@ -158,11 +160,11 @@ pub(crate) mod test {
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut ctx = crate::context::try_from(&config).unwrap();
-        let mut io = IOBuffer::new();
-        let tun = ctx.new_tunnel(&mut io);
+        let io = IOBuffer::new();
+        let tun = ctx.new_tunnel(Box::new(io));
         assert!(tun.is_ok());
         let mut tun = tun.unwrap();
-        let rec = tun.handshake();
+        let rec = tun.handshake().unwrap();
         assert_eq!(rec, pb::HandshakeState::HANDSHAKESTATE_WANT_READ);
         assert_eq!(tun.state(), pb::State::STATE_HANDSHAKE_IN_PROGRESS);
         let _ = tun.close();
@@ -206,11 +208,11 @@ pub(crate) mod test {
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut ctx = crate::context::try_from(&config).unwrap();
-        let mut io = IOBuffer::new();
-        let tun = ctx.new_tunnel(&mut io);
+        let io = IOBuffer::new();
+        let tun = ctx.new_tunnel(Box::new(io));
         assert!(tun.is_ok());
         let mut tun = tun.unwrap();
-        let rec = tun.handshake();
+        let rec = tun.handshake().unwrap();
         assert_eq!(rec, pb::HandshakeState::HANDSHAKESTATE_WANT_READ);
         let _ = tun.close();
     }
@@ -247,7 +249,7 @@ pub(crate) mod test {
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut client_ctx = crate::context::try_from(&config).unwrap();
-        let mut client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -284,19 +286,121 @@ pub(crate) mod test {
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut server_ctx = crate::context::try_from(&config).unwrap();
-        let mut server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
-        let mut client = client_ctx.new_tunnel(&mut client_io).unwrap();
-        let mut server = server_ctx.new_tunnel(&mut server_io).unwrap();
+        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
+        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
 
         assert_eq!(
-            client.handshake(),
+            client.handshake().unwrap(),
             pb::HandshakeState::HANDSHAKESTATE_WANT_READ
         );
         assert_eq!(
-            server.handshake(),
+            server.handshake().unwrap(),
             pb::HandshakeState::HANDSHAKESTATE_WANT_READ
         );
-        assert_eq!(client.handshake(), pb::HandshakeState::HANDSHAKESTATE_DONE);
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Test tunnel between client and server with an expired certificate.
+    #[test]
+    fn test_expired() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                >
+                trusted_certificates <
+                  static <
+                    data <
+                      filename: "{}"
+                    >
+                    format: ENCODING_FORMAT_PEM
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_EXPIRED_PEM_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                >
+                certificate <
+                  static <
+                    data <
+                      filename: "{}"
+                    >
+                    format: ENCODING_FORMAT_PEM
+                  >
+                >
+                private_key <
+                  static <
+                    data <
+                      filename: "{}"
+                    >
+                    format: ENCODING_FORMAT_PEM
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_EXPIRED_PEM_PATH,
+                crate::tls::test::SK_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
+        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+
+        // test that upon an error it always returns the same error
+        for _ in 0..10 {
+            match client.handshake() {
+                Err(e) => {
+                    assert_eq!(
+                        *(e.iter().next().unwrap().code()),
+                        crate::error::ProtoBasedErrorCode::from(
+                            pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED
+                        )
+                    );
+                }
+                Ok(v) => panic!("Should have errored, but got: {} instead", v),
+            }
+        }
     }
 }

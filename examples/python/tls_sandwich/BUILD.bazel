@@ -1,0 +1,31 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "client",
+    srcs = [
+        "client_sandwich_socket.py",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    main = "client_sandwich_socket.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pysandwich:python",
+    ],
+)
+
+py_binary(
+    name = "server",
+    srcs = [
+        "server_sandwich_socket.py",
+    ],
+    data = [
+        "//testdata:tests_data",
+    ],
+    main = "server_sandwich_socket.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pysandwich:python",
+    ],
+)

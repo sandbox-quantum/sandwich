@@ -115,6 +115,31 @@ impl std::fmt::Display for HandshakeState {
     }
 }
 
+/// A handshake error.
+/// A handshake error can occur during the cryptography handshake
+pub type HandshakeError = ProtoStateErrorBase<pb::HandshakeError>;
+
+/// Implements [`std::fmt::Display`] for [`HandshakeError`].
+impl std::fmt::Display for HandshakeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                pb::HandshakeError::HANDSHAKEERROR_INVALID_SERVER_NAME => "invalid server name",
+                pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED =>
+                    "certificate verification failed",
+                pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED => "certificate has expired",
+                pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_REVOKED => "certificate was revoked",
+                pb::HandshakeError::HANDSHAKEERROR_INVALID_CERTIFICATE => "invalid certificate",
+                pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED =>
+                    "certificate signature verification failed",
+                pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR => "unknown handshake error",
+            }
+        )
+    }
+}
+
 /// A record error.
 /// A record error may occur during a record plane operation: read and write.
 pub type RecordError = ProtoStateErrorBase<pb::RecordError>;
@@ -154,7 +179,7 @@ pub trait Tunnel<'io: 'ctx, 'ctx> {
     ///
     /// Depending on the return value, this method may need to be called
     /// more than once.
-    fn handshake(&mut self) -> HandshakeState;
+    fn handshake(&mut self) -> crate::Result<HandshakeState>;
 
     /// Writes data to the tunnel.
     fn write(&mut self, buf: &[u8]) -> RecordResult<usize>;
@@ -164,6 +189,13 @@ pub trait Tunnel<'io: 'ctx, 'ctx> {
 
     /// Closes the tunnel.
     fn close(&mut self) -> RecordResult<()>;
+}
+
+/// Implements [`std::fmt::Debug`] for [`Tunnel`].
+impl std::fmt::Debug for dyn Tunnel<'_, '_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Tunnel")
+    }
 }
 
 #[cfg(test)]

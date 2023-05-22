@@ -1,0 +1,19 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "server",
+    srcs = [
+        "server_plain_socket.py",
+    ],
+    main = "server_plain_socket.py",
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "client",
+    srcs = [
+        "client_plain_socket.py",
+    ],
+    main = "client_plain_socket.py",
+    visibility = ["//visibility:public"],
+)

@@ -38,9 +38,6 @@
 extern "C" {
 #endif
 
-/// \brief An I/O object (PIMPL).
-struct SandwichCIO;
-
 /// \brief A Sandwich context (PIMPL).
 struct SandwichContext;
 
@@ -116,24 +113,6 @@ struct SandwichCIOSettings {
 /// \param chain Error chain.
 SANDWICH_API void sandwich_error_free(struct SandwichError *chain);
 
-/// \brief Create an I/O interface.
-///
-/// \param[in] cioset Settings for the I/O interface.
-/// \param[out] cio The new CIO object.
-///
-/// \return NULL if no error occured, else a chain of errors.
-SANDWICH_API struct SandwichError *sandwich_io_new(
-    const struct SandwichCIOSettings *cioset, struct SandwichCIO **cio);
-
-/// \brief Free an I/O interface.
-///
-/// \param[in,out] cio I/O interface to free.
-///
-/// NULL for `cio` is allowed.
-///
-/// \return The I/O interface to free.
-SANDWICH_API void sandwich_io_free(struct SandwichCIO *cio);
-
 /// \brief Create a context from an encoded protobuf message.
 ///
 /// \param[in] src Source buffer containing the encoded protobuf message.
@@ -141,8 +120,8 @@ SANDWICH_API void sandwich_io_free(struct SandwichCIO *cio);
 /// \param[out] ctx The new Sandwich context object.
 ///
 /// \return NULL if no error occured, else a chain of errors.
-SANDWICH_API struct SandwichError *sandwich_context_new(
-    const void *src, size_t n, struct SandwichContext **ctx);
+SANDWICH_API struct SandwichError *
+sandwich_context_new(const void *src, size_t n, struct SandwichContext **ctx);
 
 /// \brief Free a Sandwich context.
 ///
@@ -153,28 +132,31 @@ SANDWICH_API void sandwich_context_free(struct SandwichContext *ctx);
 
 /// \brief Create a tunnel.
 ///
-/// A tunnel is created from an I/O interface. The tunnel takes the ownership
-/// of the I/O interface. Therefore, when the tunnel is destroyed with
-/// `sandwich_tunnel_free`, the I/O interface is also destroyed.
-/// `sandwich_tunnel_io_release` take the ownership of the I/O interface back
-/// to the user.
+/// A tunnel is created from an I/O interface. `SandwichCIOSettings` are
+/// used to create an I/O interface that forwards calls to the `read`, `write`
+/// and `close` methods of `SandwichCIOSettings`.
+///
+/// Since the implementation of `sandwich_tunnel_new` makes a copy of
+/// `SandwichCIOSettings`, the caller does not need to keep `cio` in memory.
+/// In other words, Sandwich does not take the ownership of `cio`.
 ///
 /// \param[in] ctx Sandwich context used for setting up the tunnel.
-/// \param[in,out] cio I/O interface to use for creating the tunnel.
+/// \param[in] cio I/O interface settings to use to create the I/O interface.
 /// \param[out] tun The new Sandwich tunnel object.
 ///
 /// \return NULL if no error occured, else a chain of errors.
-SANDWICH_API struct SandwichError *sandwich_tunnel_new(
-    struct SandwichContext *ctx, struct SandwichCIO *cio,
-    struct SandwichTunnel **tun);
+SANDWICH_API struct SandwichError *
+sandwich_tunnel_new(struct SandwichContext *ctx,
+                    const struct SandwichCIOSettings *cio,
+                    struct SandwichTunnel **tun);
 
 /// \brief Perform the handshake.
 ///
 /// \param[in,out] tun Tunnel.
 ///
 /// \return The state of the handshake.
-SANDWICH_API enum SandwichTunnelHandshakeState sandwich_tunnel_handshake(
-    struct SandwichTunnel *tun);
+SANDWICH_API enum SandwichTunnelHandshakeState
+sandwich_tunnel_handshake(struct SandwichTunnel *tun);
 
 /// \brief Read some bytes from the record plane of the tunnel.
 ///
@@ -186,8 +168,9 @@ SANDWICH_API enum SandwichTunnelHandshakeState sandwich_tunnel_handshake(
 /// NULL for `r` is allowed.
 ///
 /// \return An error code.
-SANDWICH_API enum SandwichTunnelRecordError sandwich_tunnel_read(
-    struct SandwichTunnel *tun, void *dst, size_t n, size_t *r);
+SANDWICH_API enum SandwichTunnelRecordError
+sandwich_tunnel_read(struct SandwichTunnel *tun, void *dst, size_t n,
+                     size_t *r);
 
 /// \brief Write some bytes to the record plane of the tunnel.
 ///
@@ -199,8 +182,9 @@ SANDWICH_API enum SandwichTunnelRecordError sandwich_tunnel_read(
 /// NULL for `w` is allowed.
 ///
 /// \return An error code.
-SANDWICH_API enum SandwichTunnelRecordError sandwich_tunnel_write(
-    struct SandwichTunnel *tun, const void *src, size_t n, size_t *w);
+SANDWICH_API enum SandwichTunnelRecordError
+sandwich_tunnel_write(struct SandwichTunnel *tun, const void *src, size_t n,
+                      size_t *w);
 
 /// \brief Close the tunnel.
 ///
@@ -212,19 +196,8 @@ SANDWICH_API void sandwich_tunnel_close(struct SandwichTunnel *tun);
 /// \param[in] tun Tunnel.
 ///
 /// \return The state of the tunnel.
-SANDWICH_API enum SandwichTunnelState sandwich_tunnel_state(
-    const struct SandwichTunnel *tun);
-
-/// \brief Release the I/O interface from the tunnel.
-///
-/// When the I/O interface is released, the tunnel can no longer be used.
-///
-/// \param[in,out] tun The Sandwich tunnel
-///
-/// \return The I/O interface, or NULL if the I/O interface has already been
-/// released from the tunnel.
-SANDWICH_API struct SandwichCIO *sandwich_tunnel_io_release(
-    struct SandwichTunnel *tun);
+SANDWICH_API enum SandwichTunnelState
+sandwich_tunnel_state(const struct SandwichTunnel *tun);
 
 /// \brief Free a Sandwich tunnel.
 ///

@@ -120,20 +120,17 @@ type Tunnel struct {
 	// handle is the C handle to the `struct SandwichTunnel *`.
 	handle *C.struct_SandwichTunnel
 
-	// ioHandle is the I/O handle to the I/O interface.
-	ioHandle *cIOHandle
+	// cIO is the I/O interface.
+	cIO *cIO
 }
 
 // NewTunnel creates a Sandwich tunnel from a context and an io.
 func NewTunnel(ctx *Context, io IO) (*Tunnel, error) {
 	tun := new(Tunnel)
-	tun.ioHandle = new(cIOHandle)
-	err := newcIOHandle(tun.ioHandle, io)
-	if err != nil {
-		return nil, err
-	}
+	tun.cIO = new(cIO)
+	newcIO(tun.cIO, io)
 
-	errc := C.sandwich_tunnel_new(ctx.handle, tun.ioHandle.handle, &tun.handle)
+	errc := C.sandwich_tunnel_new(ctx.handle, tun.cIO.settings, &tun.handle)
 	if errc != nil {
 		err := createError(errc)
 		C.sandwich_error_free(errc)
@@ -193,17 +190,7 @@ func (tun *Tunnel) Close() error {
 // IO returns the IO interface used by a tunnel.
 // The interface is borrowed to the user. Its ownership remains to the Tunnel.
 func (tun *Tunnel) IO() *IO {
-	return tun.ioHandle.io
-}
-
-// IORelease releases the IO interface used by a tunnel.
-// The returned IO object no longer belongs with the Tunnel.
-func (tun *Tunnel) IORelease() *IO {
-	ptr := C.sandwich_tunnel_io_release(tun.handle)
-	if ptr == nil {
-		return nil
-	}
-	return tun.ioHandle.io
+	return tun.cIO.io
 }
 
 // free frees the memory allocated for a `struct SandwichTunnel*`.

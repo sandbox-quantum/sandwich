@@ -155,7 +155,7 @@ def _error_code_to_exception(ptr: ctypes.c_void_p):
     head_excp = None
     current_excp = None
     while ec:
-        excp = Error.new(ec.contents.kind, ec.contents.code)
+        excp = Error.new(ec.contents.code, ec.contents.kind)
         if head_excp is None:
             head_excp = excp
             current_excp = excp
@@ -290,7 +290,6 @@ class Tunnel:
                 IO interface to use to create the tunnel.
 
         Raises:
-            IOError: The call to `sandwich_io_new` failed.
             RuntimeError: The call to `sandwich_tunnel_new` failed.
         """
         self._ctx = ctx
@@ -314,24 +313,15 @@ class Tunnel:
             lambda uarg: self._io_close()
         )
 
-        io_handle = SandwichIO._IOHandle(self._C)
-        err = self._C.c_call(
-            "sandwich_io_new", ctypes.byref(self._settings), io_handle.ref()
-        )
-        if err is not None:
-            excp = _error_code_to_exception(err)
-            self._sandwich.c_call("sandwich_error_free", err)
-            raise excp
-
         err = self._C.c_call(
             "sandwich_tunnel_new",
             self._ctx._handle,
-            io_handle.release(),
+            ctypes.byref(self._settings),
             ctypes.byref(self._handle),
         )
         if err is not None:
             excp = _error_code_to_exception(err)
-            self._sandwich.c_call("sandwich_error_free", err)
+            self._C.c_call("sandwich_error_free", err)
             raise excp
 
     def state(self) -> State:
@@ -349,18 +339,6 @@ class Tunnel:
             The last saved error.
         """
         return self._C.c_call("sandwich_tunnel_last_error", self._handle)
-
-    def io_release(self) -> SandwichIO.IO:
-        """Releases the underlying I/O interface.
-
-        This function gives back the ownership of the I/O interface to the user.
-
-        Returns:
-            The I/O interface.
-        """
-
-        self._C.c_call("sandwich_tunnel_io_release", self._handle)
-        return self._io
 
     @property
     def io(self) -> SandwichIO.IO:
@@ -567,12 +545,6 @@ class Sandwich:
     func_types = {
         # void sandwich_error_free(struct SandwichError *chain)"""
         "sandwich_error_free": ([ctypes.c_void_p], None),
-        # struct SandwichError *sandwich_io_new(
-        #       const struct SandwichCIOSettings *cioset,
-        #       struct SandwichCIO **cio);
-        "sandwich_io_new": ([ctypes.c_void_p, ctypes.c_void_p], ctypes.c_void_p),
-        # void sandwich_io_free(struct SandwichCIO *cio);
-        "sandwich_io_free": ([ctypes.c_void_p], None),
         # struct SandwichError *sandwich_context_new(
         #       const void *src,
         #       size_t n,

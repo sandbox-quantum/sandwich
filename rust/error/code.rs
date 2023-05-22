@@ -365,6 +365,20 @@ GenProtoBasedErrorCode!(
             SOCKETERROR_INVALID_AI_FAMILY => "invalid AI family",
         ],
     },
+    {
+        kind: ERRORKIND_HANDSHAKE,
+        sym: HandshakeError,
+        desc: "handshake error",
+        values: [
+            HANDSHAKEERROR_INVALID_SERVER_NAME => "invalid server name",
+            HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED => "certificate verification failed",
+            HANDSHAKEERROR_CERTIFICATE_EXPIRED => "certificate has expired",
+            HANDSHAKEERROR_CERTIFICATE_REVOKED => "certificate was revoked",
+            HANDSHAKEERROR_INVALID_CERTIFICATE => "certificate is invalid",
+            HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED => "certificate signature verification failed",
+            HANDSHAKEERROR_UNKNOWN_ERROR => "unknown handshake error",
+        ],
+    },
 );
 
 /// An error code.

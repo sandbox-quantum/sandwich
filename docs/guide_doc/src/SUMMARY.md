@@ -9,7 +9,13 @@
 # User Guide
 
 - [Installation](install/installation.md)
-- [TLS connections made simple](install/TLS-made-simple.md)
+  - [Python Sandwich Installation](install/python-installation.md)
+
+# Tutorials
+
+- [TLS connections made simple](tutorial/TLS-made-simple.md)
+  - [Simple TLS connection with Pysandwich](tutorial/tls_connection.md)
+  - [Let's write TLS with AsyncIO](tutorial/tls_asyncio.md)
 
 # Sandwich Bindings API
 
@@ -50,8 +56,6 @@
     - [`sandwich_context_new`](rust/context_new.md)
     - [`sandwich_context_free`](rust/context_free.md)
   - [IO](rust/io.md)
-    - [`sandwich_io_new`](rust/io_new.md)
-    - [`sandwich_io_free`](rust/io_free.md)
   - [Tunnel](rust/tunnel.md)
       - [`sandwich_tunnel_new`](rust/tunnel_new.md)
       - [`sandwich_tunnel_handshake`](rust/tunnel_handshake.md)

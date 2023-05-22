@@ -57,12 +57,12 @@ type IO interface {
 }
 
 // createSettings creates a C-compatible structure from an IO interface.
-func createSettings(handle *cIOHandle) *C.struct_SandwichCIOSettings {
+func createSettings(cio *cIO) *C.struct_SandwichCIOSettings {
 	set := C.allocSandwichCIOSettings()
 	set.read = &C.sandwichGoIORead
 	set.write = &C.sandwichGoIOWrite
 	set.close = &C.sandwichGoIOClose
-	set.uarg = unsafe.Pointer(handle.io)
+	set.uarg = unsafe.Pointer(cio.io)
 	return set
 }
 
@@ -98,31 +98,21 @@ func sandwichGoIOClose(ioint unsafe.Pointer) {
 	io.Close()
 }
 
-// cIOHandle wraps `struct SandwichCIO`.
-type cIOHandle struct {
-	handle *C.struct_SandwichCIO
-	io     *IO
+// cIO wraps `struct SandwichCIOSettings` and `IO` together.
+type cIO struct {
+	settings *C.struct_SandwichCIOSettings
+	io       *IO
 }
 
-// newcIOHandle creates a new cIOHandle from an IO interface.
-func newcIOHandle(handle *cIOHandle, io IO) error {
-	handle.io = &io
-	settings := createSettings(handle)
-	defer C.free(unsafe.Pointer(settings))
-
-	errc := C.sandwich_io_new(settings, &handle.handle)
-	if errc != nil {
-		err := createError(errc)
-		C.sandwich_error_free(errc)
-		return err
-	}
-
-	runtime.SetFinalizer(handle, (*cIOHandle).free)
-	return nil
+// newcIO creates a new SandwichCIOSettings from an IO interface.
+func newcIO(cio *cIO, io IO) {
+	cio.io = &io
+	cio.settings = createSettings(cio)
+	runtime.SetFinalizer(cio, (*cIO).free)
 }
 
-// Free releases the memory taken by `struct SandwichCIO.
-func (handle *cIOHandle) free() {
-	C.sandwich_io_free(handle.handle)
-	handle.handle = nil
+// free releases the memory taken by `struct SandwichCIOSettings`.
+func (cio *cIO) free() {
+	C.free(unsafe.Pointer(cio.settings))
+	cio.settings = nil
 }
