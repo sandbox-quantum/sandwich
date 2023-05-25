@@ -17,6 +17,9 @@
 //! This trait aims to ease the support of multiple OpenSSL-like implementations,
 //! such as BoringSSL, LibreSSL and OpenSSL.
 
+/// Default maximum depth for the certificate chain verification.
+pub(crate) const DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH: u32 = 100;
+
 /// Trait that supports various OpenSSL-like implementations.
 pub(crate) trait Ossl {
     /// The C type for a certificate.
@@ -41,6 +44,9 @@ pub(crate) trait Ossl {
 
     /// Sets the verify mode to a SSL context.
     fn ssl_context_set_verify_mode(pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>, flags: u32);
+
+    /// Sets the maximum depth for the certificate chain verification.
+    fn ssl_context_set_verify_depth(pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>, depth: u32);
 
     /// Sets the KEM to a SSL context.
     fn ssl_context_set_kems(
@@ -225,6 +231,13 @@ where
                     crate::Mode::Server => crate::ErrorCode::from(pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED),
             })?;
 
+        let depth = common_options
+            .as_ref()
+            .and_then(|co| co.x509_verifier.as_ref())
+            .map(|verifier| verifier.max_verify_depth)
+            .unwrap_or(DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH);
+        OsslInterface::ssl_context_set_verify_depth(&mut ssl_ctx, depth);
+
         let flags = common_options.map(|co| co.flags).unwrap_or(0);
         let mut ctx = match mode {
             crate::Mode::Client => {
@@ -233,6 +246,7 @@ where
             }
             crate::Mode::Server => Self::Server(ssl_ctx),
         };
+
         unwrap_or!(
             ctx.set_certificates(configuration),
             pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
@@ -335,15 +349,22 @@ where
     fn set_certificates(&mut self, configuration: &pb_api::Configuration) -> crate::Result<()> {
         match *self {
             Self::Client(ref mut ssl_ctx) => {
-                let tls = configuration.client().tls();
-                for cert in tls.trusted_certificates.iter() {
-                    read_certificate(cert)
+                if let Some(x509_verifier) = configuration
+                    .client()
+                    .tls()
+                    .common_options
+                    .as_ref()
+                    .and_then(|co| co.x509_verifier.as_ref())
+                {
+                    for cert in x509_verifier.trusted_cas.iter() {
+                        read_certificate(cert)
                         .and_then(|(format, cert)| match format {
                             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM => OsslInterface::certificate_from_pem(cert),
                             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_DER => OsslInterface::certificate_from_der(cert),
                         })
                         .and_then(|cert| OsslInterface::ssl_context_append_certificate_to_trust_store(ssl_ctx, cert))
                         .map_err(|e| e >> pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE)?;
+                    }
                 }
                 Ok(())
             }

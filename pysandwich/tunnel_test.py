@@ -63,7 +63,7 @@ def create_client_conf(s: Sandwich) -> Context:
 
     conf.client.tls.common_options.kem.append(_DEFAULT_KEM)
 
-    cert = conf.client.tls.trusted_certificates.add().static
+    cert = conf.client.tls.common_options.x509_verifier.trusted_cas.add().static
     cert.data.filename = _CERT_PATH
     cert.format = EncodingFormat.ENCODING_FORMAT_PEM
 

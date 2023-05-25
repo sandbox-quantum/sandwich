@@ -29,20 +29,22 @@ func createClientConfiguration() (*api.Configuration, error) {
 							Kem: []string{
 								"kyber1024",
 							},
-						},
-						TrustedCertificates: []*api.Certificate{
-							{
-								Source: &api.Certificate_Static{
-									Static: &api.ASN1DataSource{
-										Data: &api.DataSource{
-											Specifier: &api.DataSource_Filename{
-												Filename: certfile,
-											},
-										},
-										Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
-									},
-								},
-							},
+              X509Verifier: &pb.X509Verifier{
+                TrustedCas: []*pb.Certificate{
+                  {
+                    Source: &pb.Certificate_Static{
+                      Static: &pb.ASN1DataSource{
+                        Data: &pb.DataSource{
+                          Specifier: &pb.DataSource_Filename{
+                            Filename: trustedCert,
+                          },
+                        },
+                        Format: pb.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
+                      },
+                    },
+                  },
+                },
+              },
 						},
 					},
 				},

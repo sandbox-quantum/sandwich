@@ -177,7 +177,11 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .trusted_certificates
+                .common_options
+                .mut_or_insert_default()
+                .x509_verifier
+                .mut_or_insert_default()
+                .trusted_cas
                 .push(create_cert(
                     crate::tls::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
@@ -201,7 +205,11 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .trusted_certificates
+                .common_options
+                .mut_or_insert_default()
+                .x509_verifier
+                .mut_or_insert_default()
+                .trusted_cas
                 .push(create_cert(
                     crate::tls::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
@@ -229,7 +237,11 @@ pub(crate) mod test {
             config
                 .mut_client()
                 .mut_tls()
-                .trusted_certificates
+                .common_options
+                .mut_or_insert_default()
+                .x509_verifier
+                .mut_or_insert_default()
+                .trusted_cas
                 .push(create_cert(
                     crate::tls::test::CERT_PEM_PATH,
                     Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),

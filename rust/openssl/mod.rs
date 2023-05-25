@@ -141,13 +141,15 @@ pub(crate) mod test {
               tls <
                 common_options <
                   kem: "kyber512"
-                >
-                trusted_certificates <
-                  static <
-                    data <
-                      filename: "{}"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
                   >
                 >
               >
@@ -230,13 +232,15 @@ pub(crate) mod test {
               tls <
                 common_options <
                   kem: "kyber512"
-                >
-                trusted_certificates <
-                  static <
-                    data <
-                      filename: "{}"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
                   >
                 >
               >
@@ -318,13 +322,15 @@ pub(crate) mod test {
               tls <
                 common_options <
                   kem: "kyber512"
-                >
-                trusted_certificates <
-                  static <
-                    data <
-                      filename: "{}"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
                   >
                 >
               >

@@ -48,9 +48,6 @@ message TLSOptions {
 message TLSClientOptions {
   // Common TLS options.
   TLSOptions common_options = 1;
-
-  // Collection of trusted certificates.
-  repeated Certificate trusted_certificates = 2;
 }
 
 // TLS options, specific to the server mode.

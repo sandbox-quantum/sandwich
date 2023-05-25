@@ -65,12 +65,18 @@ mod test {
 
         let mut config =
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
-        config.mut_client().mut_tls().trusted_certificates.push(
-            crate::context::test::openssl::create_cert(
+        config
+            .mut_client()
+            .mut_tls()
+            .common_options
+            .mut_or_insert_default()
+            .x509_verifier
+            .mut_or_insert_default()
+            .trusted_cas
+            .push(crate::context::test::openssl::create_cert(
                 crate::tls::test::CERT_PEM_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            ),
-        );
+            ));
         config
             .mut_client()
             .mut_tls()
@@ -99,12 +105,18 @@ mod test {
 
         let mut config =
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
-        config.mut_client().mut_tls().trusted_certificates.push(
-            crate::context::test::openssl::create_cert(
+        config
+            .mut_client()
+            .mut_tls()
+            .common_options
+            .mut_or_insert_default()
+            .x509_verifier
+            .mut_or_insert_default()
+            .trusted_cas
+            .push(crate::context::test::openssl::create_cert(
                 crate::tls::test::CERT_PEM_PATH,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-            ),
-        );
+            ));
         config
             .mut_client()
             .mut_tls()

@@ -103,7 +103,9 @@ auto CreateClientContext()
 
   auto *cert = config.mutable_client()
                    ->mutable_tls()
-                   ->add_trusted_certificates()
+                   ->mutable_common_options()
+                   ->mutable_x509_verifier()
+                   ->add_trusted_cas()
                    ->mutable_static_();
   cert->mutable_data()->set_filename("testdata/cert.pem");
   cert->set_format(saq::sandwich::proto::api::v1::ASN1EncodingFormat::

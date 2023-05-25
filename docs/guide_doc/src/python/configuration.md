@@ -20,7 +20,7 @@ conf = SandwichAPI.Configuration()
 conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 conf.client.tls.common_options.kem.append("kyber512")
 
-cert = conf.client.tls.trusted_certificates.add().static
+cert = conf.client.tls.common_options.x509_verifier.trusted_cas.add().static
 cert.data.filename = "testdata/cert.pem"
 cert.format = EncodingFormat.ENCODING_FORMAT_PEM
 

@@ -52,7 +52,7 @@ conf.impl = SandwichProto.Implementation.IMPL_OPENSSL_1_1_1
 conf.client.tls.common_options.kem.append("kyber512")
 
 # Add certificate
-cert = conf.client.tls.trusted_certificates.add()
+cert = conf.client.tls.common_options.x509_verifier.trusted_cas.add().static
 cert.path = "cert.der"
 cert.format = SandwichProto.EncodingFormat.ENCODING_FORMAT_DER
 

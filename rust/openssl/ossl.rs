@@ -157,6 +157,12 @@ impl crate::ossl::Ossl for Ossl {
         }
     }
 
+    fn ssl_context_set_verify_depth(pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>, depth: u32) {
+        unsafe {
+            openssl::SSL_CTX_set_verify_depth(pimpl.as_mut_ptr(), depth as i32);
+        }
+    }
+
     fn ssl_context_set_kems(
         ssl_ctx: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
         kems: std::slice::Iter<'_, std::string::String>,
