@@ -143,14 +143,15 @@ pub(crate) trait Ossl {
 }
 
 /// A generic context that uses an OpenSSL-like backend.
-pub(crate) enum OsslContext<'ctx, OsslInterface>
+pub(crate) struct OsslContext<'ctx, OsslInterface>
 where
     OsslInterface: Ossl,
 {
-    /// Client mode.
-    Client(crate::Pimpl<'ctx, OsslInterface::NativeSslCtx>),
-    /// Server mode.
-    Server(crate::Pimpl<'ctx, OsslInterface::NativeSslCtx>),
+    /// Execution mode.
+    mode: crate::Mode,
+
+    /// SSL context.
+    ssl_ctx: crate::Pimpl<'ctx, OsslInterface::NativeSslCtx>,
 }
 
 /// Implements [`std::fmt::Debug`] for [`Ossl`].
@@ -239,13 +240,10 @@ where
         OsslInterface::ssl_context_set_verify_depth(&mut ssl_ctx, depth);
 
         let flags = common_options.map(|co| co.flags).unwrap_or(0);
-        let mut ctx = match mode {
-            crate::Mode::Client => {
-                OsslInterface::ssl_context_set_verify_mode(&mut ssl_ctx, flags as u32);
-                Self::Client(ssl_ctx)
-            }
-            crate::Mode::Server => Self::Server(ssl_ctx),
-        };
+        if mode == crate::Mode::Client {
+            OsslInterface::ssl_context_set_verify_mode(&mut ssl_ctx, flags as u32);
+        }
+        let mut ctx = Self { mode, ssl_ctx };
 
         unwrap_or!(
             ctx.set_certificates(configuration),
@@ -266,10 +264,7 @@ where
     OsslInterface: Ossl,
 {
     fn borrow(&self) -> &crate::Pimpl<'ctx, OsslInterface::NativeSslCtx> {
-        match *self {
-            Self::Client(ref ctx) => ctx,
-            Self::Server(ref ctx) => ctx,
-        }
+        &self.ssl_ctx
     }
 }
 
@@ -280,10 +275,7 @@ where
     OsslInterface: Ossl,
 {
     fn borrow_mut(&mut self) -> &mut crate::Pimpl<'ctx, OsslInterface::NativeSslCtx> {
-        match *self {
-            Self::Client(ref mut ctx) => ctx,
-            Self::Server(ref mut ctx) => ctx,
-        }
+        &mut self.ssl_ctx
     }
 }
 
@@ -347,8 +339,8 @@ where
     /// If client mode, then it appends the supplied certificates to the trust store.
     /// If server mode, then it sets the certificate to use.
     fn set_certificates(&mut self, configuration: &pb_api::Configuration) -> crate::Result<()> {
-        match *self {
-            Self::Client(ref mut ssl_ctx) => {
+        match self.mode {
+            crate::Mode::Client => {
                 if let Some(x509_verifier) = configuration
                     .client()
                     .tls()
@@ -362,20 +354,20 @@ where
                             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM => OsslInterface::certificate_from_pem(cert),
                             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_DER => OsslInterface::certificate_from_der(cert),
                         })
-                        .and_then(|cert| OsslInterface::ssl_context_append_certificate_to_trust_store(ssl_ctx, cert))
+                        .and_then(|cert| OsslInterface::ssl_context_append_certificate_to_trust_store(&self.ssl_ctx, cert))
                         .map_err(|e| e >> pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE)?;
                     }
                 }
                 Ok(())
             }
-            Self::Server(ref mut ssl_ctx) => {
+            crate::Mode::Server => {
                 if let Some(cert) = configuration.server().tls().certificate.as_ref() {
                     read_certificate(cert)
                         .and_then(|(format, cert)| match format {
                             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM => OsslInterface::certificate_from_pem(cert),
                             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_DER => OsslInterface::certificate_from_der(cert),
                         })
-                        .and_then(|cert| OsslInterface::ssl_context_set_certificate(ssl_ctx, cert))
+                        .and_then(|cert| OsslInterface::ssl_context_set_certificate(&mut self.ssl_ctx, cert))
                         .map_err(|e| e >> pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE)
                 } else {
                     Ok(())
@@ -386,14 +378,14 @@ where
 
     /// Sets the private key.
     fn set_private_key(&mut self, configuration: &pb_api::Configuration) -> crate::Result<()> {
-        if let Self::Server(ref mut ssl_ctx) = *self {
+        if self.mode == crate::Mode::Server {
             if let Some(private_key) = configuration.server().tls().private_key.as_ref() {
                 read_private_key(private_key)
                     .and_then(|(format, private_key)| match format {
                         pb_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM => OsslInterface::private_key_from_pem(private_key),
                         pb_api::ASN1EncodingFormat::ENCODING_FORMAT_DER => OsslInterface::private_key_from_der(private_key),
                     })
-                    .and_then(|private_key| OsslInterface::ssl_context_set_private_key(ssl_ctx, private_key))
+                    .and_then(|private_key| OsslInterface::ssl_context_set_private_key(&mut self.ssl_ctx, private_key))
                     .map_err(|e| e >> pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY)
             } else {
                 Ok(())
@@ -458,10 +450,6 @@ where
         ),
     ) -> std::result::Result<OsslTunnel<'io, 'tun, OsslInterface>, Self::Error> {
         use std::borrow::BorrowMut;
-        let mode = match *ctx {
-            OsslContext::Client(_) => crate::Mode::Client,
-            OsslContext::Server(_) => crate::Mode::Server,
-        };
 
         let ssl = OsslInterface::new_ssl_handle(ctx.borrow_mut());
         let ssl = if let Err(e) = ssl {
@@ -479,7 +467,7 @@ where
         let bio = crate::Pimpl::from_raw(bio.into_raw(), None);
 
         Ok(Self {
-            mode,
+            mode: ctx.mode,
             ssl,
             bio,
             io,
