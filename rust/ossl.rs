@@ -107,15 +107,16 @@ pub(crate) trait Ossl {
     ) -> crate::Result<()>;
 
     /// Sets the verify_error location for an SSL context
-    fn ssl_set_verify_error(
+    fn ssl_set_extra_data_for_verify<T>(
         ssl: *mut Self::NativeSsl,
-        verify_error_ptr: *mut std::ffi::c_int,
+        extra_data: *mut T,
     ) -> Result<(), pb::SystemError>;
 
     /// Performs the handshake.
     fn ssl_handshake(
         ssl: *mut Self::NativeSsl,
         mode: crate::Mode,
+        tun: &OsslTunnel<'_, '_, Self>,
     ) -> (crate::Result<pb::tunnel::HandshakeState>, Option<pb::State>);
 
     /// Reads from a SSL handle.
@@ -385,7 +386,7 @@ where
 /// A generic tunnel that uses an OpenSSL-like backend.
 pub(crate) struct OsslTunnel<'io, 'tun, OsslInterface>
 where
-    OsslInterface: Ossl,
+    OsslInterface: Ossl + ?Sized,
 {
     /// The current mode.
     pub(crate) mode: crate::Mode,
@@ -489,7 +490,7 @@ where
         }
 
         let (handshake_state, tunnel_state) =
-            OsslInterface::ssl_handshake(self.ssl.as_mut_ptr(), self.mode);
+            OsslInterface::ssl_handshake(self.ssl.as_mut_ptr(), self.mode, self);
         if let Some(tunnel_state) = tunnel_state {
             self.state = tunnel_state;
         }
@@ -570,10 +571,9 @@ where
             return Err((e, tun.io));
         }
 
-        if let Err(e) = OsslInterface::ssl_set_verify_error(
-            tun.ssl.as_mut_ptr(),
-            &mut tun.verify_error as *mut std::ffi::c_int,
-        ) {
+        let tun_ptr: *mut OsslTunnel<OsslInterface> = &mut *tun;
+        if let Err(e) = OsslInterface::ssl_set_extra_data_for_verify(tun.ssl.as_mut_ptr(), tun_ptr)
+        {
             return Err((e.into(), tun.io));
         }
         Ok(tun)

@@ -20,6 +20,7 @@ option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v
 
 import "pysandwich/proto/api/v1/certificate.proto";
 import "pysandwich/proto/api/v1/private_key.proto";
+import "pysandwich/proto/api/v1/verifiers.proto";
 
 enum TLSFlags {
   // Unspecified flags.
@@ -37,7 +38,10 @@ message TLSOptions {
   // Flags, as options.
   int32 flags = 2;
 
-  // Next id: 3
+  // X.509 verifier.
+  X509Verifier x509_verifier = 3;
+
+  // Next id: 4
 }
 
 // TLS options, specific to the client mode.

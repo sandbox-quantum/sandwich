@@ -411,16 +411,12 @@ impl crate::ossl::Ossl for Ossl {
         Ok(())
     }
 
-    fn ssl_set_verify_error(
+    fn ssl_set_extra_data_for_verify<T>(
         ssl: *mut Self::NativeSsl,
-        verify_error_ptr: *mut std::ffi::c_int,
+        extra_data: *mut T,
     ) -> Result<(), pb::SystemError> {
         if unsafe {
-            openssl::SSL_set_ex_data(
-                ssl,
-                crate::openssl::VERIFICATION_ERROR_INDEX,
-                verify_error_ptr as *mut std::ffi::c_void,
-            )
+            openssl::SSL_set_ex_data(ssl, crate::openssl::VERIFY_TUNNEL_INDEX, extra_data.cast())
         } as u64
             == 0
         {
@@ -432,6 +428,7 @@ impl crate::ossl::Ossl for Ossl {
     fn ssl_handshake(
         ssl: *mut Self::NativeSsl,
         mode: crate::Mode,
+        tun: &crate::ossl::OsslTunnel<Ossl>,
     ) -> (crate::Result<pb::tunnel::HandshakeState>, Option<pb::State>) {
         let err = match mode {
             crate::Mode::Client => unsafe { openssl::SSL_connect(ssl) },
@@ -477,26 +474,9 @@ impl crate::ossl::Ossl for Ossl {
                         );
                     }
                     if errlib != openssl::ERR_LIB_SSL {
-                        let verify_err;
-                        unsafe {
-                            let ve = openssl::SSL_get_ex_data(
-                                ssl,
-                                crate::openssl::VERIFICATION_ERROR_INDEX,
-                            ) as *const std::ffi::c_void;
-                            if (ve as *const std::ffi::c_void).is_null() {
-                                return (
-                                    Err(crate::Error::from((
-                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
-                                        err_string,
-                                    ))),
-                                    Some(pb::State::STATE_ERROR),
-                                );
-                            }
-                            verify_err = *(ve as *const std::ffi::c_int) as u32;
-                        }
-                        let x_e_s =
-                            unsafe { openssl::X509_verify_cert_error_string(verify_err as i64) }
-                                as *mut i8;
+                        let x_e_s = unsafe {
+                            openssl::X509_verify_cert_error_string(tun.verify_error as i64)
+                        } as *mut i8;
                         let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
                         let mut x509_error_str = err_string + "; ";
                         if let Ok(s) = x509_error_cstr.to_str() {
@@ -510,7 +490,7 @@ impl crate::ossl::Ossl for Ossl {
                                 Some(pb::State::STATE_ERROR),
                             );
                         }
-                        return match verify_err {
+                        return match tun.verify_error as u32 {
                             openssl::X509_V_OK => {
                                 (
                                     Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, x509_error_str))),
@@ -548,23 +528,8 @@ impl crate::ossl::Ossl for Ossl {
                     }
                     match err & 0xFFF {
                         openssl::SSL_R_CERTIFICATE_VERIFY_FAILED => {
-                            let verify_err;
-                            unsafe {
-                                let ve = openssl::SSL_get_ex_data(
-                                    ssl,
-                                    crate::openssl::VERIFICATION_ERROR_INDEX,
-                                )
-                                    as *const std::ffi::c_void;
-                                if (ve as *const std::ffi::c_void).is_null() {
-                                    return (
-                                    Err(pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED.into()),
-                                    Some(pb::State::STATE_ERROR),
-                                    );
-                                }
-                                verify_err = *(ve as *const std::ffi::c_int) as u32;
-                            }
                             let x_e_s = unsafe {
-                                openssl::X509_verify_cert_error_string(verify_err as i64)
+                                openssl::X509_verify_cert_error_string(tun.verify_error as i64)
                             } as *mut i8;
                             let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
                             let mut x509_error_str = err_string + "; ";
@@ -579,7 +544,7 @@ impl crate::ossl::Ossl for Ossl {
                                     Some(pb::State::STATE_ERROR),
                                 );
                             }
-                            match verify_err {
+                            match tun.verify_error as u32 {
                                 openssl::X509_V_ERR_CERT_HAS_EXPIRED => (
                                     Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED, x509_error_str))),
                                     Some(pb::State::STATE_ERROR),
@@ -722,13 +687,12 @@ extern "C" fn openssl_verify_callback(
             let err = openssl::X509_STORE_CTX_get_error(ctx);
             let ssl_idx = openssl::SSL_get_ex_data_X509_STORE_CTX_idx();
             let ssl = openssl::X509_STORE_CTX_get_ex_data(ctx, ssl_idx) as *const openssl::ssl_st;
-            let verify_reason: *mut std::ffi::c_void =
-                openssl::SSL_get_ex_data(ssl, crate::openssl::VERIFICATION_ERROR_INDEX)
-                    as *mut std::ffi::c_void;
-            if (verify_reason as *const std::ffi::c_void).is_null() {
+            let tun = openssl::SSL_get_ex_data(ssl, crate::openssl::VERIFY_TUNNEL_INDEX)
+                as *mut crate::ossl::OsslTunnel<Ossl>;
+            if tun.is_null() {
                 return verify_ok;
             }
-            *(verify_reason as *mut std::ffi::c_int) = err;
+            (*tun).verify_error = err;
         }
     }
     verify_ok

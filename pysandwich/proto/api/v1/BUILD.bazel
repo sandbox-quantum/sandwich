@@ -45,11 +45,20 @@ proto_library(
 )
 
 proto_library(
+    name = "verifiers_proto",
+    srcs = ["verifiers.proto"],
+    deps = [
+        ":certificate_proto",
+    ],
+)
+
+proto_library(
     name = "tls_proto",
     srcs = ["tls.proto"],
     deps = [
         ":certificate_proto",
         ":private_key_proto",
+        ":verifiers_proto",
     ],
 )
 
@@ -122,6 +131,17 @@ py_proto_library(
 )
 
 py_proto_library(
+    name = "verifiers_python_proto",
+    srcs = [
+        "verifiers.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":certificate_python_proto",
+    ],
+)
+
+py_proto_library(
     name = "tls_python_proto",
     srcs = [
         "tls.proto",
@@ -130,6 +150,7 @@ py_proto_library(
     deps = [
         ":certificate_python_proto",
         ":private_key_python_proto",
+        ":verifiers_python_proto",
     ],
 )
 

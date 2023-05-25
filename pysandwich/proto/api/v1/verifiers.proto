@@ -1,0 +1,74 @@
+// Copyright 2023 SandboxAQ
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
+
+import "pysandwich/proto/api/v1/certificate.proto";
+
+// Verifier for X.509-based protocols, such as TLS.
+message X509Verifier {
+  // List of trusted certificate authority certificates.
+  repeated Certificate trusted_cas = 1;
+
+  // List of sha256 digests of Subject Public Key Information (SPKI).
+  // Hash of leaf certificates SPKIs being presented to Sandwich must match
+  // one of those.
+  //
+  // If the list is empty, SPKIs verification is disabled.
+  //
+  // This is commonly used to do certificate pinning.
+  //
+  // This hash can be obtained with the following command:
+  //
+  // ```
+  // openssl x509 -in path/to/certificate.crt -noout -pubkey
+  //  | openssl pkey -outform DER -pubin
+  //  | openssl dgst -sha256 -binary
+  // ```
+  repeated bytes verify_certificate_spki = 2;
+
+  // List of sha256 digests of certificates.
+  // Hash of leaf certificate being presented to Sandwich must match
+  // one of those.
+  //
+  // If the list is empty, hash-based certificate verification is disabled.
+  //
+  // This is commonly used to do certificate pinning.
+  //
+  // This hash can be obtained with the following command:
+  //
+  // ```
+  // openssl x509 -in path/to/certificate.crt -outform DER
+  //  | openssl dgst -sha256 -binary
+  // ```
+  repeated bytes verify_certificate_hash = 3;
+
+  // Allow expired certificates.
+  //
+  // If true, no error is returned if an expired certificate is present in the
+  // chain of certificates.
+  //
+  // Default: false.
+  bool allow_expired_certificate = 4;
+
+  // Maximum depth of a certificate chain.
+  // The leaf certificate is ignored when counting certificates.
+  //
+  // Default: 100.
+  uint32 max_verify_depth = 5;
+}
