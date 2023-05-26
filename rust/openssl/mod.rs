@@ -77,7 +77,7 @@ pub(crate) mod test {
         fn read(&mut self, buf: &mut [u8], _state: pb::State) -> crate::io::Result<usize> {
             let n = std::cmp::min(buf.len(), self.buf.len());
             if n > 0 {
-                buf.copy_from_slice(&self.buf[0..n]);
+                buf[0..n].copy_from_slice(&self.buf[0..n]);
                 self.buf.drain(0..n);
             }
             if n == buf.len() {
@@ -98,7 +98,7 @@ pub(crate) mod test {
 
             let result = n;
             let n = std::cmp::min(r, self.buf.len());
-            buf.copy_from_slice(&self.buf[0..n]);
+            buf[result..result + n].copy_from_slice(&self.buf[0..n]);
             self.buf.drain(0..n);
             Ok(result + n)
         }
