@@ -21,10 +21,9 @@ package sandwich
 import "C"
 
 import (
+	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 	"runtime"
 	"unsafe"
-
-	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 
@@ -45,33 +44,36 @@ func createError(chain *C.struct_SandwichError) error {
 	for chain != nil {
 		if _, ok := pb.ErrorKind_name[int32(chain.kind)]; ok {
 			var e Error = nil
+			var msg string = C.GoString(chain.msg)
 			switch pb.ErrorKind(chain.kind) {
 			case pb.ErrorKind_ERRORKIND_API:
-				e = newAPIError(pb.APIError(chain.code))
+				e = newAPIError(pb.APIError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_CONFIGURATION:
-				e = newConfigurationError(pb.ConfigurationError(chain.code))
+				e = newConfigurationError(pb.ConfigurationError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_OPENSSL_CONFIGURATION:
-				e = newOpenSSLConfigurationError(pb.OpenSSLConfigurationError(chain.code))
+				e = newOpenSSLConfigurationError(pb.OpenSSLConfigurationError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_OPENSSL_CLIENT_CONFIGURATION:
-				e = newOpenSSLClientConfigurationError(pb.OpenSSLClientConfigurationError(chain.code))
+				e = newOpenSSLClientConfigurationError(pb.OpenSSLClientConfigurationError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_OPENSSL_SERVER_CONFIGURATION:
-				e = newOpenSSLServerConfigurationError(pb.OpenSSLServerConfigurationError(chain.code))
+				e = newOpenSSLServerConfigurationError(pb.OpenSSLServerConfigurationError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_CERTIFICATE:
-				e = newCertificateError(pb.CertificateError(chain.code))
+				e = newCertificateError(pb.CertificateError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_SYSTEM:
-				e = newSystemError(pb.SystemError(chain.code))
+				e = newSystemError(pb.SystemError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_SOCKET:
-				e = newSocketError(pb.SocketError(chain.code))
+				e = newSocketError(pb.SocketError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_PROTOBUF:
-				e = newProtobufError(pb.ProtobufError(chain.code))
+				e = newProtobufError(pb.ProtobufError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_PRIVATE_KEY:
-				e = newPrivateKeyError(pb.PrivateKeyError(chain.code))
+				e = newPrivateKeyError(pb.PrivateKeyError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_ASN1:
-				e = newASN1Error(pb.ASN1Error(chain.code))
+				e = newASN1Error(pb.ASN1Error(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_DATA_SOURCE:
-				e = newDataSourceError(pb.DataSourceError(chain.code))
+				e = newDataSourceError(pb.DataSourceError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_KEM:
-				e = newKEMError(pb.KEMError(chain.code))
+				e = newKEMError(pb.KEMError(chain.code), msg)
+			case pb.ErrorKind_ERRORKIND_HANDSHAKE:
+				e = newHandshakeError(pb.HandshakeError(chain.code), msg)
 			}
 			if root == nil {
 				root = e
@@ -90,12 +92,12 @@ func createError(chain *C.struct_SandwichError) error {
 func NewContext(configuration *api.Configuration) (*Context, error) {
 	out, err := proto.Marshal(configuration)
 	if err != nil {
-		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED)
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED, "")
 	}
 
 	n := len(out)
 	if n == 0 {
-		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_EMPTY)
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_EMPTY, "")
 	}
 
 	ctx := new(Context)
@@ -150,11 +152,17 @@ func (tun *Tunnel) State() pb.State {
 // Handshakes performs or resumes the handshake stage.
 // If nil is returned, it means the handshake is done.
 func (tun *Tunnel) Handshake() error {
-	err := C.sandwich_tunnel_handshake(tun.handle)
-	if int32(err) == int32(pb.HandshakeState_HANDSHAKESTATE_DONE) {
+	var state uint32 = 0
+	errc := C.sandwich_tunnel_handshake(tun.handle, &state)
+	if errc != nil {
+		err := createError(errc)
+		C.sandwich_error_free(errc)
+		return err
+	}
+	if int32(state) == int32(pb.HandshakeState_HANDSHAKESTATE_DONE) {
 		return nil
 	}
-	return newHandshakeError(int32(err))
+	return newHandshakeStateError(int32(state), "")
 }
 
 // Read implements the io.Reader interface.
@@ -164,7 +172,7 @@ func (tun *Tunnel) Read(b []byte) (int, error) {
 		C.size_t(len(b)),
 		&read_n)
 	if int32(err) != int32(pb.RecordError_RECORDERROR_OK) {
-		return 0, newRecordPlaneError(int32(err))
+		return 0, newRecordPlaneError(int32(err), "")
 	}
 	return int(read_n), nil
 }
@@ -176,7 +184,7 @@ func (tun *Tunnel) Write(b []byte) (int, error) {
 		C.size_t(len(b)),
 		&write_n)
 	if int32(err) != int32(pb.RecordError_RECORDERROR_OK) {
-		return 0, newRecordPlaneError(int32(err))
+		return 0, newRecordPlaneError(int32(err), "")
 	}
 	return int(write_n), nil
 }

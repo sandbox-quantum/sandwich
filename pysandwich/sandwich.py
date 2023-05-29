@@ -143,6 +143,7 @@ class _ErrorC(ctypes.Structure):
 
     _fields_ = [
         ("details", ctypes.c_void_p),
+        ("msg", ctypes.c_char_p),
         ("kind", ctypes.c_int32),
         ("code", ctypes.c_int32),
     ]
@@ -155,7 +156,7 @@ def _error_code_to_exception(ptr: ctypes.c_void_p):
     head_excp = None
     current_excp = None
     while ec:
-        excp = Error.new(ec.contents.code, ec.contents.kind)
+        excp = Error.new(ec.contents.code, ec.contents.kind, ec.contents.msg)
         if head_excp is None:
             head_excp = excp
             current_excp = excp
@@ -365,13 +366,23 @@ class Tunnel:
                 The implementation wants to write data to the wire, but the
                 underlying I/O interface is non-blocking.
             Tunnel.HandshakeErrorException:
-                An unknown error occurred during the handshake.
+                The implementation experienced an error while performing the
+                handshake. (e.g. expired or revoked certificates, bad signature, etc.)
         """
 
-        err = self._C.c_call("sandwich_tunnel_handshake", self._handle)
-
-        if err != errors.HandshakeException.ERROR_OK:
-            raise errors.HandshakeException.new(err)
+        handshake_state = ctypes.c_int32()
+        err = self._C.c_call(
+            "sandwich_tunnel_handshake",
+            self._handle,
+            ctypes.byref(handshake_state),
+        )
+        if err is not None:
+            excp = _error_code_to_exception(err)
+            self._C.c_call("sandwich_error_free", err)
+            raise excp
+        handshake_state = handshake_state.value
+        if handshake_state != errors.HandshakeException.ERROR_OK:
+            raise errors.HandshakeException.new(handshake_state)
 
     def read(self, n: int) -> bytes:
         """Reads bytes from the tunnel.
@@ -565,7 +576,10 @@ class Sandwich:
         ),
         # enum SandwichTunnelHandshakeState sandwich_tunnel_handshake(
         #       struct SandwichTunnel *tun);
-        "sandwich_tunnel_handshake": ([ctypes.c_void_p], ctypes.c_uint),
+        "sandwich_tunnel_handshake": (
+            [ctypes.c_void_p, ctypes.c_void_p],
+            ctypes.c_void_p,
+        ),
         # enum SandwichTunnelRecordError sandwich_tunnel_read(
         #       struct SandwichTunnel *tun,
         #       void *dst,

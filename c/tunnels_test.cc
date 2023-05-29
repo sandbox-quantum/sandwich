@@ -310,7 +310,9 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 ///
 /// \param client Client's tunnel.
 void ClientInitiateHandshake(struct ::SandwichTunnel *client) {
-  const auto state{::sandwich_tunnel_handshake(client)};
+  enum ::SandwichTunnelHandshakeState state;
+  const auto err{::sandwich_tunnel_handshake(client, &state)};
+  sandwich_assert(err == NULL);
   std::cout << "state=" << state << '\n';
   sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ);
 
@@ -330,8 +332,9 @@ void ClientInitiateHandshake(struct ::SandwichTunnel *client) {
 void ServerAnswerHandshake(struct ::SandwichTunnel *server) {
   sandwich_assert(::sandwich_tunnel_state(server) ==
                   SANDWICH_TUNNEL_STATE_NOT_CONNECTED);
-
-  const auto state{::sandwich_tunnel_handshake(server)};
+  enum ::SandwichTunnelHandshakeState state;
+  const auto err{::sandwich_tunnel_handshake(server, &state)};
+  sandwich_assert(err == NULL);
   sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ);
 
   sandwich_assert(::sandwich_tunnel_state(server) ==
@@ -347,7 +350,9 @@ void ServerAnswerHandshake(struct ::SandwichTunnel *server) {
 ///
 /// \param client Client's tunnel.
 void ClientCompleteHandshake(struct ::SandwichTunnel *client) {
-  const auto state{::sandwich_tunnel_handshake(client)};
+  enum ::SandwichTunnelHandshakeState state;
+  const auto err{::sandwich_tunnel_handshake(client, &state)};
+  sandwich_assert(err == NULL);
   sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_DONE);
 
   sandwich_assert(sandwich_tunnel_state(client) ==
@@ -363,7 +368,9 @@ void ClientCompleteHandshake(struct ::SandwichTunnel *client) {
 ///
 /// \param server Server's tunnel.
 void ServerCompleteHandshake(struct ::SandwichTunnel *server) {
-  const auto state{::sandwich_tunnel_handshake(server)};
+  enum ::SandwichTunnelHandshakeState state;
+  const auto err{::sandwich_tunnel_handshake(server, &state)};
+  sandwich_assert(err == NULL);
   sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_DONE);
 
   sandwich_assert(::sandwich_tunnel_state(server) ==

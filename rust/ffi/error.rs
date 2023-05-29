@@ -19,6 +19,7 @@
 #[repr(C)]
 pub struct Error {
     pub(self) details: *mut Error,
+    pub(self) msg: *mut i8,
     pub(self) kind: i32,
     pub(self) code: i32,
 }
@@ -28,11 +29,21 @@ impl std::convert::From<crate::Error> for *mut Error {
     fn from(e: crate::Error) -> *mut Error {
         let mut root: *mut Error = std::ptr::null_mut();
         let mut cur: *mut Error = std::ptr::null_mut();
-
         for ec in e.iter().rev() {
             let (kind, code) = <_ as std::convert::Into<(i32, i32)>>::into(ec);
+            let msg = match ec.msg() {
+                Some(s) => {
+                    if let Ok(cstring) = std::ffi::CString::new(s) {
+                        cstring.into_raw()
+                    } else {
+                        std::ptr::null_mut()
+                    }
+                }
+                None => std::ptr::null_mut(),
+            };
             let e_c = Box::<Error>::new(Error {
                 details: std::ptr::null_mut(),
+                msg,
                 kind,
                 code,
             });
@@ -55,6 +66,9 @@ impl std::convert::From<crate::Error> for *mut Error {
 pub extern "C" fn sandwich_error_free(mut ptr: *mut Error) {
     while !ptr.is_null() {
         let b = unsafe { Box::from_raw(ptr) };
+        if !b.msg.is_null() {
+            let _s = unsafe { std::ffi::CString::from_raw(b.msg) };
+        }
         ptr = b.details;
     }
 }

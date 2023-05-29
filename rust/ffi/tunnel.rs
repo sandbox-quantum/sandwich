@@ -48,14 +48,24 @@ pub extern "C" fn sandwich_tunnel_free(tun: *mut std::ffi::c_void) {
 
 /// Performs the handshake.
 #[no_mangle]
-pub extern "C" fn sandwich_tunnel_handshake(tun: *mut std::ffi::c_void) -> i32 {
+pub extern "C" fn sandwich_tunnel_handshake(
+    tun: *mut std::ffi::c_void,
+    state: *mut std::ffi::c_int,
+) -> *mut super::Error {
     use protobuf::Enum;
     let mut b: Box<Box<dyn crate::tunnel::Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
-    let state = b
-        .handshake()
-        .unwrap_or(pb::HandshakeState::HANDSHAKESTATE_ERROR.into());
+    let r = b.handshake();
     Box::into_raw(b);
-    state.value().value()
+    match r {
+        Err(e) => {
+            unsafe { *state = pb::HandshakeState::HANDSHAKESTATE_ERROR.value() };
+            e.into()
+        }
+        Ok(v) => {
+            unsafe { *state = v.value().value() };
+            std::ptr::null_mut()
+        }
+    }
 }
 
 /// Performs a read operation.

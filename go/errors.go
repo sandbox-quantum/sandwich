@@ -98,16 +98,20 @@ var apiErrorMap = map[pb.APIError]string{
 }
 
 // newAPIError creates an APIError from an error code.
-func newAPIError(code pb.APIError) *APIError {
-	var msg string
+func newAPIError(code pb.APIError, msg string) *APIError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := apiErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown API error code %d", int32(code))
+		m = fmt.Sprintf("unknown API error code %d", int32(code))
 	}
 	return &APIError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -127,16 +131,20 @@ var configurationErrorMap = map[pb.ConfigurationError]string{
 }
 
 // newConfigurationError creates a ConfigurationError from an error code.
-func newConfigurationError(code pb.ConfigurationError) *ConfigurationError {
-	var msg string
+func newConfigurationError(code pb.ConfigurationError, msg string) *ConfigurationError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := configurationErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown configuration error code %d", int32(code))
+		m = fmt.Sprintf("unknown configuration error code %d", int32(code))
 	}
 	return &ConfigurationError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -158,16 +166,20 @@ var openSSLConfigurationErrorMap = map[pb.OpenSSLConfigurationError]string{
 }
 
 // newOpenSSLConfigurationError creates a OpenSSLConfigurationError from an error code.
-func newOpenSSLConfigurationError(code pb.OpenSSLConfigurationError) *OpenSSLConfigurationError {
-	var msg string
+func newOpenSSLConfigurationError(code pb.OpenSSLConfigurationError, msg string) *OpenSSLConfigurationError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := openSSLConfigurationErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown OpenSSL configuration error code %d", int32(code))
+		m = fmt.Sprintf("unknown OpenSSL configuration error code %d", int32(code))
 	}
 	return &OpenSSLConfigurationError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -192,16 +204,20 @@ var openSSLClientConfigurationErrorMap = map[pb.OpenSSLClientConfigurationError]
 }
 
 // newOpenSSLClientConfigurationError creates a OpenSSLClientConfigurationError from an error code.
-func newOpenSSLClientConfigurationError(code pb.OpenSSLClientConfigurationError) *OpenSSLClientConfigurationError {
-	var msg string
+func newOpenSSLClientConfigurationError(code pb.OpenSSLClientConfigurationError, msg string) *OpenSSLClientConfigurationError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := openSSLClientConfigurationErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown OpenSSL client configuration error code %d", int32(code))
+		m = fmt.Sprintf("unknown OpenSSL client configuration error code %d", int32(code))
 	}
 	return &OpenSSLClientConfigurationError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -227,16 +243,20 @@ var openSSLServerConfigurationErrorMap = map[pb.OpenSSLServerConfigurationError]
 }
 
 // newOpenSSLServerConfigurationError creates a OpenSSLServerConfigurationError from an error code.
-func newOpenSSLServerConfigurationError(code pb.OpenSSLServerConfigurationError) *OpenSSLServerConfigurationError {
-	var msg string
+func newOpenSSLServerConfigurationError(code pb.OpenSSLServerConfigurationError, msg string) *OpenSSLServerConfigurationError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := openSSLServerConfigurationErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown OpenSSL server configuration error code %d", int32(code))
+		m = fmt.Sprintf("unknown OpenSSL server configuration error code %d", int32(code))
 	}
 	return &OpenSSLServerConfigurationError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -258,16 +278,20 @@ var certificateErrorMap = map[pb.CertificateError]string{
 }
 
 // newCertificateError creates a CertificateError from an error code.
-func newCertificateError(code pb.CertificateError) *CertificateError {
-	var msg string
+func newCertificateError(code pb.CertificateError, msg string) *CertificateError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := certificateErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown certificate error code %d", int32(code))
+		m = fmt.Sprintf("unknown certificate error code %d", int32(code))
 	}
 	return &CertificateError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -289,16 +313,20 @@ var privateKeyErrorMap = map[pb.PrivateKeyError]string{
 }
 
 // newPrivateKeyError creates a PrivateKeyError from an error code.
-func newPrivateKeyError(code pb.PrivateKeyError) *PrivateKeyError {
-	var msg string
+func newPrivateKeyError(code pb.PrivateKeyError, msg string) *PrivateKeyError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := privateKeyErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown private key error code %d", int32(code))
+		m = fmt.Sprintf("unknown private key error code %d", int32(code))
 	}
 	return &PrivateKeyError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -319,16 +347,20 @@ var protobufErrorMap = map[pb.ProtobufError]string{
 }
 
 // newProtobufError creates a ProtobufError from an error code.
-func newProtobufError(code pb.ProtobufError) *ProtobufError {
-	var msg string
+func newProtobufError(code pb.ProtobufError, msg string) *ProtobufError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := protobufErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown protobuf error code %d", int32(code))
+		m = fmt.Sprintf("unknown protobuf error code %d", int32(code))
 	}
 	return &ProtobufError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -346,16 +378,20 @@ var asn1ErrorMap = map[pb.ASN1Error]string{
 }
 
 // newASN1Error creates a ASN1Error from an error code.
-func newASN1Error(code pb.ASN1Error) *ASN1Error {
-	var msg string
+func newASN1Error(code pb.ASN1Error, msg string) *ASN1Error {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := asn1ErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown ASN.1 error code %d", int32(code))
+		m = fmt.Sprintf("unknown ASN.1 error code %d", int32(code))
 	}
 	return &ASN1Error{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -374,16 +410,20 @@ var dataSourceErrorMap = map[pb.DataSourceError]string{
 }
 
 // newDataSourceError creates a DataSourceError from an error code.
-func newDataSourceError(code pb.DataSourceError) *DataSourceError {
-	var msg string
+func newDataSourceError(code pb.DataSourceError, msg string) *DataSourceError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := dataSourceErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown DataSource error code %d", int32(code))
+		m = fmt.Sprintf("unknown DataSource error code %d", int32(code))
 	}
 	return &DataSourceError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -401,16 +441,20 @@ var kEMErrorMap = map[pb.KEMError]string{
 }
 
 // newKEMError creates a KEMError from an error code.
-func newKEMError(code pb.KEMError) *KEMError {
-	var msg string
+func newKEMError(code pb.KEMError, msg string) *KEMError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := kEMErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown KEM error code %d", int32(code))
+		m = fmt.Sprintf("unknown KEM error code %d", int32(code))
 	}
 	return &KEMError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -429,16 +473,20 @@ var systemErrorMap = map[pb.SystemError]string{
 }
 
 // newSystemError creates a SystemError from an error code.
-func newSystemError(code pb.SystemError) *SystemError {
-	var msg string
+func newSystemError(code pb.SystemError, msg string) *SystemError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := systemErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown system error code %d", int32(code))
+		m = fmt.Sprintf("unknown system error code %d", int32(code))
 	}
 	return &SystemError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
@@ -463,32 +511,83 @@ var socketErrorMap = map[pb.SocketError]string{
 }
 
 // newSocketError creates a SocketError from an error code.
-func newSocketError(code pb.SocketError) *SocketError {
-	var msg string
+func newSocketError(code pb.SocketError, msg string) *SocketError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
 	if val, ok := socketErrorMap[code]; ok {
-		msg = val
+		m = val
 	} else {
-		msg = fmt.Sprintf("unknown socket error code %d", int32(code))
+		m = fmt.Sprintf("unknown socket error code %d", int32(code))
 	}
 	return &SocketError{
 		BaseError{
-			msg:  msg,
+			msg:  m + err_msg,
 			code: int32(code),
 		},
 	}
 }
 
-// handshakeErrorMap is a map code -> string for errors regarding the handshake
-// stage. These errors are defined in `tunnel.proto` defined by `HandshakeState`.
-var handshakeErrorMap = map[int32]string{
+// handshakeStateErrorMap is a map code -> string for errors regarding the handshake
+// state. These errors are defined in `tunnel.proto` defined by `HandshakeState`.
+var handshakeStateErrorMap = map[int32]string{
 	int32(pb.HandshakeState_HANDSHAKESTATE_IN_PROGRESS): "the operation is still in progress",
 	int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ):   "the implementation wants to read from the wire, but the underlying I/O is non-blocking",
 	int32(pb.HandshakeState_HANDSHAKESTATE_WANT_WRITE):  "the implementation wants to write to the wire, but the underlying I/O is non-blocking",
 	int32(pb.HandshakeState_HANDSHAKESTATE_ERROR):       "a critical error occurred",
 }
 
-// HandshakeError defines the error that can happens during the handshake stage.
-// These errors are defined by the enum `HandshakeState` in `tunnel.proto`.
+// HandshakeStateError defines errors that take place during the handshake stage.
+// These states are defined by the enum `HandshakeState` in `tunnel.proto`.
+// They are used by `Tunnel.Handshake`.
+type HandshakeStateError struct {
+	BaseError
+}
+
+// NewHandshakeStateError creates an error from an error code.
+// The error code is supposed to match a key in `handshakeStateErrorMap`, defined above.
+func newHandshakeStateError(code int32, msg string) *HandshakeStateError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	if val, ok := handshakeStateErrorMap[code]; ok {
+		return &HandshakeStateError{
+			BaseError{
+				msg:  val + err_msg,
+				code: code,
+			},
+		}
+	}
+	return &HandshakeStateError{
+		BaseError{
+			msg:  fmt.Sprintf("unknown HandshakeStateError code %d;", code),
+			code: code,
+		},
+	}
+}
+
+// NewHandshakeErrorFromEnum creates an error from the enum pb.HandshakeState.
+func newHandshakeStateErrorFromEnum(err pb.HandshakeState) *HandshakeStateError {
+	return newHandshakeStateError(int32(err), "")
+}
+
+// handshakeErrorMap is a map code -> string for errors that take place during
+// the handshake stage. These errors are defined in `errors.proto` defined by `HandshakeError`.
+var handshakeErrorMap = map[int32]string{
+	int32(pb.HandshakeError_HANDSHAKEERROR_INVALID_SERVER_NAME):                       "invalid server name",
+	int32(pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED):           "certificate verification failed",
+	int32(pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_EXPIRED):                       "certificate has expired",
+	int32(pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_REVOKED):                       "certificate is revoked",
+	int32(pb.HandshakeError_HANDSHAKEERROR_INVALID_CERTIFICATE):                       "certificate is invalid",
+	int32(pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED): "certificate signature verification failed",
+	int32(pb.HandshakeError_HANDSHAKEERROR_UNKNOWN_ERROR):                             "unknown handshake error",
+}
+
+// HandshakeError defines errors that can happen during the handshake stage.
+// These errors are defined by the enum `HandshakeError` in `errors.proto`.
 // They are used by `Tunnel.Handshake`.
 type HandshakeError struct {
 	BaseError
@@ -496,26 +595,25 @@ type HandshakeError struct {
 
 // NewHandshakeError creates an error from an error code.
 // The error code is supposed to match a key in `handshakeErrorMap`, defined above.
-func newHandshakeError(code int32) *HandshakeError {
-	if val, ok := handshakeErrorMap[code]; ok {
+func newHandshakeError(code pb.HandshakeError, msg string) *HandshakeError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	if val, ok := handshakeErrorMap[int32(code)]; ok {
 		return &HandshakeError{
 			BaseError{
-				msg:  val,
-				code: code,
+				msg:  val + err_msg,
+				code: int32(code),
 			},
 		}
 	}
 	return &HandshakeError{
 		BaseError{
-			msg:  fmt.Sprintf("unknown HandshakeError code %d", code),
-			code: code,
+			msg:  fmt.Sprintf("unknown HandshakeError code %d;", code),
+			code: int32(code),
 		},
 	}
-}
-
-// NewHandshakeErrorFromEnum creates an error from the enum pb.HandshakeState.
-func newHandshakeErrorFromEnum(err pb.HandshakeState) *HandshakeError {
-	return newHandshakeError(int32(err))
 }
 
 // recordPlaneErrorMap is a map code -> string for errors regarding the record
@@ -537,18 +635,22 @@ type RecordPlaneError struct {
 
 // NewRecordPlaneError creates an error from an error code.
 // The error code is supposed to match a key in `recordPlaneErrorMap`, defined above.
-func newRecordPlaneError(code int32) *RecordPlaneError {
+func newRecordPlaneError(code int32, msg string) *RecordPlaneError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
 	if val, ok := recordPlaneErrorMap[code]; ok {
 		return &RecordPlaneError{
 			BaseError{
-				msg:  val,
+				msg:  val + err_msg,
 				code: code,
 			},
 		}
 	}
 	return &RecordPlaneError{
 		BaseError{
-			msg:  fmt.Sprintf("unknown RecordPlaneError code %d", code),
+			msg:  fmt.Sprintf("unknown RecordPlaneError code %d;", code),
 			code: code,
 		},
 	}
@@ -556,7 +658,7 @@ func newRecordPlaneError(code int32) *RecordPlaneError {
 
 // NewRecordPlaneErrorFromEnum creates an error from the enum pb.RecordError.
 func newRecordPlaneErrorFromEnum(err pb.RecordError) *RecordPlaneError {
-	return newRecordPlaneError(int32(err))
+	return newRecordPlaneError(int32(err), "")
 }
 
 // ioErrorMap is a map code -> string for errors regarding the I/O interface.
@@ -581,18 +683,22 @@ type IOError struct {
 // The error code is supposed to match a key in `ioErrorMap`, defined above.
 // This function is publicly exposed, as it is meant to be used by the user
 // to implement their own I/O interface.
-func NewIOError(code int32) *IOError {
+func NewIOError(code int32, msg string) *IOError {
+	var err_msg = ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
 	if val, ok := ioErrorMap[code]; ok {
 		return &IOError{
 			BaseError{
-				msg:  val,
+				msg:  val + err_msg,
 				code: code,
 			},
 		}
 	}
 	return &IOError{
 		BaseError{
-			msg:  fmt.Sprintf("unknown IOError code %d", code),
+			msg:  fmt.Sprintf("unknown IOError code %d;", code),
 			code: code,
 		},
 	}
@@ -600,5 +706,5 @@ func NewIOError(code int32) *IOError {
 
 // NewIOErrorFromEnum creates an error from the enum pb.IOError.
 func NewIOErrorFromEnum(err pb.IOError) *IOError {
-	return NewIOError(int32(err))
+	return NewIOError(int32(err), "")
 }

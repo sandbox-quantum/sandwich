@@ -49,6 +49,9 @@ struct SandwichError {
   /// \brief The encapsulated error.
   struct SandwichError *details;
 
+  /// \brief An optional error string
+  const char *msg;
+
   /// \brief The error kind. See error::ErrorKind enum.
   SandwichErrorKind kind;
 
@@ -153,10 +156,12 @@ sandwich_tunnel_new(struct SandwichContext *ctx,
 /// \brief Perform the handshake.
 ///
 /// \param[in,out] tun Tunnel.
+/// \param[out] state The state of the tunnel
 ///
-/// \return The state of the handshake.
-SANDWICH_API enum SandwichTunnelHandshakeState
-sandwich_tunnel_handshake(struct SandwichTunnel *tun);
+/// \return Null if no error occured, else a chain of errors.
+SANDWICH_API struct SandwichError *sandwich_tunnel_handshake(
+    struct SandwichTunnel *tun,
+    enum SandwichTunnelHandshakeState *state);
 
 /// \brief Read some bytes from the record plane of the tunnel.
 ///

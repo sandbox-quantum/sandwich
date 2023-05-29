@@ -24,10 +24,10 @@ This file defines the following exception families:
       library.
     * `HandshakeException`: exceptions happening during the handshake stage
       (from `Tunnel.handshake()`).
+    * `HandshakeError`: exceptions relating to errors encountered by the implementation
     * `RecordPlaneException`: exceptions happening in `Tunnel.read` or
       `Tunnel.write`.
     * `IOException`: exceptions happening in the I/O interface (see `io.py`).
-
 All exceptions are based on the error codes defined by the following protobuf:
     * `errors.proto`: `SandwichGlobalException`
     * `tunnel.proto`: `HandshakeException` and `RecordPlaneException`
@@ -55,15 +55,17 @@ class SandwichException(Exception):
         _code: The error code.
     """
 
-    def __init__(self, code, kind=None, *kargs, **kwargs):
+    def __init__(self, code, kind=None, msg=None, *kargs, **kwargs):
         """Constructs a Sandwich exception from an error code.
 
         Arguments:
             code:
                 Error code.
         """
-
-        super().__init__(self._resolve_error_string(code), *kwargs, **kwargs)
+        if not msg:
+            super().__init__(self._resolve_error_string(code), *kwargs, **kwargs)
+        else:
+            super().__init__(msg.decode("ascii"), *kwargs, **kwargs)
         self._kind = kind
         self._code = code
 
@@ -97,7 +99,10 @@ class SandwichException(Exception):
 
     @classmethod
     def new(
-        cls, code: int, kind: SandwichErrorProto.ErrorKind = None
+        cls,
+        code: int,
+        kind: SandwichErrorProto.ErrorKind = None,
+        msg: str = None,
     ) -> "SandwichException":
         """Constructs an exception from an error code.
 
@@ -105,8 +110,7 @@ class SandwichException(Exception):
             The most appropriate exception object.
         """
         if target_cls := _ERROR_KIND_MAP.get(kind):
-            return target_cls(code, kind)
-
+            return target_cls(code, kind, msg)
         errors_map = cls._ERRORS_MAP
         if (
             (errors_map is not None)
@@ -114,8 +118,7 @@ class SandwichException(Exception):
             and ((target_cls := errors_map[code].get("cls")) is not None)
         ):
             return target_cls()(kind=kind)
-
-        return SandwichException(code=code, kind=kind)
+        return SandwichException(code=code, kind=kind, msg=msg)
 
 
 class APIError(SandwichException):
@@ -421,6 +424,34 @@ class SocketError(SandwichException):
     }
 
 
+class HandshakeError(SandwichException):
+    """Map from the protobuf enum 'HandshakeState" to error string."""
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.HANDSHAKEERROR_INVALID_SERVER_NAME: {
+            "msg": "invalid server name",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED: {
+            "msg": "certificate verification failed"
+        },
+        SandwichErrorProto.HANDSHAKEERROR_CERTIFICATE_EXPIRED: {
+            "msg": "certificate has expired",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_CERTIFICATE_REVOKED: {
+            "msg": "certificate is revoked",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_INVALID_CERTIFICATE: {
+            "msg": "certificate is invalid",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED: {
+            "msg": "certificate signature verification failed",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_UNKNOWN_ERROR: {
+            "msg": "unknown handshake error",
+        },
+    }
+
+
 _ERROR_KIND_MAP = {
     SandwichErrorProto.ERRORKIND_API: APIError,
     SandwichErrorProto.ERRORKIND_CONFIGURATION: ConfigurationError,
@@ -435,6 +466,7 @@ _ERROR_KIND_MAP = {
     SandwichErrorProto.ERRORKIND_ASN1: ASN1Error,
     SandwichErrorProto.ERRORKIND_DATA_SOURCE: DataSourceError,
     SandwichErrorProto.ERRORKIND_KEM: KEMError,
+    SandwichErrorProto.ERRORKIND_HANDSHAKE: HandshakeError,
 }
 
 
@@ -472,7 +504,7 @@ class HandshakeException(SandwichException):
         },
         SandwichTunnelProto.HANDSHAKESTATE_ERROR: {
             "msg": "A critical error occurred",
-            "cls": lambda: HandshakeErrorException,
+            "cls": lambda: HandshakeErrorStateException,
         },
     }
 
@@ -504,7 +536,7 @@ class HandshakeWantWriteException(HandshakeException):
         )
 
 
-class HandshakeErrorException(HandshakeException):
+class HandshakeErrorStateException(HandshakeException):
     """Handshake general error"""
 
     def __init__(self, *kargs, **kwargs):

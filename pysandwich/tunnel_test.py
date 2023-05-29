@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import socket
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
@@ -29,6 +30,8 @@ _PONG_MSG = b"PONG"
 
 _CERT_PATH = "testdata/cert.pem"
 _KEY_PATH = "testdata/key.pem"
+_CERT_EXPIRED_PATH = "testdata/cert_expired.pem"
+_KEY_EXPIRED_PATH = "testdata/key_expired.pem"
 
 _DEFAULT_KEM = "kyber512"
 
@@ -71,6 +74,44 @@ def create_client_conf(s: Sandwich) -> Context:
     return Context.from_bytes(s, buf)
 
 
+def create_expired_server_conf(s: Sandwich) -> Context:
+    """Creates the configuration for the server using an expired certificate.
+
+    Returns:
+        Configuration for the server.
+    """
+    conf = SandwichAPI.Configuration()
+    conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
+
+    conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
+    conf.server.tls.certificate.static.data.filename = _CERT_EXPIRED_PATH
+    conf.server.tls.certificate.static.format = EncodingFormat.ENCODING_FORMAT_PEM
+
+    conf.server.tls.private_key.static.data.filename = _KEY_PATH
+    conf.server.tls.private_key.static.format = EncodingFormat.ENCODING_FORMAT_PEM
+
+    return Context.from_config(s, conf)
+
+
+def create_expired_client_conf(s: Sandwich) -> Context:
+    """Creates the configuration for the client using an expired certificate.
+
+    Returns:
+        Configuration for the client.
+    """
+    conf = SandwichAPI.Configuration()
+    conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
+
+    conf.client.tls.common_options.kem.append(_DEFAULT_KEM)
+
+    cert = conf.client.tls.common_options.x509_verifier.trusted_cas.add().static
+    cert.data.filename = _CERT_EXPIRED_PATH
+    cert.format = EncodingFormat.ENCODING_FORMAT_PEM
+
+    buf = conf.SerializeToString()
+    return Context.from_bytes(s, buf)
+
+
 def create_ios() -> (SandwichIO.IO, SandwichIO.IO):
     s1, s2 = socket.socketpair(family=socket.AF_UNIX, type=socket.SOCK_STREAM)
     s1.setblocking(0)
@@ -105,7 +146,9 @@ def main():
             e, errors.HandshakeWantReadException
         ), f"expected WANT_READ, got {e}"
     except Exception as e:
-        AssertionError(f"expected Tunnel.HandshakeWantReadException, got {e}")
+        raise AssertionError(
+            f"expected Tunnel.HandshakeWantReadException, got {e}"
+        ) from e
 
     try:
         server.handshake()
@@ -115,17 +158,19 @@ def main():
             e, errors.HandshakeWantReadException
         ), f"expected WANT_READ, got {e}"
     except Exception as e:
-        AssertionError(f"expected Tunnel.HandshakeWantReadException, got {e}")
+        raise AssertionError(
+            f"expected Tunnel.HandshakeWantReadException, got {e}"
+        ) from e
 
     try:
         client.handshake()
     except Exception as e:
-        AssertionError(f"expected no error, got {e}")
+        raise AssertionError(f"expected no error, got {e}") from e
 
     try:
         server.handshake()
     except Exception as e:
-        AssertionError(f"expected no error, got {e}")
+        raise AssertionError(f"expected no error, got {e}") from e
 
     state = client.state()
     assert (
@@ -141,13 +186,13 @@ def main():
     try:
         w = client.write(_PING_MSG)
     except errors.RecordPlaneException as e:
-        AssertionError(f"expected no error, got {e}")
+        raise AssertionError(f"expected no error, got {e}") from e
     assert w == len(_PING_MSG), f"Expected {len(_PING_MSG)} bytes written, got {w}"
 
     try:
         data = server.read(len(_PING_MSG))
     except errors.RecordPlaneException as e:
-        AssertionError(f"expected no error, got {e}")
+        raise AssertionError(f"expected no error, got {e}") from e
     assert len(data) == len(_PING_MSG), f"Expected {len(_PING_MSG)} bytes read, got {w}"
     assert data == _PING_MSG, f"Expected msg {_PING_MSG} from client, got {data}"
 
@@ -155,16 +200,66 @@ def main():
     try:
         w = server.write(_PONG_MSG)
     except errors.RecordPlaneException as e:
-        AssertionError(f"expected no error, got {e}")
+        raise AssertionError(f"expected no error, got {e}") from e
     assert w == len(_PONG_MSG), f"Expected {len(_PING_MSG)} bytes written, got {w}"
 
     try:
         data = client.read(len(_PONG_MSG))
     except errors.RecordPlaneException as e:
-        AssertionError(f"expected no error, got {e}")
+        raise AssertionError(f"expected no error, got {e}") from e
     assert len(data) == len(_PONG_MSG), f"Expected {len(_PING_MSG)} bytes read, got {w}"
     assert data == _PONG_MSG, f"Expected msg {_PING_MSG} from client, got {data}"
 
+    client.close()
+    server.close()
+
+    # Test with expired certificates
+    client_conf = create_expired_client_conf(s)
+    assert client_conf is not None
+
+    server_conf = create_expired_server_conf(s)
+    assert server_conf is not None
+
+    client_io, server_io = create_ios()
+    assert client_io is not None
+    assert server_io is not None
+
+    server = Tunnel(server_conf, server_io)
+    assert server is not None
+
+    client = Tunnel(client_conf, client_io)
+    assert client is not None
+
+    try:
+        client.handshake()
+        raise AssertionError("expected  WANT_READ, got None")
+    except errors.HandshakeException as e:
+        assert isinstance(
+            e, errors.HandshakeWantReadException
+        ), f"expected WANT_READ, got {e}"
+    except Exception as e:
+        raise AssertionError(
+            f"expected Tunnel.HandshakeWantReadException, got {e}"
+        ) from e
+
+    try:
+        server.handshake()
+        AssertionError("expected  WANT_READ, got None")
+    except errors.HandshakeException as e:
+        assert isinstance(
+            e, errors.HandshakeWantReadException
+        ), f"expected WANT_READ, got {e}"
+    except Exception as e:
+        raise AssertionError(
+            f"expected Tunnel.HandshakeWantReadException, got {e}"
+        ) from e
+
+    try:
+        client.handshake()
+    except errors.HandshakeError:
+        pass
+    except Exception as e:
+        raise AssertionError(f"expected Tunnel.HandshakeError, got {e}") from e
     client.close()
     server.close()
 
