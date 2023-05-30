@@ -70,8 +70,7 @@ mod test {
             .mut_tls()
             .common_options
             .mut_or_insert_default()
-            .x509_verifier
-            .mut_or_insert_default()
+            .mut_x509_verifier()
             .trusted_cas
             .push(crate::context::test::openssl::create_cert(
                 crate::tls::test::CERT_PEM_PATH,
@@ -110,8 +109,7 @@ mod test {
             .mut_tls()
             .common_options
             .mut_or_insert_default()
-            .x509_verifier
-            .mut_or_insert_default()
+            .mut_x509_verifier()
             .trusted_cas
             .push(crate::context::test::openssl::create_cert(
                 crate::tls::test::CERT_PEM_PATH,

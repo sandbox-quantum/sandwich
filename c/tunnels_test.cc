@@ -133,9 +133,15 @@ auto CreateServerContext()
 
   config.mutable_server()->mutable_tls()->mutable_common_options()->add_kem(
       "kyber1024");
+  config.mutable_server()
+      ->mutable_tls()
+      ->mutable_common_options()
+      ->mutable_empty_verifier();
 
   auto *cert = config.mutable_server()
                    ->mutable_tls()
+                   ->mutable_common_options()
+                   ->mutable_identity()
                    ->mutable_certificate()
                    ->mutable_static_();
   cert->mutable_data()->set_filename("testdata/cert.pem");
@@ -144,6 +150,8 @@ auto CreateServerContext()
 
   auto *key = config.mutable_server()
                   ->mutable_tls()
+                  ->mutable_common_options()
+                  ->mutable_identity()
                   ->mutable_private_key()
                   ->mutable_static_();
   key->mutable_data()->set_filename("testdata/key.pem");

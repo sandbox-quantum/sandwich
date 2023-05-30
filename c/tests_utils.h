@@ -32,8 +32,8 @@
 /** \brief Prints sandwich error and abort on condition.
  *
  * \param e The condition. */
-#define sandwich_assert(e)                                               \
-  ((void)((e) ? ((void)0)                                                \
-              : ((void)fprintf(stderr, "%s:%d: failed assertion '%s'\n", \
-                               __FILE_NAME__, __LINE__, #e),             \
+#define sandwich_assert(e)                                                     \
+  ((void)((e) ? ((void)0)                                                      \
+              : ((void)fprintf(stderr, "%s:%d: failed assertion '%s'\n",       \
+                               __FILE_NAME__, __LINE__, #e),                   \
                  abort())))

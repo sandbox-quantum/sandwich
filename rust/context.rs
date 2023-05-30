@@ -139,21 +139,6 @@ pub(crate) mod test {
             cert
         }
 
-        /// Creates a [`pb_api::PrivateKey`].
-        pub(crate) fn create_sk(
-            path: &'static str,
-            fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
-        ) -> pb_api::PrivateKey {
-            let mut sk = pb_api::PrivateKey::new();
-            let src = sk.mut_static();
-            if let Some(f) = fmt {
-                src.format = f.into();
-            }
-            let ds = src.data.mut_or_insert_default();
-            ds.set_filename(path.to_string());
-            sk
-        }
-
         /// Creates a [`api_rust_proto::Configuration`] for TLS 1.3.
         pub(crate) fn create_configuration(
             mode: crate::Mode,
@@ -173,26 +158,33 @@ pub(crate) mod test {
         /// Tests a [`api_rust_proto::Configuration`] for OpenSSL.
         #[test]
         fn test_configuration() {
-            let mut config = create_configuration(crate::Mode::Client, false);
-            config
-                .mut_client()
-                .mut_tls()
-                .common_options
-                .mut_or_insert_default()
-                .x509_verifier
-                .mut_or_insert_default()
-                .trusted_cas
-                .push(create_cert(
+            let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                format!(
+                    r#"
+                client <
+                  tls <
+                    common_options <
+                      kem: "kyber512"
+                      x509_verifier <
+                        trusted_cas <
+                          static <
+                            data <
+                              filename: "{}"
+                            >
+                            format: ENCODING_FORMAT_PEM
+                          >
+                        >
+                      >
+                    >
+                  >
+                >
+                "#,
                     crate::tls::test::CERT_PEM_PATH,
-                    Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-                ));
-            config
-                .mut_client()
-                .mut_tls()
-                .common_options
-                .mut_or_insert_default()
-                .kem
-                .push("kyber1024".to_string());
+                )
+                .as_str(),
+            )
+            .unwrap();
+            config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
             let ctx = super::super::try_from(&config);
             ctx.unwrap();
         }
@@ -201,26 +193,32 @@ pub(crate) mod test {
         /// but with missing implementation field.
         #[test]
         fn test_configuration_no_impl() {
-            let mut config = create_configuration(crate::Mode::Client, true);
-            config
-                .mut_client()
-                .mut_tls()
-                .common_options
-                .mut_or_insert_default()
-                .x509_verifier
-                .mut_or_insert_default()
-                .trusted_cas
-                .push(create_cert(
+            let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                format!(
+                    r#"
+                client <
+                  tls <
+                    common_options <
+                      kem: "kyber512"
+                      x509_verifier <
+                        trusted_cas <
+                          static <
+                            data <
+                              filename: "{}"
+                            >
+                            format: ENCODING_FORMAT_PEM
+                          >
+                        >
+                      >
+                    >
+                  >
+                >
+                "#,
                     crate::tls::test::CERT_PEM_PATH,
-                    Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
-                ));
-            config
-                .mut_client()
-                .mut_tls()
-                .common_options
-                .mut_or_insert_default()
-                .kem
-                .push("kyber1024".to_string());
+                )
+                .as_str(),
+            )
+            .unwrap();
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
             assert!(
@@ -233,26 +231,33 @@ pub(crate) mod test {
         /// an certificate supplied.
         #[test]
         fn test_configuration_bad_cert() {
-            let mut config = create_configuration(crate::Mode::Client, false);
-            config
-                .mut_client()
-                .mut_tls()
-                .common_options
-                .mut_or_insert_default()
-                .x509_verifier
-                .mut_or_insert_default()
-                .trusted_cas
-                .push(create_cert(
+            let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                format!(
+                    r#"
+                client <
+                  tls <
+                    common_options <
+                      kem: "kyber512"
+                      x509_verifier <
+                        trusted_cas <
+                          static <
+                            data <
+                              filename: "{}"
+                            >
+                            format: ENCODING_FORMAT_DER
+                          >
+                        >
+                      >
+                    >
+                  >
+                >
+                "#,
                     crate::tls::test::CERT_PEM_PATH,
-                    Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
-                ));
-            config
-                .mut_client()
-                .mut_tls()
-                .common_options
-                .mut_or_insert_default()
-                .kem
-                .push("kyber1024".to_string());
+                )
+                .as_str(),
+            )
+            .unwrap();
+            config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
             assert!(
@@ -272,24 +277,52 @@ pub(crate) mod test {
         /// an invalid private key supplied.
         #[test]
         fn test_configuration_bad_sk() {
-            let mut config = create_configuration(crate::Mode::Server, false);
-            config.mut_server().mut_tls().certificate = Some(create_cert(
-                crate::tls::test::CERT_DER_PATH,
-                Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
-            ))
-            .into();
-            config.mut_server().mut_tls().private_key = Some(create_sk(
-                crate::tls::test::SK_PATH,
-                Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_DER),
-            ))
-            .into();
-            config
-                .mut_server()
-                .mut_tls()
-                .common_options
-                .mut_or_insert_default()
-                .kem
-                .push("kyber1024".to_string());
+            let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+                format!(
+                    r#"
+                server <
+                  tls <
+                    common_options <
+                      kem: "kyber512"
+                      x509_verifier <
+                        trusted_cas <
+                          static <
+                            data <
+                              filename: "{cert}"
+                            >
+                            format: ENCODING_FORMAT_PEM
+                          >
+                        >
+                      >
+                      identity <
+                        certificate <
+                          static <
+                            data <
+                              filename: "{cert}"
+                            >
+                            format: ENCODING_FORMAT_PEM
+                          >
+                        >
+                        private_key <
+                          static <
+                            data <
+                              filename: "{private_key}"
+                            >
+                            format: ENCODING_FORMAT_DER
+                          >
+                        >
+                      >
+                    >
+                  >
+                >
+                "#,
+                    cert = crate::tls::test::CERT_PEM_PATH,
+                    private_key = crate::tls::test::SK_PATH,
+                )
+                .as_str(),
+            )
+            .unwrap();
+            config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
             assert!(

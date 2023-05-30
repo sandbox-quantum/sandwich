@@ -138,22 +138,19 @@ impl crate::ossl::Ossl for Ossl {
         }
     }
 
-    fn ssl_context_set_verify_mode(pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>, flags: u32) {
+    fn ssl_context_set_verify_mode(
+        pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
+        mode: crate::ossl::VerifyMode,
+    ) {
+        let flag = match mode {
+            crate::ossl::VerifyMode::None => openssl::SSL_VERIFY_NONE,
+            crate::ossl::VerifyMode::Peer => openssl::SSL_VERIFY_PEER,
+            crate::ossl::VerifyMode::Mutual => {
+                openssl::SSL_VERIFY_PEER | openssl::SSL_VERIFY_FAIL_IF_NO_PEER_CERT
+            }
+        } as i32;
         unsafe {
-            openssl::SSL_CTX_set_verify(
-                pimpl.as_mut_ptr(),
-                if ((flags as i32)
-                    & <pb_api::TLSFlags as protobuf::Enum>::value(
-                        &pb_api::TLSFlags::TLSFLAGS_SKIP_VERIFY,
-                    ))
-                    != 0
-                {
-                    openssl::SSL_VERIFY_NONE
-                } else {
-                    openssl::SSL_VERIFY_PEER
-                } as i32,
-                Some(openssl_verify_callback),
-            );
+            openssl::SSL_CTX_set_verify(pimpl.as_mut_ptr(), flag, Some(openssl_verify_callback));
         }
     }
 
@@ -749,16 +746,12 @@ mod additional_tests {
         let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
         assert_eq!(mode, openssl::SSL_VERIFY_PEER as i32);
 
-        Ossl::ssl_context_set_verify_mode(&mut ssl, 0);
+        Ossl::ssl_context_set_verify_mode(&mut ssl, crate::ossl::VerifyMode::Peer);
 
         let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
         assert_eq!(mode, openssl::SSL_VERIFY_PEER as i32);
 
-        Ossl::ssl_context_set_verify_mode(
-            &mut ssl,
-            <pb_api::TLSFlags as protobuf::Enum>::value(&pb_api::TLSFlags::TLSFLAGS_SKIP_VERIFY)
-                as u32,
-        );
+        Ossl::ssl_context_set_verify_mode(&mut ssl, crate::ossl::VerifyMode::None);
 
         let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
         assert_eq!(mode, openssl::SSL_VERIFY_NONE as i32);

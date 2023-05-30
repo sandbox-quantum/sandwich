@@ -260,6 +260,7 @@ GenProtoBasedErrorCode!(
             OPENSSLCLIENTCONFIGURATIONERROR_FLAGS => "flags error",
             OPENSSLCLIENTCONFIGURATIONERROR_SSL_FAILED => "SSL* creation failed",
             OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED => "BIO* creation failed",
+            OPENSSLCLIENTCONFIGURATIONERROR_PRIVATE_KEY => "private key error",
         ],
     },
     {

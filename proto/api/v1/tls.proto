@@ -22,26 +22,38 @@ import "proto/api/v1/certificate.proto";
 import "proto/api/v1/private_key.proto";
 import "proto/api/v1/verifiers.proto";
 
-enum TLSFlags {
-  // Unspecified flags.
-  TLSFLAGS_UNSPECIFIED = 0;
+// An X.509 identity.
+// An X.509 identity consists of a certificate and its associated private key.
+message X509Identity {
+  // The certificate.
+  Certificate certificate = 1;
 
-  // Skip certificate and signature verification (insecure mode).
-  TLSFLAGS_SKIP_VERIFY = 1;
-};
+  // The private key.
+  PrivateKey private_key = 2;
+}
 
 // TLS options, for both client and server modes.
 message TLSOptions {
   // The kem.
   repeated string kem = 1;
 
-  // Flags, as options.
-  int32 flags = 2;
+  // Verifier.
+  oneof peer_verifier {
+    // X.509 verifier.
+    X509Verifier x509_verifier = 3;
 
-  // X.509 verifier.
-  X509Verifier x509_verifier = 3;
+    // Empty verifier.
+    // **Warning**: when used, all security requirements are discarded!
+    EmptyVerifier empty_verifier = 4;
+  }
 
-  // Next id: 4
+  // An identity.
+  // In server mode, the identity is used to perform the TLS handshake
+  // (the private key is used to sign the transcript, and the certificate
+  // is presented to clients).
+  X509Identity identity = 5;
+
+  // Next id: 6
 }
 
 // TLS options, specific to the client mode.
@@ -54,10 +66,4 @@ message TLSClientOptions {
 message TLSServerOptions {
   // Common TLS options.
   TLSOptions common_options = 1;
-
-  // Certificate.
-  Certificate certificate = 2;
-
-  // A private key.
-  PrivateKey private_key = 3;
 }

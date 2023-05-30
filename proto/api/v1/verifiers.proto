@@ -20,6 +20,11 @@ option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v
 
 import "proto/api/v1/certificate.proto";
 
+// An empty verifier.
+// An empty verifier means that no verifier will be used.
+// **Warning**: when used, all security requirements are discarded!
+message EmptyVerifier {}
+
 // Verifier for X.509-based protocols, such as TLS.
 message X509Verifier {
   // List of trusted certificate authority certificates.

@@ -182,21 +182,24 @@ pub(crate) mod test {
               tls <
                 common_options <
                   kem: "kyber512"
-                >
-                certificate <
-                  static <
-                    data <
-                      filename: "{}"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
-                  >
-                >
-                private_key <
-                  static <
-                    data <
-                      filename: "{}"
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
                   >
                 >
               >
@@ -262,21 +265,24 @@ pub(crate) mod test {
               tls <
                 common_options <
                   kem: "kyber512"
-                >
-                certificate <
-                  static <
-                    data <
-                      filename: "{}"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
-                  >
-                >
-                private_key <
-                  static <
-                    data <
-                      filename: "{}"
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
                   >
                 >
               >
@@ -352,21 +358,24 @@ pub(crate) mod test {
               tls <
                 common_options <
                   kem: "kyber512"
-                >
-                certificate <
-                  static <
-                    data <
-                      filename: "{}"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
-                  >
-                >
-                private_key <
-                  static <
-                    data <
-                      filename: "{}"
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
                     >
-                    format: ENCODING_FORMAT_PEM
                   >
                 >
               >
@@ -408,5 +417,236 @@ pub(crate) mod test {
                 Ok(v) => panic!("Should have errored, but got: {} instead", v),
             }
         }
+    }
+
+    /// Test mTLS.
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_mTLS() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let server_certificate = "testdata/dilithium5.cert.pem";
+        let server_private_key = "testdata/dilithium5.key.pem";
+
+        let client_certificate = "testdata/falcon1024.cert.pem";
+        let client_private_key = "testdata/falcon1024.key.pem";
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{server_certificate}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{client_certificate}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{client_private_key}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{client_certificate}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{server_certificate}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{server_private_key}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
+        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Test mTLS, but the client doesn't send its identity.
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_mTLS_no_client_cert() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let server_certificate = "testdata/dilithium5.cert.pem";
+        let server_private_key = "testdata/dilithium5.key.pem";
+
+        let client_certificate = "testdata/falcon1024.cert.pem";
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{server_certificate}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{client_certificate}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{server_certificate}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{server_private_key}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
+        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+
+        server.handshake().unwrap_err();
     }
 }

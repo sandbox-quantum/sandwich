@@ -104,28 +104,33 @@ func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 							Kem: []string{
 								"kyber1024",
 							},
-						},
-						Certificate: &api.Certificate{
-							Source: &api.Certificate_Static{
-								Static: &api.ASN1DataSource{
-									Data: &api.DataSource{
-										Specifier: &api.DataSource_Filename{
-											Filename: certfile,
-										},
-									},
-									Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
-								},
+							PeerVerifier: &api.TLSOptions_EmptyVerifier{
+								EmptyVerifier: &api.EmptyVerifier{},
 							},
-						},
-						PrivateKey: &api.PrivateKey{
-							Source: &api.PrivateKey_Static{
-								Static: &api.ASN1DataSource{
-									Data: &api.DataSource{
-										Specifier: &api.DataSource_Filename{
-											Filename: keyfile,
+							Identity: &api.X509Identity{
+								Certificate: &api.Certificate{
+									Source: &api.Certificate_Static{
+										Static: &api.ASN1DataSource{
+											Data: &api.DataSource{
+												Specifier: &api.DataSource_Filename{
+													Filename: certfile,
+												},
+											},
+											Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
 										},
 									},
-									Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
+								},
+								PrivateKey: &api.PrivateKey{
+									Source: &api.PrivateKey_Static{
+										Static: &api.ASN1DataSource{
+											Data: &api.DataSource{
+												Specifier: &api.DataSource_Filename{
+													Filename: keyfile,
+												},
+											},
+											Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
+										},
+									},
 								},
 							},
 						},
@@ -153,17 +158,19 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 							Kem: []string{
 								"kyber1024",
 							},
-							X509Verifier: &api.X509Verifier{
-								TrustedCas: []*api.Certificate{
-									{
-										Source: &api.Certificate_Static{
-											Static: &api.ASN1DataSource{
-												Data: &api.DataSource{
-													Specifier: &api.DataSource_Filename{
-														Filename: certfile,
+							PeerVerifier: &api.TLSOptions_X509Verifier{
+								X509Verifier: &api.X509Verifier{
+									TrustedCas: []*api.Certificate{
+										{
+											Source: &api.Certificate_Static{
+												Static: &api.ASN1DataSource{
+													Data: &api.DataSource{
+														Specifier: &api.DataSource_Filename{
+															Filename: certfile,
+														},
 													},
+													Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
 												},
-												Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
 											},
 										},
 									},
@@ -448,28 +455,33 @@ func createServerExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 							Kem: []string{
 								"kyber1024",
 							},
-						},
-						Certificate: &api.Certificate{
-							Source: &api.Certificate_Static{
-								Static: &api.ASN1DataSource{
-									Data: &api.DataSource{
-										Specifier: &api.DataSource_Filename{
-											Filename: certfile,
-										},
-									},
-									Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
-								},
+							PeerVerifier: &api.TLSOptions_EmptyVerifier{
+								EmptyVerifier: &api.EmptyVerifier{},
 							},
-						},
-						PrivateKey: &api.PrivateKey{
-							Source: &api.PrivateKey_Static{
-								Static: &api.ASN1DataSource{
-									Data: &api.DataSource{
-										Specifier: &api.DataSource_Filename{
-											Filename: keyfile,
+							Identity: &api.X509Identity{
+								Certificate: &api.Certificate{
+									Source: &api.Certificate_Static{
+										Static: &api.ASN1DataSource{
+											Data: &api.DataSource{
+												Specifier: &api.DataSource_Filename{
+													Filename: certfile,
+												},
+											},
+											Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
 										},
 									},
-									Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
+								},
+								PrivateKey: &api.PrivateKey{
+									Source: &api.PrivateKey_Static{
+										Static: &api.ASN1DataSource{
+											Data: &api.DataSource{
+												Specifier: &api.DataSource_Filename{
+													Filename: keyfile,
+												},
+											},
+											Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
+										},
+									},
 								},
 							},
 						},
@@ -497,17 +509,19 @@ func createClientExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 							Kem: []string{
 								"kyber1024",
 							},
-							X509Verifier: &api.X509Verifier{
-								TrustedCas: []*api.Certificate{
-									{
-										Source: &api.Certificate_Static{
-											Static: &api.ASN1DataSource{
-												Data: &api.DataSource{
-													Specifier: &api.DataSource_Filename{
-														Filename: certfile,
+							PeerVerifier: &api.TLSOptions_X509Verifier{
+								X509Verifier: &api.X509Verifier{
+									TrustedCas: []*api.Certificate{
+										{
+											Source: &api.Certificate_Static{
+												Static: &api.ASN1DataSource{
+													Data: &api.DataSource{
+														Specifier: &api.DataSource_Filename{
+															Filename: certfile,
+														},
 													},
+													Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
 												},
-												Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
 											},
 										},
 									},

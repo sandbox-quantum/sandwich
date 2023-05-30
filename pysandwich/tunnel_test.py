@@ -18,6 +18,7 @@ import socket
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
+import pysandwich.proto.api.v1.verifiers_pb2 as verifiers
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 from pysandwich.sandwich import Context, Sandwich, Tunnel
@@ -46,11 +47,18 @@ def create_server_conf(s: Sandwich) -> Context:
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
-    conf.server.tls.certificate.static.data.filename = _CERT_PATH
-    conf.server.tls.certificate.static.format = EncodingFormat.ENCODING_FORMAT_PEM
+    conf.server.tls.common_options.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+    conf.server.tls.common_options.identity.certificate.static.data.filename = (
+        _CERT_PATH
+    )
+    conf.server.tls.common_options.identity.certificate.static.format = (
+        EncodingFormat.ENCODING_FORMAT_PEM
+    )
 
-    conf.server.tls.private_key.static.data.filename = _KEY_PATH
-    conf.server.tls.private_key.static.format = EncodingFormat.ENCODING_FORMAT_PEM
+    conf.server.tls.common_options.identity.private_key.static.data.filename = _KEY_PATH
+    conf.server.tls.common_options.identity.private_key.static.format = (
+        EncodingFormat.ENCODING_FORMAT_PEM
+    )
 
     return Context.from_config(s, conf)
 
@@ -84,11 +92,18 @@ def create_expired_server_conf(s: Sandwich) -> Context:
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
-    conf.server.tls.certificate.static.data.filename = _CERT_EXPIRED_PATH
-    conf.server.tls.certificate.static.format = EncodingFormat.ENCODING_FORMAT_PEM
+    conf.server.tls.common_options.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+    conf.server.tls.common_options.identity.certificate.static.data.filename = (
+        _CERT_EXPIRED_PATH
+    )
+    conf.server.tls.common_options.identity.certificate.static.format = (
+        EncodingFormat.ENCODING_FORMAT_PEM
+    )
 
-    conf.server.tls.private_key.static.data.filename = _KEY_PATH
-    conf.server.tls.private_key.static.format = EncodingFormat.ENCODING_FORMAT_PEM
+    conf.server.tls.common_options.identity.private_key.static.data.filename = _KEY_PATH
+    conf.server.tls.common_options.identity.private_key.static.format = (
+        EncodingFormat.ENCODING_FORMAT_PEM
+    )
 
     return Context.from_config(s, conf)
 

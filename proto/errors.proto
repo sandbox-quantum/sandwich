@@ -107,6 +107,9 @@ enum OpenSSLClientConfigurationError {
 
   // OpenSSL failed to create the BIO object.
   OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED = 6;
+
+  // Failed to use the private key.
+  OPENSSLCLIENTCONFIGURATIONERROR_PRIVATE_KEY = 7;
 };
 
 // Errors regarding OpenSSL server configuration.
