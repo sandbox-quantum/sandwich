@@ -20,6 +20,10 @@
 /// Default maximum depth for the certificate chain verification.
 pub(crate) const DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH: u32 = 100;
 
+/// User-data index of the tunnel in the SSL handle.
+/// For more information, see <https://www.openssl.org/docs/man1.1.1/man3/SSL_get_ex_data.html>.
+pub(crate) const VERIFY_TUNNEL_INDEX: i32 = 0;
+
 /// Verify mode.
 pub(crate) enum VerifyMode {
     /// Do not verify anything.
@@ -57,6 +61,9 @@ pub(crate) trait Ossl {
 
     /// The C type for a SSL handle (SSL).
     type NativeSsl;
+
+    /// The C type for a X.509 trusted store context.
+    type NativeX509StoreCtx;
 
     /// The C type for a BIO object.
     type NativeBio;
@@ -167,6 +174,48 @@ pub(crate) trait Ossl {
 
     /// Returns the state of the SSL handshake.
     fn ssl_get_handshake_state(ssl: *const Self::NativeSsl) -> pb::HandshakeState;
+
+    /// Returns the SSL handle (`SSL*`) from a X.509 trusted store (`X509_STORE_CTX*`).
+    fn x509_store_context_get_ssl(
+        store_ctx: *mut Self::NativeX509StoreCtx,
+    ) -> Option<*const Self::NativeSsl>;
+
+    /// Returns the error stored in a X.509 trusted store.
+    fn x509_store_context_get_error(store_ctx: *mut Self::NativeX509StoreCtx) -> i32;
+
+    /// Returns the tunnel ([`OsslTunnel`]) attached to a SSL handle.
+    fn ssl_get_tunnel<'a>(
+        ssl: *const Self::NativeSsl,
+    ) -> Option<&'a mut crate::ossl::OsslTunnel<'a, 'a, Self>>;
+
+    /// The verify callback.
+    /// This callback is passed to `SSL_set_verify`.
+    extern "C" fn verify_callback(
+        verify_code: std::ffi::c_int,
+        store_ctx: *mut Self::NativeX509StoreCtx,
+    ) -> std::ffi::c_int {
+        if verify_code == 1 {
+            return verify_code;
+        }
+
+        let ssl = if let Some(ssl) = Self::x509_store_context_get_ssl(store_ctx) {
+            ssl
+        } else {
+            return verify_code;
+        };
+
+        let tun = if let Some(tun) = Self::ssl_get_tunnel(ssl) {
+            tun
+        } else {
+            return verify_code;
+        };
+
+        let error = Self::x509_store_context_get_error(store_ctx);
+
+        tun.verify_error = error;
+
+        verify_code
+    }
 }
 
 /// A generic context that uses an OpenSSL-like backend.
@@ -179,6 +228,9 @@ where
 
     /// SSL context.
     ssl_ctx: crate::Pimpl<'ctx, OsslInterface::NativeSslCtx>,
+
+    /// Security requirements from the verifiers.
+    security_requirements: crate::tls::TunnelSecurityRequirements,
 }
 
 /// Implements [`std::fmt::Debug`] for [`Ossl`].
@@ -477,7 +529,15 @@ where
             );
         }
 
-        Ok(Self { mode, ssl_ctx })
+        let security_requirements = x509_verifier
+            .map(crate::tls::TunnelSecurityRequirements::from)
+            .unwrap_or_default();
+
+        Ok(Self {
+            mode,
+            ssl_ctx,
+            security_requirements,
+        })
     }
 }
 
@@ -574,6 +634,10 @@ where
     /// The IO.
     pub(crate) io: Box<dyn crate::IO + 'io>,
 
+    /// The security at tunnel time.
+    #[allow(dead_code)]
+    pub(crate) security_requirements: crate::tls::TunnelSecurityRequirements,
+
     /// Verification Errors.
     pub(crate) verify_error: std::ffi::c_int,
 
@@ -632,6 +696,7 @@ where
             ssl,
             bio,
             io,
+            security_requirements: ctx.security_requirements.clone(),
             verify_error: 0,
             state: pb::State::STATE_NOT_CONNECTED,
         })

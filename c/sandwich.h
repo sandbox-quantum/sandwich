@@ -16,7 +16,7 @@
 
 ///
 /// \file
-/// \brief Sandwich C library, on top of the C++ library.
+/// \brief Sandwich C library, on top of the Rust implementation.
 ///
 /// \author thb-sb
 

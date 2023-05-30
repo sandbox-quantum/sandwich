@@ -18,6 +18,43 @@ mod security;
 
 pub(crate) use security::assert_compliance;
 
+/// Security requirements to enforce on TLS tunnels.
+/// These requirements are described by the verifiers that comes with the
+/// `TLSOptions` configuration message.
+#[derive(Clone)]
+pub(crate) struct TunnelSecurityRequirements {
+    /// Allows expired certificates.
+    /// This switch comes from the X.509 verifier `X509Verifier`.
+    #[allow(dead_code)]
+    pub(crate) allow_expired_certificate: bool,
+}
+
+/// Instantiates a [`TunnelSecurityRequirements`] from a [`pb_api::X509Verifier`].
+impl std::convert::From<&pb_api::X509Verifier> for TunnelSecurityRequirements {
+    fn from(x509_verifier: &pb_api::X509Verifier) -> Self {
+        Self {
+            allow_expired_certificate: x509_verifier.allow_expired_certificate,
+        }
+    }
+}
+
+/// Implements [`std::default::Default`] for [`TunnelSecurityRequirements`].
+impl std::default::Default for TunnelSecurityRequirements {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Implements [`TunnelSecurityRequirements`].
+impl TunnelSecurityRequirements {
+    /// Instantiates a [`TunnelSecurityRequirements`].
+    fn new() -> Self {
+        Self {
+            allow_expired_certificate: false,
+        }
+    }
+}
+
 #[cfg(test)]
 pub(crate) mod test {
     /// Path to a valid PEM certificate.

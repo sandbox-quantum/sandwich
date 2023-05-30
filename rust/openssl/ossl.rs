@@ -67,6 +67,7 @@ impl crate::ossl::Ossl for Ossl {
     type NativePrivateKey = openssl::evp_pkey_st;
     type NativeSslCtx = openssl::SSL_CTX;
     type NativeSsl = openssl::SSL;
+    type NativeX509StoreCtx = openssl::X509_STORE_CTX;
     type NativeBio = openssl::BIO;
 
     fn new_ssl_context<'pimpl>(
@@ -117,7 +118,7 @@ impl crate::ossl::Ossl for Ossl {
                     openssl::SSL_CTX_set_verify(
                         pimpl.as_mut_ptr(),
                         openssl::SSL_VERIFY_PEER as i32,
-                        Some(openssl_verify_callback),
+                        Some(Self::verify_callback),
                     )
                 };
                 //let verify_error = Box::into_raw(Box::new(openssl::X509_V_OK));
@@ -150,7 +151,7 @@ impl crate::ossl::Ossl for Ossl {
             }
         } as i32;
         unsafe {
-            openssl::SSL_CTX_set_verify(pimpl.as_mut_ptr(), flag, Some(openssl_verify_callback));
+            openssl::SSL_CTX_set_verify(pimpl.as_mut_ptr(), flag, Some(Self::verify_callback));
         }
     }
 
@@ -419,7 +420,7 @@ impl crate::ossl::Ossl for Ossl {
         extra_data: *mut T,
     ) -> Result<(), pb::SystemError> {
         if unsafe {
-            openssl::SSL_set_ex_data(ssl, crate::openssl::VERIFY_TUNNEL_INDEX, extra_data.cast())
+            openssl::SSL_set_ex_data(ssl, crate::ossl::VERIFY_TUNNEL_INDEX, extra_data.cast())
         } as u64
             == 0
         {
@@ -669,6 +670,36 @@ impl crate::ossl::Ossl for Ossl {
             pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS
         }
     }
+
+    fn x509_store_context_get_ssl(
+        store_ctx: *mut Self::NativeX509StoreCtx,
+    ) -> Option<*const Self::NativeSsl> {
+        let ssl_idx = unsafe { openssl::SSL_get_ex_data_X509_STORE_CTX_idx() };
+        if ssl_idx < 0 {
+            return None;
+        }
+        let ssl = unsafe { openssl::X509_STORE_CTX_get_ex_data(store_ctx, ssl_idx) }
+            as *const Self::NativeSsl;
+        if ssl.is_null() {
+            None
+        } else {
+            Some(ssl)
+        }
+    }
+
+    fn x509_store_context_get_error(store_ctx: *mut Self::NativeX509StoreCtx) -> i32 {
+        unsafe { openssl::X509_STORE_CTX_get_error(store_ctx) }
+    }
+
+    fn ssl_get_tunnel<'a>(
+        ssl: *const Self::NativeSsl,
+    ) -> Option<&'a mut crate::ossl::OsslTunnel<'a, 'a, Self>> {
+        unsafe {
+            openssl::SSL_get_ex_data(ssl, crate::ossl::VERIFY_TUNNEL_INDEX)
+                .cast::<crate::ossl::OsslTunnel<Self>>()
+                .as_mut::<'a>()
+        }
+    }
 }
 
 /// Instantiates a [`crate::Context`] from a protobuf configuration message.
@@ -679,26 +710,6 @@ pub(crate) fn try_from<'ctx>(
     Ok(Box::new(crate::ossl::OsslContext::<Ossl>::try_from(
         configuration,
     )?))
-}
-
-extern "C" fn openssl_verify_callback(
-    verify_ok: std::ffi::c_int,
-    ctx: *mut openssl::X509_STORE_CTX,
-) -> std::ffi::c_int {
-    if verify_ok == 0 {
-        unsafe {
-            let err = openssl::X509_STORE_CTX_get_error(ctx);
-            let ssl_idx = openssl::SSL_get_ex_data_X509_STORE_CTX_idx();
-            let ssl = openssl::X509_STORE_CTX_get_ex_data(ctx, ssl_idx) as *const openssl::ssl_st;
-            let tun = openssl::SSL_get_ex_data(ssl, crate::openssl::VERIFY_TUNNEL_INDEX)
-                as *mut crate::ossl::OsslTunnel<Ossl>;
-            if tun.is_null() {
-                return verify_ok;
-            }
-            (*tun).verify_error = err;
-        }
-    }
-    verify_ok
 }
 
 GenOsslUnitTests!(

@@ -19,8 +19,6 @@ pub(crate) mod ossl;
 
 pub(self) use io::BIO_METH;
 
-pub(crate) const VERIFY_TUNNEL_INDEX: i32 = 0;
-
 #[cfg(test)]
 pub(crate) mod test {
     /// A simple I/O interface.
