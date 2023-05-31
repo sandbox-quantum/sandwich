@@ -183,6 +183,15 @@ pub(crate) trait Ossl {
     /// Returns the error stored in a X.509 trusted store.
     fn x509_store_context_get_error(store_ctx: *mut Self::NativeX509StoreCtx) -> i32;
 
+    /// Sets the error stored in a X.509 trusted store.
+    fn x509_store_context_set_error(store_ctx: *mut Self::NativeX509StoreCtx, error: i32);
+
+    /// Returns the no-error code for a X.509 trusted store.
+    fn x509_store_error_code_valid() -> i32;
+
+    /// Returns true if the given error corresponds to the 'certificate has expired' error.
+    fn x509_error_code_is_certificate_expired(error: i32) -> bool;
+
     /// Returns the tunnel ([`OsslTunnel`]) attached to a SSL handle.
     fn ssl_get_tunnel<'a>(
         ssl: *const Self::NativeSsl,
@@ -191,7 +200,7 @@ pub(crate) trait Ossl {
     /// The verify callback.
     /// This callback is passed to `SSL_set_verify`.
     extern "C" fn verify_callback(
-        verify_code: std::ffi::c_int,
+        mut verify_code: std::ffi::c_int,
         store_ctx: *mut Self::NativeX509StoreCtx,
     ) -> std::ffi::c_int {
         if verify_code == 1 {
@@ -212,8 +221,15 @@ pub(crate) trait Ossl {
 
         let error = Self::x509_store_context_get_error(store_ctx);
 
-        tun.verify_error = error;
+        if tun
+            .security_requirements
+            .assess_x509_store_error::<Self>(error)
+        {
+            verify_code = 1;
+            Self::x509_store_context_set_error(store_ctx, Self::x509_store_error_code_valid());
+        }
 
+        tun.verify_error = error;
         verify_code
     }
 }
@@ -635,7 +651,6 @@ where
     pub(crate) io: Box<dyn crate::IO + 'io>,
 
     /// The security at tunnel time.
-    #[allow(dead_code)]
     pub(crate) security_requirements: crate::tls::TunnelSecurityRequirements,
 
     /// Verification Errors.

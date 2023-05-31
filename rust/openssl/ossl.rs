@@ -691,6 +691,20 @@ impl crate::ossl::Ossl for Ossl {
         unsafe { openssl::X509_STORE_CTX_get_error(store_ctx) }
     }
 
+    fn x509_store_context_set_error(store_ctx: *mut Self::NativeX509StoreCtx, error: i32) {
+        unsafe {
+            openssl::X509_STORE_CTX_set_error(store_ctx, error);
+        }
+    }
+
+    fn x509_store_error_code_valid() -> i32 {
+        openssl::X509_V_OK as i32
+    }
+
+    fn x509_error_code_is_certificate_expired(error: i32) -> bool {
+        error == openssl::X509_V_ERR_CERT_HAS_EXPIRED as i32
+    }
+
     fn ssl_get_tunnel<'a>(
         ssl: *const Self::NativeSsl,
     ) -> Option<&'a mut crate::ossl::OsslTunnel<'a, 'a, Self>> {

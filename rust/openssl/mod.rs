@@ -647,4 +647,103 @@ pub(crate) mod test {
 
         server.handshake().unwrap_err();
     }
+
+    /// Test tunnel between client and server with an expired certificate,
+    /// and `allow_expired_certificate` to true.
+    #[test]
+    fn test_expired_allow_expired_certificate() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    allow_expired_certificate: true
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_EXPIRED_PEM_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_EXPIRED_PEM_PATH,
+                crate::tls::test::SK_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
+        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
 }

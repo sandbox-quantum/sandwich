@@ -25,7 +25,6 @@ pub(crate) use security::assert_compliance;
 pub(crate) struct TunnelSecurityRequirements {
     /// Allows expired certificates.
     /// This switch comes from the X.509 verifier `X509Verifier`.
-    #[allow(dead_code)]
     pub(crate) allow_expired_certificate: bool,
 }
 
@@ -52,6 +51,29 @@ impl TunnelSecurityRequirements {
         Self {
             allow_expired_certificate: false,
         }
+    }
+
+    /// Assesses an error returned by a X.509 trusted store.
+    /// The error usually comes from the call to
+    /// <https://www.openssl.org/docs/man1.1.1/man3/X509_STORE_CTX_get_error.html>.
+    /// This function is used for the following implementations:
+    ///   - OpenSSL 1.1.1
+    ///   - BoringSSL
+    ///
+    /// Because this function is an assessor, a `false` returned value means
+    /// that there is a security issue here.
+    #[cfg(any(feature = "openssl", feature = "boringssl"))]
+    pub(crate) fn assess_x509_store_error<OsslInterface>(&self, error: i32) -> bool
+    where
+        OsslInterface: crate::ossl::Ossl + ?Sized,
+    {
+        if self.allow_expired_certificate
+            && OsslInterface::x509_error_code_is_certificate_expired(error)
+        {
+            return true;
+        }
+
+        false
     }
 }
 
