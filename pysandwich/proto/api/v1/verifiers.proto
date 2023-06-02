@@ -77,3 +77,43 @@ message X509Verifier {
   // Default: 100.
   uint32 max_verify_depth = 5;
 }
+
+// A Subject Alternative Names entry.
+message SANMatcher {
+  // The entry.
+  oneof san {
+    // An email address.
+    string email = 1;
+
+    // An hostname, aka a DNS name.
+    string dns = 2;
+
+    // An IP address.
+    // This type allows either an IPv4 address or an IPv6 address.
+    // Ranges and masks are not allowed.
+    string ip_address = 3;
+  }
+}
+
+// Subject Alternative Names verifier.
+message SANVerifier {
+  // Entries of Subject Alternative Names.
+  repeated SANMatcher alt_names = 1;
+}
+
+// Security requirements to enforce at tunnel-time.
+// Unlike the X.509 verifier, which is used when creating a context, this
+// verifier is used when creating a tunnel. Thus, the security requirements
+// it describes are enforced to a specific tunnel only.
+message TunnelVerifier {
+  // The verifier to use at tunnel-time.
+  oneof verifier {
+    // SAN verifier, to be used when the TLS protocol is used.
+    SANVerifier san_verifier = 1;
+
+    // Empty verifier.
+    //
+    // **Warning**: when used, no SAN will be verified!
+    EmptyVerifier empty_verifier = 2;
+  }
+}
