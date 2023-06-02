@@ -8,7 +8,7 @@ exports_files([
     "Cargo.lock",
 ])
 
-_VERSION = "0.4.22"
+_VERSION = "0.4.30"
 
 rust_binary(
     name = "mdbook_bin",
