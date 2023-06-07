@@ -126,13 +126,28 @@ type Tunnel struct {
 	cIO *cIO
 }
 
-// NewTunnel creates a Sandwich tunnel from a context and an io.
-func NewTunnel(ctx *Context, io IO) (*Tunnel, error) {
+// NewTunnel creates a Sandwich tunnel from a context, an io and a verifier.
+func NewTunnel(ctx *Context, io IO, verifier *api.TunnelVerifier) (*Tunnel, error) {
+	out, err := proto.Marshal(verifier)
+	if err != nil {
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED, "")
+	}
+
+	n := len(out)
+	if n == 0 {
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_EMPTY, "")
+	}
+
 	tun := new(Tunnel)
 	tun.cIO = new(cIO)
 	newcIO(tun.cIO, io)
 
-	errc := C.sandwich_tunnel_new(ctx.handle, tun.cIO.settings, &tun.handle)
+	ver := C.struct_SandwichTunnelVerifierSerialized{
+		src: unsafe.Pointer(&out[0]),
+		n:   C.size_t(n),
+	}
+
+	errc := C.sandwich_tunnel_new(ctx.handle, tun.cIO.settings, ver, &tun.handle)
 	if errc != nil {
 		err := createError(errc)
 		C.sandwich_error_free(errc)

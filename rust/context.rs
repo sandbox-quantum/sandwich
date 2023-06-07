@@ -59,6 +59,7 @@ pub trait Context<'ctx>: std::fmt::Debug {
     fn new_tunnel<'io: 'tun, 'tun>(
         &mut self,
         io: Box<dyn crate::IO + 'io>,
+        verifier: pb_api::TunnelVerifier,
     ) -> TunnelResult<'io, 'tun>
     where
         'ctx: 'tun;

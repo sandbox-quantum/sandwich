@@ -18,6 +18,7 @@ import socket
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
+import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.proto.api.v1.verifiers_pb2 as verifiers
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
@@ -147,10 +148,13 @@ def main():
     assert client_io is not None
     assert server_io is not None
 
-    server = Tunnel(server_conf, server_io)
+    verifier = SandwichVerifiers.TunnelVerifier()
+    verifier.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+
+    server = Tunnel(server_conf, server_io, verifier)
     assert server is not None
 
-    client = Tunnel(client_conf, client_io)
+    client = Tunnel(client_conf, client_io, verifier)
     assert client is not None
 
     try:
@@ -239,10 +243,13 @@ def main():
     assert client_io is not None
     assert server_io is not None
 
-    server = Tunnel(server_conf, server_io)
+    verifier = SandwichVerifiers.TunnelVerifier()
+    verifier.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+
+    server = Tunnel(server_conf, server_io, verifier)
     assert server is not None
 
-    client = Tunnel(client_conf, client_io)
+    client = Tunnel(client_conf, client_io, verifier)
     assert client is not None
 
     try:

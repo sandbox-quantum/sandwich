@@ -292,15 +292,18 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 ///
 /// \param ctx Context.
 /// \param io IO interface.
+/// \param verifier Verifier.
 ///
 /// This function succeed.
 ///
 /// \return The tunnel.
-[[nodiscard]] auto CreateTunnel(struct ::SandwichContext *ctx,
-                                const struct ::SandwichCIOSettings &io)
+[[nodiscard]] auto
+CreateTunnel(struct ::SandwichContext *ctx,
+             const struct ::SandwichCIOSettings &io,
+             const struct ::SandwichTunnelVerifierSerialized &verifier)
     -> std::unique_ptr<struct ::SandwichTunnel, SandwichTunnelDeleter> {
   struct ::SandwichTunnel *tun{nullptr};
-  const auto *err{::sandwich_tunnel_new(ctx, &io, &tun)};
+  const auto *err{::sandwich_tunnel_new(ctx, &io, verifier, &tun)};
   sandwich_assert(err == nullptr);
   sandwich_assert(tun != nullptr);
 
@@ -501,8 +504,10 @@ int main() {
   server_io.uarg = reinterpret_cast<void *>(fds[1]);
 
   // Create tunnels.
-  auto client_tunnel = CreateTunnel(&*client, client_io);
-  auto server_tunnel = CreateTunnel(&*server, server_io);
+  auto client_tunnel =
+      CreateTunnel(&*client, client_io, SandwichTunnelVerifierEmpty);
+  auto server_tunnel =
+      CreateTunnel(&*server, server_io, SandwichTunnelVerifierEmpty);
 
   // Client initiates the handshake.
   ClientInitiateHandshake(&*client_tunnel);

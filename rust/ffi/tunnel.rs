@@ -14,16 +14,61 @@
 
 //! Sandwich tunnel module for FFI.
 
+/// A serialized [`pb_api::TunnelVerifier`] for FFI.
+#[repr(C)]
+pub struct SandwichTunnelVerifierSerialized {
+    /// Buffer containing the serialized tunnel verifier message.
+    pub(self) src: *const std::ffi::c_void,
+
+    /// Size of the buffer.
+    pub(self) n: usize,
+}
+
+unsafe impl std::marker::Sync for SandwichTunnelVerifierSerialized {}
+
+/// A `TunnelVerifier` with the `EmptyVerifier` case serialized.
+const TUNNEL_VERIFIER_WITH_EMPTY_VERIFIER_SERIALIZED: [u8; 2] = [0x12, 0x00];
+
+/// A static const variable that binds to a `SandwichTunnelVerifierSerialized`
+/// with an Empty verifier.
+#[no_mangle]
+#[used]
+pub static SandwichTunnelVerifierEmpty: SandwichTunnelVerifierSerialized =
+    SandwichTunnelVerifierSerialized {
+        src: TUNNEL_VERIFIER_WITH_EMPTY_VERIFIER_SERIALIZED
+            .as_ptr()
+            .cast(),
+        n: TUNNEL_VERIFIER_WITH_EMPTY_VERIFIER_SERIALIZED.len(),
+    };
+
 /// Instantiates a new tunnel from a serialized protobuf configuration message.
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_new(
     ctx: *mut std::ffi::c_void,
     cio: *const super::io::Settings,
+    verifier_serialized: SandwichTunnelVerifierSerialized,
     tun: *mut *mut std::ffi::c_void,
 ) -> *mut super::Error {
     let mut b: Box<Box<dyn crate::context::Context>> = unsafe { Box::from_raw(ctx as *mut _) };
+
+    let slice = unsafe {
+        std::slice::from_raw_parts(verifier_serialized.src as *const u8, verifier_serialized.n)
+    };
+    let mut tunnel_verifier = pb_api::TunnelVerifier::new();
+
+    if let Err(e) =
+        <_ as protobuf::Message>::merge_from_bytes(&mut tunnel_verifier, slice).map_err(|e| {
+            crate::Error::from((
+                pb::TunnelError::TUNNELERROR_INVALID,
+                format!("invalid serialized verifier: {e}"),
+            ))
+        })
+    {
+        return e.into();
+    }
+
     let io: Box<dyn crate::IO> = Box::new(unsafe { *cio });
-    let r = b.new_tunnel(io);
+    let r = b.new_tunnel(io, tunnel_verifier);
     Box::into_raw(b);
     match r {
         Ok(t) => {

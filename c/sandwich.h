@@ -59,6 +59,18 @@ struct SandwichError {
   int code;
 };
 
+/// \brief A serialized `TunnelVerifier` message.
+struct SandwichTunnelVerifierSerialized {
+  /// \brief Buffer containing the serialized `TunnelVerifier` message.
+  const void *src;
+
+  /// \brief Size of `src`.
+  size_t n;
+};
+
+/// \brief An empty Tunnel Verifier.
+extern struct SandwichTunnelVerifierSerialized SandwichTunnelVerifierEmpty;
+
 /// \brief Read function for the I/O interface.
 ///
 /// \param[in,out] uarg User opaque argument.
@@ -145,12 +157,15 @@ SANDWICH_API void sandwich_context_free(struct SandwichContext *ctx);
 ///
 /// \param[in] ctx Sandwich context used for setting up the tunnel.
 /// \param[in] cio I/O interface settings to use to create the I/O interface.
+/// \param[in] verifier Additional verifier the connection is subject to.
+///            A null pointer is undefined behavior.
 /// \param[out] tun The new Sandwich tunnel object.
 ///
 /// \return NULL if no error occured, else a chain of errors.
 SANDWICH_API struct SandwichError *
 sandwich_tunnel_new(struct SandwichContext *ctx,
                     const struct SandwichCIOSettings *cio,
+                    struct SandwichTunnelVerifierSerialized verifier,
                     struct SandwichTunnel **tun);
 
 /// \brief Perform the handshake.
@@ -159,9 +174,9 @@ sandwich_tunnel_new(struct SandwichContext *ctx,
 /// \param[out] state The state of the tunnel
 ///
 /// \return Null if no error occured, else a chain of errors.
-SANDWICH_API struct SandwichError *sandwich_tunnel_handshake(
-    struct SandwichTunnel *tun,
-    enum SandwichTunnelHandshakeState *state);
+SANDWICH_API struct SandwichError *
+sandwich_tunnel_handshake(struct SandwichTunnel *tun,
+                          enum SandwichTunnelHandshakeState *state);
 
 /// \brief Read some bytes from the record plane of the tunnel.
 ///

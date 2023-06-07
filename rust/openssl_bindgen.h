@@ -21,6 +21,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <oqs/rand.h>
 
 /// \brief Custom BIO method for Sandwich.

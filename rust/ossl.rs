@@ -65,6 +65,9 @@ pub(crate) trait Ossl {
     /// The C type for a X.509 trusted store context.
     type NativeX509StoreCtx;
 
+    /// The C type for some verification parameters (X509_VERIFY_PARAM).
+    type NativeX509VerifyParams;
+
     /// The C type for a BIO object.
     type NativeBio;
 
@@ -232,6 +235,31 @@ pub(crate) trait Ossl {
         tun.verify_error = error;
         verify_code
     }
+
+    /// Returns the X.509 verification parameters from a SSL handle.
+    fn ssl_get_x509_verify_parameters(
+        ssl: *mut Self::NativeSsl,
+    ) -> Option<*mut Self::NativeX509VerifyParams>;
+
+    /// Appends a DNS as SAN to the X.509 verification parameters.
+    fn x509_verify_parameters_add_san_dns(
+        verify_params: *mut Self::NativeX509VerifyParams,
+        dns: &str,
+    ) -> crate::Result<()>;
+
+    /// Set an email address as SAN to the X.509 verification parameters.
+    fn x509_verify_parameters_set_san_email(
+        verify_params: *mut Self::NativeX509VerifyParams,
+        email: &str,
+    ) -> crate::Result<()>;
+
+    /// Set an IP address as SAN to the X.509 verification parameters.
+    /// IPv4 address or IPv6 address are allowed.
+    /// Ranges and masks are disallowed.
+    fn x509_verify_parameters_set_san_ip_address(
+        verify_params: *mut Self::NativeX509VerifyParams,
+        ip_addr: &str,
+    ) -> crate::Result<()>;
 }
 
 /// A generic context that uses an OpenSSL-like backend.
@@ -267,12 +295,17 @@ where
     fn new_tunnel<'io, 'tun>(
         &mut self,
         io: Box<dyn crate::IO + 'io>,
+        verifier: pb_api::TunnelVerifier,
     ) -> crate::TunnelResult<'io, 'tun>
     where
         'io: 'tun,
         'ctx: 'tun,
     {
-        OsslTunnel::<'io, 'tun, OsslInterface>::new_with_io(self, io)
+        OsslTunnel::<'io, 'tun, OsslInterface>::new_with_io(TunnelBuilder {
+            ctx: self,
+            io,
+            verifier,
+        })
     }
 }
 
@@ -670,12 +703,61 @@ where
     }
 }
 
+/// Tunnel builder.
+/// This is a convenient aggregate of useful values to build a tunnel.
+pub(crate) struct TunnelBuilder<'ctx, 'io, 'a, OsslInterface>
+where
+    OsslInterface: Ossl,
+{
+    /// The context.
+    pub(crate) ctx: &'a mut OsslContext<'ctx, OsslInterface>,
+
+    /// The IO interface.
+    pub(crate) io: Box<dyn crate::IO + 'io>,
+
+    /// The tunnel-time verifier.
+    pub(crate) verifier: pb_api::TunnelVerifier,
+}
+
+/// Applies security requirements regarding the Subject Alternative Names.
+fn apply_san_verifier_to_ssl<OsslInterface>(
+    ssl: *mut OsslInterface::NativeSsl,
+    san_verifier: &pb_api::SANVerifier,
+) -> crate::Result<()>
+where
+    OsslInterface: Ossl,
+{
+    if san_verifier.alt_names.is_empty() {
+        unreachable!();
+    }
+
+    let params = OsslInterface::ssl_get_x509_verify_parameters(ssl).ok_or((
+        pb::TunnelError::TUNNELERROR_UNKNOWN,
+        "failed to get the X.509 verify parameters from the SSL handle",
+    ))?;
+
+    for san in san_verifier.alt_names.iter() {
+        match san.san.as_ref() {
+            Some(pb_api::verifiers::sanmatcher::San::Dns(dns)) => {
+                OsslInterface::x509_verify_parameters_add_san_dns(params, dns)
+            }
+            Some(pb_api::verifiers::sanmatcher::San::Email(email)) => {
+                OsslInterface::x509_verify_parameters_set_san_email(params, email)
+            }
+            Some(pb_api::verifiers::sanmatcher::San::IpAddress(ip_addr)) => {
+                OsslInterface::x509_verify_parameters_set_san_ip_address(params, ip_addr)
+            }
+            _ => unreachable!(),
+        }?;
+    }
+
+    Ok(())
+}
+
 /// Instantiates a [`OsslTunnel`] from a [`OsslContext`] and an IO interface.
 impl<'ctx, 'io, 'tun, OsslInterface>
-    std::convert::TryFrom<(
-        &mut OsslContext<'ctx, OsslInterface>,
-        Box<dyn crate::IO + 'io>,
-    )> for OsslTunnel<'io, 'tun, OsslInterface>
+    std::convert::TryFrom<TunnelBuilder<'ctx, 'io, '_, OsslInterface>>
+    for OsslTunnel<'io, 'tun, OsslInterface>
 where
     'io: 'tun,
     'ctx: 'tun,
@@ -684,34 +766,47 @@ where
     type Error = (crate::Error, Box<dyn crate::IO + 'io>);
 
     fn try_from(
-        (ctx, io): (
-            &mut OsslContext<'ctx, OsslInterface>,
-            Box<dyn crate::IO + 'io>,
-        ),
+        builder: TunnelBuilder<'ctx, 'io, '_, OsslInterface>,
     ) -> std::result::Result<OsslTunnel<'io, 'tun, OsslInterface>, Self::Error> {
+        use crate::tls::VerifierSanitizer;
         use std::borrow::BorrowMut;
 
-        let ssl = OsslInterface::new_ssl_handle(ctx.borrow_mut());
-        let ssl = if let Err(e) = ssl {
-            return Err((e, io));
+        let security_requirements = builder.ctx.security_requirements.clone();
+        if let Err(e) = security_requirements.run_sanitizer_checks(&builder.verifier) {
+            return Err((e, builder.io));
+        }
+
+        let ssl = OsslInterface::new_ssl_handle(builder.ctx.borrow_mut());
+        let mut ssl = if let Err(e) = ssl {
+            return Err((e, builder.io));
         } else {
             ssl.unwrap()
         };
 
+        if let Some(pb_api::verifiers::tunnel_verifier::Verifier::SanVerifier(san_verifier)) =
+            builder.verifier.verifier.as_ref()
+        {
+            if let Err(e) =
+                apply_san_verifier_to_ssl::<OsslInterface>(ssl.as_mut_ptr(), san_verifier)
+            {
+                return Err((e, builder.io));
+            }
+        }
+
         let bio = OsslInterface::new_ssl_bio();
         let bio = if let Err(e) = bio {
-            return Err((e, io));
+            return Err((e, builder.io));
         } else {
             bio.unwrap()
         };
         let bio = crate::Pimpl::from_raw(bio.into_raw(), None);
 
         Ok(Self {
-            mode: ctx.mode,
+            mode: builder.ctx.mode,
             ssl,
             bio,
-            io,
-            security_requirements: ctx.security_requirements.clone(),
+            io: builder.io,
+            security_requirements: builder.ctx.security_requirements.clone(),
             verify_error: 0,
             state: pb::State::STATE_NOT_CONNECTED,
         })
@@ -805,14 +900,12 @@ where
 {
     /// Instantiates a new [`OsslTunnel`] from a [`OsslContext`] and an IO interface.
     fn new_with_io<'ctx>(
-        ctx: &mut OsslContext<'ctx, OsslInterface>,
-        io: Box<dyn crate::IO + 'io>,
+        builder: TunnelBuilder<'ctx, 'io, '_, OsslInterface>,
     ) -> crate::TunnelResult<'io, 'tun>
     where
         'ctx: 'tun,
     {
-        let mut tun: Box<OsslTunnel<'io, 'tun, OsslInterface>> =
-            Box::new(Self::try_from((ctx, io))?);
+        let mut tun: Box<OsslTunnel<'io, 'tun, OsslInterface>> = Box::new(Self::try_from(builder)?);
         if let Err(e) = OsslInterface::ssl_set_bio(
             tun.bio.as_mut_ptr(),
             tun.ssl.as_mut_ptr(),
@@ -1133,6 +1226,54 @@ macro_rules! GenOsslUnitTests {
                     let bio = Ossl::new_ssl_bio();
                     let bio = bio.unwrap();
                     assert!(!bio.as_ptr().is_null());
+                }
+            }
+
+            /// X509 verify params related tests.
+            mod x509_verify_params {
+                use super::Ossl;
+                use crate::ossl::Ossl as OsslTrait;
+
+                /// Tests the getter of SSL for X509 verify params.
+                #[test]
+                fn test_getter_x509_verify_params() {
+                    let mut ctx = Ossl::new_ssl_context(crate::Mode::Client).unwrap();
+                    let mut ssl = Ossl::new_ssl_handle(&mut ctx).unwrap();
+                    let params = Ossl::ssl_get_x509_verify_parameters(ssl.as_mut_ptr()).unwrap();
+                    assert!(!params.is_null());
+                }
+
+                /// Tests adding a DNS entry to the X509 verify params.
+                #[test]
+                fn test_add_dns() {
+                    let mut ctx = Ossl::new_ssl_context(crate::Mode::Client).unwrap();
+                    let mut ssl = Ossl::new_ssl_handle(&mut ctx).unwrap();
+                    let params = Ossl::ssl_get_x509_verify_parameters(ssl.as_mut_ptr()).unwrap();
+                    assert!(!params.is_null());
+
+                    Ossl::x509_verify_parameters_add_san_dns(params, "example.com").expect("adding a valid DNS must be valid");
+                }
+
+                /// Tests setting an email entry to the X509 verify params.
+                #[test]
+                fn test_set_email() {
+                    let mut ctx = Ossl::new_ssl_context(crate::Mode::Client).unwrap();
+                    let mut ssl = Ossl::new_ssl_handle(&mut ctx).unwrap();
+                    let params = Ossl::ssl_get_x509_verify_parameters(ssl.as_mut_ptr()).unwrap();
+                    assert!(!params.is_null());
+
+                    Ossl::x509_verify_parameters_set_san_email(params, "zadig@example.com").expect("setting a valid email address must be valid");
+                }
+
+                /// Tests setting an IP address to the X509 verify params.
+                #[test]
+                fn test_set_ip_address() {
+                    let mut ctx = Ossl::new_ssl_context(crate::Mode::Client).unwrap();
+                    let mut ssl = Ossl::new_ssl_handle(&mut ctx).unwrap();
+                    let params = Ossl::ssl_get_x509_verify_parameters(ssl.as_mut_ptr()).unwrap();
+                    assert!(!params.is_null());
+
+                    Ossl::x509_verify_parameters_set_san_ip_address(params, "127.0.0.1").expect("setting a valid IP address must be valid");
                 }
             }
         }

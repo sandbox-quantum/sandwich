@@ -236,7 +236,7 @@ func createIOs() ioInts {
 
 // createServerTunnel creates the tunnel for the server.
 func createServerTunnel(t *testing.T, context *sandwich.Context, io sandwich.IO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnel(context, io)
+	tun, err := sandwich.NewTunnel(context, io, createEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the server's tunnel: %v", err)
 	}
@@ -246,7 +246,7 @@ func createServerTunnel(t *testing.T, context *sandwich.Context, io sandwich.IO)
 
 // createClientTunnel creates the tunnel for the client.
 func createClientTunnel(t *testing.T, context *sandwich.Context, io sandwich.IO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnel(context, io)
+	tun, err := sandwich.NewTunnel(context, io, createEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the client's tunnel: %v", err)
 	}
@@ -432,6 +432,15 @@ func TestTunnelLargeReadWriteGC(t *testing.T) {
 
 	clientTunnel.Close()
 	serverTunnel.Close()
+}
+
+// createEmptyVerifier creates an empty TunnelVerifier.
+func createEmptyTunnelVerifier() *api.TunnelVerifier {
+	return &api.TunnelVerifier{
+		Verifier: &api.TunnelVerifier_EmptyVerifier{
+			EmptyVerifier: &api.EmptyVerifier{},
+		},
+	}
 }
 
 // createServerExpiredConfiguration creates the configuration for the server using an expired certificate.

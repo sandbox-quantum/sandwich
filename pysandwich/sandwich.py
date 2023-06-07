@@ -67,10 +67,14 @@ except Error as e:
 # Get an I/O.
 io = create_custom_io()
 
+# Create a verifier (empty, i.e. server name will not be checked)
+verifier = SandwichVerifiers.TunnelVerifier()
+verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
+
 # Create a tunnel.
 tun = None
 try:
-    tun = Tunnel(ctx, io)
+    tun = Tunnel(ctx, io, verifier)
 except Error as e:
     print(f"Failed to create the tunnel: {e} (code: {e.code})")
     fail()
@@ -104,6 +108,7 @@ import platform
 import typing
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
+import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
@@ -277,11 +282,30 @@ class Tunnel:
         _io: I/O interface to use.
     """
 
+    class TunnelVerifierSerialized(ctypes.Structure):
+        """The `struct SandwichTunnelVerifierSerialized`."""
+
+        _fields_ = [
+            (
+                "src",
+                ctypes.c_char_p,
+            ),
+            (
+                "n",
+                ctypes.c_size_t,
+            ),
+        ]
+
     State = SandwichTunnelProto.State
     HandshakeState = SandwichTunnelProto.HandshakeState
     RecordError = SandwichTunnelProto.RecordError
 
-    def __init__(self, ctx: Context, io: SandwichIO.IO):
+    def __init__(
+        self,
+        ctx: Context,
+        io: SandwichIO.IO,
+        verifier: SandwichVerifiers.TunnelVerifier,
+    ):
         """Initializes a tunnel.
 
         Args:
@@ -296,6 +320,11 @@ class Tunnel:
         self._ctx = ctx
         self._handle = ctypes.c_void_p(0)
         self._io = io
+
+        ver_bytes = verifier.SerializeToString()
+        ver = Tunnel.TunnelVerifierSerialized()
+        ver.src = ver_bytes
+        ver.n = len(ver_bytes)
 
         # WARNING: we have to keep a refrence to this object, otherwise
         # the garbage collector will clean references to the ctypes.FUNCTYPE.
@@ -318,6 +347,7 @@ class Tunnel:
             "sandwich_tunnel_new",
             self._ctx._handle,
             ctypes.byref(self._settings),
+            ver,
             ctypes.byref(self._handle),
         )
         if err is not None:
@@ -569,9 +599,15 @@ class Sandwich:
         # struct SandwichError *sandwich_tunnel_new(
         #       struct SandwichContext *ctx,
         #       struct SandwichCIO *cio,
+        #       struct SandwichTunnelVerifierSerialized verifier,
         #       struct SandwichTunnel **tun);
         "sandwich_tunnel_new": (
-            [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p],
+            [
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                Tunnel.TunnelVerifierSerialized,
+                ctypes.c_void_p,
+            ],
             ctypes.c_void_p,
         ),
         # enum SandwichTunnelHandshakeState sandwich_tunnel_handshake(

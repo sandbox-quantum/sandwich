@@ -68,6 +68,7 @@ impl crate::ossl::Ossl for Ossl {
     type NativeSslCtx = openssl::SSL_CTX;
     type NativeSsl = openssl::SSL;
     type NativeX509StoreCtx = openssl::X509_STORE_CTX;
+    type NativeX509VerifyParams = openssl::X509_VERIFY_PARAM;
     type NativeBio = openssl::BIO;
 
     fn new_ssl_context<'pimpl>(
@@ -712,6 +713,96 @@ impl crate::ossl::Ossl for Ossl {
             openssl::SSL_get_ex_data(ssl, crate::ossl::VERIFY_TUNNEL_INDEX)
                 .cast::<crate::ossl::OsslTunnel<Self>>()
                 .as_mut::<'a>()
+        }
+    }
+
+    fn ssl_get_x509_verify_parameters(
+        ssl: *mut Self::NativeSsl,
+    ) -> Option<*mut Self::NativeX509VerifyParams> {
+        let params = unsafe { openssl::SSL_get0_param(ssl) };
+        if !params.is_null() {
+            unsafe {
+                openssl::X509_VERIFY_PARAM_set_hostflags(
+                    params,
+                    openssl::X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT,
+                );
+            }
+            Some(params)
+        } else {
+            None
+        }
+    }
+
+    fn x509_verify_parameters_add_san_dns(
+        verify_params: *mut Self::NativeX509VerifyParams,
+        dns: &str,
+    ) -> crate::Result<()> {
+        let cstring = std::ffi::CString::new(dns.as_bytes()).map_err(|e| {
+            (
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                format!("dns '{dns}' is invalid: {e}"),
+            )
+        })?;
+        let cstr = cstring.as_c_str();
+        let err = unsafe {
+            openssl::X509_VERIFY_PARAM_add1_host(verify_params, cstr.as_ptr(), dns.len())
+        };
+        if err == 1 {
+            Ok(())
+        } else {
+            Err((
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                format!("cannot add SAN entry of type dns '{dns}'"),
+            )
+                .into())
+        }
+    }
+
+    fn x509_verify_parameters_set_san_email(
+        verify_params: *mut Self::NativeX509VerifyParams,
+        email: &str,
+    ) -> crate::Result<()> {
+        let cstring = std::ffi::CString::new(email.as_bytes()).map_err(|e| {
+            (
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                format!("email '{email}' is invalid: {e}"),
+            )
+        })?;
+        let cstr = cstring.as_c_str();
+        let err = unsafe {
+            openssl::X509_VERIFY_PARAM_set1_email(verify_params, cstr.as_ptr(), email.len())
+        };
+        if err == 1 {
+            Ok(())
+        } else {
+            Err((
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                format!("cannot set SAN of type email '{email}'"),
+            )
+                .into())
+        }
+    }
+
+    fn x509_verify_parameters_set_san_ip_address(
+        verify_params: *mut Self::NativeX509VerifyParams,
+        ip_addr: &str,
+    ) -> crate::Result<()> {
+        let cstring = std::ffi::CString::new(ip_addr.as_bytes()).map_err(|e| {
+            (
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                format!("ip address '{ip_addr}' is invalid: {e}"),
+            )
+        })?;
+        let cstr = cstring.as_c_str();
+        let err = unsafe { openssl::X509_VERIFY_PARAM_set1_ip_asc(verify_params, cstr.as_ptr()) };
+        if err == 1 {
+            Ok(())
+        } else {
+            Err((
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                format!("cannot set SAN of type ip address '{ip_addr}'"),
+            )
+                .into())
         }
     }
 }

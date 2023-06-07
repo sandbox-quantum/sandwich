@@ -18,6 +18,15 @@ mod security;
 
 pub(crate) use security::assert_compliance;
 
+/// A set of security requirements that can be updated with new requirements
+/// described in a given verifier `V`.
+/// A sanitizer check for security requirements described in a given verifier
+/// `V`.
+pub(crate) trait VerifierSanitizer<V> {
+    /// Updates the current security requirements with a verifier `V`.
+    fn run_sanitizer_checks(&self, verifier: &V) -> crate::Result<()>;
+}
+
 /// Security requirements to enforce on TLS tunnels.
 /// These requirements are described by the verifiers that comes with the
 /// `TLSOptions` configuration message.
@@ -77,6 +86,85 @@ impl TunnelSecurityRequirements {
     }
 }
 
+/// Implements [`VerifierSanitizer`] for [`TunnelSecurityRequirements`]
+/// with the [`pb_api::SANVerifier`] verifier.
+impl VerifierSanitizer<pb_api::SANVerifier> for TunnelSecurityRequirements {
+    fn run_sanitizer_checks(&self, verifier: &pb_api::SANVerifier) -> crate::Result<()> {
+        if verifier.alt_names.is_empty() {
+            return Err((
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                "SAN list in SANVerifier is empty",
+            )
+                .into());
+        }
+
+        let mut has_email = false;
+        let mut has_ip = false;
+        for (i, san) in verifier.alt_names.iter().enumerate() {
+            match san.san.as_ref() {
+                Some(pb_api::verifiers::sanmatcher::San::Dns(_)) => {
+                    Ok::<(), crate::error::ErrorCode>(())
+                }
+                Some(pb_api::verifiers::sanmatcher::San::Email(_)) => {
+                    if has_email {
+                        Err((
+                            pb::TunnelError::TUNNELERROR_VERIFIER,
+                            "cannot have multiple email addresses as SANs",
+                        )
+                            .into())
+                    } else {
+                        has_email = true;
+                        Ok(())
+                    }
+                }
+                Some(pb_api::verifiers::sanmatcher::San::IpAddress(_)) => {
+                    if has_ip {
+                        Err((
+                            pb::TunnelError::TUNNELERROR_VERIFIER,
+                            "cannot have multiple IP addresses as SANs",
+                        )
+                            .into())
+                    } else {
+                        has_ip = true;
+                        Ok(())
+                    }
+                }
+                Some(t) => Err((
+                    pb::TunnelError::TUNNELERROR_VERIFIER,
+                    format!("unsupported SAN type '{t:?}' at position {i}"),
+                )
+                    .into()),
+                None => Err((
+                    pb::TunnelError::TUNNELERROR_VERIFIER,
+                    format!("empty SANMatcher at position {i}"),
+                )
+                    .into()),
+            }?;
+        }
+        Ok(())
+    }
+}
+
+/// Implements [`VerifierSanitizer`] for [`TunnelSecurityRequirements`]
+/// with the [`pb_api::TunnelVerifier`] verifier.
+impl VerifierSanitizer<pb_api::TunnelVerifier> for TunnelSecurityRequirements {
+    /// Updates the current security requirements with a verifier `V`.
+    fn run_sanitizer_checks(&self, verifier: &pb_api::TunnelVerifier) -> crate::Result<()> {
+        match verifier.verifier.as_ref() {
+            Some(pb_api::verifiers::tunnel_verifier::Verifier::SanVerifier(san_verifier)) => {
+                self.run_sanitizer_checks(san_verifier)
+            }
+            Some(pb_api::verifiers::tunnel_verifier::Verifier::EmptyVerifier(_)) => Ok(()),
+            Some(_) => unreachable!(),
+            None => Err((
+                pb::TunnelError::TUNNELERROR_VERIFIER,
+                "tunnel verifier must specify a verifier",
+            )
+                .into()),
+        }
+    }
+}
+
 #[cfg(test)]
 pub(crate) mod test {
     /// Path to a valid PEM certificate.
@@ -97,4 +185,225 @@ pub(crate) mod test {
 
     /// Path to a valid DER private key.
     pub(crate) const SK_DER_PATH: &str = "testdata/key.der";
+
+    /// Path to a certificate signed for the `example.com` DNS name.
+    pub(crate) const EXAMPLE_COM_CERT_PATH: &str = "testdata/example.com.cert.pem";
+
+    /// Path to the private key associated to the certificate that is signed for the `example.com` DNS name.
+    pub(crate) const EXAMPLE_COM_PRIVATE_KEY_PATH: &str =
+        "testdata/example.com.key.pem";
+
+    /// Path to a certificate signed for the `user@example.com` email address.
+    #[allow(dead_code)]
+    pub(crate) const USER_AT_EXAMPLE_COM_CERT_PATH: &str =
+        "testdata/user@example.com.cert.pem";
+
+    /// Path to the private key associated to the certificate that is signed for the `user@example.com` email address.
+    #[allow(dead_code)]
+    pub(crate) const USER_AT_EXAMPLE_COM_PRIVATE_KEY_PATH: &str =
+        "testdata/user@example.com.key.pem";
+
+    /// Path to a certificate signed for the `127.0.0.1` IP address.
+    #[allow(dead_code)]
+    pub(crate) const IP_127_0_0_1_CERT_PATH: &str = "testdata/127.0.0.1.cert.pem";
+
+    /// Path to the private key associated to the certificate that is signed for the `127.0.0.1` IP address.
+    #[allow(dead_code)]
+    pub(crate) const IP_127_0_0_1_PRIVATE_KEY_PATH: &str =
+        "testdata/127.0.0.1.key.pem";
+
+    /// Path to a certificate signed for the email address `zadig@example.com`
+    /// and the DNS wildcard name `*.example.com`.
+    #[allow(dead_code)]
+    pub(crate) const EMAIL_AND_DNS_WILDCARD_CERT_PATH: &str =
+        "testdata/email_and_dns_wildcard.cert.pem";
+
+    /// Path to the private key associated to the  certificate signed for the email address `zadig@example.com`
+    /// and the DNS wildcard name `*.example.com`.
+    #[allow(dead_code)]
+    pub(crate) const EMAIL_AND_DNS_WILDCARD_PRIVATE_KEY_PATH: &str =
+        "testdata/email_and_dns_wildcard.key.pem";
+
+    /// Tests the behavior of [`TunnelSecurityRequirements`] being updated with
+    /// a [`pb_api::TunnelVerifier`].
+    #[test]
+    fn test_security_requirements_update_tunnel_verifier() {
+        use super::TunnelSecurityRequirements;
+        use super::VerifierSanitizer;
+
+        let secr = TunnelSecurityRequirements::new();
+
+        let tunnel_verifier = pb_api::TunnelVerifier::new();
+
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect_err("must fail on empty protobuf message");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect("empty verifier must be a valid value");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <>
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect_err("must fail on empty SAN verifier");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <>
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect_err("must fail on san verifier with empty entry");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect("san verifier with a dns entry must be valid");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example.com"
+                    >
+                    alt_names <
+                        dns: "*.example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect("san verifier with multiple dns entries must be valid");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        email: "zadig@example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect("san verifier with an email entry must be valid");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        email: "zadig@example.com"
+                    >
+                    alt_names <
+                        email: "thomas@example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect_err("san verifier with multiple email entries must fail");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        ip_address: "127.0.0.1"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect("san verifier with IP address entry must be valid");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        ip_address: "127.0.0.1"
+                    >
+                    alt_names <
+                        ip_address: "127.0.0.2"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier)
+            .expect_err("san verifier with multiple IP address entries must fail");
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        email: "zadig@example.com"
+                    >
+                    alt_names <
+                        ip_address: "127.0.0.1"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier).expect(
+            "san verifier with different types of entries (email and IP address) must be valid",
+        );
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example.com"
+                    >
+                    alt_names <
+                        ip_address: "127.0.0.1"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier).expect(
+            "san verifier with different types of entries (dns and IP address) must be valid",
+        );
+
+        let tunnel_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example.com"
+                    >
+                    alt_names <
+                        email: "zadig@example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        secr.run_sanitizer_checks(&tunnel_verifier).expect(
+            "san verifier with different types of entries (dns and email address) must be valid",
+        );
+    }
 }

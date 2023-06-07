@@ -380,6 +380,16 @@ GenProtoBasedErrorCode!(
             HANDSHAKEERROR_UNKNOWN_ERROR => "unknown handshake error",
         ],
     },
+    {
+        kind: ERRORKIND_TUNNEL,
+        sym: TunnelError,
+        desc: "tunnel error",
+        values: [
+            TUNNELERROR_INVALID => "invalid tunnel configuration",
+            TUNNELERROR_VERIFIER => "invalid verifier",
+            TUNNELERROR_UNKNOWN => "unknown error",
+        ],
+    },
 );
 
 /// An error code.

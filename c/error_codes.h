@@ -160,6 +160,14 @@ enum SandwichHandshakeError {
 };
 typedef enum SandwichHandshakeError SandwichHandshakeError;
 
+/** \brief Enum TunnelError. */
+enum SandwichTunnelError { 
+  SANDWICH_TUNNELERROR_INVALID = 0,
+  SANDWICH_TUNNELERROR_VERIFIER = 1,
+  SANDWICH_TUNNELERROR_UNKNOWN = 2,
+};
+typedef enum SandwichTunnelError SandwichTunnelError;
+
 /** \brief Enum ErrorKind. */
 enum SandwichErrorKind { 
   SANDWICH_ERRORKIND_API = 0,
@@ -176,6 +184,7 @@ enum SandwichErrorKind {
   SANDWICH_ERRORKIND_DATA_SOURCE = 11,
   SANDWICH_ERRORKIND_KEM = 12,
   SANDWICH_ERRORKIND_HANDSHAKE = 13,
+  SANDWICH_ERRORKIND_TUNNEL = 14,
 };
 typedef enum SandwichErrorKind SandwichErrorKind;
 

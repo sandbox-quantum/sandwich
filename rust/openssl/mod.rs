@@ -161,7 +161,14 @@ pub(crate) mod test {
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut ctx = crate::context::try_from(&config).unwrap();
         let io = IOBuffer::new();
-        let tun = ctx.new_tunnel(Box::new(io));
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+        let tun = ctx.new_tunnel(Box::new(io), verifier);
         assert!(tun.is_ok());
         let mut tun = tun.unwrap();
         let rec = tun.handshake().unwrap();
@@ -212,7 +219,14 @@ pub(crate) mod test {
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
         let mut ctx = crate::context::try_from(&config).unwrap();
         let io = IOBuffer::new();
-        let tun = ctx.new_tunnel(Box::new(io));
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+        let tun = ctx.new_tunnel(Box::new(io), verifier);
         assert!(tun.is_ok());
         let mut tun = tun.unwrap();
         let rec = tun.handshake().unwrap();
@@ -296,8 +310,19 @@ pub(crate) mod test {
         let mut server_ctx = crate::context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
-        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
-        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
 
         assert_eq!(
             client.handshake().unwrap(),
@@ -389,8 +414,19 @@ pub(crate) mod test {
         let mut server_ctx = crate::context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
-        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
-        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
 
         assert_eq!(
             client.handshake().unwrap(),
@@ -524,8 +560,19 @@ pub(crate) mod test {
         let mut server_ctx = crate::context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
-        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
-        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
 
         assert_eq!(
             client.handshake().unwrap(),
@@ -629,8 +676,19 @@ pub(crate) mod test {
         let mut server_ctx = crate::context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
-        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
-        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
 
         assert_eq!(
             client.handshake().unwrap(),
@@ -726,8 +784,19 @@ pub(crate) mod test {
         let mut server_ctx = crate::context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
-        let mut client = client_ctx.new_tunnel(Box::new(client_io)).unwrap();
-        let mut server = server_ctx.new_tunnel(Box::new(server_io)).unwrap();
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
 
         assert_eq!(
             client.handshake().unwrap(),
@@ -743,6 +812,1120 @@ pub(crate) mod test {
         );
         assert_eq!(
             server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests the constructor of a tunnel with a empty message for the tunnel verifier.
+    #[test]
+    fn test_tunnel_no_verifier() {
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_PEM_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut ctx = crate::context::try_from(&config).unwrap();
+        let io = IOBuffer::new();
+
+        let verifier = pb_api::TunnelVerifier::new();
+        ctx.new_tunnel(Box::new(io), verifier).expect_err(
+            "constructing a tunnel with an empty message for the tunnel verifier must fail",
+        );
+    }
+
+    /// Tests the constructor of a tunnel with a valid SAN verifier.
+    #[test]
+    fn test_tunnel_san_verifier_valid() {
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_PEM_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut ctx = crate::context::try_from(&config).unwrap();
+        let io = IOBuffer::new();
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        ctx.new_tunnel(Box::new(io), verifier)
+            .expect("constructing a tunnel with a valid SANVerifier must succeed");
+    }
+
+    /// Tests the constructor of a tunnel with an empty SAN verifier.
+    #[test]
+    fn test_tunnel_empty_san_verifier() {
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_PEM_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut ctx = crate::context::try_from(&config).unwrap();
+        let io = IOBuffer::new();
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                >
+            "#,
+        )
+        .unwrap();
+        ctx.new_tunnel(Box::new(io), verifier)
+            .expect_err("constructing a tunnel with an empty SANVerifier must fail");
+    }
+
+    /// Tests the constructor of a tunnel with an invalid SAN verifier.
+    #[test]
+    fn test_tunnel_san_verifier_invalid() {
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::CERT_PEM_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut ctx = crate::context::try_from(&config).unwrap();
+        let io = IOBuffer::new();
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        email: "zadig@example.com"
+                    >
+                    alt_names <
+                        email: "user@example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+        ctx.new_tunnel(Box::new(io), verifier)
+            .expect_err("constructing a tunnel with an invalid SANVerifier must fail");
+    }
+
+    /// Tests the SAN verifier with a simple dns hostname `example.com` that
+    /// matches the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_dns_match() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EXAMPLE_COM_CERT_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EXAMPLE_COM_CERT_PATH,
+                crate::tls::test::EXAMPLE_COM_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests the SAN verifier with a simple dns hostname `example2.com` that
+    /// doesn't match the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_dns_mismatch() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EXAMPLE_COM_CERT_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EXAMPLE_COM_CERT_PATH,
+                crate::tls::test::EXAMPLE_COM_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example2.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+
+        client
+            .handshake()
+            .expect_err("handshake must fail because hostnames mistmatch");
+
+        server.handshake().unwrap_err();
+    }
+
+    /// Tests the SAN verifier with a simple email address `user@example.com` that
+    /// matches the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_email_match() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH,
+                crate::tls::test::USER_AT_EXAMPLE_COM_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        email: "user@example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests the SAN verifier with a simple email address `root@example.com` that
+    /// doesn't match the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_email_mismatch() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH,
+                crate::tls::test::USER_AT_EXAMPLE_COM_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        email: "root@example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+
+        client
+            .handshake()
+            .expect_err("handshake must fail because email mistmatch");
+
+        server.handshake().unwrap_err();
+    }
+
+    /// Tests the SAN verifier with a simple IP address `127.0.0.1` that
+    /// matches the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_ip_address_match() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::IP_127_0_0_1_CERT_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::IP_127_0_0_1_CERT_PATH,
+                crate::tls::test::IP_127_0_0_1_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        ip_address: "127.0.0.1"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests the SAN verifier with a simple IP address `127.0.0.2` that
+    /// doesn't match the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_ip_address_mismatch() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::IP_127_0_0_1_CERT_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::IP_127_0_0_1_CERT_PATH,
+                crate::tls::test::IP_127_0_0_1_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        ip_address: "127.0.0.2"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+
+        client
+            .handshake()
+            .expect_err("handshake must fail because email mistmatch");
+
+        server.handshake().unwrap_err();
+    }
+
+    /// Tests the SAN verifier with an email and a certificate being signed
+    /// for that email and also a wildcard DNS name.
+    #[test]
+    fn test_san_email_certificate_email_wildcard_match() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
+                crate::tls::test::EMAIL_AND_DNS_WILDCARD_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        email: "zadig@example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests the SAN verifier with a DNS name and a certificate being signed
+    /// for an email and also a wildcard DNS name that covers the DNS name.
+    #[test]
+    fn test_san_dns_wildcard_match() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
+                crate::tls::test::EMAIL_AND_DNS_WILDCARD_PRIVATE_KEY_PATH,
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "subdomain.example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
             pb::HandshakeState::HANDSHAKESTATE_DONE
         );
     }
