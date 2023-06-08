@@ -1,0 +1,10 @@
+py_binary(
+    name = "mkdocs",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = [
+        "@pypi_mkdocs//:pkg",
+        "@pypi_mkdocs_material//:pkg",
+        "@pypi_mkdoxy//:pkg",
+    ],
+)
