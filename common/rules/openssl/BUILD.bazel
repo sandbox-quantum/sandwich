@@ -1,0 +1,28 @@
+load(":rules.bzl", "gen_certificate", "gen_private_key")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+gen_private_key(
+    name = "private_key_test",
+    out = "dilithium5.key",
+    algorithm = "dilithium5",
+    format = "DER",
+)
+
+gen_certificate(
+    name = "certificate_test",
+    out = "dilithium5.cert.pem",
+    private_key = ":private_key_test",
+    private_key_format = "DER",
+    subject_alt_names = [
+        "DNS:example.com",
+        "DNS:*.example.com",
+    ],
+)
+
+build_test(
+    name = "cert_test_build_test",
+    targets = [
+        ":certificate_test",
+        ":private_key_test",
+    ],
+)
