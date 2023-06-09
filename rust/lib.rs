@@ -97,3 +97,19 @@ pub(crate) mod tls;
 pub(crate) use context::Mode;
 pub(crate) use data_source::DataSource;
 pub(crate) use pimpl::Pimpl;
+
+#[cfg(test)]
+extern crate runfiles;
+
+#[cfg(test)]
+mod test {
+    /// Resolves the filepath of a runfiles file (data attributes).
+    #[allow(dead_code)]
+    pub(crate) fn resolve_runfile(path: &str) -> std::string::String {
+        let r = runfiles::Runfiles::create().unwrap();
+        r.rlocation(format!("sandwich/{path}"))
+            .into_os_string()
+            .into_string()
+            .unwrap()
+    }
+}

@@ -6,7 +6,7 @@ py_binary(
         "client_asyncio_ssl.py",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     main = "client_asyncio_ssl.py",
     visibility = ["//visibility:public"],
@@ -18,7 +18,7 @@ py_binary(
         "server_asyncio_ssl.py",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     main = "server_asyncio_ssl.py",
     visibility = ["//visibility:public"],

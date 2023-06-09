@@ -42,6 +42,11 @@ _SANDWICH_PROTOBUF_DEPS = [
     "@crate_index//:protobuf",
 ]
 
+# Rust dependencies for unit tests.
+_SANDWICH_RUNFILES_DEPS = [
+    "@rules_rust//tools/runfiles",
+]
+
 # Sandwich "naked" variant.
 rust_library(
     name = "sandwich_naked",
@@ -69,7 +74,7 @@ rust_test(
     timeout = "short",
     crate = ":sandwich_naked",
     crate_features = [],
-    data = ["//testdata:tests_data"],
+    data = ["//testdata"],
     rustc_flags = [
         "-A",
         "dead_code",
@@ -78,7 +83,7 @@ rust_test(
         "-A",
         "unused_macros",
     ],
-    deps = _SANDWICH_PROTOBUF_DEPS,
+    deps = _SANDWICH_PROTOBUF_DEPS + _SANDWICH_RUNFILES_DEPS,
 )
 
 rust_clippy(
@@ -257,8 +262,8 @@ rust_test(
         "ffi",
         "openssl",
     ],
-    data = ["//testdata:tests_data"],
-    deps = _SANDWICH_PROTOBUF_DEPS,
+    data = ["//testdata"],
+    deps = _SANDWICH_PROTOBUF_DEPS + _SANDWICH_RUNFILES_DEPS,
 )
 
 rust_clippy(

@@ -37,7 +37,7 @@ var (
 	certPath        string = "testdata/localhost.cert.pem"
 	certExpiredPath string = "testdata/cert_expired.pem"
 	keyPath         string = "testdata/localhost.key.pem"
-	keyExpiredPath  string = "testdata/key.pem"
+	keyExpiredPath  string = "testdata/private_key_cert_expired.pem"
 )
 
 // bufIO implements sandwich.IO, using a TX buffer and a

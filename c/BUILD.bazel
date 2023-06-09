@@ -48,12 +48,13 @@ cc_test(
         "--std=c++20",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     linkstatic = True,
     deps = [
         ":sandwich",
         "//proto:sandwich_cc_proto",
         "//proto/api/v1:api_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
     ],
 )

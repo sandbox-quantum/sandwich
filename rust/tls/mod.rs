@@ -168,7 +168,7 @@ impl VerifierSanitizer<pb_api::TunnelVerifier> for TunnelSecurityRequirements {
 #[cfg(test)]
 pub(crate) mod test {
     /// Path to a valid PEM certificate.
-    pub(crate) const CERT_PEM_PATH: &str = "testdata/cert.pem";
+    pub(crate) const CERT_PEM_PATH: &str = "testdata/dilithium5.cert.pem";
 
     /// Path to an invalid DER certificate.
     pub(crate) const CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH: &str =
@@ -177,52 +177,40 @@ pub(crate) mod test {
     /// Path to an expired PEM certificate.
     pub(crate) const CERT_EXPIRED_PEM_PATH: &str = "testdata/cert_expired.pem";
 
+    /// Path to the private key associated with the expired PEM certificate.
+    pub(crate) const CERT_EXPIRED_PRIVATE_KEY_PEM_PATH: &str =
+        "testdata/private_key_cert_expired.pem";
+
     /// Path to a valid DER certificate.
-    pub(crate) const CERT_DER_PATH: &str = "testdata/cert.der";
+    pub(crate) const CERT_DER_PATH: &str = "testdata/dilithium5.cert.der";
 
     /// Path to a valid PEM private key.
-    pub(crate) const SK_PATH: &str = "testdata/key.pem";
+    pub(crate) const SK_PATH: &str = "testdata/dilithium5.key.pem";
 
     /// Path to a valid DER private key.
-    pub(crate) const SK_DER_PATH: &str = "testdata/key.der";
+    pub(crate) const SK_DER_PATH: &str = "testdata/dilithium5.key.der";
+
+    /// Path to a valid private key using a post-quantum algorithm, in PEM format.
+    #[allow(dead_code)]
+    pub(crate) const PQ_PRIVATE_KEY_PEM_PATH: &str = "testdata/dilithium5.key.pem";
 
     /// Path to a certificate signed for the `example.com` DNS name.
     pub(crate) const EXAMPLE_COM_CERT_PATH: &str = "testdata/example.com.cert.pem";
-
-    /// Path to the private key associated to the certificate that is signed for the `example.com` DNS name.
-    pub(crate) const EXAMPLE_COM_PRIVATE_KEY_PATH: &str =
-        "testdata/example.com.key.pem";
 
     /// Path to a certificate signed for the `user@example.com` email address.
     #[allow(dead_code)]
     pub(crate) const USER_AT_EXAMPLE_COM_CERT_PATH: &str =
         "testdata/user@example.com.cert.pem";
 
-    /// Path to the private key associated to the certificate that is signed for the `user@example.com` email address.
-    #[allow(dead_code)]
-    pub(crate) const USER_AT_EXAMPLE_COM_PRIVATE_KEY_PATH: &str =
-        "testdata/user@example.com.key.pem";
-
     /// Path to a certificate signed for the `127.0.0.1` IP address.
     #[allow(dead_code)]
     pub(crate) const IP_127_0_0_1_CERT_PATH: &str = "testdata/127.0.0.1.cert.pem";
-
-    /// Path to the private key associated to the certificate that is signed for the `127.0.0.1` IP address.
-    #[allow(dead_code)]
-    pub(crate) const IP_127_0_0_1_PRIVATE_KEY_PATH: &str =
-        "testdata/127.0.0.1.key.pem";
 
     /// Path to a certificate signed for the email address `zadig@example.com`
     /// and the DNS wildcard name `*.example.com`.
     #[allow(dead_code)]
     pub(crate) const EMAIL_AND_DNS_WILDCARD_CERT_PATH: &str =
         "testdata/email_and_dns_wildcard.cert.pem";
-
-    /// Path to the private key associated to the  certificate signed for the email address `zadig@example.com`
-    /// and the DNS wildcard name `*.example.com`.
-    #[allow(dead_code)]
-    pub(crate) const EMAIL_AND_DNS_WILDCARD_PRIVATE_KEY_PATH: &str =
-        "testdata/email_and_dns_wildcard.key.pem";
 
     /// Tests the behavior of [`TunnelSecurityRequirements`] being updated with
     /// a [`pb_api::TunnelVerifier`].

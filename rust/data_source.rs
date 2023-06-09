@@ -118,21 +118,20 @@ mod test {
     use super::DataSource;
 
     /// Path to an existing and readable file.
-    const FILE_PATH: &str = "testdata/key.pem";
+    const FILE_PATH: &str = "testdata/dilithium5.cert.pem";
 
     /// Tests [`DataSource`] constructor from a protobuf `DataSource` message
     /// containing a file path.
     #[test]
     fn test_datasource_constructor_fs() {
-        let mt = std::fs::metadata(FILE_PATH);
+        let filepath = crate::test::resolve_runfile(FILE_PATH);
+        let mt = std::fs::metadata(&filepath);
         assert!(mt.is_ok());
         let fsize = mt.unwrap().len() as usize;
 
         let mut ds = pb_api::DataSource::new();
-        ds.set_filename(FILE_PATH.to_string());
-        let ds = DataSource::try_from(&ds);
-        assert!(ds.is_ok());
-        let ds = ds.unwrap();
+        ds.set_filename(filepath);
+        let ds = DataSource::try_from(&ds).unwrap();
         assert_eq!(ds.len(), fsize);
     }
 

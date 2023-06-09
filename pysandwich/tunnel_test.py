@@ -30,10 +30,10 @@ _LISTENING_PORT = 1339
 _PING_MSG = b"PING"
 _PONG_MSG = b"PONG"
 
-_CERT_PATH = "testdata/cert.pem"
-_KEY_PATH = "testdata/key.pem"
+_CERT_PATH = "testdata/falcon1024.cert.pem"
+_KEY_PATH = "testdata/falcon1024.key.pem"
 _CERT_EXPIRED_PATH = "testdata/cert_expired.pem"
-_KEY_EXPIRED_PATH = "testdata/key_expired.pem"
+_PRIVATE_KEY_EXPIRED_PATH = "testdata/private_key_cert_expired.pem"
 
 _DEFAULT_KEM = "kyber512"
 
@@ -101,7 +101,9 @@ def create_expired_server_conf(s: Sandwich) -> Context:
         EncodingFormat.ENCODING_FORMAT_PEM
     )
 
-    conf.server.tls.common_options.identity.private_key.static.data.filename = _KEY_PATH
+    conf.server.tls.common_options.identity.private_key.static.data.filename = (
+        _PRIVATE_KEY_EXPIRED_PATH
+    )
     conf.server.tls.common_options.identity.private_key.static.format = (
         EncodingFormat.ENCODING_FORMAT_PEM
     )

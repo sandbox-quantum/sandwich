@@ -24,6 +24,8 @@
 #include "proto/api/v1/configuration.pb.h"
 #include "proto/sandwich.pb.h"
 
+#include "tools/cpp/runfiles/runfiles.h"
+
 extern "C" {
 
 #include <sys/socket.h>
@@ -50,6 +52,8 @@ extern "C" {
                  abort())))
 
 } // end extern "C"
+
+using bazel::tools::cpp::runfiles::Runfiles;
 
 namespace {
 
@@ -91,8 +95,10 @@ using SandwichContextDeleter = std::function<void(struct ::SandwichContext *)>;
 
 /// \brief Create a Sandwich context for the client.
 ///
+/// \param runfiles Bazel runfiles context.
+///
 /// \return A Sandwich context for the client.
-auto CreateClientContext()
+auto CreateClientContext(std::unique_ptr<Runfiles> &runfiles)
     -> std::unique_ptr<struct ::SandwichContext, SandwichContextDeleter> {
   auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_CLIENT,
                                   saq::sandwich::proto::api::v1::
@@ -107,7 +113,8 @@ auto CreateClientContext()
                    ->mutable_x509_verifier()
                    ->add_trusted_cas()
                    ->mutable_static_();
-  cert->mutable_data()->set_filename("testdata/cert.pem");
+  cert->mutable_data()->set_filename(runfiles->Rlocation(
+      "sandwich/testdata/falcon1024.cert.pem"));
   cert->set_format(saq::sandwich::proto::api::v1::ASN1EncodingFormat::
                        ENCODING_FORMAT_PEM);
 
@@ -124,8 +131,10 @@ auto CreateClientContext()
 
 /// \brief Create a Sandwich context for the server.
 ///
+/// \param runfiles Bazel runfiles context.
+///
 /// \return A Sandwich context for the server.
-auto CreateServerContext()
+auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
     -> std::unique_ptr<struct ::SandwichContext, SandwichContextDeleter> {
   auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_SERVER,
                                   saq::sandwich::proto::api::v1::
@@ -144,7 +153,8 @@ auto CreateServerContext()
                    ->mutable_identity()
                    ->mutable_certificate()
                    ->mutable_static_();
-  cert->mutable_data()->set_filename("testdata/cert.pem");
+  cert->mutable_data()->set_filename(runfiles->Rlocation(
+      "sandwich/testdata/falcon1024.cert.pem"));
   cert->set_format(saq::sandwich::proto::api::v1::ASN1EncodingFormat::
                        ENCODING_FORMAT_PEM);
 
@@ -154,7 +164,8 @@ auto CreateServerContext()
                   ->mutable_identity()
                   ->mutable_private_key()
                   ->mutable_static_();
-  key->mutable_data()->set_filename("testdata/key.pem");
+  key->mutable_data()->set_filename(runfiles->Rlocation(
+      "sandwich/testdata/falcon1024.key.pem"));
   key->set_format(saq::sandwich::proto::api::v1::ASN1EncodingFormat::
                       ENCODING_FORMAT_PEM);
 
@@ -324,7 +335,6 @@ void ClientInitiateHandshake(struct ::SandwichTunnel *client) {
   enum ::SandwichTunnelHandshakeState state;
   const auto err{::sandwich_tunnel_handshake(client, &state)};
   sandwich_assert(err == NULL);
-  std::cout << "state=" << state << '\n';
   sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ);
 
   sandwich_assert(::sandwich_tunnel_state(client) ==
@@ -474,9 +484,14 @@ void ServerClosesTunnel(struct ::SandwichTunnel *server) {
 
 } // end anonymous namespace
 
-int main() {
-  auto client = CreateClientContext();
-  auto server = CreateServerContext();
+int main(int argc, char **argv) {
+  std::string error;
+  std::unique_ptr<Runfiles> runfiles(
+      Runfiles::CreateForTest(BAZEL_CURRENT_REPOSITORY, &error));
+  sandwich_assert(runfiles != nullptr);
+
+  auto client = CreateClientContext(runfiles);
+  auto server = CreateServerContext(runfiles);
 
   // Create two connected sockets, to use with saq::sandwich::io::Socket.
   std::array<int, 2> fds{0};

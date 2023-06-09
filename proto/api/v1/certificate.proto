@@ -22,7 +22,5 @@ import "proto/api/v1/data_source.proto";
 
 // A certificate.
 message Certificate {
-  oneof source {
-    ASN1DataSource static = 1;
-  }
+  oneof source { ASN1DataSource static = 1; }
 }

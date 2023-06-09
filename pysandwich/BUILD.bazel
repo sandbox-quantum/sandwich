@@ -56,7 +56,7 @@ py_test(
     timeout = "short",
     srcs = ["tunnel_test.py"],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     deps = [
         ":python",

@@ -6,7 +6,7 @@ py_binary(
         "client_ssl_socket.py",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     main = "client_ssl_socket.py",
     visibility = ["//visibility:public"],
@@ -18,7 +18,7 @@ py_binary(
         "server_ssl_socket.py",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     main = "server_ssl_socket.py",
     visibility = ["//visibility:public"],

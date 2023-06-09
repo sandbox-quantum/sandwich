@@ -33,7 +33,7 @@ py_test(
         "$(location //examples/python/tls_asyncio:server)",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     main = "test_client_server.py",
     visibility = ["//visibility:public"],
@@ -56,7 +56,7 @@ py_test(
         "$(location //examples/python/tls_socket:server)",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     main = "test_client_server.py",
     visibility = ["//visibility:public"],
@@ -79,7 +79,7 @@ py_test(
         "$(location //examples/python/tls_sandwich:server)",
     ],
     data = [
-        "//testdata:tests_data",
+        "//testdata",
     ],
     main = "test_client_server.py",
     visibility = ["//visibility:public"],

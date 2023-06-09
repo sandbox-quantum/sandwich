@@ -18,7 +18,8 @@ package saq.sandwich.proto.api.v1;
 
 option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
 
-// Whether to allow or forbid classical algorithms. We define "classical algorithms" as something that isn't quantum-safe, like ECC.
+// Whether to allow or forbid classical algorithms. We define "classical
+// algorithms" as something that isn't quantum-safe, like ECC.
 enum ClassicalAlgoChoice {
   CLASSICAL_ALGORITHMS_FORBID = 0;
   CLASSICAL_ALGORITHMS_ALLOW = 1;
@@ -30,7 +31,8 @@ enum QuantumSafeAlgoChoice {
   QUANTUM_SAFE_ALGORITHMS_FORBID = 1;
 };
 
-// Whether to allow or forbid hybrid algorithms. In this context "hybrid" means a combination of a quantum-safe algorithm and a classical one.
+// Whether to allow or forbid hybrid algorithms. In this context "hybrid" means
+// a combination of a quantum-safe algorithm and a classical one.
 enum HybridAlgoChoice {
   HYBRID_ALGORITHMS_ALLOW = 0;
   HYBRID_ALGORITHMS_FORBID = 1;
@@ -43,8 +45,9 @@ enum NISTSecurityStrengthBits {
   BIT_STRENGTH_AT_LEAST_256 = 2;
 };
 
-// Compliance lists high level security constraints on the choice of algorithms within a Sandwich configuration.
-// If a Sandwich configuration specifies algorithms that violate those constraints, an error will be returned.
+// Compliance lists high level security constraints on the choice of algorithms
+// within a Sandwich configuration. If a Sandwich configuration specifies
+// algorithms that violate those constraints, an error will be returned.
 message Compliance {
   HybridAlgoChoice hybrid_choice = 1;
   QuantumSafeAlgoChoice quantum_safe_choice = 2;

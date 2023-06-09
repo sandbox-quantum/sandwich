@@ -1,5 +1,100 @@
+load("//common/rules/openssl:rules.bzl", "gen_certificate", "gen_private_key")
+
+gen_private_key(
+    name = "pq_private_key_pem",
+    out = "dilithium5.key.pem",
+    algorithm = "dilithium5",
+    format = "PEM",
+)
+
+gen_private_key(
+    name = "pq_private_key_der",
+    out = "dilithium5.key.der",
+    algorithm = "dilithium5",
+    format = "DER",
+)
+
+gen_private_key(
+    name = "falcon1024_private_key_pem",
+    out = "falcon1024.key.pem",
+    algorithm = "falcon1024",
+    format = "PEM",
+)
+
+gen_certificate(
+    name = "falcon1024_cert_pem",
+    out = "falcon1024.cert.pem",
+    private_key = ":falcon1024_private_key_pem",
+)
+
+gen_certificate(
+    name = "pq_cert_pem",
+    out = "dilithium5.cert.pem",
+    private_key = ":pq_private_key_pem",
+)
+
+gen_certificate(
+    name = "pq_cert_der",
+    out = "dilithium5.cert.der",
+    format = "DER",
+    private_key = ":pq_private_key_pem",
+)
+
+gen_certificate(
+    name = "cert_with_ip",
+    out = "127.0.0.1.cert.pem",
+    private_key = ":pq_private_key_pem",
+    subject_alt_names = [
+        "IP:127.0.0.1",
+    ],
+)
+
+gen_certificate(
+    name = "cert_with_email",
+    out = "user@example.com.cert.pem",
+    private_key = ":pq_private_key_pem",
+    subject_alt_names = [
+        "email:user@example.com",
+    ],
+)
+
+gen_certificate(
+    name = "cert_with_dns",
+    out = "example.com.cert.pem",
+    private_key = ":pq_private_key_pem",
+    subject_alt_names = [
+        "DNS:example.com",
+    ],
+)
+
+gen_certificate(
+    name = "cert_with_email_and_dns_wildcard",
+    out = "email_and_dns_wildcard.cert.pem",
+    private_key = ":pq_private_key_pem",
+    subject_alt_names = [
+        "email:zadig@example.com",
+        "DNS:*.example.com",
+    ],
+)
+
 filegroup(
-    name = "tests_data",
-    srcs = glob(["*"]),
+    name = "testdata",
+    srcs = [
+        "cert_expired.pem",
+        "cert_unknown_sig_alg.der",
+        "localhost.cert.pem",
+        "localhost.key.pem",
+        "private_key_cert_expired.pem",
+        ":cert_with_dns",
+        ":cert_with_email",
+        ":cert_with_email_and_dns_wildcard",
+        ":cert_with_ip",
+        ":falcon1024_cert_pem",
+        ":falcon1024_private_key_pem",
+        ":pq_cert_der",
+        ":pq_cert_pem",
+        ":pq_private_key_der",
+        ":pq_private_key_pem",
+    ],
     visibility = ["//visibility:public"],
 )

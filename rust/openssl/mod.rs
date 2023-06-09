@@ -153,7 +153,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
             )
             .as_str(),
         )
@@ -210,8 +210,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH,
-                crate::tls::test::SK_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
+                crate::test::resolve_runfile(crate::tls::test::SK_PATH),
             )
             .as_str(),
         )
@@ -261,7 +261,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
             )
             .as_str(),
         )
@@ -300,8 +300,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH,
-                crate::tls::test::SK_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
+                crate::test::resolve_runfile(crate::tls::test::SK_PATH),
             )
             .as_str(),
         )
@@ -365,7 +365,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_EXPIRED_PEM_PATH,
+                crate::test::resolve_runfile(crate::tls::test::CERT_EXPIRED_PEM_PATH),
             )
             .as_str(),
         )
@@ -404,8 +404,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_EXPIRED_PEM_PATH,
-                crate::tls::test::SK_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_EXPIRED_PEM_PATH),
+                crate::test::resolve_runfile(crate::tls::test::CERT_EXPIRED_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -460,11 +460,15 @@ pub(crate) mod test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let server_certificate = "testdata/dilithium5.cert.pem";
-        let server_private_key = "testdata/dilithium5.key.pem";
+        let server_certificate =
+            crate::test::resolve_runfile("testdata/dilithium5.cert.pem");
+        let server_private_key =
+            crate::test::resolve_runfile("testdata/dilithium5.key.pem");
 
-        let client_certificate = "testdata/falcon1024.cert.pem";
-        let client_private_key = "testdata/falcon1024.key.pem";
+        let client_certificate =
+            crate::test::resolve_runfile("testdata/falcon1024.cert.pem");
+        let client_private_key =
+            crate::test::resolve_runfile("testdata/falcon1024.key.pem");
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -595,10 +599,13 @@ pub(crate) mod test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let server_certificate = "testdata/dilithium5.cert.pem";
-        let server_private_key = "testdata/dilithium5.key.pem";
+        let server_certificate =
+            crate::test::resolve_runfile("testdata/dilithium5.cert.pem");
+        let server_private_key =
+            crate::test::resolve_runfile("testdata/dilithium5.key.pem");
 
-        let client_certificate = "testdata/falcon1024.cert.pem";
+        let client_certificate =
+            crate::test::resolve_runfile("testdata/falcon1024.cert.pem");
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -735,7 +742,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_EXPIRED_PEM_PATH,
+                crate::test::resolve_runfile(crate::tls::test::CERT_EXPIRED_PEM_PATH),
             )
             .as_str(),
         )
@@ -774,8 +781,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_EXPIRED_PEM_PATH,
-                crate::tls::test::SK_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_EXPIRED_PEM_PATH),
+                crate::test::resolve_runfile(crate::tls::test::CERT_EXPIRED_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -840,7 +847,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
             )
             .as_str(),
         )
@@ -879,7 +886,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
             )
             .as_str(),
         )
@@ -926,7 +933,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
             )
             .as_str(),
         )
@@ -970,7 +977,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::CERT_PEM_PATH
+                crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
             )
             .as_str(),
         )
@@ -1024,7 +1031,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EXAMPLE_COM_CERT_PATH
+                crate::test::resolve_runfile(crate::tls::test::EXAMPLE_COM_CERT_PATH),
             )
             .as_str(),
         )
@@ -1063,8 +1070,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EXAMPLE_COM_CERT_PATH,
-                crate::tls::test::EXAMPLE_COM_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::EXAMPLE_COM_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -1140,7 +1147,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EXAMPLE_COM_CERT_PATH
+                crate::test::resolve_runfile(crate::tls::test::EXAMPLE_COM_CERT_PATH),
             )
             .as_str(),
         )
@@ -1179,8 +1186,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EXAMPLE_COM_CERT_PATH,
-                crate::tls::test::EXAMPLE_COM_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::EXAMPLE_COM_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -1258,7 +1265,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH
+                crate::test::resolve_runfile(crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH),
             )
             .as_str(),
         )
@@ -1297,8 +1304,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH,
-                crate::tls::test::USER_AT_EXAMPLE_COM_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -1374,7 +1381,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH
+                crate::test::resolve_runfile(crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH),
             )
             .as_str(),
         )
@@ -1413,8 +1420,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH,
-                crate::tls::test::USER_AT_EXAMPLE_COM_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::USER_AT_EXAMPLE_COM_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -1492,7 +1499,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::IP_127_0_0_1_CERT_PATH,
+                crate::test::resolve_runfile(crate::tls::test::IP_127_0_0_1_CERT_PATH),
             )
             .as_str(),
         )
@@ -1531,8 +1538,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::IP_127_0_0_1_CERT_PATH,
-                crate::tls::test::IP_127_0_0_1_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::IP_127_0_0_1_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -1608,7 +1615,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::IP_127_0_0_1_CERT_PATH,
+                crate::test::resolve_runfile(crate::tls::test::IP_127_0_0_1_CERT_PATH),
             )
             .as_str(),
         )
@@ -1647,8 +1654,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::IP_127_0_0_1_CERT_PATH,
-                crate::tls::test::IP_127_0_0_1_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::IP_127_0_0_1_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -1726,7 +1733,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
+                crate::test::resolve_runfile(crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH),
             )
             .as_str(),
         )
@@ -1765,8 +1772,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
-                crate::tls::test::EMAIL_AND_DNS_WILDCARD_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )
@@ -1842,7 +1849,7 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
+                crate::test::resolve_runfile(crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH),
             )
             .as_str(),
         )
@@ -1881,8 +1888,8 @@ pub(crate) mod test {
               >
             >
             "#,
-                crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH,
-                crate::tls::test::EMAIL_AND_DNS_WILDCARD_PRIVATE_KEY_PATH,
+                crate::test::resolve_runfile(crate::tls::test::EMAIL_AND_DNS_WILDCARD_CERT_PATH),
+                crate::test::resolve_runfile(crate::tls::test::PQ_PRIVATE_KEY_PEM_PATH),
             )
             .as_str(),
         )

@@ -127,7 +127,7 @@ pub(crate) mod test {
     pub(crate) mod openssl {
         /// Creates a [`pb_api::Certificate`].
         pub(crate) fn create_cert(
-            path: &'static str,
+            path: &'_ str,
             fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
         ) -> pb_api::Certificate {
             let mut cert = pb_api::Certificate::new();
@@ -180,7 +180,7 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    crate::tls::test::CERT_PEM_PATH,
+                    crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
                 )
                 .as_str(),
             )
@@ -215,7 +215,7 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    crate::tls::test::CERT_PEM_PATH,
+                    crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
                 )
                 .as_str(),
             )
@@ -253,7 +253,7 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    crate::tls::test::CERT_PEM_PATH,
+                    crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
                 )
                 .as_str(),
             )
@@ -317,8 +317,8 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    cert = crate::tls::test::CERT_PEM_PATH,
-                    private_key = crate::tls::test::SK_PATH,
+                    cert = crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
+                    private_key = crate::test::resolve_runfile(crate::tls::test::SK_PATH),
                 )
                 .as_str(),
             )

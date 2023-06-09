@@ -63,6 +63,7 @@ mod test {
     fn test_context_ctor_dtor() {
         use protobuf::Message;
 
+        let cert_path = crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH);
         let mut config =
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
         config
@@ -73,7 +74,7 @@ mod test {
             .mut_x509_verifier()
             .trusted_cas
             .push(crate::context::test::openssl::create_cert(
-                crate::tls::test::CERT_PEM_PATH,
+                &cert_path,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ));
         config
@@ -85,6 +86,7 @@ mod test {
             .push("kyber1024".to_string());
 
         let encoded = config.write_to_bytes().unwrap();
+        drop(config);
 
         let mut ptr: *mut std::ffi::c_void = std::ptr::null_mut();
         super::sandwich_context_new(
@@ -102,6 +104,7 @@ mod test {
     fn test_context_ctor_error() {
         use protobuf::Message;
 
+        let cert_path = crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH);
         let mut config =
             crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
         config
@@ -112,7 +115,7 @@ mod test {
             .mut_x509_verifier()
             .trusted_cas
             .push(crate::context::test::openssl::create_cert(
-                crate::tls::test::CERT_PEM_PATH,
+                &cert_path,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ));
         config
