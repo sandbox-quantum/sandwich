@@ -1,0 +1,29 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+rust_binary(
+    name = "protoc-gen-md",
+    srcs = [
+        "main.rs",
+        "template.rs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//common/libs/metaproto",
+        "@crate_index//:env_logger",
+        "@crate_index//:log",
+        "@crate_index//:protobuf",
+    ],
+)
+
+rust_clippy(
+    name = "clippy",
+    deps = [
+        ":protoc-gen-md",
+    ],
+)
+
+build_test(
+    name = "build_test",
+    targets = [":clippy"],
+)

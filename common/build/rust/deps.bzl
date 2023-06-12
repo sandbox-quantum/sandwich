@@ -14,6 +14,13 @@ def rust_deps():
             )],
         },
         packages = {
+            "env_logger": crate.spec(
+                version = "0.10.0",
+            ),
+            "log": crate.spec(
+                version = "0.4.17",
+                features = ["release_max_level_info"],
+            ),
             "protobuf": crate.spec(
                 version = "3.2.0",
             ),

@@ -1,0 +1,44 @@
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+rust_library(
+    name = "metaproto",
+    srcs = [
+        "enum_.rs",
+        "file_info.rs",
+        "lib.rs",
+        "message.rs",
+        "oneof.rs",
+        "source_info.rs",
+        "symbol.rs",
+        "symbol_info.rs",
+    ],
+    crate_name = "metaproto",
+    visibility = [
+        "//common/libs/metaproto:__subpackages__",
+        "//common/tools/proto2md:__subpackages__",
+    ],
+    deps = [
+        "@crate_index//:log",
+        "@crate_index//:protobuf",
+    ],
+)
+
+rust_clippy(
+    name = "clippy",
+    deps = [
+        ":metaproto",
+    ],
+)
+
+build_test(
+    name = "build_test",
+    targets = [":clippy"],
+)
+
+rust_test(
+    name = "test",
+    timeout = "short",
+    crate = ":metaproto",
+    data = ["test.proto"],
+)
