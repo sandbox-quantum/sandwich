@@ -5,7 +5,7 @@ from time import process_time
 _PING_MSG = b"PING"
 _PONG_MSG = b"PONG"
 
-_CERT_PATH = "testdata/cert.pem"
+_CERT_EXPIRED_PATH = "testdata/cert_expired.pem"
 
 
 async def client_to_server(
@@ -38,9 +38,9 @@ async def main(count, server_address):
     server_host, server_port = server_address
 
     client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    client_ctx.load_verify_locations(_CERT_PATH)
-    client_ctx.verify_mode = ssl.CERT_REQUIRED
+    client_ctx.load_verify_locations(_CERT_EXPIRED_PATH)
     client_ctx.check_hostname = False
+    client_ctx.verify_mode = ssl.CERT_NONE
 
     # Start benchmark
     start = process_time()

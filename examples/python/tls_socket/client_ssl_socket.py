@@ -5,7 +5,7 @@ from time import process_time
 _PING_MSG = b"PING"
 _PONG_MSG = b"PONG"
 
-_CERT_PATH = "testdata/cert.pem"
+_CERT_EXPIRED_PATH = "testdata/cert_expired.pem"
 
 
 def client_to_server(server_address, client_ssl_io: ssl.SSLSocket):
@@ -25,9 +25,9 @@ def main(count):
 
     # Set up the client SSL context
     client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    client_ctx.load_verify_locations(_CERT_PATH)
-    client_ctx.verify_mode = ssl.CERT_REQUIRED
+    client_ctx.load_verify_locations(_CERT_EXPIRED_PATH)
     client_ctx.check_hostname = False
+    client_ctx.verify_mode = ssl.CERT_NONE
     client_ctx.set_ciphers("ECDHE-ECDSA-AES256-GCM-SHA384")
 
     start = process_time()

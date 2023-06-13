@@ -4,8 +4,8 @@ import ssl
 _PING_MSG = b"PING"
 _PONG_MSG = b"PONG"
 
-_CERT_PATH = "testdata/cert.pem"
-_KEY_PATH = "testdata/key.pem"
+_CERT_EXPIRED_PATH = "testdata/cert_expired.pem"
+_PRIVATE_KEY_EXPIRED_PATH = "testdata/private_key_cert_expired.pem"
 
 
 async def server_to_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -30,7 +30,7 @@ async def server_to_client(reader: asyncio.StreamReader, writer: asyncio.StreamW
 
 async def main(server_host: str, server_port: int):
     server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    server_ctx.load_cert_chain(_CERT_PATH, _KEY_PATH)
+    server_ctx.load_cert_chain(_CERT_EXPIRED_PATH, _PRIVATE_KEY_EXPIRED_PATH)
 
     server = await asyncio.start_server(
         server_to_client,

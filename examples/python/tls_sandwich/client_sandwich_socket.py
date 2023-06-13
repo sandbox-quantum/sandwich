@@ -4,6 +4,7 @@ from time import process_time
 import pysandwich.proto.api.v1.compliance_pb2 as Compliance
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
+import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.io as SandwichIO
 from pysandwich.sandwich import Context, Sandwich, Tunnel
 
@@ -11,7 +12,7 @@ _PING_MSG = b"PING"
 _PONG_MSG = b"PONG"
 
 _CIPHER = "prime256v1"
-_CERT_PATH = "testdata/cert.pem"
+_CERT_PATH = "testdata/falcon1024.cert.pem"
 
 
 def create_client_conf(cipher_opts: str) -> SandwichAPI:
@@ -32,8 +33,10 @@ def create_client_conf(cipher_opts: str) -> SandwichAPI:
 def sandwich_client_to_server(server_address, client_ctx: Context):
     """Connect to server with a Context"""
     client_io = socket.create_connection(server_address)
+    verifier = SandwichVerifiers.TunnelVerifier()
+    verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
 
-    client = Tunnel(client_ctx, SandwichIO.Socket(client_io))
+    client = Tunnel(client_ctx, SandwichIO.Socket(client_io), verifier)
     assert client is not None
 
     # Here is the plan:

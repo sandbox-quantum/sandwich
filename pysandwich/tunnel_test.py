@@ -19,7 +19,6 @@ import socket
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
 import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
-import pysandwich.proto.api.v1.verifiers_pb2 as verifiers
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 from pysandwich.sandwich import Context, Sandwich, Tunnel
@@ -48,7 +47,9 @@ def create_server_conf(s: Sandwich) -> Context:
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
-    conf.server.tls.common_options.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+    conf.server.tls.common_options.empty_verifier.CopyFrom(
+        SandwichVerifiers.EmptyVerifier()
+    )
     conf.server.tls.common_options.identity.certificate.static.data.filename = (
         _CERT_PATH
     )
@@ -93,7 +94,9 @@ def create_expired_server_conf(s: Sandwich) -> Context:
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
-    conf.server.tls.common_options.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+    conf.server.tls.common_options.empty_verifier.CopyFrom(
+        SandwichVerifiers.EmptyVerifier()
+    )
     conf.server.tls.common_options.identity.certificate.static.data.filename = (
         _CERT_EXPIRED_PATH
     )
@@ -130,7 +133,7 @@ def create_expired_client_conf(s: Sandwich) -> Context:
     return Context.from_bytes(s, buf)
 
 
-def create_ios() -> (SandwichIO.IO, SandwichIO.IO):
+def create_ios() -> tuple[SandwichIO.IO, SandwichIO.IO]:
     s1, s2 = socket.socketpair(family=socket.AF_UNIX, type=socket.SOCK_STREAM)
     s1.setblocking(0)
     s2.setblocking(0)
@@ -151,7 +154,7 @@ def main():
     assert server_io is not None
 
     verifier = SandwichVerifiers.TunnelVerifier()
-    verifier.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+    verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
 
     server = Tunnel(server_conf, server_io, verifier)
     assert server is not None
@@ -246,7 +249,7 @@ def main():
     assert server_io is not None
 
     verifier = SandwichVerifiers.TunnelVerifier()
-    verifier.empty_verifier.CopyFrom(verifiers.EmptyVerifier())
+    verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
 
     server = Tunnel(server_conf, server_io, verifier)
     assert server is not None

@@ -4,8 +4,8 @@ import ssl
 _PING_MSG = b"PING"
 _PONG_MSG = b"PONG"
 
-_CERT_PATH = "testdata/cert.pem"
-_KEY_PATH = "testdata/key.pem"
+_CERT_EXPIRED_PATH = "testdata/cert_expired.pem"
+_PRIVATE_KEY_EXPIRED_PATH = "testdata/private_key_cert_expired.pem"
 
 
 def server_handler(client_ssl_socket: ssl.SSLSocket):
@@ -25,7 +25,7 @@ def main():
 
     # Setup the server SSL context
     server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    server_ctx.load_cert_chain(_CERT_PATH, _KEY_PATH)
+    server_ctx.load_cert_chain(_CERT_EXPIRED_PATH, _PRIVATE_KEY_EXPIRED_PATH)
     server_ctx.set_ciphers("ECDHE-ECDSA-AES256-GCM-SHA384")
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
