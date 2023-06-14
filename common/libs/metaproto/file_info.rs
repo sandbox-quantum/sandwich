@@ -1,7 +1,7 @@
-///! Defines [`Info`].
-///!
-///! [`Info`] describes a protobuf source file, using its package name
-///! and its file path.
+//! Defines [`Info`].
+//!
+//! [`Info`] describes a protobuf source file, using its package name
+//! and its file path.
 extern crate protobuf;
 
 use super::source_info::Info as SourceInfo;

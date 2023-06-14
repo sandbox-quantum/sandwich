@@ -1,4 +1,4 @@
-///! Defines the [`Symbol`] struct.
+//! Defines the [`Symbol`] struct.
 extern crate protobuf;
 
 use super::file_info::Info as FileInfo;

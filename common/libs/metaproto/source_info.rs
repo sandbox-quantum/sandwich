@@ -1,6 +1,6 @@
-///! Defines [`Info`].
-///!
-///! [`Info`] is a struct that reads and parses [`protobuf::descriptor::SourceCodeInfo`].
+//! Defines [`Info`].
+//!
+//! [`Info`] is a struct that reads and parses [`protobuf::descriptor::SourceCodeInfo`].
 extern crate log;
 extern crate protobuf;
 

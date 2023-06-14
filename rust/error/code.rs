@@ -515,10 +515,7 @@ mod test {
     #[test]
     pub fn test_comparison_error_code_error_code() {
         let e0 = ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET);
-        let e1 = e0.clone();
-        assert_eq!(e0, e1);
-        assert_eq!(e0, e1);
-        assert_eq!(e0, e1);
+        let e1 = ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET);
         assert_eq!(e0, e1);
     }
 

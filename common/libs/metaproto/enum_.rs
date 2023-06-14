@@ -1,6 +1,6 @@
-///! Defines the [`Enum`] struct.
-///!
-///! A [`Enum`] is a representation of a protobuf enumeration.
+//! Defines the [`Enum`] struct.
+//!
+//! A [`Enum`] is a representation of a protobuf enumeration.
 extern crate protobuf;
 
 use super::symbol_info::Info as SymbolInfo;

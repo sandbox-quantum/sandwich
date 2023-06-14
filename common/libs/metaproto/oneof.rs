@@ -1,4 +1,4 @@
-///! Defines [`OneOf`].
+//! Defines [`OneOf`].
 extern crate protobuf;
 
 use super::symbol_info::Info as SymbolInfo;

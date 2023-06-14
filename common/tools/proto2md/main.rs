@@ -1,4 +1,4 @@
-///! Implementation of the protobuf plugin to generate markdown.
+//! Implementation of the protobuf plugin to generate markdown.
 extern crate env_logger;
 extern crate log;
 extern crate metaproto;

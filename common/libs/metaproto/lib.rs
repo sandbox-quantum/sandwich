@@ -1,4 +1,4 @@
-///! Defines [`MetaProto`] handle.
+//! Defines [`MetaProto`] handle.
 extern crate log;
 extern crate protobuf;
 

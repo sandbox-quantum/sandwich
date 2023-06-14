@@ -1,4 +1,4 @@
-///! Template routines.
+//! Template routines.
 extern crate metaproto;
 
 use metaproto::enum_::Enum;

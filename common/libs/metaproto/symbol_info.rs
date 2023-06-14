@@ -1,7 +1,7 @@
-///! Defines [`Info`].
-///!
-///! [`Info`] is a structure that collects various information about a
-///! symbol, such as its name, its source code and its comments (if any).
+//! Defines [`Info`].
+//!
+//! [`Info`] is a structure that collects various information about a
+//! symbol, such as its name, its source code and its comments (if any).
 extern crate protobuf;
 
 use super::source_info::Comments;

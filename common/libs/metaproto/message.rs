@@ -1,6 +1,6 @@
-///! Defines the [`Message`] struct.
-///!
-///! A [`Message`] is a representation of a protobuf message.
+//! Defines the [`Message`] struct.
+//!
+//! A [`Message`] is a representation of a protobuf message.
 extern crate protobuf;
 
 use super::oneof::OneOf;
