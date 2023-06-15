@@ -1,5 +1,7 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load(":rules.bzl", "md_proto_library")
 
 rust_binary(
     name = "protoc-gen-md",
@@ -23,7 +25,27 @@ rust_clippy(
     ],
 )
 
+proto_library(
+    name = "test_proto",
+    srcs = ["test.proto"],
+)
+
+md_proto_library(
+    name = "md_test_proto",
+    package = "com.example",
+    proto = ":test_proto",
+    strip_package = True,
+    symbols = [
+        "TestMsg",
+        "TestEnum",
+        "TestOneOfMsg",
+    ],
+)
+
 build_test(
     name = "build_test",
-    targets = [":clippy"],
+    targets = [
+        ":clippy",
+        ":md_test_proto",
+    ],
 )
