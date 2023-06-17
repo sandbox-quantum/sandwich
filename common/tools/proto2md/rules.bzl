@@ -75,9 +75,12 @@ def _proto2md_compile_impl(ctx):
 
     if ctx.attr.strip_package:
         outputs_stripped = []
+        prefix = "{}.".format(ctx.attr.package)
         for o in outputs:
-            filename = o.basename.replace("{}.".format(ctx.attr.package), "")
-            if filename == o.basename:
+            filename = None
+            if o.basename.startswith(prefix):
+                filename = o.basename.lstrip(prefix)
+            else:
                 fail("cannot strip {}".format(f.path))
             stripped_o = ctx.actions.declare_file(filename)
             ctx.actions.symlink(
