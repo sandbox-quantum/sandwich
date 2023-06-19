@@ -1,0 +1,31 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "client",
+    srcs = [
+        "client_asyncio_sandwich.py",
+    ],
+    data = [
+        "//testdata",
+    ],
+    main = "client_asyncio_sandwich.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pysandwich:python_async",
+    ],
+)
+
+py_binary(
+    name = "server",
+    srcs = [
+        "server_asyncio_sandwich.py",
+    ],
+    data = [
+        "//testdata",
+    ],
+    main = "server_asyncio_sandwich.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pysandwich:python_async",
+    ],
+)

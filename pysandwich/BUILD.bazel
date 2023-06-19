@@ -51,6 +51,28 @@ py_library(
     ],
 )
 
+py_library(
+    name = "python_async",
+    srcs = [
+        "constants.py",
+        "sandwich_async.py",
+        "sandwich_protocol.py",
+    ],
+    data = [
+        ":sandwich_ffi",
+    ],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":errors",
+        ":io",
+        ":python",
+        "//pysandwich/proto:sandwich_python_proto",
+        "//pysandwich/proto/api/v1:api_python_proto",
+        "@bazel_tools//tools/python/runfiles",
+    ],
+)
+
 py_test(
     name = "tunnel_test",
     timeout = "short",
@@ -91,7 +113,7 @@ py_wheel(
             ":x86_64-pc-windows-msvc": "win_amd64",
         },
     ),
-    python_tag = "cp310",
+    python_tag = "cp311",
     target_compatible_with = select({
         "@platforms//os:osx": [],
         "@platforms//os:linux": [],

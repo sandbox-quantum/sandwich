@@ -1,0 +1,16 @@
+load("//common/build/boringssl:rules.bzl", "boringssl_build")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+boringssl_build(
+    name = "boringssl",
+    boringssl_srcs = "@open-quantum-safe.boringssl//:all_srcs",
+    liboqs = "//vendor/github.com/open-quantum-safe/liboqs",
+    visibility = ["//visibility:public"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":boringssl_boringssl",
+    ],
+)

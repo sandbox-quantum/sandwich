@@ -2,7 +2,7 @@
 
 ### Sandwich Python Wheel
 
-Sandwich officially supports `Python 3.10` and later, and many platforms:
+Sandwich officially supports `Python 3.11` and later, and many platforms:
 
 - `x86_64-unknown-linux-gnu`
 - `aarch64-apple-darwin`

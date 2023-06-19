@@ -1,0 +1,25 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "client",
+    srcs = [
+        "client_asyncio_upgrade.py",
+    ],
+    data = [
+        "//testdata",
+    ],
+    main = "client_asyncio_upgrade.py",
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "server",
+    srcs = [
+        "server_asyncio_upgrade.py",
+    ],
+    data = [
+        "//testdata",
+    ],
+    main = "server_asyncio_upgrade.py",
+    visibility = ["//visibility:public"],
+)

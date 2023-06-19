@@ -305,3 +305,321 @@ rust_doc(
 ######################################
 ### END OpenSSL related rules      ###
 ######################################
+
+######################################
+### BEGIN BoringSSL related rules  ###
+###                                ###
+### The following rules enable the ###
+### support of BoringSSL           ###
+### in Sandwich.                   ###
+######################################
+
+# Source files for the Sandwich BoringSSL module.
+_SANDWICH_BORINGSSL_MOD_SRCS = [
+    "boringssl/io.rs",
+    "boringssl/mod.rs",
+    "boringssl/ossl.rs",
+]
+
+# All source files for Sandwich BoringSSL variant.
+_SANDWICH_BORINGSSL_VARIANT_SRCS = \
+    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_ERROR_MOD_SRCS + \
+    _SANDWICH_TLS_MOD_SRCS + \
+    _SANDWICH_BORINGSSL_MOD_SRCS
+
+_BORINGSSL_LINK_PREFIX = "__private_boringssl_"
+
+# BoringSSL, prefixed with Bartleby.
+bartleby(
+    name = "boringssl_bartleby",
+    srcs = ["//vendor/github.com/open-quantum-safe/boringssl"],
+    prefix = _BORINGSSL_LINK_PREFIX,
+)
+
+# C library to guide Rust-bindgen for generating BoringSSL bindings.
+cc_library(
+    name = "boringssl_bindgen_library",
+    hdrs = [
+        "boringssl_bindgen.h",
+    ],
+    deps = [
+        ":boringssl_bartleby",
+    ],
+)
+
+# BoringSSL bindings.
+rust_bindgen_library(
+    name = "boringssl_bindgen",
+    bindgen_flags = bindgen_add_prefix_link_name(_BORINGSSL_LINK_PREFIX),
+    cc_lib = ":boringssl_bindgen_library",
+    clang_flags = select({
+        # This flag is needed for the CircleCI macos job to cross-compile
+        # Sandwich to Rust from an x86_64 host, because `bindgen` does not
+        # officially support iOS and aarch64.
+        "@platforms//os:ios": [
+            "-target",
+            "arm64-ios",
+        ],
+        "//conditions:default": [],
+    }),
+    crate_name = "boringssl",
+    header = "boringssl_bindgen.h",
+    rustc_flags = [
+        "-A",
+        "non-camel-case-types",
+        "-A",
+        "non-upper-case-globals",
+        "-A",
+        "non_snake_case",
+        "-A",
+        "improper_ctypes",
+    ],
+)
+
+# Sandwich BoringSSL variant.
+rust_library(
+    name = "sandwich_boringssl",
+    srcs = _SANDWICH_BORINGSSL_VARIANT_SRCS,
+    crate_features = ["boringssl"],
+    crate_name = "sandwich",
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+# Sandwich BoringSSL+ffi variant.
+rust_library(
+    name = "sandwich_boringssl_ffi",
+    srcs = _SANDWICH_BORINGSSL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+    ],
+    crate_name = "sandwich",
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+# Sandwich with BoringSSL and FFI.
+rust_static_library(
+    name = "sandwich_boringssl_ffi_static",
+    srcs = _SANDWICH_BORINGSSL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+    ],
+    crate_name = "sandwich_boringssl",
+    visibility = ["//visibility:public"],
+    deps = [":boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_boringssl_ffi_shared",
+    srcs = _SANDWICH_BORINGSSL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "ffi",
+        "boringssl",
+    ],
+    crate_name = "sandwich_boringssl",
+    visibility = ["//visibility:public"],
+    deps = [":boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_test(
+    name = "sandwich_boringssl_ffi_test",
+    timeout = "short",
+    crate = ":sandwich_boringssl_ffi",
+    crate_features = [
+        "boringssl",
+        "ffi",
+    ],
+    data = ["//testdata"],
+    deps = _SANDWICH_PROTOBUF_DEPS + _SANDWICH_RUNFILES_DEPS,
+)
+
+rust_clippy(
+    name = "sandwich_boringssl_ffi_clippy",
+    testonly = True,
+    deps = [
+        ":sandwich_boringssl_ffi",
+        ":sandwich_boringssl_ffi_test",
+    ],
+)
+
+rust_doc(
+    name = "sandwich_boringssl_doc",
+    crate = ":sandwich_boringssl_ffi",
+    rustdoc_flags = [
+        "-A",
+        "rustdoc::private_intra_doc_links",
+        "--cfg",
+        'feature="boringssl"',
+        "--cfg",
+        'feature="ffi"',
+    ],
+)
+
+rust_doc(
+    name = "sandwich_boringssl_internal_doc",
+    crate = ":sandwich_boringssl_ffi",
+    rustdoc_flags = [
+        "--document-private-items",
+        "-A",
+        "rustdoc::private_intra_doc_links",
+        "--cfg",
+        'feature="boringssl"',
+        "--cfg",
+        'feature="ffi"',
+    ],
+)
+
+######################################
+### END BoringSSL related rules    ###
+######################################
+
+######################################
+### BEGIN Sandwich "full" variant  ###
+###                                ###
+### The "full" variant supports    ###
+### OpenSSL and BoringSSL          ###
+######################################
+
+# All source files for the Sandwich "full" variant.
+_SANDWICH_FULL_VARIANT_SRCS = \
+    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_ERROR_MOD_SRCS + \
+    _SANDWICH_TLS_MOD_SRCS + \
+    _SANDWICH_OPENSSL_MOD_SRCS + \
+    _SANDWICH_BORINGSSL_MOD_SRCS
+
+# Dependencies for the Sandwich "full" variant.
+_SANDWICH_FULL_VARIANT_DEPS = [
+    ":boringssl_bindgen",
+    ":openssl_bindgen",
+] + _SANDWICH_PROTOBUF_DEPS
+
+# Sandwich BoringSSL variant.
+rust_library(
+    name = "sandwich_full",
+    srcs = _SANDWICH_FULL_VARIANT_SRCS,
+    crate_features = [
+        "boringssl",
+        "openssl",
+    ],
+    crate_name = "sandwich",
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+# Sandwich full+ffi variant.
+rust_library(
+    name = "sandwich_full_ffi",
+    srcs = _SANDWICH_FULL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+        "openssl",
+    ],
+    crate_name = "sandwich",
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+rust_static_library(
+    name = "sandwich_full_ffi_static",
+    srcs = _SANDWICH_FULL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+        "openssl",
+    ],
+    crate_name = "sandwich_full",
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_full_ffi_shared",
+    srcs = _SANDWICH_FULL_VARIANT_SRCS + _SANDWICH_FFI_MOD_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+        "openssl",
+    ],
+    crate_name = "sandwich_full",
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+rust_test(
+    name = "sandwich_full_ffi_test",
+    timeout = "short",
+    crate = ":sandwich_full_ffi",
+    crate_features = [
+        "boringssl",
+        "ffi",
+        "openssl",
+    ],
+    data = ["//testdata"],
+    deps = _SANDWICH_PROTOBUF_DEPS + _SANDWICH_RUNFILES_DEPS,
+)
+
+rust_clippy(
+    name = "sandwich_full_ffi_clippy",
+    testonly = True,
+    deps = [
+        ":sandwich_full_ffi",
+        ":sandwich_full_ffi_test",
+    ],
+)
+
+rust_doc(
+    name = "sandwich_full_doc",
+    crate = ":sandwich_full_ffi",
+    rustdoc_flags = [
+        "-A",
+        "rustdoc::private_intra_doc_links",
+        "--cfg",
+        'feature="boringssl"',
+        "--cfg",
+        'feature="ffi"',
+        "--cfg",
+        'feature="openssl"',
+    ],
+)
+
+rust_doc(
+    name = "sandwich_full_internal_doc",
+    crate = ":sandwich_full_ffi",
+    rustdoc_flags = [
+        "--document-private-items",
+        "-A",
+        "rustdoc::private_intra_doc_links",
+        "--cfg",
+        'feature="boringssl"',
+        "--cfg",
+        'feature="ffi"',
+        "--cfg",
+        'feature="openssl"',
+    ],
+)
+
+######################################
+### END Sandwich "full" variant    ###
+######################################

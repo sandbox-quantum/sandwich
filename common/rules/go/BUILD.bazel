@@ -1,0 +1,14 @@
+load(":rules.bzl", "get_go_sdk")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+get_go_sdk(
+    name = "go_sdk",
+    visibility = ["//visibility:public"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":go_sdk",
+    ],
+)

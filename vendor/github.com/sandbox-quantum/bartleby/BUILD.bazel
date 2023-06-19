@@ -1,0 +1,8 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+build_test(
+    name = "bartleby",
+    targets = [
+        "@com_sandboxquantum_bartleby//bartleby/tools/Bartleby:bartleby",
+    ],
+)

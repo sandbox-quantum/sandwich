@@ -67,6 +67,14 @@ load("//vendor/github.com/open-quantum-safe/openssl:BUILD.bzl", "open_quantum_sa
 
 open_quantum_safe_openssl_no_liboqs_fetch_archive()
 
+load("//vendor/github.com/open-quantum-safe/boringssl:BUILD.bzl", "open_quantum_safe_boringssl_fetch_archive")
+
+open_quantum_safe_boringssl_fetch_archive()
+
+load("//vendor/github.com/sandbox-quantum/bartleby:BUILD.bzl", "com_github_sandboxquantum_bartleby_fetch_archive")
+
+com_github_sandboxquantum_bartleby_fetch_archive()
+
 load("//vendor/github.com/protocolbuffers/protobuf:BUILD.bzl", "protocolbuffers_protobuf_pull_git_repo")
 
 protocolbuffers_protobuf_pull_git_repo()
@@ -173,12 +181,6 @@ http_archive(
     sha256 = "7897bfaa5ad39a479177cfb5c3ce010184dbaee22a7c3727b212282871918751",
     strip_prefix = "googletest-a4ab0abb93620ce26efad9de9296b73b16e88588",
     urls = ["https://github.com/google/googletest/archive/a4ab0abb93620ce26efad9de9296b73b16e88588.tar.gz"],
-)
-
-http_archive(
-    name = "com_sandboxquantum_bartleby",
-    sha256 = "1251298a1bcee576ad09b48152c73a0391dd91165e389b3cae710a0127da03fa",
-    urls = ["https://github.com/sandbox-quantum/bartleby/releases/download/0.2.0/bartleby-v0.2.0.tar.gz"],
 )
 
 load("@com_sandboxquantum_bartleby//bartleby:repositories.bzl", "bartleby_repositories")
