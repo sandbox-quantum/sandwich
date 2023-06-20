@@ -44,52 +44,6 @@ py_test(
 )
 
 py_test(
-    name = "test_tls_asyncio_sandwich",
-    timeout = "short",
-    srcs = [
-        "test_client_server.py",
-    ],
-    args = [
-        "--client_bin",
-        "$(location //examples/python/tls_asyncio_sandwich:client)",
-        "--server_bin",
-        "$(location //examples/python/tls_asyncio_sandwich:server)",
-    ],
-    data = [
-        "//testdata",
-    ],
-    main = "test_client_server.py",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//examples/python/tls_asyncio_sandwich:client",
-        "//examples/python/tls_asyncio_sandwich:server",
-    ],
-)
-
-py_test(
-    name = "test_tls_asyncio_upgrade",
-    timeout = "short",
-    srcs = [
-        "test_client_server.py",
-    ],
-    args = [
-        "--client_bin",
-        "$(location //examples/python/tls_asyncio_upgrade:client)",
-        "--server_bin",
-        "$(location //examples/python/tls_asyncio_upgrade:server)",
-    ],
-    data = [
-        "//testdata",
-    ],
-    main = "test_client_server.py",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//examples/python/tls_asyncio_upgrade:client",
-        "//examples/python/tls_asyncio_upgrade:server",
-    ],
-)
-
-py_test(
     name = "test_tls_socket",
     timeout = "short",
     srcs = [

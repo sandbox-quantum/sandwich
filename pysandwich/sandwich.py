@@ -554,7 +554,7 @@ class Tunnel:
                 tunnel_state,
             )
         except SandwichIO.IOException as e:
-            err[0] = e.code
+            err[0] = e.code()
             return 0
         err[0] = SandwichIO.IOException.ERROR_OK
         return w

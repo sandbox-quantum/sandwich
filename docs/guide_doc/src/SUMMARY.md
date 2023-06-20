@@ -17,10 +17,14 @@
 
 # Tutorials
 
-- [TLS connections made simple](tutorial/TLS-made-simple.md)
-  - [Simple TLS connection with Pysandwich](tutorial/tls_connection.md)
-  - [Let's write TLS with AsyncIO](tutorial/tls_asyncio.md)
+- [TLS connections made simple](tutorials/TLS_simple.md)
+  - [TLS connection with Sandwich](tutorials/TLS_Sandwich.md)
+  - [TLS Sandwich with AsyncIO](tutorials/TLS_AsyncIO.md)
 
+- [HTTPS connections made simple](tutorials/HTTPS_simple.md)
+
+
+<!--
 # Sandwich Bindings API
 
 ## Go API
@@ -46,13 +50,13 @@
 
 ## Rust API
 
-- [Rust API](rust/API-doc.md)
+- [Rust API](rust/API-doc.md) -->
 
 
 <!-- # C/C++ -->
 
 <!-- - [C/C++ API]() -->
-
+<!--
 # Sandwich Backend FFI
 
 - [Rust FFI](rust/API.md)
@@ -70,7 +74,7 @@
       - [`sandwich_tunnel_close`](rust/tunnel_close.md)
       - [`sandwich_tunnel_free`](rust/tunnel_free.md)
   - [Error](rust/error.md)
-
+ -->
 
 ---
 
