@@ -158,92 +158,27 @@ class ConfigurationError(SandwichException):
     }
 
 
-class OpenSSLConfigurationError(SandwichException):
-    """OpenSSL configuration errors.
-    This exception may occur when a protobuf configuration using the OpenSSL
-    implementation is malformed.
+class TLSConfigurationError(SandwichException):
+    """TLS configuration errors.
+    This exception may occur when a protobuf configuration using the TLS protocol
+    is malformed.
     """
 
     _ERRORS_MAP = {
-        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION: {
+        SandwichErrorProto.TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION: {
             "msg": "unsupported implementation",
         },
-        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: {
+        SandwichErrorProto.TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: {
             "msg": "unsupported TLS version",
         },
-        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_EMPTY: {
+        SandwichErrorProto.TLSCONFIGURATIONERROR_EMPTY: {
             "msg": "empty configuration",
         },
-        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_INVALID_CASE: {
+        SandwichErrorProto.TLSCONFIGURATIONERROR_INVALID_CASE: {
             "msg": "invalid oneof case",
         },
-        SandwichErrorProto.OPENSSLCONFIGURATIONERROR_INVALID: {
-            "msg": "invalid OpenSSL configuration",
-        },
-    }
-
-
-class OpenSSLClientConfigurationError(SandwichException):
-    """OpenSSL client configuration errors.
-    This exception may occur when a protobuf configuration using the OpenSSL
-    implementation in client mode is malformed.
-    """
-
-    _ERRORS_MAP = {
-        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_EMPTY: {
-            "msg": "empty configuration",
-        },
-        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE: {
-            "msg": "certificate error",
-        },
-        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_SSL_CTX_FAILED: {
-            "msg": "SSL_CTX* creation failed",
-        },
-        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_KEM: {
-            "msg": "KEM error",
-        },
-        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_FLAGS: {
-            "msg": "flags error",
-        },
-        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_SSL_FAILED: {
-            "msg": "SSL* creation failed",
-        },
-        SandwichErrorProto.OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED: {
-            "msg": "BIO* creation failed",
-        },
-    }
-
-
-class OpenSSLServerConfigurationError(SandwichException):
-    """OpenSSL server configuration errors.
-    This exception may occur when a protobuf configuration using the OpenSSL
-    implementation in server mode is malformed.
-    """
-
-    _ERRORS_MAP = {
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_EMPTY: {
-            "msg": "empty configuration",
-        },
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE: {
-            "msg": "certificate error",
-        },
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED: {
-            "msg": "SSL_CTX* creation failed",
-        },
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_KEM: {
-            "msg": "KEM error",
-        },
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_FLAGS: {
-            "msg": "flags error",
-        },
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY: {
-            "msg": "private key error",
-        },
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_SSL_FAILED: {
-            "msg": "SSL* creation failed",
-        },
-        SandwichErrorProto.OPENSSLSERVERCONFIGURATIONERROR_BIO_FAILED: {
-            "msg": "BIO* creation failed",
+        SandwichErrorProto.TLSCONFIGURATIONERROR_INVALID: {
+            "msg": "invalid TLS configuration",
         },
     }
 
@@ -455,9 +390,7 @@ class HandshakeError(SandwichException):
 _ERROR_KIND_MAP = {
     SandwichErrorProto.ERRORKIND_API: APIError,
     SandwichErrorProto.ERRORKIND_CONFIGURATION: ConfigurationError,
-    SandwichErrorProto.ERRORKIND_OPENSSL_CONFIGURATION: OpenSSLConfigurationError,
-    SandwichErrorProto.ERRORKIND_OPENSSL_CLIENT_CONFIGURATION: OpenSSLClientConfigurationError,
-    SandwichErrorProto.ERRORKIND_OPENSSL_SERVER_CONFIGURATION: OpenSSLServerConfigurationError,
+    SandwichErrorProto.ERRORKIND_TLS_CONFIGURATION: TLSConfigurationError,
     SandwichErrorProto.ERRORKIND_CERTIFICATE: CertificateError,
     SandwichErrorProto.ERRORKIND_SYSTEM: SystemError,
     SandwichErrorProto.ERRORKIND_SOCKET: SocketError,

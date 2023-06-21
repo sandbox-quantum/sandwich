@@ -67,76 +67,22 @@ enum ProtobufError {
   PROTOBUFERROR_NULLPTR = 3;
 };
 
-// Errors regarding OpenSSL configurations.
-enum OpenSSLConfigurationError {
+// Errors regarding TLS configurations.
+enum TLSConfigurationError {
   // The selected implementation isn't supported.
-  OPENSSLCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION = 0;
+  TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION = 0;
 
   // The configuration case (client/server) isn't valid.
-  OPENSSLCONFIGURATIONERROR_INVALID_CASE = 1;
+  TLSCONFIGURATIONERROR_INVALID_CASE = 1;
 
   // The configuration is empty.
-  OPENSSLCONFIGURATIONERROR_EMPTY = 2;
+  TLSCONFIGURATIONERROR_EMPTY = 2;
 
   // Unsupported protocol version error.
-  OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION = 3;
+  TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION = 3;
 
   // Invalid configuration.
-  OPENSSLCONFIGURATIONERROR_INVALID = 4;
-};
-
-// Errors regarding OpenSSL client configuration.
-enum OpenSSLClientConfigurationError {
-  // The configuration is empty.
-  OPENSSLCLIENTCONFIGURATIONERROR_EMPTY = 0;
-
-  // OpenSSL failed to create a SSL_CTX*.
-  OPENSSLCLIENTCONFIGURATIONERROR_SSL_CTX_FAILED = 1;
-
-  // Failed to use a certificate.
-  OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE = 2;
-
-  // Failed to use a KEM.
-  OPENSSLCLIENTCONFIGURATIONERROR_KEM = 3;
-
-  // Failed to apply some flags.
-  OPENSSLCLIENTCONFIGURATIONERROR_FLAGS = 4;
-
-  // OpenSSL failed to create a SSL*.
-  OPENSSLCLIENTCONFIGURATIONERROR_SSL_FAILED = 5;
-
-  // OpenSSL failed to create the BIO object.
-  OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED = 6;
-
-  // Failed to use the private key.
-  OPENSSLCLIENTCONFIGURATIONERROR_PRIVATE_KEY = 7;
-};
-
-// Errors regarding OpenSSL server configuration.
-enum OpenSSLServerConfigurationError {
-  // The configuration is empty.
-  OPENSSLSERVERCONFIGURATIONERROR_EMPTY = 0;
-
-  // OpenSSL failed to create a SSL_CTX*.
-  OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED = 1;
-
-  // Failed to use a certificate.
-  OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE = 2;
-
-  // Failed to use a KEM.
-  OPENSSLSERVERCONFIGURATIONERROR_KEM = 3;
-
-  // Failed to apply some flags.
-  OPENSSLSERVERCONFIGURATIONERROR_FLAGS = 4;
-
-  // Failed to use the private key.
-  OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY = 5;
-
-  // OpenSSL failed to create a SSL*.
-  OPENSSLSERVERCONFIGURATIONERROR_SSL_FAILED = 6;
-
-  // OpenSSL failed to create the BIO object.
-  OPENSSLSERVERCONFIGURATIONERROR_BIO_FAILED = 7;
+  TLSCONFIGURATIONERROR_INVALID = 4;
 };
 
 // Certificate errors.
@@ -288,42 +234,36 @@ enum ErrorKind {
   // Configuration errors. See ConfigurationError.
   ERRORKIND_CONFIGURATION = 1;
 
-  // OpenSSL configuration errors. See OpenSSLConfigurationError.
-  ERRORKIND_OPENSSL_CONFIGURATION = 2;
-
-  // OpenSSL client configuration errors. See OpenSSLClientConfigurationError.
-  ERRORKIND_OPENSSL_CLIENT_CONFIGURATION = 3;
-
-  // OpenSSL server configuration errors. See OpenSSLServerConfigurationError.
-  ERRORKIND_OPENSSL_SERVER_CONFIGURATION = 4;
+  // TLS configuration errors. See TLSConfigurationError.
+  ERRORKIND_TLS_CONFIGURATION = 2;
 
   // Certificate errors. See CertificateError.
-  ERRORKIND_CERTIFICATE = 5;
+  ERRORKIND_CERTIFICATE = 3;
 
   // System errors. See SystemError.
-  ERRORKIND_SYSTEM = 6;
+  ERRORKIND_SYSTEM = 4;
 
   // Socket errors. See SocketError.
-  ERRORKIND_SOCKET = 7;
+  ERRORKIND_SOCKET = 5;
 
   // Protobuf errors. see ProtobufError.
-  ERRORKIND_PROTOBUF = 8;
+  ERRORKIND_PROTOBUF = 6;
 
   // Private key errors. See PrivateKeyError.
-  ERRORKIND_PRIVATE_KEY = 9;
+  ERRORKIND_PRIVATE_KEY = 7;
 
   // ASN1 errors. See ASN1Error.
-  ERRORKIND_ASN1 = 10;
+  ERRORKIND_ASN1 = 8;
 
   // DataSource errors. See DataSourceError.
-  ERRORKIND_DATA_SOURCE = 11;
+  ERRORKIND_DATA_SOURCE = 9;
 
   // KEM errors. See KEMError.
-  ERRORKIND_KEM = 12;
+  ERRORKIND_KEM = 10;
 
   // Handshake errors. See HandshakeError.
-  ERRORKIND_HANDSHAKE = 13;
+  ERRORKIND_HANDSHAKE = 11;
 
   // Tunnel errors. See TunnelError.
-  ERRORKIND_TUNNEL = 14;
+  ERRORKIND_TUNNEL = 12;
 };

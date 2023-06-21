@@ -1,0 +1,41 @@
+load(":rules.bzl", "get_bin")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+cmake(
+    name = "doxygen_cmake",
+    build_data = [
+        "@rules_bison//bison:current_bison_toolchain",
+        "@rules_m4//m4:current_m4_toolchain",
+        "//vendor/github.com/jmillikin/rules_bison:bison",
+        "//vendor/github.com/jmillikin/rules_flex:flex",
+        "//vendor/github.com/jmillikin/rules_m4:m4",
+    ],
+    env = {
+        "BISON": "$(execpath //vendor/github.com/jmillikin/rules_bison:bison)",
+        "FLEX": "$(execpath //vendor/github.com/jmillikin/rules_flex:flex)",
+        "BISON_PKGDATADIR": "$$EXT_BUILD_ROOT$$/external/bison_v3.3.2/data",
+        "M4": "$(execpath //vendor/github.com/jmillikin/rules_m4:m4)",
+    },
+    generate_args = [
+        "-GNinja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBISON_EXECUTABLE=${BISON}",
+        "-DFLEX_EXECUTABLE=${FLEX}",
+    ],
+    lib_source = "@doxygen.doxygen//:all_srcs",
+    out_binaries = ["doxygen"],
+)
+
+get_bin(
+    name = "doxygen",
+    doxygen_cmake = ":doxygen_cmake",
+    visibility = ["//visibility:public"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":doxygen",
+    ],
+)

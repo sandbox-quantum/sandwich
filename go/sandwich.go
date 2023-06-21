@@ -50,12 +50,8 @@ func createError(chain *C.struct_SandwichError) error {
 				e = newAPIError(pb.APIError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_CONFIGURATION:
 				e = newConfigurationError(pb.ConfigurationError(chain.code), msg)
-			case pb.ErrorKind_ERRORKIND_OPENSSL_CONFIGURATION:
-				e = newOpenSSLConfigurationError(pb.OpenSSLConfigurationError(chain.code), msg)
-			case pb.ErrorKind_ERRORKIND_OPENSSL_CLIENT_CONFIGURATION:
-				e = newOpenSSLClientConfigurationError(pb.OpenSSLClientConfigurationError(chain.code), msg)
-			case pb.ErrorKind_ERRORKIND_OPENSSL_SERVER_CONFIGURATION:
-				e = newOpenSSLServerConfigurationError(pb.OpenSSLServerConfigurationError(chain.code), msg)
+			case pb.ErrorKind_ERRORKIND_TLS_CONFIGURATION:
+				e = newTLSConfigurationError(pb.TLSConfigurationError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_CERTIFICATE:
 				e = newCertificateError(pb.CertificateError(chain.code), msg)
 			case pb.ErrorKind_ERRORKIND_SYSTEM:

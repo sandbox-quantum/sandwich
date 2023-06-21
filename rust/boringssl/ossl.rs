@@ -157,9 +157,17 @@ impl crate::ossl::Ossl for Ossl {
                 }
             }
 
-            match unsafe { boringssl::SSL_CTX_set_min_proto_version(pimpl.as_mut_ptr(), boringssl::TLS1_3_VERSION as u16) } {
+            match unsafe {
+                boringssl::SSL_CTX_set_min_proto_version(
+                    pimpl.as_mut_ptr(),
+                    boringssl::TLS1_3_VERSION as u16,
+                )
+            } {
                 1 => Ok(pimpl),
-                _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION.into())
+                _ => Err(
+                    pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
+                        .into(),
+                ),
             }
         }
     }

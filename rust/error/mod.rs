@@ -25,10 +25,9 @@
 //! ```text
 //! APIError::APIERROR_CONFIGURATION   // The most global error.
 //!   -> ConfigurationError::CONFIGURATIONERROR_INVALID
-//!     -> OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
-//!       -> OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE
-//!         -> CertificateError::CERTIFICATEERROR_MALFORMED
-//!           -> ASN1Error::ASN1ERROR_MALFORMED  // The most precise error.
+//!     -> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID
+//!       -> CertificateError::CERTIFICATEERROR_MALFORMED
+//!         -> ASN1Error::ASN1ERROR_MALFORMED  // The most precise error.
 //! ```
 //!
 //! Error codes that are being used by Sandwich are defined in the [`code`]
@@ -450,7 +449,7 @@ mod test {
     fn test_error_code_order() {
         let p0 = pb::ASN1Error::ASN1ERROR_INVALID_FORMAT;
         let p1 = pb::CertificateError::CERTIFICATEERROR_MALFORMED;
-        let p2 = pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE;
+        let p2 = pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID;
         let e = Error::from(p0) >> p1 >> p2;
         assert_eq!(e.len(), 3);
 

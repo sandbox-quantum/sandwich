@@ -82,7 +82,7 @@ mod test {
     fn test_error_ctor() {
         use protobuf::Enum;
         let err = errors! {
-        pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
+        pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID
             => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
                 => pb::APIError::APIERROR_CONFIGURATION};
         let ptr: *mut Error = err.into();
@@ -103,11 +103,11 @@ mod test {
             assert!(!ptr.is_null());
             assert_eq!(
                 (*ptr).kind,
-                pb::ErrorKind::ERRORKIND_OPENSSL_CONFIGURATION.value()
+                pb::ErrorKind::ERRORKIND_TLS_CONFIGURATION.value()
             );
             assert_eq!(
                 (*ptr).code,
-                pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID.value()
+                pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID.value()
             );
 
             let ptr = (*ptr).details;

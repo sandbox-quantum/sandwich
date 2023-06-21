@@ -79,6 +79,14 @@ load("//vendor/github.com/protocolbuffers/protobuf:BUILD.bzl", "protocolbuffers_
 
 protocolbuffers_protobuf_pull_git_repo()
 
+load("//common/build/mkdocs:repositories.bzl", "mkdocs_repositories")
+
+mkdocs_repositories()
+
+load("//common/build/mkdocs:deps.bzl", "mkdocs_dependencies")
+
+mkdocs_dependencies()
+
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()

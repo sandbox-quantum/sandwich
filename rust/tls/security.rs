@@ -19,11 +19,11 @@ fn get_kems(cfg: &pb_api::Configuration) -> crate::Result<&std::vec::Vec<std::st
     use pb_api::configuration::configuration as pb_configuration;
     cfg.opts
         .as_ref()
-        .ok_or_else(|| pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE.into())
+        .ok_or_else(|| pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into())
         .and_then(|oneof| match oneof {
             pb_configuration::Opts::Client(c) => Ok(&c.tls().common_options.kem),
             pb_configuration::Opts::Server(s) => Ok(&s.tls().common_options.kem),
-            _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE.into()),
+            _ => Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into()),
         })
 }
 
@@ -109,7 +109,7 @@ impl std::convert::TryFrom<&str> for AlgorithmQuantumness {
             "p521_hqc256" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
             "p521_kyber1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
             "p521_kyber90s1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE.into()),
+            _ => Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into()),
         }
     }
 }
@@ -122,17 +122,17 @@ fn assert_bit_strength(
     match desired_strength {
         pb_api::NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_128 => {
             if bit_strength < BitStrength::Bits128 {
-                Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE)?
+                Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
             }
         }
         pb_api::NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_192 => {
             if bit_strength < BitStrength::Bits192 {
-                Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE)?
+                Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
             }
         }
         pb_api::NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_256 => {
             if bit_strength < BitStrength::Bits256 {
-                Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE)?
+                Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
             }
         }
     }
@@ -151,19 +151,19 @@ pub(crate) fn assert_compliance(cfg: &pb_api::Configuration) -> crate::Result<()
         match AlgorithmQuantumness::try_from(k.as_str())? {
             AlgorithmQuantumness::Hybrid(hybrid_bit_strength) => {
                 if hybrid_choice == pb_api::HybridAlgoChoice::HYBRID_ALGORITHMS_FORBID {
-                    Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE)?
+                    Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
                 }
                 assert_bit_strength(hybrid_bit_strength, desired_strength)?;
             }
             AlgorithmQuantumness::Classical(classical_bit_strength) => {
                 if classical_choice == pb_api::ClassicalAlgoChoice::CLASSICAL_ALGORITHMS_FORBID {
-                    Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE)?
+                    Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
                 }
                 assert_bit_strength(classical_bit_strength, desired_strength)?;
             }
             AlgorithmQuantumness::QuantumSafe(quantum_bit_strength) => {
                 if quantum_choice == pb_api::QuantumSafeAlgoChoice::QUANTUM_SAFE_ALGORITHMS_FORBID {
-                    Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID_CASE)?
+                    Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
                 }
                 assert_bit_strength(quantum_bit_strength, desired_strength)?;
             }

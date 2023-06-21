@@ -261,17 +261,13 @@ pub(crate) mod test {
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
-            assert!(
-                ctx.unwrap_err().is(&
-                errors! {
-                    pb::ASN1Error::ASN1ERROR_MALFORMED
-                        => pb::CertificateError::CERTIFICATEERROR_MALFORMED
-                            => pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE
-                                => pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
-                                    => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
-                                        => pb::APIError::APIERROR_CONFIGURATION
-                }
-            ));
+            assert!(ctx.unwrap_err().is(&errors! {
+                pb::ASN1Error::ASN1ERROR_MALFORMED
+                    => pb::CertificateError::CERTIFICATEERROR_MALFORMED
+                        => pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID
+                            => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
+                                => pb::APIError::APIERROR_CONFIGURATION
+            }));
         }
 
         /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
@@ -326,17 +322,13 @@ pub(crate) mod test {
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
             let ctx = super::super::try_from(&config);
             assert!(ctx.is_err());
-            assert!(
-                ctx.unwrap_err().is(
-                &errors! {
-                    pb::ASN1Error::ASN1ERROR_MALFORMED
-                        => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED
-                            => pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY
-                                => pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
-                                    => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
-                                        => pb::APIError::APIERROR_CONFIGURATION
-                }
-            ));
+            assert!(ctx.unwrap_err().is(&errors! {
+                pb::ASN1Error::ASN1ERROR_MALFORMED
+                    => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED
+                        => pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID
+                            => pb::ConfigurationError::CONFIGURATIONERROR_INVALID
+                                => pb::APIError::APIERROR_CONFIGURATION
+            }));
         }
     }
 }

@@ -69,19 +69,17 @@ func (err *BaseError) Error() string {
 // errorKindMap is a map code -> string for error kinds, defined in
 // `errors.proto`, enum `ErrorKind`.
 var errorKindMap = map[pb.ErrorKind]string{
-	pb.ErrorKind_ERRORKIND_API:                          "API error",
-	pb.ErrorKind_ERRORKIND_CONFIGURATION:                "configuration error",
-	pb.ErrorKind_ERRORKIND_OPENSSL_CONFIGURATION:        "OpenSSL configuration error",
-	pb.ErrorKind_ERRORKIND_OPENSSL_CLIENT_CONFIGURATION: "OpenSSL client configuration error",
-	pb.ErrorKind_ERRORKIND_OPENSSL_SERVER_CONFIGURATION: "OpenSSL server configuration error",
-	pb.ErrorKind_ERRORKIND_CERTIFICATE:                  "certificate error",
-	pb.ErrorKind_ERRORKIND_SYSTEM:                       "system error",
-	pb.ErrorKind_ERRORKIND_SOCKET:                       "socket error",
-	pb.ErrorKind_ERRORKIND_PROTOBUF:                     "protobuf error",
-	pb.ErrorKind_ERRORKIND_PRIVATE_KEY:                  "private key error",
-	pb.ErrorKind_ERRORKIND_ASN1:                         "ASN.1 error",
-	pb.ErrorKind_ERRORKIND_DATA_SOURCE:                  "DataSource error",
-	pb.ErrorKind_ERRORKIND_KEM:                          "KEM error",
+	pb.ErrorKind_ERRORKIND_API:               "API error",
+	pb.ErrorKind_ERRORKIND_CONFIGURATION:     "configuration error",
+	pb.ErrorKind_ERRORKIND_TLS_CONFIGURATION: "TLS configuration error",
+	pb.ErrorKind_ERRORKIND_CERTIFICATE:       "certificate error",
+	pb.ErrorKind_ERRORKIND_SYSTEM:            "system error",
+	pb.ErrorKind_ERRORKIND_SOCKET:            "socket error",
+	pb.ErrorKind_ERRORKIND_PROTOBUF:          "protobuf error",
+	pb.ErrorKind_ERRORKIND_PRIVATE_KEY:       "private key error",
+	pb.ErrorKind_ERRORKIND_ASN1:              "ASN.1 error",
+	pb.ErrorKind_ERRORKIND_DATA_SOURCE:       "DataSource error",
+	pb.ErrorKind_ERRORKIND_KEM:               "KEM error",
 }
 
 // APIError defines the first-class API errors, such as Context errors,
@@ -150,111 +148,34 @@ func newConfigurationError(code pb.ConfigurationError, msg string) *Configuratio
 	}
 }
 
-// OpenSSLConfigurationError defines an error that may occur when a protobuf
-// configuration using the OpenSSL implementation is malformed.
-type OpenSSLConfigurationError struct {
+// TLSConfigurationError defines an error that may occur when a protobuf
+// configuration using the TLS protocol is malformed.
+type TLSConfigurationError struct {
 	BaseError
 }
 
-// openSSLConfigurationErrorMap is a map code -> string for OpenSSL configuration errors.
-var openSSLConfigurationErrorMap = map[pb.OpenSSLConfigurationError]string{
-	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION:   "unsupported implementation",
-	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: "invalid TLS version",
-	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_EMPTY:                        "empty configuration",
-	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_INVALID_CASE:                 "invalid oneof case",
-	pb.OpenSSLConfigurationError_OPENSSLCONFIGURATIONERROR_INVALID:                      "invalid OpenSSL configuration",
+// tlsConfigurationErrorMap is a map code -> string for TLS configuration errors.
+var tlsConfigurationErrorMap = map[pb.TLSConfigurationError]string{
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION:   "unsupported implementation",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: "invalid TLS version",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_EMPTY:                        "empty configuration",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID_CASE:                 "invalid oneof case",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID:                      "invalid TLS configuration",
 }
 
-// newOpenSSLConfigurationError creates a OpenSSLConfigurationError from an error code.
-func newOpenSSLConfigurationError(code pb.OpenSSLConfigurationError, msg string) *OpenSSLConfigurationError {
+// newTLSConfigurationError creates a TLSConfigurationError from an error code.
+func newTLSConfigurationError(code pb.TLSConfigurationError, msg string) *TLSConfigurationError {
 	var err_msg = ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
 	var m string
-	if val, ok := openSSLConfigurationErrorMap[code]; ok {
+	if val, ok := tlsConfigurationErrorMap[code]; ok {
 		m = val
 	} else {
 		m = fmt.Sprintf("unknown OpenSSL configuration error code %d", int32(code))
 	}
-	return &OpenSSLConfigurationError{
-		BaseError{
-			msg:  m + err_msg,
-			code: int32(code),
-		},
-	}
-}
-
-// OpenSSLClientConfigurationError defines an error that may occur when a
-// protobuf configuration using the OpenSSL implementation in client mode
-// is malformed.
-type OpenSSLClientConfigurationError struct {
-	BaseError
-}
-
-// openSSLClientConfigurationErrorMap is a map code -> string for OpenSSL client configuration errors.
-var openSSLClientConfigurationErrorMap = map[pb.OpenSSLClientConfigurationError]string{
-	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_EMPTY:          "empty configuration",
-	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE:    "certificate error",
-	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_SSL_CTX_FAILED: "SSL_CTX* creation failed",
-	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_KEM:            "KEM error",
-	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_FLAGS:          "flags error",
-	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_SSL_FAILED:     "SSL* creation failed",
-	pb.OpenSSLClientConfigurationError_OPENSSLCLIENTCONFIGURATIONERROR_BIO_FAILED:     "BIO* creation failed",
-}
-
-// newOpenSSLClientConfigurationError creates a OpenSSLClientConfigurationError from an error code.
-func newOpenSSLClientConfigurationError(code pb.OpenSSLClientConfigurationError, msg string) *OpenSSLClientConfigurationError {
-	var err_msg = ";"
-	if msg != "" {
-		err_msg = "; " + msg
-	}
-	var m string
-	if val, ok := openSSLClientConfigurationErrorMap[code]; ok {
-		m = val
-	} else {
-		m = fmt.Sprintf("unknown OpenSSL client configuration error code %d", int32(code))
-	}
-	return &OpenSSLClientConfigurationError{
-		BaseError{
-			msg:  m + err_msg,
-			code: int32(code),
-		},
-	}
-}
-
-// OpenSSLServerConfigurationError defines an error that may occur when a
-// protobuf configuration using the OpenSSL implementation in server mode
-// is malformed.
-type OpenSSLServerConfigurationError struct {
-	BaseError
-}
-
-// openSSLServerConfigurationErrorMap is a map code -> string for OpenSSL server configuration errors.
-var openSSLServerConfigurationErrorMap = map[pb.OpenSSLServerConfigurationError]string{
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_EMPTY:          "empty configuration",
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE:    "certificate error",
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED: "SSL_CTX* creation failed",
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_KEM:            "KEM error",
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_FLAGS:          "flags error",
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY:    "private key error",
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_SSL_FAILED:     "SSL* creation failed",
-	pb.OpenSSLServerConfigurationError_OPENSSLSERVERCONFIGURATIONERROR_BIO_FAILED:     "BIO* creation failed",
-}
-
-// newOpenSSLServerConfigurationError creates a OpenSSLServerConfigurationError from an error code.
-func newOpenSSLServerConfigurationError(code pb.OpenSSLServerConfigurationError, msg string) *OpenSSLServerConfigurationError {
-	var err_msg = ";"
-	if msg != "" {
-		err_msg = "; " + msg
-	}
-	var m string
-	if val, ok := openSSLServerConfigurationErrorMap[code]; ok {
-		m = val
-	} else {
-		m = fmt.Sprintf("unknown OpenSSL server configuration error code %d", int32(code))
-	}
-	return &OpenSSLServerConfigurationError{
+	return &TLSConfigurationError{
 		BaseError{
 			msg:  m + err_msg,
 			code: int32(code),

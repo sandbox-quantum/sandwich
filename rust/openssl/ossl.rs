@@ -133,9 +133,19 @@ impl crate::ossl::Ossl for Ossl {
                     openssl::X509_STORE_set_trust(ptr, 1);
                 }
             }
-            match unsafe { openssl::SSL_CTX_ctrl(pimpl.as_mut_ptr(), openssl::SSL_CTRL_SET_MIN_PROTO_VERSION as i32, openssl::TLS1_3_VERSION.into(), std::ptr::null_mut()) } {
+            match unsafe {
+                openssl::SSL_CTX_ctrl(
+                    pimpl.as_mut_ptr(),
+                    openssl::SSL_CTRL_SET_MIN_PROTO_VERSION as i32,
+                    openssl::TLS1_3_VERSION.into(),
+                    std::ptr::null_mut(),
+                )
+            } {
                 1 => Ok(pimpl),
-                _ => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION.into())
+                _ => Err(
+                    pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
+                        .into(),
+                ),
             }
         }
     }

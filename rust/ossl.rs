@@ -309,102 +309,35 @@ where
     }
 }
 
-/// Various errors that may happen during the initialization of the SSL_CTX
-/// object.
-enum SSLCtxErrors {
-    /// Allocation failed.
-    SSLCtxAllocFailed,
-
-    /// KEM error.
-    KEMError,
-
-    /// Certificate error.
-    CertificateError,
-
-    /// Private key error.
-    PrivateKeyError,
-}
-
-/// Wrap an error in the appropriate error kind, depending on the mode (client
-/// or server).
-fn wrap_error_in_mode(
-    mode: crate::Mode,
-    inner_error: crate::Error,
-    outer_error: SSLCtxErrors,
-) -> crate::Error {
-    inner_error
-        >> match (mode, outer_error) {
-            (crate::Mode::Client, SSLCtxErrors::SSLCtxAllocFailed) => crate::error::ErrorCode::from(
-                pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_SSL_CTX_FAILED,
-            ),
-            (crate::Mode::Client, SSLCtxErrors::KEMError) => crate::error::ErrorCode::from(
-                pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_KEM,
-            ),
-            (crate::Mode::Client, SSLCtxErrors::CertificateError) => crate::error::ErrorCode::from(
-                pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_CERTIFICATE,
-            ),
-            (crate::Mode::Client, SSLCtxErrors::PrivateKeyError) => crate::error::ErrorCode::from(
-                pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_PRIVATE_KEY,
-            ),
-
-            (crate::Mode::Server, SSLCtxErrors::SSLCtxAllocFailed) => crate::error::ErrorCode::from(
-                pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_SSL_CTX_FAILED,
-            ),
-            (crate::Mode::Server, SSLCtxErrors::KEMError) => crate::error::ErrorCode::from(
-                pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_KEM,
-            ),
-            (crate::Mode::Server, SSLCtxErrors::CertificateError) => crate::error::ErrorCode::from(
-                pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_CERTIFICATE,
-            ),
-            (crate::Mode::Server, SSLCtxErrors::PrivateKeyError) => crate::error::ErrorCode::from(
-                pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_PRIVATE_KEY,
-            ),
-        }
-        >> pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_INVALID
-}
-
 /// Returns the execution mode (Client or Server) and the tls options (`TLSOptions`).
 fn configuration_get_mode_and_tls_options(
     configuration: &pb_api::Configuration,
 ) -> crate::Result<(crate::Mode, &pb_api::TLSOptions)> {
-    match configuration.opts.as_ref() {
-        Some(pb_api::configuration::configuration::Opts::Client(opt)) => opt
-            .opts
-            .as_ref()
-            .ok_or(
-                pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_EMPTY.into(),
-            )
-            .and_then(|proto| match proto {
-                pb_api::configuration::client_options::Opts::Tls(tls) => Ok(tls),
-                _ => unreachable!(),
-            })
-            .and_then(|tls| {
-                tls.common_options.as_ref().ok_or(
-                    pb::OpenSSLClientConfigurationError::OPENSSLCLIENTCONFIGURATIONERROR_EMPTY
-                        .into(),
-                )
-            })
-            .map(|tls| (crate::Mode::Client, tls)),
-        Some(pb_api::configuration::configuration::Opts::Server(opt)) => opt
-            .opts
-            .as_ref()
-            .ok_or(
-                pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_EMPTY.into(),
-            )
-            .and_then(|proto| match proto {
-                pb_api::configuration::server_options::Opts::Tls(tls) => Ok(tls),
-                _ => unreachable!(),
-            })
-            .and_then(|tls| {
-                tls.common_options.as_ref().ok_or(
-                    pb::OpenSSLServerConfigurationError::OPENSSLSERVERCONFIGURATIONERROR_EMPTY
-                        .into(),
-                )
-            })
-            .map(|tls| (crate::Mode::Server, tls)),
-        Some(_) => unreachable!(),
-        None => Err(pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY.into()),
-    }
+    configuration
+        .opts
+        .as_ref()
+        .and_then(|opts| match opts {
+            pb_api::configuration::configuration::Opts::Client(opt) => opt
+                .opts
+                .as_ref()
+                .and_then(|proto| match proto {
+                    pb_api::configuration::client_options::Opts::Tls(tls) => Some(tls),
+                    _ => None,
+                })
+                .and_then(|opts| opts.common_options.as_ref())
+                .map(|tls| (crate::Mode::Client, tls)),
+            pb_api::configuration::configuration::Opts::Server(opt) => opt
+                .opts
+                .as_ref()
+                .and_then(|proto| match proto {
+                    pb_api::configuration::server_options::Opts::Tls(tls) => Some(tls),
+                    _ => None,
+                })
+                .and_then(|opts| opts.common_options.as_ref())
+                .map(|tls| (crate::Mode::Server, tls)),
+            _ => unreachable!(),
+        })
+        .ok_or(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_EMPTY.into())
 }
 
 /// Returns the X.509 verifier if exists.
@@ -418,7 +351,7 @@ fn tls_options_get_x509_verifier(
         .as_ref()
         .ok_or(
             (
-                pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY,
+                pb::TLSConfigurationError::TLSCONFIGURATIONERROR_EMPTY,
                 "no verifier specified",
             )
                 .into(),
@@ -439,7 +372,7 @@ fn x509_verifier_verify_emptiness(
             Ok(x509_verifier)
         } else {
             Err((
-                pb::OpenSSLConfigurationError::OPENSSLCONFIGURATIONERROR_EMPTY,
+                pb::TLSConfigurationError::TLSCONFIGURATIONERROR_EMPTY,
                 "X.509 verifier empty",
             )
                 .into())
@@ -456,7 +389,6 @@ fn x509_verifier_verify_emptiness(
 fn ssl_context_set_identity<OsslInterface>(
     ssl_ctx: &mut crate::Pimpl<'_, OsslInterface::NativeSslCtx>,
     identity: &pb_api::X509Identity,
-    mode: crate::Mode,
 ) -> crate::Result<()>
 where
     OsslInterface: Ossl,
@@ -475,7 +407,7 @@ where
             }
         })
         .and_then(|cert| OsslInterface::ssl_context_set_certificate(ssl_ctx, cert))
-        .map_err(|e| wrap_error_in_mode(mode, e, SSLCtxErrors::CertificateError))?;
+        .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
     identity
         .private_key
@@ -491,7 +423,7 @@ where
             }
         })
         .and_then(|private_key| OsslInterface::ssl_context_set_private_key(ssl_ctx, private_key))
-        .map_err(|e| wrap_error_in_mode(mode, e, SSLCtxErrors::PrivateKeyError))
+        .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)
 }
 
 /// Pushes the trusted certificate authority certificates to the trust store.
@@ -531,10 +463,10 @@ where
         let (mode, tls_options) = configuration_get_mode_and_tls_options(configuration)?;
 
         let mut ssl_ctx = OsslInterface::new_ssl_context(mode)
-            .map_err(|e| wrap_error_in_mode(mode, e, SSLCtxErrors::SSLCtxAllocFailed))?;
+            .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
         OsslInterface::ssl_context_set_kems(&mut ssl_ctx, tls_options.kem.iter())
-            .map_err(|e| wrap_error_in_mode(mode, e, SSLCtxErrors::KEMError))?;
+            .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
         let x509_verifier =
             tls_options_get_x509_verifier(tls_options).and_then(x509_verifier_verify_emptiness)?;
@@ -553,7 +485,7 @@ where
         );
 
         if let Some(identity) = tls_options.identity.as_ref() {
-            ssl_context_set_identity::<OsslInterface>(&mut ssl_ctx, identity, mode)?;
+            ssl_context_set_identity::<OsslInterface>(&mut ssl_ctx, identity)?;
             true
         } else {
             false
@@ -561,7 +493,7 @@ where
 
         if let Some(v) = x509_verifier {
             ssl_fill_trust_store::<OsslInterface>(&mut ssl_ctx, v)
-                .map_err(|e| wrap_error_in_mode(mode, e, SSLCtxErrors::CertificateError))?
+                .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?
         } else {
             0
         };
