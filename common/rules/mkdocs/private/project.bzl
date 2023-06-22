@@ -21,7 +21,7 @@ load(
 def _compile_project(ctx, project):
     """Build the MkDocs project. `project` must be a MkDocsProjectInfo."""
 
-    output_directory_name = ctx.label.name
+    output_directory_name = "{}_html".format(ctx.label.name)
 
     out = ctx.actions.declare_directory(output_directory_name)
 

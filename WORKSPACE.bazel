@@ -128,9 +128,9 @@ gazelle_dependencies(go_repository_default_config = "@//:WORKSPACE.bazel")
 
 http_archive(
     name = "rules_rust",
-    sha256 = "950a3ad4166ae60c8ccd628d1a8e64396106e7f98361ebe91b0bcfe60d8e4b60",
+    sha256 = "190b5aeba104210f8ed9b1ff595d1f459297fe32db70f0a04f5c537a13ee0602",
     urls = [
-        "https://github.com/bazelbuild/rules_rust/releases/download/0.20.0/rules_rust-v0.20.0.tar.gz",
+        "https://github.com/bazelbuild/rules_rust/releases/download/0.24.1/rules_rust-v0.24.1.tar.gz",
     ],
 )
 
@@ -140,7 +140,12 @@ rules_rust_dependencies()
 
 rust_register_toolchains(
     edition = "2021",
-    versions = ["1.70.0"],
+    extra_target_triples = [
+        "aarch64-apple-darwin",
+        "aarch64-apple-ios",
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux",
+    ],
 )
 
 load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
@@ -155,26 +160,17 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-load("//common/build/rust/bindgen:toolchains.bzl", "common_build_rust_bindgen_fetch_toolchains", "common_build_rust_bindgen_register_toolchains")
-load("//common/build/rust/bindgen/cli:fetch.bzl", "common_build_rust_bindgen_cli_fetch_archive")
-
-common_build_rust_bindgen_fetch_toolchains()
-
-common_build_rust_bindgen_cli_fetch_archive()
-
-load("//common/build/rust/bindgen/cli:build.bzl", "common_build_rust_bindgen_cli_build")
-
-common_build_rust_bindgen_cli_build()
-
-load("@bindgen-cli_deps//:defs.bzl", bindgen_cli_deps = "crate_repositories")
-
-bindgen_cli_deps()
-
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies")
 
 rust_bindgen_dependencies()
 
-common_build_rust_bindgen_register_toolchains()
+load("//common/build/rust/bindgen:repositories.bzl", "rust_bindgen_repositories")
+
+rust_bindgen_repositories()
+
+load("//common/build/rust/bindgen:rules.bzl", "rust_bindgen_register_toolchains")
+
+rust_bindgen_register_toolchains()
 
 load("//common/build/rust/proto:toolchains.bzl", "common_build_rust_proto_register_toolchains")
 

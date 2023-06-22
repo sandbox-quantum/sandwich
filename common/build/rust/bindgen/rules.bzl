@@ -1,31 +1,41 @@
-def bindgen_add_prefix_link_name(prefix):
-    """Returns the list of arguments necessary to apply a prefix to the link names
-    of symbols.
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
+load(":repositories.bzl", "rust_bindgen_get_component")
 
-    This function returns a list of two elements. The first one is the
-    `--prefix-link-name` option, which tells bindgen to apply a prefix to the
-    link names of symbols when building the .rs files.
-    The second is the chosen prefix.
+def rust_bindgen_register_toolchain(os, arch):
+    """Registers the Rust bindgen toolchain for a given OS and architecture."""
+    name = "bindgen_toolchain_{os}_{arch}".format(
+        os = os,
+        arch = arch,
+    )
+    impl_name = "{name}_impl".format(
+        name = name,
+    )
+    rust_bindgen_toolchain(
+        name = impl_name,
+        bindgen = "@rules_rust//bindgen/3rdparty:bindgen",
+        clang = rust_bindgen_get_component(os, arch, "clang"),
+        libclang = rust_bindgen_get_component(os, arch, "libclang"),
+    )
+    native.toolchain(
+        name = name,
+        toolchain = impl_name,
+        toolchain_type = "@rules_rust//bindgen:toolchain_type",
+        exec_compatible_with = [
+            "@platforms//os:{}".format(os),
+            "@platforms//cpu:{}".format(arch),
+        ],
+        visibility = ["//visibility:public"],
+    )
 
-    On some operating systems such as macOS or iOS, symbols are always internally
-    prefixed with a `_`. It means that when we compile an object that contains
-    the definition of `function`, its link name will actually be `_function`.
-
-    This function takes care of that divergence, by applying this leading `_` when
-    it is necessary.
-
-    Arguments:
-      prefix:
-        The prefix to modify if necessary.
-
-    Returns:
-      A list of arguments to add to the `bindgen_flags` argument of rule
-      `rust_bindgen_library`.
-    """
-    return ["--prefix-link-name"] + select({
-        "@platforms//os:ios": ["_{}".format(prefix)],
-        "@platforms//os:macos": ["_{}".format(prefix)],
-        "@platforms//os:tvos": ["_{}".format(prefix)],
-        "@platforms//os:watchos": ["_{}".format(prefix)],
-        "//conditions:default": ["{}".format(prefix)],
-    })
+def rust_bindgen_register_toolchains():
+    """Register all the Rust bindgen toolchains."""
+    for os, arch in (
+        ("linux", "aarch64"),
+        ("linux", "x86_64"),
+        ("macos", "aarch64"),
+        ("macos", "x86_64"),
+    ):
+        native.register_toolchains("//common/build/rust/bindgen:bindgen_toolchain_{os}_{arch}".format(
+            os = os,
+            arch = arch,
+        ))

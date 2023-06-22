@@ -1,6 +1,6 @@
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
 load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
-load("//common/build/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
+load("//common/rules/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
 load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
 
 # Source files for various general definitions in Sandwich.
