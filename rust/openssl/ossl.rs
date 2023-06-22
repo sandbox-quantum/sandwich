@@ -14,9 +14,8 @@
 
 //! Defines [`Ossl`] structure that implements [`crate::ossl::Ossl`].
 
-extern crate openssl;
-
 use crate::support;
+use openssl1_1_1 as openssl;
 
 pub(crate) struct Ossl {}
 
@@ -840,6 +839,7 @@ GenOsslUnitTests!(
 mod additional_tests {
     use super::Ossl;
     use crate::ossl::Ossl as OsslTrait;
+    use openssl1_1_1 as openssl;
 
     /// Tests creation of SSL handles.
     #[test]

@@ -14,6 +14,8 @@
 
 //! Sandwich OpenSSL implementation module.
 
+extern crate openssl1_1_1;
+
 pub(self) mod io;
 pub(crate) mod ossl;
 

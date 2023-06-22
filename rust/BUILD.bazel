@@ -179,7 +179,7 @@ rust_bindgen_library(
         ],
         "//conditions:default": [],
     }),
-    crate_name = "openssl",
+    crate_name = "openssl1_1_1",
     header = "openssl_bindgen.h",
     rustc_flags = [
         "-A",
