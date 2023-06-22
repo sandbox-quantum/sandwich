@@ -16,6 +16,8 @@
 
 extern crate openssl;
 
+use crate::support;
+
 pub(crate) struct Ossl {}
 
 /// Converts an OpenSSL error to a [`crate::tunnel::RecordError`].
@@ -37,7 +39,7 @@ fn openssl_error_to_record_error(e: i32, errno: std::io::Error) -> crate::tunnel
 /// Creates a BIO object from a buffer.
 fn buffer_to_bio<'data: 'pimpl, 'pimpl>(
     buf: &'data impl std::convert::AsRef<[u8]>,
-) -> crate::Result<crate::Pimpl<'pimpl, openssl::BIO>> {
+) -> crate::Result<support::Pimpl<'pimpl, openssl::BIO>> {
     let obj = buf.as_ref();
     let ptr = if obj.len() <= (std::i32::MAX as usize) {
         unsafe {
@@ -50,7 +52,7 @@ fn buffer_to_bio<'data: 'pimpl, 'pimpl>(
         Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW)
     }?;
     if !ptr.is_null() {
-        Ok(crate::Pimpl::from_raw(
+        Ok(support::Pimpl::from_raw(
             ptr,
             Some(|p| unsafe {
                 openssl::BIO_free_all(p);
@@ -73,7 +75,7 @@ impl crate::ossl::Ossl for Ossl {
 
     fn new_ssl_context<'pimpl>(
         mode: crate::Mode,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativeSslCtx>> {
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeSslCtx>> {
         let ctx = unsafe {
             openssl::SSL_CTX_new(match mode {
                 crate::Mode::Client => openssl::TLS_client_method(),
@@ -108,7 +110,7 @@ impl crate::ossl::Ossl for Ossl {
                     std::ptr::null_mut(),
                 );
             }
-            let mut pimpl = crate::Pimpl::<openssl::SSL_CTX>::from_raw(
+            let mut pimpl = support::Pimpl::<openssl::SSL_CTX>::from_raw(
                 ctx,
                 Some(|x| unsafe {
                     openssl::SSL_CTX_free(x);
@@ -151,7 +153,7 @@ impl crate::ossl::Ossl for Ossl {
     }
 
     fn ssl_context_set_verify_mode(
-        pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
+        pimpl: &mut support::Pimpl<'_, Self::NativeSslCtx>,
         mode: crate::ossl::VerifyMode,
     ) {
         let flag = match mode {
@@ -166,14 +168,17 @@ impl crate::ossl::Ossl for Ossl {
         }
     }
 
-    fn ssl_context_set_verify_depth(pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>, depth: u32) {
+    fn ssl_context_set_verify_depth(
+        pimpl: &mut support::Pimpl<'_, Self::NativeSslCtx>,
+        depth: u32,
+    ) {
         unsafe {
             openssl::SSL_CTX_set_verify_depth(pimpl.as_mut_ptr(), depth as i32);
         }
     }
 
     fn ssl_context_set_kems(
-        ssl_ctx: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
+        ssl_ctx: &mut support::Pimpl<'_, Self::NativeSslCtx>,
         kems: std::slice::Iter<'_, std::string::String>,
     ) -> crate::Result<()> {
         let mut nids = std::vec::Vec::<i32>::new();
@@ -210,8 +215,8 @@ impl crate::ossl::Ossl for Ossl {
     }
 
     fn ssl_context_append_certificate_to_trust_store(
-        ssl_ctx: &crate::Pimpl<'_, Self::NativeSslCtx>,
-        mut cert: crate::Pimpl<'_, Self::NativeCertificate>,
+        ssl_ctx: &support::Pimpl<'_, Self::NativeSslCtx>,
+        mut cert: support::Pimpl<'_, Self::NativeCertificate>,
     ) -> crate::Result<()> {
         let store = unsafe { openssl::SSL_CTX_get_cert_store(ssl_ctx.as_ptr()) };
         if store.is_null() {
@@ -227,8 +232,8 @@ impl crate::ossl::Ossl for Ossl {
     }
 
     fn ssl_context_set_certificate(
-        ssl_ctx: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
-        mut cert: crate::Pimpl<'_, Self::NativeCertificate>,
+        ssl_ctx: &mut support::Pimpl<'_, Self::NativeSslCtx>,
+        mut cert: support::Pimpl<'_, Self::NativeCertificate>,
     ) -> crate::Result<()> {
         match unsafe { openssl::SSL_CTX_use_certificate(ssl_ctx.as_mut_ptr(), cert.as_mut_ptr()) } {
             1 => Ok(()),
@@ -237,8 +242,8 @@ impl crate::ossl::Ossl for Ossl {
     }
 
     fn ssl_context_set_private_key(
-        ssl_ctx: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
-        mut pkey: crate::Pimpl<'_, Self::NativePrivateKey>,
+        ssl_ctx: &mut support::Pimpl<'_, Self::NativeSslCtx>,
+        mut pkey: support::Pimpl<'_, Self::NativePrivateKey>,
     ) -> crate::Result<()> {
         match unsafe { openssl::SSL_CTX_use_PrivateKey(ssl_ctx.as_mut_ptr(), pkey.as_mut_ptr()) } {
             1 => Ok(()),
@@ -248,7 +253,7 @@ impl crate::ossl::Ossl for Ossl {
 
     fn certificate_from_pem<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativeCertificate>> {
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeCertificate>> {
         if cert.as_ref().len() > (std::i32::MAX as usize) {
             return Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW.into());
         }
@@ -272,7 +277,7 @@ impl crate::ossl::Ossl for Ossl {
                 _ => pb::CertificateError::CERTIFICATEERROR_UNSUPPORTED.into(),
             })
         } else {
-            Ok(crate::Pimpl::from_raw(
+            Ok(support::Pimpl::from_raw(
                 cert,
                 Some(|x| unsafe {
                     openssl::X509_free(x);
@@ -283,7 +288,7 @@ impl crate::ossl::Ossl for Ossl {
 
     fn certificate_from_der<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativeCertificate>> {
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeCertificate>> {
         if cert.as_ref().len() > (std::i32::MAX as usize) {
             return Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW.into());
         }
@@ -305,7 +310,7 @@ impl crate::ossl::Ossl for Ossl {
                 _ => pb::CertificateError::CERTIFICATEERROR_UNSUPPORTED.into(),
             })
         } else {
-            Ok(crate::Pimpl::from_raw(
+            Ok(support::Pimpl::from_raw(
                 cert,
                 Some(|x| unsafe {
                     openssl::X509_free(x);
@@ -316,7 +321,7 @@ impl crate::ossl::Ossl for Ossl {
 
     fn private_key_from_pem<'pimpl>(
         pkey: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativePrivateKey>> {
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativePrivateKey>> {
         if pkey.as_ref().len() > (std::i32::MAX as usize) {
             return Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW.into());
         }
@@ -340,7 +345,7 @@ impl crate::ossl::Ossl for Ossl {
                 _ => pb::PrivateKeyError::PRIVATEKEYERROR_UNSUPPORTED.into(),
             })
         } else {
-            Ok(crate::Pimpl::from_raw(
+            Ok(support::Pimpl::from_raw(
                 pkey,
                 Some(|x| unsafe {
                     openssl::EVP_PKEY_free(x);
@@ -351,7 +356,7 @@ impl crate::ossl::Ossl for Ossl {
 
     fn private_key_from_der<'pimpl>(
         pkey: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativePrivateKey>> {
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativePrivateKey>> {
         if pkey.as_ref().len() > (std::i32::MAX as usize) {
             return Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW.into());
         }
@@ -373,7 +378,7 @@ impl crate::ossl::Ossl for Ossl {
                 _ => pb::PrivateKeyError::PRIVATEKEYERROR_UNSUPPORTED.into(),
             })
         } else {
-            Ok(crate::Pimpl::from_raw(
+            Ok(support::Pimpl::from_raw(
                 pkey,
                 Some(|x| unsafe {
                     openssl::EVP_PKEY_free(x);
@@ -383,8 +388,8 @@ impl crate::ossl::Ossl for Ossl {
     }
 
     fn new_ssl_handle<'ctx, 'ssl>(
-        ssl_context: &mut crate::Pimpl<'ctx, Self::NativeSslCtx>,
-    ) -> crate::Result<crate::Pimpl<'ssl, Self::NativeSsl>>
+        ssl_context: &mut support::Pimpl<'ctx, Self::NativeSslCtx>,
+    ) -> crate::Result<support::Pimpl<'ssl, Self::NativeSsl>>
     where
         'ctx: 'ssl,
     {
@@ -392,7 +397,7 @@ impl crate::ossl::Ossl for Ossl {
         if ptr.is_null() {
             return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
         }
-        Ok(crate::Pimpl::from_raw(
+        Ok(support::Pimpl::from_raw(
             ptr,
             Some(|x| unsafe {
                 openssl::SSL_free(x);
@@ -400,12 +405,12 @@ impl crate::ossl::Ossl for Ossl {
         ))
     }
 
-    fn new_ssl_bio<'pimpl>() -> crate::Result<crate::Pimpl<'pimpl, Self::NativeBio>> {
+    fn new_ssl_bio<'pimpl>() -> crate::Result<support::Pimpl<'pimpl, Self::NativeBio>> {
         let bio = unsafe { openssl::BIO_new(&super::BIO_METH as *const openssl::bio_method_st) };
         if bio.is_null() {
             return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
         }
-        Ok(crate::Pimpl::from_raw(
+        Ok(support::Pimpl::from_raw(
             bio,
             Some(|x| unsafe {
                 openssl::BIO_free_all(x);

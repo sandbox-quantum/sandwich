@@ -18,8 +18,6 @@
 //! sources. The source is given by the protobuf configuration (see
 //! [`api_rust_proto::DataSource`].
 
-use pb::DataSourceError::*;
-
 /// A DataSource.
 /// Source of the material is either from the local filesystem (`Fs`), from
 /// an inline slice of bytes (`Bytes`) or from a inline string (`String`).
@@ -46,10 +44,10 @@ impl<'ds: 'data, 'data> std::convert::TryFrom<&'ds pb_api::DataSource> for DataS
         use pb_api::data_source::data_source;
         ds.specifier
             .as_ref()
-            .ok_or_else(|| DATASOURCEERROR_INVALID_CASE.into())
+            .ok_or_else(|| pb::DataSourceError::DATASOURCEERROR_INVALID_CASE.into())
             .and_then(|oneof| match oneof {
                 data_source::Specifier::Filename(path) => Ok(Self::Fs(
-                    std::fs::read(path).or(Err(DATASOURCEERROR_NOT_FOUND))?,
+                    std::fs::read(path).or(Err(pb::DataSourceError::DATASOURCEERROR_NOT_FOUND))?,
                 )),
                 data_source::Specifier::InlineBytes(ref v) => {
                     Ok(Self::Bytes(std::borrow::Cow::from(v)))
@@ -57,7 +55,7 @@ impl<'ds: 'data, 'data> std::convert::TryFrom<&'ds pb_api::DataSource> for DataS
                 data_source::Specifier::InlineString(ref v) => {
                     Ok(Self::String(std::borrow::Cow::from(v)))
                 }
-                _ => Err(DATASOURCEERROR_INVALID_CASE.into()),
+                _ => Err(pb::DataSourceError::DATASOURCEERROR_INVALID_CASE.into()),
             })
     }
 }
@@ -114,7 +112,6 @@ impl<'data> DataSource<'data> {
 /// Tests for [`DataSource`].
 #[cfg(test)]
 mod test {
-    use super::super::pb;
     use super::DataSource;
 
     /// Path to an existing and readable file.

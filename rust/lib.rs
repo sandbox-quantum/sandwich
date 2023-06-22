@@ -64,6 +64,7 @@ pub type Result<T> = std::result::Result<T, error::Error>;
 pub mod error;
 pub mod context;
 pub mod io;
+pub mod support;
 pub mod tunnel;
 
 /// A Sandwich context.
@@ -85,18 +86,13 @@ pub(crate) mod ossl;
 #[cfg(feature = "boringssl")]
 pub(crate) mod boringssl;
 
-pub(crate) mod data_source;
-
 #[cfg(feature = "openssl")]
 pub(crate) mod openssl;
-pub(crate) mod pimpl;
 
 #[cfg(any(feature = "openssl", feature = "boringssl"))]
 pub(crate) mod tls;
 
 pub(crate) use context::Mode;
-pub(crate) use data_source::DataSource;
-pub(crate) use pimpl::Pimpl;
 
 #[cfg(test)]
 extern crate runfiles;

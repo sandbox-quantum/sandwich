@@ -6,12 +6,17 @@ load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
 # Source files for various general definitions in Sandwich.
 _SANDWICH_LIB_SRCS = [
     "context.rs",
-    "data_source.rs",
     "io.rs",
     "lib.rs",
     "ossl.rs",
-    "pimpl.rs",
     "tunnel.rs",
+]
+
+# Source files for the Sandwich support module.
+_SANDWICH_SUPPORT_MOD_SRCS = [
+    "support/data_source.rs",
+    "support/mod.rs",
+    "support/pimpl.rs",
 ]
 
 # Source files for the Sandwich error module.
@@ -50,9 +55,11 @@ _SANDWICH_RUNFILES_DEPS = [
 # Sandwich "naked" variant.
 rust_library(
     name = "sandwich_naked",
-    srcs = _SANDWICH_LIB_SRCS +
-           _SANDWICH_ERROR_MOD_SRCS +
-           _SANDWICH_TLS_MOD_SRCS,
+    srcs =
+        _SANDWICH_ERROR_MOD_SRCS +
+        _SANDWICH_SUPPORT_MOD_SRCS +
+        _SANDWICH_LIB_SRCS +
+        _SANDWICH_TLS_MOD_SRCS,
     crate_features = [],
     crate_name = "sandwich",
     rustc_flags = [
@@ -134,10 +141,11 @@ _SANDWICH_OPENSSL_MOD_SRCS = [
 
 # All source files for Sandwich OpenSSL variant.
 _SANDWICH_OPENSSL_VARIANT_SRCS = \
-    _SANDWICH_LIB_SRCS + \
     _SANDWICH_ERROR_MOD_SRCS + \
-    _SANDWICH_TLS_MOD_SRCS + \
-    _SANDWICH_OPENSSL_MOD_SRCS
+    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_OPENSSL_MOD_SRCS + \
+    _SANDWICH_SUPPORT_MOD_SRCS + \
+    _SANDWICH_TLS_MOD_SRCS
 
 _OPENSSL_LINK_PREFIX = "__private_ossl_1_1_1_"
 
@@ -323,10 +331,11 @@ _SANDWICH_BORINGSSL_MOD_SRCS = [
 
 # All source files for Sandwich BoringSSL variant.
 _SANDWICH_BORINGSSL_VARIANT_SRCS = \
-    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_BORINGSSL_MOD_SRCS + \
     _SANDWICH_ERROR_MOD_SRCS + \
-    _SANDWICH_TLS_MOD_SRCS + \
-    _SANDWICH_BORINGSSL_MOD_SRCS
+    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_SUPPORT_MOD_SRCS + \
+    _SANDWICH_TLS_MOD_SRCS
 
 _BORINGSSL_LINK_PREFIX = "__private_boringssl_"
 
@@ -494,11 +503,12 @@ rust_doc(
 
 # All source files for the Sandwich "full" variant.
 _SANDWICH_FULL_VARIANT_SRCS = \
-    _SANDWICH_LIB_SRCS + \
+    _SANDWICH_BORINGSSL_MOD_SRCS + \
     _SANDWICH_ERROR_MOD_SRCS + \
-    _SANDWICH_TLS_MOD_SRCS + \
+    _SANDWICH_LIB_SRCS + \
     _SANDWICH_OPENSSL_MOD_SRCS + \
-    _SANDWICH_BORINGSSL_MOD_SRCS
+    _SANDWICH_SUPPORT_MOD_SRCS + \
+    _SANDWICH_TLS_MOD_SRCS
 
 # Dependencies for the Sandwich "full" variant.
 _SANDWICH_FULL_VARIANT_DEPS = [

@@ -17,6 +17,8 @@
 //! This trait aims to ease the support of multiple OpenSSL-like implementations,
 //! such as BoringSSL, LibreSSL and OpenSSL.
 
+use crate::support;
+
 /// Default maximum depth for the certificate chain verification.
 pub(crate) const DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH: u32 = 100;
 
@@ -74,73 +76,73 @@ pub(crate) trait Ossl {
     /// Creates a new SSL context.
     fn new_ssl_context<'pimpl>(
         mode: crate::Mode,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativeSslCtx>>;
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeSslCtx>>;
 
     /// Sets the verify mode to a SSL context.
     fn ssl_context_set_verify_mode(
-        pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
+        pimpl: &mut support::Pimpl<'_, Self::NativeSslCtx>,
         mode: VerifyMode,
     );
 
     /// Sets the maximum depth for the certificate chain verification.
-    fn ssl_context_set_verify_depth(pimpl: &mut crate::Pimpl<'_, Self::NativeSslCtx>, depth: u32);
+    fn ssl_context_set_verify_depth(pimpl: &mut support::Pimpl<'_, Self::NativeSslCtx>, depth: u32);
 
     /// Sets the KEM to a SSL context.
     fn ssl_context_set_kems(
-        ssl_ctx: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
+        ssl_ctx: &mut support::Pimpl<'_, Self::NativeSslCtx>,
         kems: std::slice::Iter<'_, std::string::String>,
     ) -> crate::Result<()>;
 
     /// Appends a certificate to the certificate trust store.
     /// This is used in client mode.
     fn ssl_context_append_certificate_to_trust_store(
-        ssl_ctx: &crate::Pimpl<'_, Self::NativeSslCtx>,
-        cert: crate::Pimpl<'_, Self::NativeCertificate>,
+        ssl_ctx: &support::Pimpl<'_, Self::NativeSslCtx>,
+        cert: support::Pimpl<'_, Self::NativeCertificate>,
     ) -> crate::Result<()>;
 
     /// Sets the certificate to use.
     /// This is used in server mode.
     fn ssl_context_set_certificate(
-        ssl_ctx: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
-        cert: crate::Pimpl<'_, Self::NativeCertificate>,
+        ssl_ctx: &mut support::Pimpl<'_, Self::NativeSslCtx>,
+        cert: support::Pimpl<'_, Self::NativeCertificate>,
     ) -> crate::Result<()>;
 
     /// Sets the private key to use.
     /// This is used in server mode.
     fn ssl_context_set_private_key(
-        ssl_ctx: &mut crate::Pimpl<'_, Self::NativeSslCtx>,
-        pkey: crate::Pimpl<'_, Self::NativePrivateKey>,
+        ssl_ctx: &mut support::Pimpl<'_, Self::NativeSslCtx>,
+        pkey: support::Pimpl<'_, Self::NativePrivateKey>,
     ) -> crate::Result<()>;
 
     /// Instantiates a certificate using a buffer that contains a PEM-encoded certificate.
     fn certificate_from_pem<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativeCertificate>>;
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeCertificate>>;
 
     /// Instantiates a certificate using a buffer that contains a DER-encoded certificate.
     fn certificate_from_der<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativeCertificate>>;
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeCertificate>>;
 
     /// Instantiates a private key using a buffer that contains a PEM-encoded private key.
     fn private_key_from_pem<'pimpl>(
         pkey: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativePrivateKey>>;
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativePrivateKey>>;
 
     /// Instantiates a private key using a buffer that contains a DER-encoded private key.
     fn private_key_from_der<'pimpl>(
         pkey: impl std::convert::AsRef<[u8]>,
-    ) -> crate::Result<crate::Pimpl<'pimpl, Self::NativePrivateKey>>;
+    ) -> crate::Result<support::Pimpl<'pimpl, Self::NativePrivateKey>>;
 
     /// Instantiates a SSL handle from a SSL context.
     fn new_ssl_handle<'ctx, 'ssl>(
-        ssl_context: &mut crate::Pimpl<'ctx, Self::NativeSslCtx>,
-    ) -> crate::Result<crate::Pimpl<'ssl, Self::NativeSsl>>
+        ssl_context: &mut support::Pimpl<'ctx, Self::NativeSslCtx>,
+    ) -> crate::Result<support::Pimpl<'ssl, Self::NativeSsl>>
     where
         'ctx: 'ssl;
 
     /// Instantiates a BIO object for the SSL handle.
-    fn new_ssl_bio<'pimpl>() -> crate::Result<crate::Pimpl<'pimpl, Self::NativeBio>>;
+    fn new_ssl_bio<'pimpl>() -> crate::Result<support::Pimpl<'pimpl, Self::NativeBio>>;
 
     /// Attaches a BIO to a SSL handle, and sets its forwarded data.
     fn ssl_set_bio(
@@ -271,7 +273,7 @@ where
     mode: crate::Mode,
 
     /// SSL context.
-    ssl_ctx: crate::Pimpl<'ctx, OsslInterface::NativeSslCtx>,
+    ssl_ctx: support::Pimpl<'ctx, OsslInterface::NativeSslCtx>,
 
     /// Security requirements from the verifiers.
     security_requirements: crate::tls::TunnelSecurityRequirements,
@@ -387,7 +389,7 @@ fn x509_verifier_verify_emptiness(
 /// certificate request from the server, in order to establish a mutual
 /// TLS tunnel (mTLS).
 fn ssl_context_set_identity<OsslInterface>(
-    ssl_ctx: &mut crate::Pimpl<'_, OsslInterface::NativeSslCtx>,
+    ssl_ctx: &mut support::Pimpl<'_, OsslInterface::NativeSslCtx>,
     identity: &pb_api::X509Identity,
 ) -> crate::Result<()>
 where
@@ -428,7 +430,7 @@ where
 
 /// Pushes the trusted certificate authority certificates to the trust store.
 fn ssl_fill_trust_store<OsslInterface>(
-    ssl_ctx: &mut crate::Pimpl<'_, OsslInterface::NativeSslCtx>,
+    ssl_ctx: &mut support::Pimpl<'_, OsslInterface::NativeSslCtx>,
     x509_verifier: &pb_api::X509Verifier,
 ) -> crate::Result<usize>
 where
@@ -523,23 +525,23 @@ where
 }
 
 /// Borrows the SSL context from [`OsslContext`].
-impl<'ctx, OsslInterface> std::borrow::Borrow<crate::Pimpl<'ctx, OsslInterface::NativeSslCtx>>
+impl<'ctx, OsslInterface> std::borrow::Borrow<support::Pimpl<'ctx, OsslInterface::NativeSslCtx>>
     for OsslContext<'ctx, OsslInterface>
 where
     OsslInterface: Ossl,
 {
-    fn borrow(&self) -> &crate::Pimpl<'ctx, OsslInterface::NativeSslCtx> {
+    fn borrow(&self) -> &support::Pimpl<'ctx, OsslInterface::NativeSslCtx> {
         &self.ssl_ctx
     }
 }
 
 /// Borrows as mutable the SSL context from [`OsslContext`].
-impl<'ctx, OsslInterface> std::borrow::BorrowMut<crate::Pimpl<'ctx, OsslInterface::NativeSslCtx>>
+impl<'ctx, OsslInterface> std::borrow::BorrowMut<support::Pimpl<'ctx, OsslInterface::NativeSslCtx>>
     for OsslContext<'ctx, OsslInterface>
 where
     OsslInterface: Ossl,
 {
-    fn borrow_mut(&mut self) -> &mut crate::Pimpl<'ctx, OsslInterface::NativeSslCtx> {
+    fn borrow_mut(&mut self) -> &mut support::Pimpl<'ctx, OsslInterface::NativeSslCtx> {
         &mut self.ssl_ctx
     }
 }
@@ -547,7 +549,7 @@ where
 /// Reads the content of a certificate as described in a protobuf message.
 fn read_certificate(
     cert: &pb_api::Certificate,
-) -> crate::Result<(pb_api::ASN1EncodingFormat, crate::DataSource<'_>)> {
+) -> crate::Result<(pb_api::ASN1EncodingFormat, support::DataSource<'_>)> {
     use pb_api::certificate::certificate;
     cert.source
         .as_ref()
@@ -557,7 +559,7 @@ fn read_certificate(
                 .data
                 .as_ref()
                 .ok_or_else(|| pb::DataSourceError::DATASOURCEERROR_EMPTY.into())
-                .and_then(crate::DataSource::try_from)
+                .and_then(support::DataSource::try_from)
                 .and_then(|ds| {
                     asn1ds
                         .format
@@ -572,7 +574,7 @@ fn read_certificate(
 /// Reads the content of a private key as described in a protobuf message.
 fn read_private_key(
     private_key: &pb_api::PrivateKey,
-) -> crate::Result<(pb_api::ASN1EncodingFormat, crate::DataSource<'_>)> {
+) -> crate::Result<(pb_api::ASN1EncodingFormat, support::DataSource<'_>)> {
     use pb_api::private_key::private_key;
     private_key
         .source
@@ -583,7 +585,7 @@ fn read_private_key(
                 .data
                 .as_ref()
                 .ok_or_else(|| pb::DataSourceError::DATASOURCEERROR_EMPTY.into())
-                .and_then(crate::DataSource::try_from)
+                .and_then(support::DataSource::try_from)
                 .and_then(|ds| {
                     asn1ds
                         .format
@@ -607,10 +609,10 @@ where
     pub(crate) mode: crate::Mode,
 
     /// The SSL handle.
-    pub(crate) ssl: crate::Pimpl<'tun, OsslInterface::NativeSsl>,
+    pub(crate) ssl: support::Pimpl<'tun, OsslInterface::NativeSsl>,
 
     /// The BIO handle.
-    pub(crate) bio: crate::Pimpl<'tun, OsslInterface::NativeBio>,
+    pub(crate) bio: support::Pimpl<'tun, OsslInterface::NativeBio>,
 
     /// The IO.
     pub(crate) io: Box<dyn crate::IO + 'io>,
@@ -731,7 +733,7 @@ where
         } else {
             bio.unwrap()
         };
-        let bio = crate::Pimpl::from_raw(bio.into_raw(), None);
+        let bio = support::Pimpl::from_raw(bio.into_raw(), None);
 
         Ok(Self {
             mode: builder.ctx.mode,
