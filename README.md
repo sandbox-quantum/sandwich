@@ -4,6 +4,7 @@
   <img alt="Sandwich logo" src="./docs/guide_doc/src/images/sandwich_black.png" align="center" height="100">
 </picture>
 
+<img src="./docs/guide_doc/src/images/sandwich_black.png" align="center" height="100"/>
 
 # Sandwich
 [rust-badge][go-badge][release-badge][etc][etc]
