@@ -1,5 +1,8 @@
 <img src="./docs/guide_doc/src/images/logo.png" align="center" height="100"/>
 
+![Logo Dark](./docs/guide_doc/src/images/sandwich_white.png#gh-dark-mode-only)
+![Logo Light](./docs/guide_doc/src/images/sandwich_black.png#gh-light-mode-only)
+
 # Sandwich
 [rust-badge][go-badge][release-badge][etc][etc]
 
