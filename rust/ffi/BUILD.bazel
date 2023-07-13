@@ -1,0 +1,11 @@
+filegroup(
+    name = "ffi",
+    srcs = [
+        "context.rs",
+        "error.rs",
+        "io.rs",
+        "mod.rs",
+        "tunnel.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

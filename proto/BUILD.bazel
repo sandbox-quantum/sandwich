@@ -89,6 +89,10 @@ go_proto_library(
 
 rust_proto_library(
     name = "sandwich_rust_proto",
+    rustc_flags = [
+        "-A",
+        "ambiguous_glob_reexports",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":sandwich_proto",

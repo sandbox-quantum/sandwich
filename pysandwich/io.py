@@ -34,8 +34,6 @@ Author: thb-sb
 
 import abc
 import ctypes
-import errno
-import socket
 
 import pysandwich.proto.io_pb2 as SandwichIOProto
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
@@ -228,42 +226,3 @@ class IO(abc.ABC):
             IOException.
         """
         pass
-
-
-class Socket(IO):
-    def __init__(self, sock: socket.socket):
-        self._sock = sock
-
-    def _errno_to_exception(self, err):
-        match err:
-            case errno.EINPROGRESS | errno.EINTR:
-                return IOInProgressException()
-            case errno.EAGAIN | errno.EWOULDBLOCK:
-                return IOWouldBlockException()
-            case errno.ENOTSOCK | errno.EPROTOTYPE | errno.EBADF:
-                return IOInvalidException()
-            case (
-                errno.EACCES
-                | errno.EPERM
-                | errno.ETIMEDOUT
-                | errno.ENETUNREACH
-                | errno.ECONNREFUSED
-            ):
-                return IORefusedException()
-            case _:
-                return errors.IOUnknownException()
-
-    def read(self, n, tunnel_state: SandwichTunnelProto.State) -> bytes:
-        try:
-            return self._sock.recv(n)
-        except OSError as e:
-            raise self._errno_to_exception(e.errno) from e
-
-    def write(self, buf, tunnel_state: SandwichTunnelProto.State) -> int:
-        try:
-            return self._sock.send(buf)
-        except Exception as e:
-            raise self._errno_to_exception(e.errno) from e
-
-    def close(self):
-        self._sock.close()

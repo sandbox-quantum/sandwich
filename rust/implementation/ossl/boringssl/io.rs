@@ -79,8 +79,7 @@ fn set_bio_close(bio: *mut boringssl::bio_st) {
 /// BIO write callback.
 unsafe extern "C" fn bio_write(bio: *mut boringssl::bio_st, data: *const i8, len: i32) -> i32 {
     clear_bio_retry_flags(bio);
-    let tun = &mut *(boringssl::BIO_get_data(bio)
-        as *mut crate::ossl::OsslTunnel<crate::boringssl::ossl::Ossl>);
+    let tun = &mut *(boringssl::BIO_get_data(bio) as *mut super::ossl::OsslTunnel<super::Ossl>);
 
     debug_assert!(tun.bio.as_ptr() == bio);
 
@@ -115,8 +114,7 @@ unsafe extern "C" fn bio_write(bio: *mut boringssl::bio_st, data: *const i8, len
 /// BIO read callback.
 unsafe extern "C" fn bio_read(bio: *mut boringssl::bio_st, data: *mut i8, len: i32) -> i32 {
     clear_bio_retry_flags(bio);
-    let tun = &mut *(boringssl::BIO_get_data(bio)
-        as *mut crate::ossl::OsslTunnel<crate::boringssl::ossl::Ossl>);
+    let tun = &mut *(boringssl::BIO_get_data(bio) as *mut super::ossl::OsslTunnel<super::Ossl>);
 
     debug_assert!(tun.bio.as_ptr() == bio);
 

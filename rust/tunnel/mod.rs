@@ -223,3 +223,6 @@ mod test {
         assert!(e.is(&errors! {pb::APIError::APIERROR_SOCKET}));
     }
 }
+
+#[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
+pub(crate) mod tls;

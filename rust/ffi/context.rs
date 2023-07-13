@@ -56,16 +56,18 @@ pub extern "C" fn sandwich_context_free(ctx: *mut std::ffi::c_void) {
     }
 }
 
-#[cfg(all(test, feature = "openssl"))]
+#[cfg(all(test, feature = "openssl1_1_1"))]
 mod test {
+    use crate::tunnel::tls;
+
     /// Tests [`sandwich_context_new`] and [`sandwich_context_free`].
     #[test]
     fn test_context_ctor_dtor() {
         use protobuf::Message;
 
-        let cert_path = crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH);
+        let cert_path = crate::test::resolve_runfile(tls::test::CERT_PEM_PATH);
         let mut config =
-            crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
+            crate::context::test::openssl1_1_1::create_configuration(crate::Mode::Client, false);
         config
             .mut_client()
             .mut_tls()
@@ -73,7 +75,7 @@ mod test {
             .mut_or_insert_default()
             .mut_x509_verifier()
             .trusted_cas
-            .push(crate::context::test::openssl::create_cert(
+            .push(crate::context::test::openssl1_1_1::create_cert(
                 &cert_path,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ));
@@ -104,9 +106,9 @@ mod test {
     fn test_context_ctor_error() {
         use protobuf::Message;
 
-        let cert_path = crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH);
+        let cert_path = crate::test::resolve_runfile(tls::test::CERT_PEM_PATH);
         let mut config =
-            crate::context::test::openssl::create_configuration(crate::Mode::Client, false);
+            crate::context::test::openssl1_1_1::create_configuration(crate::Mode::Client, false);
         config
             .mut_client()
             .mut_tls()
@@ -114,7 +116,7 @@ mod test {
             .mut_or_insert_default()
             .mut_x509_verifier()
             .trusted_cas
-            .push(crate::context::test::openssl::create_cert(
+            .push(crate::context::test::openssl1_1_1::create_cert(
                 &cert_path,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ));

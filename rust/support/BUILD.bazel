@@ -1,0 +1,9 @@
+filegroup(
+    name = "support",
+    srcs = [
+        "data_source.rs",
+        "mod.rs",
+        "pimpl.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

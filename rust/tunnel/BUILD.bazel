@@ -1,0 +1,7 @@
+filegroup(
+    name = "tunnel",
+    srcs = [
+        "mod.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

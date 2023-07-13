@@ -1,0 +1,7 @@
+filegroup(
+    name = "implementation",
+    srcs = [
+        "mod.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

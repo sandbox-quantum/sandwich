@@ -1,0 +1,8 @@
+filegroup(
+    name = "error",
+    srcs = [
+        "code.rs",
+        "mod.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

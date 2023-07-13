@@ -1,0 +1,16 @@
+filegroup(
+    name = "boringssl",
+    srcs = [
+        "io.rs",
+        "mod.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)
+
+filegroup(
+    name = "bindgen",
+    srcs = [
+        "bindgen.h",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

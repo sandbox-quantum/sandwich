@@ -1,0 +1,8 @@
+filegroup(
+    name = "tls",
+    srcs = [
+        "mod.rs",
+        "security.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

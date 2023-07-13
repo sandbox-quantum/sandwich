@@ -71,10 +71,10 @@ impl TunnelSecurityRequirements {
     ///
     /// Because this function is an assessor, a `false` returned value means
     /// that there is a security issue here.
-    #[cfg(any(feature = "openssl", feature = "boringssl"))]
+    #[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
     pub(crate) fn assess_x509_store_error<OsslInterface>(&self, error: i32) -> bool
     where
-        OsslInterface: crate::ossl::Ossl + ?Sized,
+        OsslInterface: crate::implementation::ossl::Ossl + ?Sized,
     {
         if self.allow_expired_certificate
             && OsslInterface::x509_error_code_is_certificate_expired(error)

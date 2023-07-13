@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Defines [`Ossl`] structure that implements [`crate::ossl::Ossl`].
+//! Sandwich BoringSSL implementation module.
+
+//! Defines [`Ossl`] structure that implements [`ossl::Ossl`].
 
 extern crate boringssl;
 
-pub(crate) struct Ossl {}
+mod io;
 
 use crate::support;
+use crate::tunnel::tls;
+
+use super::super::ossl;
 
 /// Default supported signing algorithms.
 /// This is needed for BoringSSL, because it doesn't support ED25519 by default.
@@ -86,8 +91,10 @@ fn buffer_to_bio<'data: 'pimpl, 'pimpl>(
     }
 }
 
-/// Implements [`crate::ossl::Ossl`] for [`Ossl`].
-impl crate::ossl::Ossl for Ossl {
+struct Ossl {}
+
+/// Implements [`ossl::Ossl`] for [`Ossl`].
+impl super::Ossl for Ossl {
     type NativeCertificate = boringssl::x509_st;
     type NativePrivateKey = boringssl::evp_pkey_st;
     type NativeSslCtx = boringssl::SSL_CTX;
@@ -176,12 +183,12 @@ impl crate::ossl::Ossl for Ossl {
 
     fn ssl_context_set_verify_mode(
         pimpl: &mut support::Pimpl<'_, Self::NativeSslCtx>,
-        mode: crate::ossl::VerifyMode,
+        mode: ossl::VerifyMode,
     ) {
         let flag = match mode {
-            crate::ossl::VerifyMode::None => boringssl::SSL_VERIFY_NONE,
-            crate::ossl::VerifyMode::Peer => boringssl::SSL_VERIFY_PEER,
-            crate::ossl::VerifyMode::Mutual => {
+            ossl::VerifyMode::None => boringssl::SSL_VERIFY_NONE,
+            ossl::VerifyMode::Peer => boringssl::SSL_VERIFY_PEER,
+            ossl::VerifyMode::Mutual => {
                 boringssl::SSL_VERIFY_PEER | boringssl::SSL_VERIFY_FAIL_IF_NO_PEER_CERT
             }
         } as i32;
@@ -425,8 +432,7 @@ impl crate::ossl::Ossl for Ossl {
     }
 
     fn new_ssl_bio<'pimpl>() -> crate::Result<support::Pimpl<'pimpl, Self::NativeBio>> {
-        let bio =
-            unsafe { boringssl::BIO_new(&super::BIO_METH as *const boringssl::bio_method_st) };
+        let bio = unsafe { boringssl::BIO_new(&io::BIO_METH as *const boringssl::bio_method_st) };
         if bio.is_null() {
             return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
         }
@@ -455,9 +461,8 @@ impl crate::ossl::Ossl for Ossl {
         ssl: *mut Self::NativeSsl,
         extra_data: *mut T,
     ) -> Result<(), pb::SystemError> {
-        if unsafe {
-            boringssl::SSL_set_ex_data(ssl, crate::ossl::VERIFY_TUNNEL_INDEX, extra_data.cast())
-        } as u64
+        if unsafe { boringssl::SSL_set_ex_data(ssl, ossl::VERIFY_TUNNEL_INDEX, extra_data.cast()) }
+            as u64
             == 0
         {
             return Err(pb::SystemError::SYSTEMERROR_MEMORY);
@@ -468,7 +473,7 @@ impl crate::ossl::Ossl for Ossl {
     fn ssl_handshake(
         ssl: *mut Self::NativeSsl,
         mode: crate::Mode,
-        tun: &crate::ossl::OsslTunnel<Ossl>,
+        tun: &ossl::OsslTunnel<Ossl>,
     ) -> (crate::Result<pb::tunnel::HandshakeState>, Option<pb::State>) {
         let err = match mode {
             crate::Mode::Client => unsafe { boringssl::SSL_connect(ssl) },
@@ -480,7 +485,8 @@ impl crate::ossl::Ossl for Ossl {
                 Some(pb::State::STATE_HANDSHAKE_DONE),
             )
         } else {
-            match unsafe { boringssl::SSL_get_error(ssl, err as i32) } as u32 {
+            let e = unsafe { boringssl::SSL_get_error(ssl, err as i32) } as u32;
+            match e {
                 boringssl::SSL_ERROR_WANT_READ => (
                     Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_READ),
                     Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
@@ -497,8 +503,30 @@ impl crate::ossl::Ossl for Ossl {
                     Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
                     Some(pb::State::STATE_NOT_CONNECTED),
                 ),
-                _ => {
+                boringssl::SSL_ERROR_WANT_X509_LOOKUP => (
+                        Err(crate::Error::from((
+                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                        "BoringSSL error: application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again.".to_string()
+                                    ))
+                        ),
+                        Some(pb::State::STATE_ERROR),
+                ),
+                boringssl::SSL_ERROR_SYSCALL | boringssl::SSL_ERROR_SSL => {
                     let err = unsafe { boringssl::ERR_get_error() };
+                    if err == 0 && tun.verify_error == 0 {
+                        return (
+                            Err(crate::Error::from((
+                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                        match e {
+                                          boringssl::SSL_ERROR_SYSCALL => "BoringSSL error: Returned SSL_ERROR_SYSCALL with no additional info.",
+                                          boringssl::SSL_ERROR_SSL => "BoringSSL error: Returned SSL_ERROR_SSL with no additional info.",
+                                          _ => "BoringSSL error: Reached an unreachable point.",
+                                        }.to_string()
+                                ))
+                            ),
+                            Some(pb::State::STATE_ERROR),
+                        );
+                    }
                     let errlib = (err >> 24) & 0xFF;
                     let e_r = unsafe { boringssl::ERR_error_string(err, std::ptr::null_mut()) };
                     let err_cstring = unsafe { std::ffi::CStr::from_ptr(e_r) };
@@ -622,6 +650,10 @@ impl crate::ossl::Ossl for Ossl {
                         ),
                     }
                 }
+                _ => (
+                    Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                    Some(pb::State::STATE_ERROR),
+                ),
             }
         }
     }
@@ -745,10 +777,10 @@ impl crate::ossl::Ossl for Ossl {
 
     fn ssl_get_tunnel<'a>(
         ssl: *const Self::NativeSsl,
-    ) -> Option<&'a mut crate::ossl::OsslTunnel<'a, 'a, Self>> {
+    ) -> Option<&'a mut ossl::OsslTunnel<'a, 'a, Self>> {
         unsafe {
-            boringssl::SSL_get_ex_data(ssl, crate::ossl::VERIFY_TUNNEL_INDEX)
-                .cast::<crate::ossl::OsslTunnel<Self>>()
+            boringssl::SSL_get_ex_data(ssl, ossl::VERIFY_TUNNEL_INDEX)
+                .cast::<ossl::OsslTunnel<Self>>()
                 .as_mut::<'a>()
         }
     }
@@ -842,20 +874,20 @@ impl crate::ossl::Ossl for Ossl {
 pub(crate) fn try_from<'ctx>(
     configuration: &pb_api::Configuration,
 ) -> crate::Result<Box<dyn crate::Context<'ctx> + 'ctx>> {
-    crate::tls::assert_compliance(configuration)?;
-    Ok(Box::new(crate::ossl::OsslContext::<Ossl>::try_from(
+    tls::assert_compliance(configuration)?;
+    Ok(Box::new(ossl::OsslContext::<Ossl>::try_from(
         configuration,
     )?))
 }
 
 GenOsslUnitTests!(
-    use crate::boringssl::ossl::Ossl;
+    use crate::implementation::ossl::boringssl::Ossl;
 );
 
 #[cfg(test)]
 mod additional_tests {
+    use super::super::Ossl as OsslTrait;
     use super::Ossl;
-    use crate::ossl::Ossl as OsslTrait;
 
     /// Tests [`Ossl::ssl_context_set_verify_mode`].
     #[test]
@@ -867,14 +899,794 @@ mod additional_tests {
         let mode = unsafe { boringssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
         assert_eq!(mode, boringssl::SSL_VERIFY_PEER as i32);
 
-        Ossl::ssl_context_set_verify_mode(&mut ssl, crate::ossl::VerifyMode::Peer);
+        Ossl::ssl_context_set_verify_mode(&mut ssl, super::ossl::VerifyMode::Peer);
 
         let mode = unsafe { boringssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
         assert_eq!(mode, boringssl::SSL_VERIFY_PEER as i32);
 
-        Ossl::ssl_context_set_verify_mode(&mut ssl, crate::ossl::VerifyMode::None);
+        Ossl::ssl_context_set_verify_mode(&mut ssl, super::ossl::VerifyMode::None);
 
         let mode = unsafe { boringssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
         assert_eq!(mode, boringssl::SSL_VERIFY_NONE as i32);
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod additional_test {
+    use super::tls;
+
+    /// A simple I/O interface.
+    struct IOBuffer {
+        pub(self) read: std::vec::Vec<u8>,
+        pub(self) write: std::vec::Vec<u8>,
+    }
+
+    /// Implements [`crate::IO`] for [`IOBuffer`].
+    impl crate::IO for IOBuffer {
+        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> crate::io::Result<usize> {
+            let n = std::cmp::min(buf.len(), self.read.len());
+            if n == 0 {
+                Err(pb::IOError::IOERROR_WOULD_BLOCK.into())
+            } else {
+                buf.copy_from_slice(&self.read[0..n]);
+                self.read.drain(0..n);
+                Ok(n)
+            }
+        }
+
+        fn write(&mut self, buf: &[u8], _state: pb::State) -> crate::io::Result<usize> {
+            self.write.extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn close(&mut self) -> crate::io::Result<()> {
+            self.read.clear();
+            self.write.clear();
+            Ok(())
+        }
+    }
+
+    /// Implements [`IOBuffer`].
+    impl IOBuffer {
+        /// Constructs a new [`IOBuffer`].
+        fn new() -> Self {
+            Self {
+                read: std::vec::Vec::new(),
+                write: std::vec::Vec::new(),
+            }
+        }
+    }
+
+    /// A double I/O interface.
+    struct LinkedIOBuffer {
+        pub(self) buf: std::vec::Vec<u8>,
+        pub(self) recv: std::sync::mpsc::Receiver<std::vec::Vec<u8>>,
+        pub(self) send: std::sync::mpsc::Sender<std::vec::Vec<u8>>,
+    }
+
+    /// Implements [`crate::IO`] for [`LinkedIOBuffer`].
+    impl crate::IO for LinkedIOBuffer {
+        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> crate::io::Result<usize> {
+            let n = std::cmp::min(buf.len(), self.buf.len());
+            if n > 0 {
+                buf[0..n].copy_from_slice(&self.buf[0..n]);
+                self.buf.drain(0..n);
+            }
+            if n == buf.len() {
+                return Ok(n);
+            }
+
+            let r = buf.len() - n;
+            match self.recv.try_recv() {
+                Ok(mut v) => {
+                    self.buf.append(&mut v);
+                    Ok(())
+                }
+                Err(e) => match e {
+                    std::sync::mpsc::TryRecvError::Empty => Err(pb::IOError::IOERROR_WOULD_BLOCK),
+                    _ => Err(pb::IOError::IOERROR_CLOSED),
+                },
+            }?;
+
+            let result = n;
+            let n = std::cmp::min(r, self.buf.len());
+            buf[result..result + n].copy_from_slice(&self.buf[0..n]);
+            self.buf.drain(0..n);
+            Ok(result + n)
+        }
+
+        fn write(&mut self, buf: &[u8], _state: pb::State) -> crate::io::Result<usize> {
+            self.send
+                .send(std::vec::Vec::from(buf))
+                .map(|_| buf.len())
+                .map_err(|_| pb::IOError::IOERROR_CLOSED.into())
+        }
+
+        fn close(&mut self) -> crate::io::Result<()> {
+            self.buf.clear();
+            Ok(())
+        }
+    }
+
+    /// Implements [`LinkedIOBuffer`].
+    impl LinkedIOBuffer {
+        /// Constructs a new [`LinkedIOBuffer`].
+        fn new(
+            send: std::sync::mpsc::Sender<std::vec::Vec<u8>>,
+            recv: std::sync::mpsc::Receiver<std::vec::Vec<u8>>,
+        ) -> Self {
+            Self {
+                buf: std::vec::Vec::new(),
+                recv,
+                send,
+            }
+        }
+    }
+
+    /// Test tunnel constructor for client.
+    #[test]
+    fn test_client() {
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut ctx = crate::context::try_from(&config).unwrap();
+        let io = IOBuffer::new();
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let tun = ctx.new_tunnel(Box::new(io), verifier);
+        assert!(tun.is_ok());
+        let mut tun = tun.unwrap();
+        let rec = tun.handshake().unwrap();
+        assert_eq!(rec, pb::HandshakeState::HANDSHAKESTATE_WANT_READ);
+        assert_eq!(tun.state(), pb::State::STATE_HANDSHAKE_IN_PROGRESS);
+        let _ = tun.close();
+    }
+
+    /// Test tunnel constructor for server.
+    #[test]
+    fn test_server() {
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier<>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
+                crate::test::resolve_runfile(tls::test::SK_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut ctx = crate::context::try_from(&config).unwrap();
+        let io = IOBuffer::new();
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+        let tun = ctx.new_tunnel(Box::new(io), verifier);
+        assert!(tun.is_ok());
+        let mut tun = tun.unwrap();
+        let rec = tun.handshake().unwrap();
+        assert_eq!(rec, pb::HandshakeState::HANDSHAKESTATE_WANT_READ);
+        let _ = tun.close();
+    }
+
+    /// Test tunnel between client and server.
+    #[test]
+    fn test_all() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier<>
+                  identity<
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
+                crate::test::resolve_runfile(tls::test::SK_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Test tunnel between client and server with an expired certificate.
+    #[test]
+    fn test_expired() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_EXPIRED_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier<>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_EXPIRED_PEM_PATH),
+                crate::test::resolve_runfile(tls::test::CERT_EXPIRED_PRIVATE_KEY_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        // test that upon an error it always returns the same error
+        for _ in 0..10 {
+            match client.handshake() {
+                Err(e) => {
+                    assert_eq!(
+                        *(e.iter().next().unwrap().code()),
+                        crate::error::ProtoBasedErrorCode::from(
+                            pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED
+                        )
+                    );
+                }
+                Ok(v) => panic!("Should have errored, but got: {} instead", v),
+            }
+        }
+    }
+
+    /// Test tunnel between client and server with an expired certificate,
+    /// and `allow_expired_certificate` to true.
+    #[test]
+    fn test_expired_allow_expired_certificate() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    allow_expired_certificate: true
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_EXPIRED_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::CERT_EXPIRED_PEM_PATH),
+                crate::test::resolve_runfile(tls::test::CERT_EXPIRED_PRIVATE_KEY_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), verifier.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests the SAN verifier with a simple dns hostname `example.com` that
+    /// matches the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_dns_match() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::EXAMPLE_COM_CERT_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::EXAMPLE_COM_CERT_PATH),
+                crate::test::resolve_runfile(tls::test::PQ_PRIVATE_KEY_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests the SAN verifier with a simple dns hostname `example2.com` that
+    /// doesn't match the SANs in the certificate presented by the server.
+    #[test]
+    fn test_san_dns_mismatch() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            client <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::EXAMPLE_COM_CERT_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut client_ctx = crate::context::try_from(&config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            server <
+              tls <
+                common_options <
+                  kem: "kyber512"
+                  empty_verifier <>
+                  identity <
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                crate::test::resolve_runfile(tls::test::EXAMPLE_COM_CERT_PATH),
+                crate::test::resolve_runfile(tls::test::PQ_PRIVATE_KEY_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+        let mut server_ctx = crate::context::try_from(&config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let client_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                san_verifier <
+                    alt_names <
+                        dns: "example2.com"
+                    >
+                >
+            "#,
+        )
+        .unwrap();
+
+        let server_verifier = protobuf::text_format::parse_from_str::<pb_api::TunnelVerifier>(
+            r#"
+                empty_verifier <>
+            "#,
+        )
+        .unwrap();
+
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), client_verifier)
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), server_verifier)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+
+        client
+            .handshake()
+            .expect_err("handshake must fail because hostnames mistmatch");
+
+        server.handshake().unwrap_err();
     }
 }

@@ -1,8 +1,4 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/guide_doc/src/images/sandwich_white.png">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/guide_doc/src/images/sandwich_black.png">
-  <img alt="Sandwich logo" src="./docs/guide_doc/src/images/sandwich_black.png" align="center" height="150">
-</picture>
+<img src="./docs/guide_doc/src/images/logo.png" align="center" height="100"/>
 
 # Sandwich
 [rust-badge][go-badge][release-badge][etc][etc]

@@ -35,7 +35,7 @@ cc_library(
     deps = [
         ":sandwich_hdrs",
         "//proto/api/v1:api_cc_proto",
-        "//rust:sandwich_openssl_ffi_static",
+        "//rust:sandwich_full_ffi_static",
     ],
     alwayslink = True,
 )

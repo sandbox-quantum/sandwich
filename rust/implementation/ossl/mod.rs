@@ -18,6 +18,7 @@
 //! such as BoringSSL, LibreSSL and OpenSSL.
 
 use crate::support;
+use crate::tunnel::tls;
 
 /// Default maximum depth for the certificate chain verification.
 pub(crate) const DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH: u32 = 100;
@@ -198,9 +199,7 @@ pub(crate) trait Ossl {
     fn x509_error_code_is_certificate_expired(error: i32) -> bool;
 
     /// Returns the tunnel ([`OsslTunnel`]) attached to a SSL handle.
-    fn ssl_get_tunnel<'a>(
-        ssl: *const Self::NativeSsl,
-    ) -> Option<&'a mut crate::ossl::OsslTunnel<'a, 'a, Self>>;
+    fn ssl_get_tunnel<'a>(ssl: *const Self::NativeSsl) -> Option<&'a mut OsslTunnel<'a, 'a, Self>>;
 
     /// The verify callback.
     /// This callback is passed to `SSL_set_verify`.
@@ -276,7 +275,7 @@ where
     ssl_ctx: support::Pimpl<'ctx, OsslInterface::NativeSslCtx>,
 
     /// Security requirements from the verifiers.
-    security_requirements: crate::tls::TunnelSecurityRequirements,
+    security_requirements: tls::TunnelSecurityRequirements,
 }
 
 /// Implements [`std::fmt::Debug`] for [`Ossl`].
@@ -513,7 +512,7 @@ where
         }
 
         let security_requirements = x509_verifier
-            .map(crate::tls::TunnelSecurityRequirements::from)
+            .map(tls::TunnelSecurityRequirements::from)
             .unwrap_or_default();
 
         Ok(Self {
@@ -618,7 +617,7 @@ where
     pub(crate) io: Box<dyn crate::IO + 'io>,
 
     /// The security at tunnel time.
-    pub(crate) security_requirements: crate::tls::TunnelSecurityRequirements,
+    pub(crate) security_requirements: tls::TunnelSecurityRequirements,
 
     /// Verification Errors.
     pub(crate) verify_error: std::ffi::c_int,
@@ -702,8 +701,8 @@ where
     fn try_from(
         builder: TunnelBuilder<'ctx, 'io, '_, OsslInterface>,
     ) -> std::result::Result<OsslTunnel<'io, 'tun, OsslInterface>, Self::Error> {
-        use crate::tls::VerifierSanitizer;
         use std::borrow::BorrowMut;
+        use tls::VerifierSanitizer;
 
         let security_requirements = builder.ctx.security_requirements.clone();
         if let Err(e) = security_requirements.run_sanitizer_checks(&builder.verifier) {
@@ -872,16 +871,18 @@ macro_rules! GenOsslUnitTests {
     ($ossl:item) => {
         #[cfg(test)]
         mod test {
+            use super::tls;
             $ossl
             /// Certificate related tests.
             mod certificates {
                 use super::Ossl;
-                use crate::ossl::Ossl as OsslTrait;
+                use super::tls;
+                use crate::implementation::ossl::Ossl as OsslTrait;
 
                 /// Tests [`Ossl::certificate_from_pem`] using a PEM certificate.
                 #[test]
                 fn test_certificate_from_pem_valid() {
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_PEM_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_pem(cert);
                     let cert = cert.unwrap();
@@ -900,7 +901,7 @@ macro_rules! GenOsslUnitTests {
                 /// Tests [`Ossl::certificate_from_pem`] using a DER certificate.
                 #[test]
                 fn test_certificate_from_pem_with_der() {
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_DER_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_DER_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_pem(cert);
                     let err = cert.unwrap_err();
@@ -910,7 +911,7 @@ macro_rules! GenOsslUnitTests {
                 /// Tests [`Ossl::certificate_from_der`] using a DER certificate.
                 #[test]
                 fn test_certificate_from_der_valid() {
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_DER_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_DER_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_der(cert);
                     let cert = cert.unwrap();
@@ -929,7 +930,7 @@ macro_rules! GenOsslUnitTests {
                 /// Tests [`Ossl::certificate_from_der`] using a DER certificate that contains an invalid sig alg (invalid OID).
                 #[test]
                 fn test_certificate_from_der_with_invalid_der() {
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_der(cert);
                     let err = cert.unwrap_err();
@@ -940,12 +941,13 @@ macro_rules! GenOsslUnitTests {
             /// Private keys related tests.
             mod private_keys {
                 use super::Ossl;
-                use crate::ossl::Ossl as OsslTrait;
+                use super::tls;
+                use crate::implementation::ossl::Ossl as OsslTrait;
 
                 /// Tests [`Ossl::private_key_from_pem`] using a PEM private key.
                 #[test]
                 fn test_private_key_from_pem_valid() {
-                    let skey = std::fs::read(crate::test::resolve_runfile(crate::tls::test::SK_PATH))
+                    let skey = std::fs::read(crate::test::resolve_runfile(tls::test::SK_PATH))
                         .expect("failed to read the private key");
                     let skey = Ossl::private_key_from_pem(skey);
                     let skey = skey.unwrap();
@@ -964,7 +966,7 @@ macro_rules! GenOsslUnitTests {
                 /// Tests [`Ossl::private_key_from_pem`] using a DER private key.
                 #[test]
                 fn test_private_key_from_pem_with_der() {
-                    let skey = std::fs::read(crate::test::resolve_runfile(crate::tls::test::SK_DER_PATH))
+                    let skey = std::fs::read(crate::test::resolve_runfile(tls::test::SK_DER_PATH))
                         .expect("failed to read the private key");
                     let skey = Ossl::private_key_from_pem(skey);
                     let err = skey.unwrap_err();
@@ -974,7 +976,7 @@ macro_rules! GenOsslUnitTests {
                 /// Tests [`Ossl::private_key_from_der`] using a DER private key.
                 #[test]
                 fn test_private_key_from_der_valid() {
-                    let skey = std::fs::read(crate::test::resolve_runfile(crate::tls::test::SK_DER_PATH))
+                    let skey = std::fs::read(crate::test::resolve_runfile(tls::test::SK_DER_PATH))
                         .expect("failed to read the private key");
                     let skey = Ossl::private_key_from_der(skey);
                     let skey = skey.unwrap();
@@ -994,7 +996,8 @@ macro_rules! GenOsslUnitTests {
             /// SSL context related tests.
             mod ssl_ctx {
                 use super::Ossl;
-                use crate::ossl::Ossl as OsslTrait;
+                use super::tls;
+                use crate::implementation::ossl::Ossl as OsslTrait;
 
                 /// Tests instantiates a [`SSL_CTX`] for a client.
                 #[test]
@@ -1059,7 +1062,7 @@ macro_rules! GenOsslUnitTests {
                     let mut ssl = ssl.unwrap();
                     assert!(!ssl.as_ptr().is_null());
 
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_PEM_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_pem(cert);
                     let cert = cert.unwrap();
@@ -1075,7 +1078,7 @@ macro_rules! GenOsslUnitTests {
                     let mut ssl = ssl.unwrap();
                     assert!(!ssl.as_ptr().is_null());
 
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_DER_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_DER_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_der(cert);
                     let cert = cert.unwrap();
@@ -1091,7 +1094,7 @@ macro_rules! GenOsslUnitTests {
                     let mut ssl = ssl.unwrap();
                     assert!(!ssl.as_ptr().is_null());
 
-                    let skey = std::fs::read(crate::test::resolve_runfile(crate::tls::test::SK_PATH))
+                    let skey = std::fs::read(crate::test::resolve_runfile(tls::test::SK_PATH))
                         .expect("failed to read the private key");
                     let skey = Ossl::private_key_from_pem(skey);
                     let skey = skey.unwrap();
@@ -1107,7 +1110,7 @@ macro_rules! GenOsslUnitTests {
                     let mut ssl = ssl.unwrap();
                     assert!(!ssl.as_ptr().is_null());
 
-                    let skey = std::fs::read(crate::test::resolve_runfile(crate::tls::test::SK_DER_PATH))
+                    let skey = std::fs::read(crate::test::resolve_runfile(tls::test::SK_DER_PATH))
                         .expect("failed to read the private key");
                     let skey = Ossl::private_key_from_der(skey);
                     let skey = skey.unwrap();
@@ -1123,7 +1126,7 @@ macro_rules! GenOsslUnitTests {
                     let ssl = ssl.unwrap();
                     assert!(!ssl.as_ptr().is_null());
 
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_PEM_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_pem(cert);
                     let cert = cert.unwrap();
@@ -1139,7 +1142,7 @@ macro_rules! GenOsslUnitTests {
                     let ssl = ssl.unwrap();
                     assert!(!ssl.as_ptr().is_null());
 
-                    let cert = std::fs::read(crate::test::resolve_runfile(crate::tls::test::CERT_DER_PATH))
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_DER_PATH))
                         .expect("failed to read the certificate");
                     let cert = Ossl::certificate_from_der(cert);
                     let cert = cert.unwrap();
@@ -1152,7 +1155,7 @@ macro_rules! GenOsslUnitTests {
             /// BIO related tests.
             mod ssl_bio {
                 use super::Ossl;
-                use crate::ossl::Ossl as OsslTrait;
+                use crate::implementation::ossl::Ossl as OsslTrait;
 
                 /// Tests creation of SSL BIO.
                 #[test]
@@ -1166,7 +1169,7 @@ macro_rules! GenOsslUnitTests {
             /// X509 verify params related tests.
             mod x509_verify_params {
                 use super::Ossl;
-                use crate::ossl::Ossl as OsslTrait;
+                use crate::implementation::ossl::Ossl as OsslTrait;
 
                 /// Tests the getter of SSL for X509 verify params.
                 #[test]
@@ -1213,3 +1216,9 @@ macro_rules! GenOsslUnitTests {
         }
     };
 }
+
+#[cfg(feature = "boringssl")]
+pub(crate) mod boringssl;
+
+#[cfg(feature = "openssl1_1_1")]
+pub(crate) mod openssl1_1_1;

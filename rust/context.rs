@@ -102,14 +102,14 @@ pub fn try_from<'ctx>(
         .enum_value()
         .map_err(|_| errors!{pb::ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => pb::ConfigurationError::CONFIGURATIONERROR_INVALID})
         .and_then(|v| match v {
-            #[cfg(feature = "openssl")]
+            #[cfg(feature = "openssl1_1_1")]
             pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS => {
-                crate::openssl::ossl::try_from(configuration)
+                crate::implementation::ossl::openssl1_1_1::try_from(configuration)
                     .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
             #[cfg(feature = "boringssl")]
             pb_api::Implementation::IMPL_BORINGSSL_OQS => {
-                crate::boringssl::ossl::try_from(configuration)
+                crate::implementation::ossl::boringssl::try_from(configuration)
                     .map_err(|e| e >> pb::ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
             _ => Err(
@@ -123,8 +123,9 @@ pub fn try_from<'ctx>(
 pub(crate) mod test {
     /// The following tests target the OpenSSL 1.1.1 + liboqs Implementation
     /// (`api_rust_proto::Implementation::IMPL_OPENSSL1_1_1_OQS`).
-    #[cfg(feature = "openssl")]
-    pub(crate) mod openssl {
+    #[cfg(feature = "openssl1_1_1")]
+    pub(crate) mod openssl1_1_1 {
+        use crate::tunnel::tls;
         /// Creates a [`pb_api::Certificate`].
         pub(crate) fn create_cert(
             path: &'_ str,
@@ -180,7 +181,7 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
+                    crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
                 )
                 .as_str(),
             )
@@ -215,7 +216,7 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
+                    crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
                 )
                 .as_str(),
             )
@@ -253,7 +254,7 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
+                    crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
                 )
                 .as_str(),
             )
@@ -313,8 +314,8 @@ pub(crate) mod test {
                   >
                 >
                 "#,
-                    cert = crate::test::resolve_runfile(crate::tls::test::CERT_PEM_PATH),
-                    private_key = crate::test::resolve_runfile(crate::tls::test::SK_PATH),
+                    cert = crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
+                    private_key = crate::test::resolve_runfile(tls::test::SK_PATH),
                 )
                 .as_str(),
             )
