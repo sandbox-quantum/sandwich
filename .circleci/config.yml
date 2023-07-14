@@ -45,9 +45,6 @@ jobs:
             doczip=$(bazelisk cquery --output files //rust:sandwich_full_doc)
             bazelisk build //rust:sandwich_full_doc
             cp -r ${doczip} docs/rust
-            guidedoczip=$(bazelisk cquery --output files //docs/guide_doc:mdbook_html)
-            bazelisk build //docs/guide_doc:mdbook_html
-            unzip ${guidedoczip}
             mkdocs gh-deploy --force --config-file mkdocs.yml
 
 workflows:
