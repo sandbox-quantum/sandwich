@@ -542,7 +542,7 @@ impl super::Ossl for Ossl {
                     if errlib != boringssl::ERR_LIB_SSL {
                         let x_e_s = unsafe {
                             boringssl::X509_verify_cert_error_string(tun.verify_error as i64)
-                        } as *mut i8;
+                        } as *mut std::os::raw::c_char;
                         let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
                         let mut x509_error_str = err_string + "; ";
                         if let Ok(s) = x509_error_cstr.to_str() {
@@ -559,7 +559,7 @@ impl super::Ossl for Ossl {
                         return match tun.verify_error as u32 {
                             boringssl::X509_V_OK => {
                                 let mut buf = [0u8; 1000];
-                                unsafe { boringssl::ERR_error_string_n(err, buf.as_mut_ptr() as *mut i8, buf.len()) };
+                                unsafe { boringssl::ERR_error_string_n(err, buf.as_mut_ptr() as *mut std::os::raw::c_char, buf.len()) };
                                 let err_string = std::ffi::CStr::from_bytes_with_nul(&buf).unwrap().to_str().unwrap();
                                 (
                                     Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, err_string))),
@@ -599,7 +599,7 @@ impl super::Ossl for Ossl {
                         boringssl::SSL_R_CERTIFICATE_VERIFY_FAILED => {
                             let x_e_s = unsafe {
                                 boringssl::X509_verify_cert_error_string(tun.verify_error as i64)
-                            } as *mut i8;
+                            } as *mut std::os::raw::c_char;
                             let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
                             let mut x509_error_str = err_string + "; ";
                             if let Ok(s) = x509_error_cstr.to_str() {

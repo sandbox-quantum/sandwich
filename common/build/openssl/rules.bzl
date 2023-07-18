@@ -147,6 +147,7 @@ _CMAKE_OS_MAP = {
     "darwin_arm64": ("Darwin", "arm64"),
     "darwin_arm64e": ("Darwin", "arm64"),
     "k8": ("Linux", "x86_64"),
+    "aarch64": ("Linux", "arm64"),
 }
 
 """`LibraryToLink` attributes that define static libraries."""

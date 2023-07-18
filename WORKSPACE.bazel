@@ -194,19 +194,3 @@ bartleby_repositories()
 load("@com_sandboxquantum_bartleby//bartleby:deps.bzl", "bartleby_deps")
 
 bartleby_deps()
-
-load("//vendor/github.com/mdbook:BUILD.bzl", "com_github_mdbook_fetch_archive")
-
-com_github_mdbook_fetch_archive()
-
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
-
-crates_repository(
-    name = "com_github_rust_lang_mdbook_crate",
-    cargo_lockfile = "@com_github_rust_lang_mdbook//:Cargo.lock",
-    manifests = ["@com_github_rust_lang_mdbook//:Cargo.toml"],
-)
-
-load("@com_github_rust_lang_mdbook_crate//:defs.bzl", com_github_rust_lang_mdbook_crate_repositories = "crate_repositories")
-
-com_github_rust_lang_mdbook_crate_repositories()

@@ -19,7 +19,7 @@
 #[repr(C)]
 pub struct Error {
     pub(self) details: *mut Error,
-    pub(self) msg: *mut i8,
+    pub(self) msg: *mut std::os::raw::c_char,
     pub(self) kind: i32,
     pub(self) code: i32,
 }

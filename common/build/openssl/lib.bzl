@@ -12,6 +12,7 @@ _OPENSSL_OS_MAP = {
     "darwin_arm64": "darwin64-arm64-cc",
     "darwin_arm64e": "darwin64-arm64-cc",
     "k8": "linux-x86_64-clang",
+    "aarch64": "linux-aarch64",
 }
 
 def pick_openssl_Configure_os(ctx):

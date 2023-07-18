@@ -77,7 +77,11 @@ fn set_bio_close(bio: *mut boringssl::bio_st) {
 }
 
 /// BIO write callback.
-unsafe extern "C" fn bio_write(bio: *mut boringssl::bio_st, data: *const i8, len: i32) -> i32 {
+unsafe extern "C" fn bio_write(
+    bio: *mut boringssl::bio_st,
+    data: *const std::os::raw::c_char,
+    len: std::os::raw::c_int,
+) -> i32 {
     clear_bio_retry_flags(bio);
     let tun = &mut *(boringssl::BIO_get_data(bio) as *mut super::ossl::OsslTunnel<super::Ossl>);
 
@@ -112,7 +116,11 @@ unsafe extern "C" fn bio_write(bio: *mut boringssl::bio_st, data: *const i8, len
 }
 
 /// BIO read callback.
-unsafe extern "C" fn bio_read(bio: *mut boringssl::bio_st, data: *mut i8, len: i32) -> i32 {
+unsafe extern "C" fn bio_read(
+    bio: *mut boringssl::bio_st,
+    data: *mut std::os::raw::c_char,
+    len: std::os::raw::c_int,
+) -> i32 {
     clear_bio_retry_flags(bio);
     let tun = &mut *(boringssl::BIO_get_data(bio) as *mut super::ossl::OsslTunnel<super::Ossl>);
 

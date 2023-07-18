@@ -81,7 +81,7 @@ fn set_bio_close(bio: *mut openssl::bio_st) {
 /// BIO write callback.
 unsafe extern "C" fn bio_write(
     bio: *mut openssl::bio_st,
-    data: *const i8,
+    data: *const std::os::raw::c_char,
     len: usize,
     written: *mut usize,
 ) -> i32 {
@@ -124,7 +124,7 @@ unsafe extern "C" fn bio_write(
 /// BIO read callback.
 unsafe extern "C" fn bio_read(
     bio: *mut openssl::bio_st,
-    data: *mut i8,
+    data: *mut std::os::raw::c_char,
     len: usize,
     read: *mut usize,
 ) -> i32 {
