@@ -245,6 +245,7 @@ GenProtoBasedErrorCode!(
             TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION => "unsupported TLS version",
             TLSCONFIGURATIONERROR_EMPTY => "empty configuration",
             TLSCONFIGURATIONERROR_INVALID_CASE => "invalid oneof case",
+            TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE => "private key is not consistent with the provided certificate",
             TLSCONFIGURATIONERROR_INVALID => "invalid TLS configuration",
         ],
     },

@@ -115,6 +115,14 @@ pub(crate) trait Ossl {
         pkey: support::Pimpl<'_, Self::NativePrivateKey>,
     ) -> crate::Result<()>;
 
+    /// Checks the consistency of a private key with the corresponding
+    /// certificate loaded.
+    /// The private key is the one loaded using [`Ossl::ssl_context_set_private_key`]
+    /// and the certificate is the one loaded using [`Ossl::ssl_context_set_certificate`].
+    fn ssl_context_check_private_key(
+        ssl_ctx: &support::Pimpl<'_, Self::NativeSslCtx>,
+    ) -> crate::Result<()>;
+
     /// Instantiates a certificate using a buffer that contains a PEM-encoded certificate.
     fn certificate_from_pem<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
@@ -424,7 +432,9 @@ where
             }
         })
         .and_then(|private_key| OsslInterface::ssl_context_set_private_key(ssl_ctx, private_key))
-        .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)
+        .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+
+    OsslInterface::ssl_context_check_private_key(ssl_ctx)
 }
 
 /// Pushes the trusted certificate authority certificates to the trust store.
@@ -1149,6 +1159,57 @@ macro_rules! GenOsslUnitTests {
                     assert!(!cert.as_ptr().is_null());
 
                     Ossl::ssl_context_append_certificate_to_trust_store(&ssl, cert).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_check_private_key`] with a valid pair certificate/private key,
+                /// and then an inconsistency pair certificate/private key.
+                #[test]
+                fn test_ssl_ctx_check_private_key() {
+                    let mut ssl_ctx = Ossl::new_ssl_context(crate::Mode::Server).unwrap();
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_PEM_PATH))
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_pem(cert)
+                        .expect("failed to parse the certificate");
+                    Ossl::ssl_context_set_certificate(&mut ssl_ctx, cert)
+                        .expect("failed to set the certificate");
+
+                    let private_key = std::fs::read(crate::test::resolve_runfile(tls::test::SK_PATH))
+                        .expect("failed to read the private key");
+                    let private_key = Ossl::private_key_from_pem(private_key)
+                        .expect("failed to parse the private key");
+                    Ossl::ssl_context_set_private_key(&mut ssl_ctx, private_key)
+                        .expect("failed to set the private key");
+
+                    Ossl::ssl_context_check_private_key(&ssl_ctx)
+                        .expect("private key and certificate should be seen as consistent");
+
+                    let mut ssl_ctx = Ossl::new_ssl_context(crate::Mode::Server).unwrap();
+                    let cert = std::fs::read(crate::test::resolve_runfile(tls::test::CERT_PEM_PATH))
+                        .expect("failed to read the certificate");
+                    let cert = Ossl::certificate_from_pem(cert)
+                        .expect("failed to parse the certificate");
+                    Ossl::ssl_context_set_certificate(&mut ssl_ctx, cert)
+                        .expect("failed to set the certificate");
+
+                    let private_key = std::fs::read(crate::test::resolve_runfile(tls::test::PQ_PRIVATE_KEY_DER_PATH))
+                        .expect("failed to read the private key");
+                    let private_key = Ossl::private_key_from_der(private_key)
+                        .expect("failed to parse the private key");
+
+                    // BoringSSL performs the consistency check when `SSL_CTX_use_PrivateKey` is called.
+                    // See https://github.com/google/boringssl/blob/e9f816b12b3e68de575d21e2a9b7d76e4e5c58ac/ssl/ssl_privkey.cc#L86-L91.
+                    let mut has_err = false;
+                    if Ossl::ssl_context_set_private_key(&mut ssl_ctx, private_key).is_err() {
+                        has_err = true;
+                    }
+
+                    if Ossl::ssl_context_check_private_key(&ssl_ctx).is_err() {
+                        has_err = true;
+                    }
+
+                    if !has_err {
+                        panic!("private key and certificate must be seen has inconsistent between each other");
+                    }
                 }
             }
 

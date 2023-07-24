@@ -1,6 +1,8 @@
 build:clang --action_env=CC=clang-13
 build:clang --action_env=CXX=clang++-13
+build:clang --action_env='LLVM_AR=/usr/lib/llvm-13/bin/llvm-ar'
 build:clang --action_env='LLVM_CONFIG=/usr/lib/llvm-13/bin/llvm-config'
+build:clang --action_env='LLVM_PROFDATA=/usr/lib/llvm-13/bin/llvm-profdata'
 build:clang --repo_env='LLVM_CONFIG=/usr/lib/llvm-13/bin/llvm-config'
 
 # Google abseil triggers this warning if we compile using clang 14 or newer

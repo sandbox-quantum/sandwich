@@ -194,6 +194,10 @@ pub(crate) mod test {
     #[allow(dead_code)]
     pub(crate) const PQ_PRIVATE_KEY_PEM_PATH: &str = "testdata/dilithium5.key.pem";
 
+    /// Path to another valid private key using a post-quantum algorithm, in DER format.
+    #[allow(dead_code)]
+    pub(crate) const PQ_PRIVATE_KEY_DER_PATH: &str = "testdata/dilithium5.key.der";
+
     /// Path to a certificate signed for the `example.com` DNS name.
     pub(crate) const EXAMPLE_COM_CERT_PATH: &str = "testdata/example.com.cert.pem";
 

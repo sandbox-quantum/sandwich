@@ -81,8 +81,11 @@ enum TLSConfigurationError {
   // Unsupported protocol version error.
   TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION = 3;
 
+  /// Inconsistency between a private key and the corresponding certificate.
+  TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE = 4;
+
   // Invalid configuration.
-  TLSCONFIGURATIONERROR_INVALID = 4;
+  TLSCONFIGURATIONERROR_INVALID = 5;
 };
 
 // Certificate errors.

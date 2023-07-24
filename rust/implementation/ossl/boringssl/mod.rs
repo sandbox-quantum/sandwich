@@ -277,6 +277,16 @@ impl super::Ossl for Ossl {
         }
     }
 
+    fn ssl_context_check_private_key(
+        ssl_ctx: &support::Pimpl<'_, Self::NativeSslCtx>,
+    ) -> crate::Result<()> {
+        if unsafe { boringssl::SSL_CTX_check_private_key(ssl_ctx.as_ptr()) } != 1 {
+            Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE.into())
+        } else {
+            Ok(())
+        }
+    }
+
     fn certificate_from_pem<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
     ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeCertificate>> {

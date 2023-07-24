@@ -177,6 +177,9 @@ class TLSConfigurationError(SandwichException):
         SandwichErrorProto.TLSCONFIGURATIONERROR_INVALID_CASE: {
             "msg": "invalid oneof case",
         },
+        SandwichErrorProto.TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE: {
+            "msg": "private key is not consistent with the provided certificate",
+        },
         SandwichErrorProto.TLSCONFIGURATIONERROR_INVALID: {
             "msg": "invalid TLS configuration",
         },

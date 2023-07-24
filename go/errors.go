@@ -156,11 +156,12 @@ type TLSConfigurationError struct {
 
 // tlsConfigurationErrorMap is a map code -> string for TLS configuration errors.
 var tlsConfigurationErrorMap = map[pb.TLSConfigurationError]string{
-	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION:   "unsupported implementation",
-	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: "invalid TLS version",
-	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_EMPTY:                        "empty configuration",
-	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID_CASE:                 "invalid oneof case",
-	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID:                      "invalid TLS configuration",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION:                "unsupported implementation",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION:              "invalid TLS version",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_EMPTY:                                     "empty configuration",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID_CASE:                              "invalid oneof case",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE: "private key is not consistent with the provided certificate",
+	pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID:                                   "invalid TLS configuration",
 }
 
 // newTLSConfigurationError creates a TLSConfigurationError from an error code.

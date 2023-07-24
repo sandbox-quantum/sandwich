@@ -55,16 +55,16 @@ def rust_bindgen_repositories():
 
     _fetch_llvm_release(
         name = "bindgen_clang_linux_aarch64",
-        version = "16.0.4",
+        version = "15.0.6",
         platform_string = "aarch64-linux-gnu",
-        sha256sum = "2e0b5b20d21ff80dea9f31d3f7636e458028ad0d5ee0bda42608fa8744ea3a12",
+        sha256sum = "8ca4d68cf103da8331ca3f35fe23d940c1b78fb7f0d4763c1c059e352f5d1bec",
     )
 
     _fetch_llvm_release(
         name = "bindgen_clang_linux_x86_64",
-        version = "16.0.4",
-        platform_string = "x86_64-linux-gnu-ubuntu-22.04",
-        sha256sum = "fd464333bd55b482eb7385f2f4e18248eb43129a3cda4c0920ad9ac3c12bdacf",
+        version = "15.0.6",
+        platform_string = "x86_64-linux-gnu-ubuntu-18.04",
+        sha256sum = "38bc7f5563642e73e69ac5626724e206d6d539fbef653541b34cae0ba9c3f036",
     )
 
     _fetch_llvm_release(
