@@ -24,7 +24,7 @@ jobs:
             echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
             bazelisk build --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
               --google_default_credentials \
-              c/...
+              sandwich_c/...
             export CC=clang-13
             export CXX=clang++-13
             cd go && go build

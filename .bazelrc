@@ -1,5 +1,7 @@
 import %workspace%/clang.bazelrc
 
+startup --host_jvm_args=-Xmx4g
+
 # This flag hints Bazel about the use of incompatible platforms for repositories.
 # Without this flag, Bazel may raise an error about a repo that is not compatible
 # with a specific platform, even if it is not the actual platform it is building

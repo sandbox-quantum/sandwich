@@ -32,7 +32,7 @@ extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "c/sandwich.h"
+#include "sandwich_c/sandwich.h"
 
 #ifndef SOCK_NONBLOCK
 #include <fcntl.h>

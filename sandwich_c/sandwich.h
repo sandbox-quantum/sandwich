@@ -30,9 +30,9 @@
 #define SANDWICH_API
 #endif
 
-#include "c/error_codes.h"
-#include "c/ioerrors.h"
-#include "c/tunnel_types.h"
+#include "sandwich_c/error_codes.h"
+#include "sandwich_c/ioerrors.h"
+#include "sandwich_c/tunnel_types.h"
 
 #ifdef __cplusplus
 extern "C" {

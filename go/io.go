@@ -27,7 +27,7 @@ import (
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
-#include "c/sandwich.h"
+#include "sandwich_c/sandwich.h"
 
 
 extern SandwichCIOReadFunction sandwichGoIORead;

@@ -15,7 +15,7 @@
 package sandwich
 
 /*
-  #include "c/sandwich.h"
+  #include "sandwich_c/sandwich.h"
   #include <stdlib.h>
 */
 import "C"

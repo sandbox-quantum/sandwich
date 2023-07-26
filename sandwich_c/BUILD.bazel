@@ -6,6 +6,19 @@ filegroup(
     ],
 )
 
+filegroup(
+    name = "sandwich_hdrs_all_files",
+    srcs = [
+        "error_codes.h",
+        "ioerrors.h",
+        "sandwich.h",
+        "tunnel_types.h",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
 cc_library(
     name = "sandwich_hdrs",
     hdrs = [

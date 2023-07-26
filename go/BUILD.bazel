@@ -8,7 +8,7 @@ go_library(
         "sandwich.go",
     ],
     cdeps = [
-        "//c:sandwich",
+        "//sandwich_c:sandwich",
     ],
     cgo = True,
     importpath = "github.com/sandbox-quantum/sandwich/go/sandwich",

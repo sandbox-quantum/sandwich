@@ -14,7 +14,7 @@ def open_quantum_safe_boringssl_fetch_archive():
         strip_prefix = "boringssl-{commit}".format(commit = _COMMIT),
         patch_args = ["-p1"],
         patches = [
-            "//vendor/github.com/open-quantum-safe/boringssl:Wno-newline-eof.patch",
+            "//vendor/github.com/open-quantum-safe/boringssl:warning_fixes.patch",
         ],
         build_file_content = """filegroup(name = "all_srcs", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
     )

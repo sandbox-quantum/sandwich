@@ -1,0 +1,31 @@
+load("@rules_pkg//:mappings.bzl", "pkg_files")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+
+# Export sandwich into a self-contained archive
+
+pkg_files(
+    name = "c_headers",
+    srcs = [
+        "//sandwich_c:sandwich_hdrs_all_files",
+    ],
+    prefix = "/include/sandwich_c",
+)
+
+pkg_files(
+    name = "c_lib",
+    srcs = [
+        "//rust:sandwich_full_ffi_shared",
+        "//rust:sandwich_full_ffi_static",
+    ],
+    prefix = "/lib",
+)
+
+pkg_tar(
+    name = "export",
+    srcs = [
+        ":c_headers",
+        ":c_lib",
+    ],
+    extension = ".tar.bz2",
+)
