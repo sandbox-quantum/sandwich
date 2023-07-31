@@ -123,6 +123,12 @@ pub(crate) trait Ossl {
         ssl_ctx: &support::Pimpl<'_, Self::NativeSslCtx>,
     ) -> crate::Result<()>;
 
+    /// Sets ALPN protocols.
+    fn ssl_context_set_alpn_protos(
+        ssl: &mut support::Pimpl<'_, Self::NativeSslCtx>,
+        alpn_protocols: std::slice::Iter<'_, std::string::String>,
+    ) -> crate::Result<()>;
+
     /// Instantiates a certificate using a buffer that contains a PEM-encoded certificate.
     fn certificate_from_pem<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
@@ -477,6 +483,9 @@ where
             .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
         OsslInterface::ssl_context_set_kems(&mut ssl_ctx, tls_options.kem.iter())
+            .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+
+        OsslInterface::ssl_context_set_alpn_protos(&mut ssl_ctx, tls_options.alpn_protocol.iter())
             .map_err(|e| e >> pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
         let x509_verifier =
@@ -1210,6 +1219,64 @@ macro_rules! GenOsslUnitTests {
                     if !has_err {
                         panic!("private key and certificate must be seen has inconsistent between each other");
                     }
+                }
+
+                /// Tests [`Ossl::ssl_context_set_alpn_protos`] with ALPN HTTPs.
+                #[test]
+                fn test_ssl_ctx_set_alpn_protos_valid() {
+                    let protos = vec!["http/1.1".into(), "h2".into(), "h3".into(), "h2c".into()];
+
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    Ossl::ssl_context_set_alpn_protos(&mut ssl, protos.iter()).unwrap();
+
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    Ossl::ssl_context_set_alpn_protos(&mut ssl, protos.iter()).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_alpn_protos`] with ALPN has NULL bytes in the middle.
+                #[test]
+                fn test_ssl_ctx_set_alpn_protos_nullbytes() {
+                    let protos = vec!["http\x00/1.1".into()];
+
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let err = Ossl::ssl_context_set_alpn_protos(&mut ssl, protos.iter()).unwrap_err();
+                    assert!(err.is(&errors! {pb::ALPNError::ALPNERROR_INVALID_STRING}));
+
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let err = Ossl::ssl_context_set_alpn_protos(&mut ssl, protos.iter()).unwrap_err();
+                    assert!(err.is(&errors! {pb::ALPNError::ALPNERROR_INVALID_STRING}));
+                }
+
+                /// Tests [`Ossl::ssl_context_set_alpn_protos`] with ALPN has length longer than 255.
+                #[test]
+                fn test_ssl_ctx_set_alpn_protos_invalid_length() {
+                    let protos = vec!["http/1.1".repeat(100).into()];
+
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Client);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let err = Ossl::ssl_context_set_alpn_protos(&mut ssl, protos.iter()).unwrap_err();
+                    assert!(err.is(&errors! {pb::ALPNError::ALPNERROR_LENGTH_ERROR}));
+
+                    let ssl = Ossl::new_ssl_context(crate::Mode::Server);
+                    let mut ssl = ssl.unwrap();
+                    assert!(!ssl.as_ptr().is_null());
+
+                    let err = Ossl::ssl_context_set_alpn_protos(&mut ssl, protos.iter()).unwrap_err();
+                    assert!(err.is(&errors! {pb::ALPNError::ALPNERROR_LENGTH_ERROR}));
                 }
             }
 

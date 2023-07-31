@@ -20,7 +20,15 @@ option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v
 
 import "proto/api/v1/data_source.proto";
 
-// A private key.
+// An ASN.1 encoded private key.
+//
+// The [ASN1DataSource](ASN1DataSource.md) message is used to specify the source
+// of the private key..
 message PrivateKey {
-  oneof source { ASN1DataSource static = 1; }
+  oneof source {
+    // Static source of bytes.
+    //
+    // See also [ASN1DataSource](ASN1DataSource.md).
+    ASN1DataSource static = 1;
+  }
 }

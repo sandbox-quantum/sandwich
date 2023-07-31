@@ -88,6 +88,7 @@ def create_server_conf(s: Sandwich) -> Context:
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
+    conf.server.tls.common_options.alpn_protocol.extend(["http/1.1", "h2", "h2c", "h3"])
     conf.server.tls.common_options.empty_verifier.CopyFrom(
         SandwichVerifiers.EmptyVerifier()
     )
@@ -116,6 +117,7 @@ def create_client_conf(s: Sandwich) -> Context:
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
     conf.client.tls.common_options.kem.append(_DEFAULT_KEM)
+    conf.client.tls.common_options.alpn_protocol.extend(["http/1.1", "h2", "h2c", "h3"])
 
     cert = conf.client.tls.common_options.x509_verifier.trusted_cas.add().static
     cert.data.filename = _CERT_PATH

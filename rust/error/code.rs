@@ -294,6 +294,15 @@ GenProtoBasedErrorCode!(
         ],
     },
     {
+        kind: ERRORKIND_ALPN,
+        sym: ALPNError,
+        desc: "ALPN error",
+        values: [
+            ALPNERROR_LENGTH_ERROR => "protocol length is longer than 255 bytes",
+            ALPNERROR_INVALID_STRING => "protocol contains NULL byte or invalid string",
+        ],
+    },
+    {
         kind: ERRORKIND_DATA_SOURCE,
         sym: DataSourceError,
         desc: "DataSource error",

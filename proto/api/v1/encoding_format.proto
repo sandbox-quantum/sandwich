@@ -18,7 +18,11 @@ package saq.sandwich.proto.api.v1;
 
 option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
 
-// Certificate and public key encoding format.
+// Encoding format for ASN.1 data.
+//
+// This format is mainly used to construct an
+// [ASN1DataSource](ASN1DataSource.md) for either a
+// [Certificate](Certificate.md) or a [PrivateKey](PrivateKey.md).
 enum ASN1EncodingFormat {
   // PEM format.
   ENCODING_FORMAT_PEM = 0;

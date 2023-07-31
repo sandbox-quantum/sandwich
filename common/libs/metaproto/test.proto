@@ -23,10 +23,10 @@ message TestOneOfMsg {
 
   // The oneof.
   oneof choice {
-      // Choice 1.
-      string choice1 = 2;
+    // Choice 1.
+    string choice1 = 2;
 
-      // Choice 2.
-      string choice2 = 3;
+    // Choice 2.
+    string choice2 = 3;
   };
 }

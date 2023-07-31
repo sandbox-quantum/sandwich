@@ -8,6 +8,7 @@ py_binary(
     deps = [
         "@pypi_mkdocs//:pkg",
         "@pypi_mkdocs_material//:pkg",
+        "@pypi_mkdoxy//:pkg",
     ],
 )
 

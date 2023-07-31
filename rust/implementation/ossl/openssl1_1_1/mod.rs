@@ -268,6 +268,43 @@ impl super::Ossl for Ossl {
         }
     }
 
+    fn ssl_context_set_alpn_protos(
+        ssl_ctx: &mut support::Pimpl<'_, Self::NativeSslCtx>,
+        alpn_protocols: std::slice::Iter<'_, std::string::String>,
+    ) -> crate::Result<()> {
+        let mut protos: String = String::new();
+        for proto in alpn_protocols {
+            let x = proto.len();
+            if 0 < x && x < 256 {
+                if proto.contains('\0') {
+                    return Err(pb::ALPNError::ALPNERROR_INVALID_STRING.into());
+                }
+
+                protos.push((x as u8) as char);
+                protos.push_str(proto);
+            } else {
+                return Err(pb::ALPNError::ALPNERROR_LENGTH_ERROR.into());
+            }
+        }
+
+        let len = protos.len();
+        let cstr = std::ffi::CString::new(protos.as_bytes()).unwrap();
+
+        if unsafe {
+            openssl::SSL_CTX_set_alpn_protos(
+                ssl_ctx.as_mut_ptr(),
+                cstr.as_ptr() as *const u8,
+                len as u32,
+            )
+        } as u64
+            != 0
+        {
+            Err(pb::ALPNError::ALPNERROR_INVALID_STRING.into())
+        } else {
+            Ok(())
+        }
+    }
+
     fn certificate_from_pem<'pimpl>(
         cert: impl std::convert::AsRef<[u8]>,
     ) -> crate::Result<support::Pimpl<'pimpl, Self::NativeCertificate>> {

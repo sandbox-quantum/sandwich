@@ -1,1 +1,0 @@
-# HTTPS connections made simple

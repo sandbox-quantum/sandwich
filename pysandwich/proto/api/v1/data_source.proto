@@ -34,11 +34,17 @@ message DataSource {
   }
 }
 
-// An ASN1 encoded data source
+// A Data source consisting of ASN.1 encoded data.
+//
+// The data [DataSource](DataSource.md) points to consists of ASN.1 encoded
+// data. The format of the data is described in
+// [ASN1EncodingFormat](ASN1EncodingFormat.md).
 message ASN1DataSource {
-  // The raw data source
+  // The raw data source.
+  // See [DataSource](DataSource.md).
   DataSource data = 1;
 
-  // The ASN1 encoding format of that data source
+  // The ASN1 encoding format of that data source.
+  // See [ASN1EncodingFormat](ASN1EncodingFormat.md).
   ASN1EncodingFormat format = 2;
 }

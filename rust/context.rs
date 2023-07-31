@@ -177,6 +177,8 @@ pub(crate) mod test {
                           >
                         >
                       >
+                      alpn_protocol: "h2"
+                      alpn_protocol: "http/1.1"
                     >
                   >
                 >

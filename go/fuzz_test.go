@@ -15,7 +15,7 @@
 package sandwich_test
 
 import (
-	"github.com/sandbox-quantum/sandwich/go/sandwich"
+	"github.com/sandbox-quantum/sandwich/go"
 	"encoding/base64"
 	"log"
 	"testing"

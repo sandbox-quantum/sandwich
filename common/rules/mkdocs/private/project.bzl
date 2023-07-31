@@ -24,21 +24,16 @@ def _compile_project(ctx, project):
     output_directory_name = "{}_html".format(ctx.label.name)
 
     out = ctx.actions.declare_directory(output_directory_name)
-
     inputs = depset([project.yaml_configuration], transitive = [project.files, ctx.attr._doxygen_binary.files])
     args = ctx.actions.args()
-    args.add(ctx.executable._mkdocs_binary)
-    args.add("build")
-    args.add("--site-dir", output_directory_name)
-    args.add("--config-file", project.yaml_configuration)
-    if is_debug_mode(ctx):
-        args.add("-v")
-    args.add("--clean")
+    args.add(ctx.executable._mkdocs_binary.path)
+    args.add(output_directory_name)
+    args.add(project.yaml_configuration)
 
     ctx.actions.run_shell(
         inputs = inputs,
         outputs = [out],
-        command = """ env PATH=$PATH:"$PWD/{}" $@""".format(ctx.attr._doxygen_binary.files.to_list()[0].dirname),
+        command = 'export PATH=$PATH:"$PWD/{doxygen_bin_path}" && export WK="$PWD" && cd "{project_path}" && "$WK/$1" build --site-dir "$2" --config-file "$WK/$3" --clean'.format(project_path = project.yaml_configuration.dirname, doxygen_bin_path = ctx.attr._doxygen_binary.files.to_list()[0].dirname),
         arguments = [args],
         mnemonic = "RunMkDocs",
         tools = [ctx.executable._mkdocs_binary],

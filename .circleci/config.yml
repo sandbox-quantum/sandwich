@@ -27,7 +27,7 @@ jobs:
               sandwich_c/...
             export CC=clang-13
             export CXX=clang++-13
-            cd go && go build
+            cd go && CGO_CFLAGS=-I$PWD/.. go build
   publish-doc:
     docker:
       - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"

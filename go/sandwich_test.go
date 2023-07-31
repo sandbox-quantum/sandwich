@@ -16,7 +16,7 @@ package sandwich_test
 
 import (
 	"bytes"
-	"github.com/sandbox-quantum/sandwich/go/sandwich"
+	"github.com/sandbox-quantum/sandwich/go"
 	"crypto/rand"
 	"runtime"
 	"runtime/debug"
@@ -133,6 +133,12 @@ func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 									},
 								},
 							},
+							AlpnProtocol: []string{
+								"http/1.1",
+								"h2",
+								"h2c",
+								"h3",
+							},
 						},
 					},
 				},
@@ -175,6 +181,12 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 										},
 									},
 								},
+							},
+							AlpnProtocol: []string{
+								"http/1.1",
+								"h2",
+								"h2c",
+								"h3",
 							},
 						},
 					},
@@ -576,6 +588,7 @@ func createClientExpiredContext(t *testing.T) (*sandwich.Context, error) {
 
 	return ctx, nil
 }
+
 func TestExpiredTunnels(t *testing.T) {
 	serverContext, err := createServerExpiredContext(t)
 	if err != nil {

@@ -1,0 +1,91 @@
+edit_uri: edit/main/docs/
+docs_dir: docs
+repo_name: "GitHub repository"
+repo_url: https://github.com/sandbox-quantum/sandwich
+site_author: "SandboxAQ"
+site_description: "Technical documentation of the Sandwich library."
+site_name: "Sandwich: technical documentation"
+use_directory_urls: false
+
+nav:
+  - Manual:
+    - Introduction: index.md
+    - Installation and integration: install.md
+    - Concepts:
+      - I/O: concepts/io.md
+      - Tunnel: concepts/tunnel.md
+  - Protobuf API:
+    - protobuf/index.md
+    - api:
+      - protobuf/api/index.md
+      - v1:
+        - protobuf/api/v1/index.md
+        - protobuf/api/v1/ASN1DataSource.md
+        - protobuf/api/v1/ASN1EncodingFormat.md
+        - protobuf/api/v1/Certificate.md
+        - protobuf/api/v1/ClassicalAlgoChoice.md
+        - protobuf/api/v1/ClientOptions.md
+        - protobuf/api/v1/Compliance.md
+        - protobuf/api/v1/Configuration.md
+        - protobuf/api/v1/DataSource.md
+        - protobuf/api/v1/EmptyVerifier.md
+        - protobuf/api/v1/HybridAlgoChoice.md
+        - protobuf/api/v1/Implementation.md
+        - protobuf/api/v1/NISTSecurityStrengthBits.md
+        - protobuf/api/v1/PrivateKey.md
+        - protobuf/api/v1/QuantumSafeAlgoChoice.md
+        - protobuf/api/v1/SANMatcher.md
+        - protobuf/api/v1/SANVerifier.md
+        - protobuf/api/v1/ServerOptions.md
+        - protobuf/api/v1/TLSClientOptions.md
+        - protobuf/api/v1/TLSOptions.md
+        - protobuf/api/v1/TLSServerOptions.md
+        - protobuf/api/v1/TunnelVerifier.md
+        - protobuf/api/v1/X509Identity.md
+        - protobuf/api/v1/X509Verifier.md
+  - C API:
+    - c_api.md
+  - Rust API:
+    - rust_api/sandwich_full_doc.rustdoc/sandwich/index.html
+  - Golang API:
+    - https://pkg.go.dev/github.com/sandbox-quantum/sandwich/go
+theme:
+  features:
+    - content.code.copy
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+  icon:
+    repo: fontawesome/brands/github
+  name: material
+
+plugins:
+  - mkdoxy:
+      debug: True
+      projects:
+        cAPI:
+          src-dirs: docs/sandwich_c
+          full-doc: true
+          doxy-cfg:
+            EXTRACT_ALL: True
+            FILE_PATTERNS: "*.h"
+            RECURSIVE: True
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - tables

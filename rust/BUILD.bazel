@@ -2,6 +2,7 @@ load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
 load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_shared_library", "rust_static_library", "rust_test")
 load("//common/rules/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
 load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
 
 # Source files of Sandwich.
 _SANDWICH_SRCS = [
@@ -241,6 +242,14 @@ rust_doc(
         "--cfg",
         'feature="openssl1_1_1"',
     ],
+    visibility = ["//docs:__subpackages__"],
+)
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [":sandwich_full_doc"],
+    path = "rust_api",
+    visibility = ["//docs:__subpackages__"],
 )
 
 rust_doc(

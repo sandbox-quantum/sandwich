@@ -1,3 +1,15 @@
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        "tunnels_test.cc",
+        ":sandwich_hdrs_all_files",
+    ],
+    path = "sandwich_c/",
+    visibility = ["//docs:__subpackages__"],
+)
+
 filegroup(
     name = "sandwich_hdrs_file",
     srcs = ["sandwich.h"],

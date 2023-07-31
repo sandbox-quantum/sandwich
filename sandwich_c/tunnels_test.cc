@@ -180,6 +180,8 @@ auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
   return {ctx, [](struct ::SandwichContext *c) { ::sandwich_context_free(c); }};
 }
 
+// --8<-- [start:cio_socket]
+
 /// \brief Read from a socket.
 ///
 /// This method is a SandwichCIOReadFunction.
@@ -295,6 +297,8 @@ constexpr struct ::SandwichCIOSettings SandwichSocketCIOSettings = {
     .write = SandwichWriteToSocket,
     .close = SandwichCloseSocket,
     .uarg = nullptr};
+// --8<-- [end:cio_socket]
+
 
 /// \brief Deleter for Sandwich Tunnel.
 using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;

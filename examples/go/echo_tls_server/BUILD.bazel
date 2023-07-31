@@ -1,0 +1,10 @@
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        "main.go",
+    ],
+    path = "examples/go/echo_tls_server",
+    visibility = ["//docs:__subpackages__"],
+)

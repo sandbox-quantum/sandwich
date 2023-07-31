@@ -273,6 +273,22 @@ class ASN1Error(SandwichException):
     }
 
 
+class ALPNError(SandwichException):
+    """ALPN errors.
+
+    This exception may occur when an ALPN protocol is provided.
+    """
+
+    _ERRORS_MAP = {
+        SandwichErrorProto.ALPNERROR_LENGTH_ERROR: {
+            "msg": "protocol length is longer than 255 bytes",
+        },
+        SandwichErrorProto.ALPNERROR_INVALID_STRING: {
+            "msg": "protocol contains NULL byte or invalid string",
+        },
+    }
+
+
 class DataSourceError(SandwichException):
     """DataSource errors.
 
@@ -400,6 +416,7 @@ _ERROR_KIND_MAP = {
     SandwichErrorProto.ERRORKIND_PROTOBUF: ProtobufError,
     SandwichErrorProto.ERRORKIND_PRIVATE_KEY: PrivateKeyError,
     SandwichErrorProto.ERRORKIND_ASN1: ASN1Error,
+    SandwichErrorProto.ERRORKIND_ALPN: ALPNError,
     SandwichErrorProto.ERRORKIND_DATA_SOURCE: DataSourceError,
     SandwichErrorProto.ERRORKIND_KEM: KEMError,
     SandwichErrorProto.ERRORKIND_HANDSHAKE: HandshakeError,

@@ -133,6 +133,14 @@ enum ASN1Error {
   ASN1ERROR_MALFORMED = 1;
 };
 
+// ALPN errors.
+enum ALPNError {
+  // Protocol length is longer than 255 bytes.
+  ALPNERROR_LENGTH_ERROR = 0;
+  // Protocol contains '\x00' byte or invalid string.
+  ALPNERROR_INVALID_STRING = 1;
+}
+
 // DataSource errors.
 enum DataSourceError {
   // Empty data source.
@@ -269,4 +277,7 @@ enum ErrorKind {
 
   // Tunnel errors. See TunnelError.
   ERRORKIND_TUNNEL = 12;
+
+  // ALPN erros. See ALPNError.
+  ERRORKIND_ALPN = 13;
 };

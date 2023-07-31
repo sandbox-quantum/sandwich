@@ -1,0 +1,11 @@
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        "index.md",
+        "//proto/api/v1:md_api_proto",
+    ],
+    path = "protobuf/api/v1",
+    visibility = ["//docs:__subpackages__"],
+)

@@ -87,6 +87,13 @@ enum SandwichASN1Error {
 };
 typedef enum SandwichASN1Error SandwichASN1Error;
 
+/** \brief Enum ALPNError. */
+enum SandwichALPNError { 
+  SANDWICH_ALPNERROR_LENGTH_ERROR = 0,
+  SANDWICH_ALPNERROR_INVALID_STRING = 1,
+};
+typedef enum SandwichALPNError SandwichALPNError;
+
 /** \brief Enum DataSourceError. */
 enum SandwichDataSourceError { 
   SANDWICH_DATASOURCEERROR_EMPTY = 0,
@@ -158,6 +165,7 @@ enum SandwichErrorKind {
   SANDWICH_ERRORKIND_KEM = 10,
   SANDWICH_ERRORKIND_HANDSHAKE = 11,
   SANDWICH_ERRORKIND_TUNNEL = 12,
+  SANDWICH_ERRORKIND_ALPN = 13,
 };
 typedef enum SandwichErrorKind SandwichErrorKind;
 

@@ -92,9 +92,12 @@ mod test {
     #[allow(dead_code)]
     pub(crate) fn resolve_runfile(path: &str) -> std::string::String {
         let r = runfiles::Runfiles::create().unwrap();
-        r.rlocation(format!("sandwich/{path}"))
-            .into_os_string()
-            .into_string()
-            .unwrap()
+        r.rlocation(format!(
+            "{workspace}/{path}",
+            workspace = r.current_repository()
+        ))
+        .into_os_string()
+        .into_string()
+        .unwrap()
     }
 }

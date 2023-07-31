@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_path", "go_test")
 
 go_library(
     name = "sandwich",
@@ -11,7 +11,8 @@ go_library(
         "//sandwich_c:sandwich",
     ],
     cgo = True,
-    importpath = "github.com/sandbox-quantum/sandwich/go/sandwich",
+    importpath = "github.com/sandbox-quantum/sandwich/go",
+    importpath_aliases = ["github.com/sandbox-quantum/sandwich/go"],
     deps = [
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
@@ -45,5 +46,13 @@ go_test(
         "//proto/api/v1:api_go_proto",
         "@io_bazel_rules_go//go/tools/bazel",
         "@org_golang_google_protobuf//proto:go_default_library",
+    ],
+)
+
+# API doc generation
+go_path(
+    name = "godoc_root",
+    deps = [
+        ":sandwich",
     ],
 )

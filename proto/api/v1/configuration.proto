@@ -22,12 +22,22 @@ import "proto/api/v1/compliance.proto";
 import "proto/api/v1/tls.proto";
 
 // Supported implementations.
+//
+// Implementations are low-level cryptographic libraries that Sandwich uses to
+// provide cryptographic capabilities.
 enum Implementation {
   // Unspecified implementation.
+  // Using this value always leads to an error.
   IMPL_UNSPECIFIED = 0;
+
   // OpenSSL 1.1.1 with liboqs.
+  //
+  // See [liboqs](https://github.com/open-quantum-safe/liboqs).
   IMPL_OPENSSL1_1_1_OQS = 1;
+
   // BoringSSL with liboqs.
+  //
+  // See [liboqs](https://github.com/open-quantum-safe/liboqs).
   IMPL_BORINGSSL_OQS = 2;
 }
 
@@ -35,6 +45,8 @@ enum Implementation {
 message ClientOptions {
   oneof opts {
     // TLS options.
+    //
+    // See [TLSClientOptions](TLSClientOptions.md).
     TLSClientOptions tls = 1;
   }
   // Next id: 2
@@ -44,25 +56,35 @@ message ClientOptions {
 message ServerOptions {
   oneof opts {
     // TLS options.
+    //
+    // See [TLSServerOptions](TLSServerOptions.md).
     TLSServerOptions tls = 1;
   }
   // Next id: 2
 }
 
-// A configuration for a sandwich tunnel (server or client).
+// A configuration for a sandwich tunnel (either server or client).
 message Configuration {
   // The implementation to use.
+  //
+  // See [Implementation](Implementation.md).
   Implementation impl = 1;
 
-  // The option specific to the pair {protocol, impl}.
+  // Options specific to the `{protocol, implementation}` pair.
   oneof opts {
     // Client options.
+    //
+    // See [ClientOptions](ClientOptions.md).
     ClientOptions client = 2;
+
     // Server options.
+    // See [ServerOptions](ServerOptions.md).
     ServerOptions server = 3;
   }
 
   // Constraints applied on the choice of algorithms in the configuration.
+  //
+  // See [Compliance](Compliance.md).
   Compliance compliance = 4;
   // Next id: 5
 }

@@ -21,47 +21,21 @@ option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v
 import "pysandwich/proto/api/v1/certificate.proto";
 
 // An empty verifier.
-// An empty verifier means that no verifier will be used.
-// **Warning**: when used, all security requirements are discarded!
+//
+// An empty verifier is typically used when no verification of the remote
+// peer is necessary (for instance in a non mutual TLS connection, the server
+// does not have to verify the client's identity).
+//
+// > **Warning**: if used in a context where a verification may happen, any
+// > result will be discarded!
 message EmptyVerifier {}
 
-// Verifier for X.509-based protocols, such as TLS.
+// Verifier for X.509-based protocols such as TLS.
 message X509Verifier {
   // List of trusted certificate authority certificates.
+  //
+  // See [Certificate](Certificate.md).
   repeated Certificate trusted_cas = 1;
-
-  // List of sha256 digests of Subject Public Key Information (SPKI).
-  // Hash of leaf certificates SPKIs being presented to Sandwich must match
-  // one of those.
-  //
-  // If the list is empty, SPKIs verification is disabled.
-  //
-  // This is commonly used to do certificate pinning.
-  //
-  // This hash can be obtained with the following command:
-  //
-  // ```
-  // openssl x509 -in path/to/certificate.crt -noout -pubkey
-  //  | openssl pkey -outform DER -pubin
-  //  | openssl dgst -sha256 -binary
-  // ```
-  repeated bytes verify_certificate_spki = 2;
-
-  // List of sha256 digests of certificates.
-  // Hash of leaf certificate being presented to Sandwich must match
-  // one of those.
-  //
-  // If the list is empty, hash-based certificate verification is disabled.
-  //
-  // This is commonly used to do certificate pinning.
-  //
-  // This hash can be obtained with the following command:
-  //
-  // ```
-  // openssl x509 -in path/to/certificate.crt -outform DER
-  //  | openssl dgst -sha256 -binary
-  // ```
-  repeated bytes verify_certificate_hash = 3;
 
   // Allow expired certificates.
   //
@@ -89,6 +63,7 @@ message SANMatcher {
     string dns = 2;
 
     // An IP address.
+    //
     // This type allows either an IPv4 address or an IPv6 address.
     // Ranges and masks are not allowed.
     string ip_address = 3;
@@ -96,24 +71,39 @@ message SANMatcher {
 }
 
 // Subject Alternative Names verifier.
+//
+// This verifier is used when a tunnel is created in Sandwich. It is responsible
+// for verifying that the identity presented by the remote peer matches the
+// expected identity.
+//
+// This is commonly used to verify the server's name in a TLS connection and
+// to prevent mallory-in-the-middle attacks.
 message SANVerifier {
-  // Entries of Subject Alternative Names.
+  // Entries of expected Subject Alternative Names.
+  //
+  // See [SANMatcher](SANMatcher.md).
   repeated SANMatcher alt_names = 1;
 }
 
 // Security requirements to enforce at tunnel-time.
+//
 // Unlike the X.509 verifier, which is used when creating a context, this
 // verifier is used when creating a tunnel. Thus, the security requirements
 // it describes are enforced to a specific tunnel only.
 message TunnelVerifier {
   // The verifier to use at tunnel-time.
   oneof verifier {
-    // SAN verifier, to be used when the TLS protocol is used.
+    // Subject Alternative Names verifier, to be used when the TLS protocol is
+    // used.
+    //
+    // See [SANVerifier](SANVerifier.md).
     SANVerifier san_verifier = 1;
 
     // Empty verifier.
     //
-    // **Warning**: when used, no SAN will be verified!
+    // > **Warning**: when used, no identity will be verified!
+    //
+    // See [EmptyVerifier](EmptyVerifier.md).
     EmptyVerifier empty_verifier = 2;
   }
 }

@@ -1,0 +1,34 @@
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_project", "mkdocs_tree")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+mkdocs_tree(
+    name = "mkdocs_homepage",
+    srcs = [
+        "c_api.md",
+        "index.md",
+        "install.md",
+    ],
+)
+
+mkdocs_project(
+    name = "docs",
+    config = "mkdocs.yml",
+    trees = [
+        "//sandwich_c:mkdocs",
+        "//examples/go/echo_tls_server:mkdocs",
+        "//rust:mkdocs",
+        "//docs/concepts:mkdocs",
+        "//docs/protobuf/api/v1:mkdocs",
+        "//docs/protobuf/api:mkdocs",
+        "//docs/protobuf:mkdocs",
+        "//docs/images:mkdocs",
+        ":mkdocs_homepage",
+    ],
+)
+
+build_test(
+    name = "sandwich_docs_build_test",
+    targets = [
+        ":docs",
+    ],
+)

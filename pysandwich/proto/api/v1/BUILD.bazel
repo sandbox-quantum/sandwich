@@ -1,3 +1,4 @@
+load("//common/tools/proto2md:rules.bzl", "md_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
 
@@ -71,6 +72,56 @@ proto_library(
     deps = [
         ":compliance_proto",
         ":tls_proto",
+    ],
+)
+
+md_proto_library(
+    name = "md_api_proto",
+    package = "saq.sandwich.proto.api.v1",
+    proto = ":api_proto",
+    strip_package = True,
+    symbols = [
+        # configuration.proto
+        "Implementation",
+        "ClientOptions",
+        "ServerOptions",
+        "Configuration",
+
+        # certificate.proto
+        "Certificate",
+
+        # private_key.proto
+        "PrivateKey",
+
+        # data_source.proto
+        "DataSource",
+        "ASN1DataSource",
+
+        # encoding_format.proto
+        "ASN1EncodingFormat",
+
+        # compliance.proto
+        "ClassicalAlgoChoice",
+        "QuantumSafeAlgoChoice",
+        "HybridAlgoChoice",
+        "NISTSecurityStrengthBits",
+        "Compliance",
+
+        # tls.proto
+        "X509Identity",
+        "TLSOptions",
+        "TLSClientOptions",
+        "TLSServerOptions",
+
+        # verifiers.proto
+        "EmptyVerifier",
+        "X509Verifier",
+        "SANMatcher",
+        "SANVerifier",
+        "TunnelVerifier",
+    ],
+    visibility = [
+        "//visibility:public",
     ],
 )
 

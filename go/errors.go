@@ -78,6 +78,7 @@ var errorKindMap = map[pb.ErrorKind]string{
 	pb.ErrorKind_ERRORKIND_PROTOBUF:          "protobuf error",
 	pb.ErrorKind_ERRORKIND_PRIVATE_KEY:       "private key error",
 	pb.ErrorKind_ERRORKIND_ASN1:              "ASN.1 error",
+	pb.ErrorKind_ERRORKIND_ALPN:              "ALPN error",
 	pb.ErrorKind_ERRORKIND_DATA_SOURCE:       "DataSource error",
 	pb.ErrorKind_ERRORKIND_KEM:               "KEM error",
 }
@@ -97,7 +98,7 @@ var apiErrorMap = map[pb.APIError]string{
 
 // newAPIError creates an APIError from an error code.
 func newAPIError(code pb.APIError, msg string) *APIError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -130,7 +131,7 @@ var configurationErrorMap = map[pb.ConfigurationError]string{
 
 // newConfigurationError creates a ConfigurationError from an error code.
 func newConfigurationError(code pb.ConfigurationError, msg string) *ConfigurationError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -166,7 +167,7 @@ var tlsConfigurationErrorMap = map[pb.TLSConfigurationError]string{
 
 // newTLSConfigurationError creates a TLSConfigurationError from an error code.
 func newTLSConfigurationError(code pb.TLSConfigurationError, msg string) *TLSConfigurationError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -201,7 +202,7 @@ var certificateErrorMap = map[pb.CertificateError]string{
 
 // newCertificateError creates a CertificateError from an error code.
 func newCertificateError(code pb.CertificateError, msg string) *CertificateError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -236,7 +237,7 @@ var privateKeyErrorMap = map[pb.PrivateKeyError]string{
 
 // newPrivateKeyError creates a PrivateKeyError from an error code.
 func newPrivateKeyError(code pb.PrivateKeyError, msg string) *PrivateKeyError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -270,7 +271,7 @@ var protobufErrorMap = map[pb.ProtobufError]string{
 
 // newProtobufError creates a ProtobufError from an error code.
 func newProtobufError(code pb.ProtobufError, msg string) *ProtobufError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -301,7 +302,7 @@ var asn1ErrorMap = map[pb.ASN1Error]string{
 
 // newASN1Error creates a ASN1Error from an error code.
 func newASN1Error(code pb.ASN1Error, msg string) *ASN1Error {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -312,6 +313,37 @@ func newASN1Error(code pb.ASN1Error, msg string) *ASN1Error {
 		m = fmt.Sprintf("unknown ASN.1 error code %d", int32(code))
 	}
 	return &ASN1Error{
+		BaseError{
+			msg:  m + err_msg,
+			code: int32(code),
+		},
+	}
+}
+
+// ALPNError defines an error that may occur when ALPN Protocol is provided.
+type ALPNError struct {
+	BaseError
+}
+
+// ErrorMap is a map code -> string for ALPN errors.
+var alpnErrorMap = map[pb.ALPNError]string{
+	pb.ALPNError_ALPNERROR_LENGTH_ERROR:   "protocol length is longer than 255 bytes",
+	pb.ALPNError_ALPNERROR_INVALID_STRING: "protocol contains NULL byte or invalid string",
+}
+
+// newALPNError creates a ALPNError from an error code.
+func newALPNError(code pb.ALPNError, msg string) *ALPNError {
+	err_msg := ";"
+	if msg != "" {
+		err_msg = "; " + msg
+	}
+	var m string
+	if val, ok := alpnErrorMap[code]; ok {
+		m = val
+	} else {
+		m = fmt.Sprintf("unknown ALPN error code %d", int32(code))
+	}
+	return &ALPNError{
 		BaseError{
 			msg:  m + err_msg,
 			code: int32(code),
@@ -333,7 +365,7 @@ var dataSourceErrorMap = map[pb.DataSourceError]string{
 
 // newDataSourceError creates a DataSourceError from an error code.
 func newDataSourceError(code pb.DataSourceError, msg string) *DataSourceError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -364,7 +396,7 @@ var kEMErrorMap = map[pb.KEMError]string{
 
 // newKEMError creates a KEMError from an error code.
 func newKEMError(code pb.KEMError, msg string) *KEMError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -396,7 +428,7 @@ var systemErrorMap = map[pb.SystemError]string{
 
 // newSystemError creates a SystemError from an error code.
 func newSystemError(code pb.SystemError, msg string) *SystemError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -434,7 +466,7 @@ var socketErrorMap = map[pb.SocketError]string{
 
 // newSocketError creates a SocketError from an error code.
 func newSocketError(code pb.SocketError, msg string) *SocketError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -471,7 +503,7 @@ type HandshakeStateError struct {
 // NewHandshakeStateError creates an error from an error code.
 // The error code is supposed to match a key in `handshakeStateErrorMap`, defined above.
 func newHandshakeStateError(code int32, msg string) *HandshakeStateError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -518,7 +550,7 @@ type HandshakeError struct {
 // NewHandshakeError creates an error from an error code.
 // The error code is supposed to match a key in `handshakeErrorMap`, defined above.
 func newHandshakeError(code pb.HandshakeError, msg string) *HandshakeError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -558,7 +590,7 @@ type RecordPlaneError struct {
 // NewRecordPlaneError creates an error from an error code.
 // The error code is supposed to match a key in `recordPlaneErrorMap`, defined above.
 func newRecordPlaneError(code int32, msg string) *RecordPlaneError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}
@@ -606,7 +638,7 @@ type IOError struct {
 // This function is publicly exposed, as it is meant to be used by the user
 // to implement their own I/O interface.
 func NewIOError(code int32, msg string) *IOError {
-	var err_msg = ";"
+	err_msg := ";"
 	if msg != "" {
 		err_msg = "; " + msg
 	}

@@ -1,0 +1,14 @@
+[package]
+name = "bazelisk-proto"
+version = "0.1.0"
+build = "compile.rs"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+protobuf = "3.2.0"
+
+[build-dependencies]
+protobuf-codegen = "3.2.0"
+protoc-bin-vendored = "3.0.0"
