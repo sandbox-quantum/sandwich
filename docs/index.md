@@ -1,6 +1,12 @@
 # Introduction
 
-<img src="./images/architecture_sketch.png" alt="Sandwich Architecture" width="80%" text-align= center/>
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./images/sandwich_architecture_white.png" width="666">
+  <source media="(prefers-color-scheme: light)" srcset="./images/sandwich_architecture_black.png" width="666">
+  <img alt="The architecture of Sandwich.">
+</picture>
+</p>
 
 ## What is Sandwich?
 
