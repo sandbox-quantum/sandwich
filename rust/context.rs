@@ -48,7 +48,7 @@ pub type TunnelResult<'io, 'tun> = std::result::Result<
 >;
 
 /// A Sandwich context.
-/// A Sandwich context is usually instantiated from a protobuf [`api_rust_proto::Configuration`].
+/// A Sandwich context is usually instantiated from a protobuf [`sandwich_api_proto::Configuration`].
 pub trait Context<'ctx>: std::fmt::Debug {
     /// Creates a new tunnel from an I/O interface. See [`crate::IO`] from [`crate::io`] module.
     ///
@@ -71,7 +71,7 @@ pub trait Context<'ctx>: std::fmt::Debug {
 ///
 /// ## Constructs a configuration in Rust.
 /// ```
-/// use api_rust_proto as pb_api;
+/// use sandwich_api_proto as pb_api;
 ///
 /// // Creates a protobuf configuration
 /// let mut configuration = pb_api::Configuration::new();
@@ -122,7 +122,7 @@ pub fn try_from<'ctx>(
 #[cfg(test)]
 pub(crate) mod test {
     /// The following tests target the OpenSSL 1.1.1 + liboqs Implementation
-    /// (`api_rust_proto::Implementation::IMPL_OPENSSL1_1_1_OQS`).
+    /// (`sandwich_api_proto::Implementation::IMPL_OPENSSL1_1_1_OQS`).
     #[cfg(feature = "openssl1_1_1")]
     pub(crate) mod openssl1_1_1 {
         use crate::tunnel::tls;
@@ -141,7 +141,7 @@ pub(crate) mod test {
             cert
         }
 
-        /// Creates a [`api_rust_proto::Configuration`] for TLS 1.3.
+        /// Creates a [`sandwich_api_proto::Configuration`] for TLS 1.3.
         pub(crate) fn create_configuration(
             mode: crate::Mode,
             skip_impl: bool,
@@ -157,7 +157,7 @@ pub(crate) mod test {
             conf
         }
 
-        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL.
+        /// Tests a [`sandwich_api_proto::Configuration`] for OpenSSL.
         #[test]
         fn test_configuration() {
             let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -193,7 +193,7 @@ pub(crate) mod test {
             ctx.unwrap();
         }
 
-        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but
+        /// Tests a [`sandwich_api_proto::Configuration`] for OpenSSL, but
         /// but with missing implementation field.
         #[test]
         fn test_configuration_no_impl() {
@@ -231,7 +231,7 @@ pub(crate) mod test {
             ));
         }
 
-        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
+        /// Tests a [`sandwich_api_proto::Configuration`] for OpenSSL, but with
         /// an certificate supplied.
         #[test]
         fn test_configuration_bad_cert() {
@@ -273,7 +273,7 @@ pub(crate) mod test {
             }));
         }
 
-        /// Tests a [`api_rust_proto::Configuration`] for OpenSSL, but with
+        /// Tests a [`sandwich_api_proto::Configuration`] for OpenSSL, but with
         /// an invalid private key supplied.
         #[test]
         fn test_configuration_bad_sk() {

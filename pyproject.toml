@@ -1,0 +1,12 @@
+[project]
+name = "pysandwich"
+version = "0.1.0"
+description = "sandwich library Python bindings"
+readme = "README.md"
+dependencies = [
+    "protobuf"
+]
+
+[build-system]
+requires = ["setuptools", "wheel", "grpcio-tools"]
+build-backend = "setuptools.build_meta"

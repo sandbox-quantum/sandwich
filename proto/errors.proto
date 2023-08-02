@@ -65,6 +65,9 @@ enum ProtobufError {
   /// This error is thrown by `sandwich_context_new`, when the given source
   /// buffer is a null pointer.
   PROTOBUFERROR_NULLPTR = 3;
+
+  /// An invalid value was given.
+  PROTOBUFERROR_INVALID_ARGUMENT = 4;
 };
 
 // Errors regarding TLS configurations.

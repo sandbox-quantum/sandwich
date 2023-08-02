@@ -46,10 +46,10 @@
 //! [protobuf]: https://protobuf.dev/
 
 /// Protobuf definitions crate for Sandwich API.
-pub extern crate api_rust_proto as pb_api;
+pub extern crate sandwich_api_proto as pb_api;
 
 /// Protobuf definitions crate for Sandwich.
-pub extern crate sandwich_rust_proto as pb;
+pub extern crate sandwich_proto as pb;
 
 /// A structured error around [`ErrorCode`].
 pub type Error = error::Error;

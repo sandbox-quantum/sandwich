@@ -368,7 +368,7 @@ impl std::ops::Shr<ErrorCode> for ErrorCode {
 
 #[cfg(test)]
 mod test {
-    extern crate sandwich_rust_proto as pb;
+    extern crate sandwich_proto as pb;
     use super::{Error, ErrorCode, ProtoBasedErrorCode};
 
     /// Tests the constructor of [`Error`] from an error enum.

@@ -37,6 +37,22 @@ go_test(
 )
 
 go_test(
+    name = "tcp_test",
+    timeout = "short",
+    srcs = ["tcp_test.go"],
+    cgo = True,
+    data = [
+        "//testdata",
+    ],
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@io_bazel_rules_go//go/tools/bazel",
+    ],
+)
+
+go_test(
     name = "fuzz_test",
     timeout = "short",
     srcs = ["fuzz_test.go"],

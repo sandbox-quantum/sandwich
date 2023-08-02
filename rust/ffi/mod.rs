@@ -40,4 +40,5 @@ pub(self) use error::Error;
 
 pub(self) mod context;
 pub(self) mod io;
+pub(self) mod io_helpers;
 pub(self) mod tunnel;

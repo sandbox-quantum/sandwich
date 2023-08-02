@@ -25,7 +25,7 @@
 //! Errors are defined in the `errors.proto` protobuf file by enums.
 
 extern crate protobuf;
-extern crate sandwich_rust_proto as pb;
+extern crate sandwich_proto as pb;
 
 /// An enum allowed in [`ProtoBasedErrorCode`].
 pub(crate) trait AllowedProtoBasedErrorCodeEnum: Copy + Clone + Sized {}
@@ -70,21 +70,21 @@ macro_rules! GenProtoBasedErrorCode {
         pub enum ProtoBasedErrorCode {
             $(
                 #[doc=$desc]
-                $sym(sandwich_rust_proto::$sym),
+                $sym(sandwich_proto::$sym),
             )*
         }
 
         $(
-            /// Implements `[std::convert::From<sandwich_rust_proto::ErrorEnum>]` for [`ProtoBasedErrorCode`].
-            impl std::convert::From<sandwich_rust_proto::$sym> for ProtoBasedErrorCode {
-                fn from(v: sandwich_rust_proto::$sym) -> Self {
+            /// Implements `[std::convert::From<sandwich_proto::ErrorEnum>]` for [`ProtoBasedErrorCode`].
+            impl std::convert::From<sandwich_proto::$sym> for ProtoBasedErrorCode {
+                fn from(v: sandwich_proto::$sym) -> Self {
                     Self::$sym(v)
                 }
             }
 
-            /// Implements `[std::convert::From<sandwich_rust_proto::ErrorEnum>]` for [`ErrorCode`].
-            impl std::convert::From<sandwich_rust_proto::$sym> for ErrorCode {
-                fn from(v: sandwich_rust_proto::$sym) -> Self {
+            /// Implements `[std::convert::From<sandwich_proto::ErrorEnum>]` for [`ErrorCode`].
+            impl std::convert::From<sandwich_proto::$sym> for ErrorCode {
+                fn from(v: sandwich_proto::$sym) -> Self {
                     Self{
                         ec: ProtoBasedErrorCode::from(v),
                         msg: None
@@ -93,10 +93,10 @@ macro_rules! GenProtoBasedErrorCode {
             }
 
             /// Instantiates an [`ErrorCode`] from an error enum and a string.
-            impl<S> std::convert::From<(sandwich_rust_proto::$sym, &S)> for ErrorCode
+            impl<S> std::convert::From<(sandwich_proto::$sym, &S)> for ErrorCode
                 where S: std::convert::AsRef<str>
             {
-                fn from((v, s): (sandwich_rust_proto::$sym, &S)) -> Self {
+                fn from((v, s): (sandwich_proto::$sym, &S)) -> Self {
                     Self{
                         ec: ProtoBasedErrorCode::from(v),
                         msg: Some(s.as_ref().into())
@@ -105,9 +105,9 @@ macro_rules! GenProtoBasedErrorCode {
             }
 
             /// Instantiates an [`ErrorCode`] from an error enum and a string.
-            impl std::convert::From<(sandwich_rust_proto::$sym, &str)> for ErrorCode
+            impl std::convert::From<(sandwich_proto::$sym, &str)> for ErrorCode
             {
-                fn from((v, s): (sandwich_rust_proto::$sym, &str)) -> Self {
+                fn from((v, s): (sandwich_proto::$sym, &str)) -> Self {
                     Self{
                         ec: ProtoBasedErrorCode::from(v),
                         msg: Some(s.into())
@@ -116,9 +116,9 @@ macro_rules! GenProtoBasedErrorCode {
             }
 
             /// Instantiates an [`ErrorCode`] from an error enum and a [`std::string::String`].
-            impl std::convert::From<(sandwich_rust_proto::$sym, std::string::String)> for ErrorCode
+            impl std::convert::From<(sandwich_proto::$sym, std::string::String)> for ErrorCode
             {
-                fn from((v, s): (sandwich_rust_proto::$sym, std::string::String)) -> Self {
+                fn from((v, s): (sandwich_proto::$sym, std::string::String)) -> Self {
                     Self{
                         ec: ProtoBasedErrorCode::from(v),
                         msg: Some(s)
@@ -131,7 +131,7 @@ macro_rules! GenProtoBasedErrorCode {
             impl AllowedProtoBasedErrorCodeEnum for &pb::$sym {}
 
             /// Implements comparison operator between [`ProtoBasedErrorCode`] and the current error enum.
-            impl PartialEq<ProtoBasedErrorCode> for sandwich_rust_proto::$sym {
+            impl PartialEq<ProtoBasedErrorCode> for sandwich_proto::$sym {
                 fn eq(&self, other: &ProtoBasedErrorCode) -> bool {
                     match other {
                         ProtoBasedErrorCode::$sym(ec) => ec == self,
@@ -141,19 +141,19 @@ macro_rules! GenProtoBasedErrorCode {
             }
 
             /// Implements comparison operator between [`ProtoBasedErrorCode`] and the current error enum.
-            impl PartialEq<sandwich_rust_proto::$sym> for ProtoBasedErrorCode {
-                fn eq(&self, other: &sandwich_rust_proto::$sym) -> bool {
+            impl PartialEq<sandwich_proto::$sym> for ProtoBasedErrorCode {
+                fn eq(&self, other: &sandwich_proto::$sym) -> bool {
                     other == self
                 }
             }
         )*
 
-        /// Implements `std::convert::Into<sandwich_rust_proto::ErrorKind>` for [`ProtoBasedErrorCode`].
-        impl std::convert::From<&ProtoBasedErrorCode> for sandwich_rust_proto::ErrorKind {
+        /// Implements `std::convert::Into<sandwich_proto::ErrorKind>` for [`ProtoBasedErrorCode`].
+        impl std::convert::From<&ProtoBasedErrorCode> for sandwich_proto::ErrorKind {
             fn from(ec: &ProtoBasedErrorCode) -> Self {
                 match ec {
                     $(
-                        ProtoBasedErrorCode::$sym(_) => sandwich_rust_proto::ErrorKind::$kind,
+                        ProtoBasedErrorCode::$sym(_) => sandwich_proto::ErrorKind::$kind,
 
                     )*
                 }
@@ -167,11 +167,31 @@ macro_rules! GenProtoBasedErrorCode {
                     $(
                         ProtoBasedErrorCode::$sym(e) => write!(f, "{}: {}", $desc, match e {
                             $(
-                                sandwich_rust_proto::$sym::$vsym => $vstr,
+                                sandwich_proto::$sym::$vsym => $vstr,
                             )*
                         }),
                     )*
                 }
+            }
+        }
+
+        impl std::convert::TryFrom<(i32, i32)> for ProtoBasedErrorCode {
+            type Error = crate::Error;
+
+            fn try_from((kind, ec): (i32, i32)) -> crate::Result<Self> {
+                use protobuf::Enum;
+
+                let kind = sandwich_proto::ErrorKind::from_i32(kind)
+                    .ok_or_else::<Self::Error, _>(|| sandwich_proto::ProtobufError::PROTOBUFERROR_INVALID_ARGUMENT.into())?;
+
+                #[allow(unreachable_patterns)]
+                match kind {
+                    $(
+                        sandwich_proto::ErrorKind::$kind => sandwich_proto::$sym::from_i32(ec).map(ProtoBasedErrorCode::from),
+                    )*
+                    _ => unreachable!(),
+                }
+                .ok_or_else(|| sandwich_proto::ProtobufError::PROTOBUFERROR_INVALID_ARGUMENT.into())
             }
         }
 
@@ -182,7 +202,7 @@ macro_rules! GenProtoBasedErrorCode {
                 use protobuf::Enum;
                 match ec {
                     $(
-                        ProtoBasedErrorCode::$sym(e) => (sandwich_rust_proto::ErrorKind::$kind.value(),  e.value()),
+                        ProtoBasedErrorCode::$sym(e) => (sandwich_proto::ErrorKind::$kind.value(),  e.value()),
                     )*
                 }
             }
@@ -282,6 +302,7 @@ GenProtoBasedErrorCode!(
             PROTOBUFERROR_TOO_BIG => "message too large",
             PROTOBUFERROR_PARSE_FAILED => "message parsing failed",
             PROTOBUFERROR_NULLPTR => "null pointer",
+            PROTOBUFERROR_INVALID_ARGUMENT => "invalid argument",
         ],
     },
     {
@@ -469,7 +490,7 @@ impl ErrorCode {
 
 #[cfg(test)]
 mod test {
-    extern crate sandwich_rust_proto as pb;
+    extern crate sandwich_proto as pb;
     use super::ProtoBasedErrorCode;
 
     /// Tests trivial copy.
@@ -568,5 +589,13 @@ mod test {
             "api error: socket error: port already in use"
         );
         assert_eq!(ec.msg(), Some("port already in use"));
+    }
+
+    /// Tests the conversion between a pair of integers to a [`ProtoBasedErrorCode`].
+    #[test]
+    pub fn test_integers_to_protobasederrorcode() {
+        ProtoBasedErrorCode::try_from((9999, 9999)).expect_err("must fail");
+        let errcode = ProtoBasedErrorCode::try_from((8, 1)).expect("should work");
+        assert_eq!(sandwich_proto::ASN1Error::ASN1ERROR_MALFORMED, errcode);
     }
 }

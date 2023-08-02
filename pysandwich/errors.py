@@ -257,6 +257,9 @@ class ProtobufError(SandwichException):
         SandwichErrorProto.PROTOBUFERROR_NULLPTR: {
             "msg": "null pointer",
         },
+        SandwichErrorProto.PROTOBUFERROR_INVALID_ARGUMENT: {
+            "msg": "invalid argument",
+        },
     }
 
 

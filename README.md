@@ -1,98 +1,46 @@
-<img src="./docs/guide_doc/src/images/logo.png" align="center" height="100"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../docs/images/sandwich_logo_white.png" width="666">
+  <source media="(prefers-color-scheme: light)" srcset="../../docs/images/sandwich_logo_black.png" width="666">
+  <img alt="Sandwich logo.">
+</picture>
 
 # Sandwich
-[rust-badge][go-badge][release-badge][etc][etc]
 
-Sandwich is a multi-platform, multi-language, open-source library that provides a simple unified API for developers to use (multiple) cryptographic libraries in their applications. Find documentation at: [link to doc landing page].
+Sandwich is a multi-platform, multi-language, open-source library that provides
+a simple unified API for developers to use (multiple) cryptographic libraries
+in their applications. Find documentation
+[here](https://sandbox-quantum.github.io/sandwich).
+
+## Status & API stability
+
+### Security
+
+**WARNING**: This library is under current security review by a
+third-party company. We will release a new version fixing the
+findings found during that audit.
+
+### API stability
+
+Sandwich version is current `v0.x.y`. Until Sandwich v1.0.0 is
+released, expect some breaking changes in the various APIs.
 
 ## Contents
 
 1. [Introduction](#introduction)
-    1. [What is Sandwich?](#what-is-sandwich)
-    2. [Why use Sandwich?](#why-sandwich)
-2. [Current Version](#current-version)
-3. [Getting Started](#installation)
-4. [How to Contribute](#how-to-contribute)
+2. [Getting Started](#installation)
+3. [License](#license)
 
 ## Introduction
 
-<img src="./docs/guide_doc/src/images/architecture_sketch.png" align="right" width="325"/>
-
-### What is Sandwich?
-### (alt title) What are the main features of Sandwich?
-- Sandwich is a **middleware** to interact with cryptographic libraries.
-- Sandwich **unifies** cryptographic libraries under the Sandwich API.
-
-### Why use Sandwich instead of `$LIBRARY`?
-
-#### Sandwich provides **agility**
-
-Consider these cases:
-
-- If you need to use `$ANOTHER_CRYPTO_LIBRARY` instead of `$CURRENT_CRYPTO_LIBRARY` and worry about API differences?
-- If you want have post-quantum cryptography and your `$CURRENT_CRYPTO_LIBRARY` does not have such features?
-- If you want to support multiple `$LIBRARIES` instead of a single `$LIBRARY`?
-
-**In all cases above, you don't have to reimplement your code**, the Sandwich API remains unchanged, you just need to point Sandwich to the your new choice of `$CRYPTO_LIBRARY` and recompile.
-
-We have plan to support changing library at run-time on our roadmap.
-
-#### Sandwich is a *thin wrapper*
-
-Sandwich is a wrapper around cryptography libraries. Our objectives:
-
-- **Minimal overhead**. You can see our benchmark between Sandwich and direct call to Crypto library [here](TODO).
-- **Support multiple languages**. We provide binding to Go, Python, C/C++ via FFI and Rust API.
-
-#### Sandwich is Simple
-
-##### Simple to use
-Using Sandwich will not collide with your current setup, we support domain separation by preventing symbol name collisions.
-
-To do so, we develop open source tools to encounter problems while developing Sandwich:
-
-- [`Bartleby`](https://github.com/sandbox-quantum/bartleby): Resolve symbols collision between shared crypto libraries. Which means a simple prefix `sandwich_crypto_@version_number` will isolate Sandwich with other libraries.
-
-##### Simple to build
-
-`Sandwich Backend` links to well-tested Cryptography libraries (e.g OpenSSL, BoringSSL). `Sandwich API` provides safe, high-level abstraction on top of `Sandwich Backend` to other programming languages.
-
-Our build process is wrapped in Bazel build, which compiles the Sandwich cores and Cryptography libraries, plus all the bindings.
-
-`Bazel` provides fast and parallel approaches, it's also support multiple platforms by predefined `Bazel rules`.
-We think Bazel build system enhances build process experience for developers.
-
-With Bazel, we simplify the build process to a few commands:
-
-```
-bazelisk build ... # Build everything
-bazelisk test ...  # Test everything
-```
-
-## Current version
-
-[Insert a versioned description of the library: timestamp this, describe what OS support there is, what languages (2 paragraphs max).]
-
-e.g. "The last version is [1.0](https://github.com/sandbox-quantum/sandwich/releases/tag/v1.0), released on 2023-08-01, which offers support for [OpenSSL](https://github.com/sandbox-quantum/sandwich/tree/main/common/build/openssl) and [BoringSSL]() in [rust](), [python](https://github.com/sandbox-quantum/sandwich/blob/main/docs/guide_doc/src/install/python-installation.md), [go](), [C/C++](), [etc]()". Link these to landing pages (i.e., a how-to or install guide) for each language, e.g. for python the link above works.
-
-[Add workflow status badges for ubuntu, macos, etc]
-
-Our update and release cycle occurs at our GitHub repository. We ensure to stay on top of performance and security fixes.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../docs/images/sandwich_architecture_white.png" width="666">
+  <source media="(prefers-color-scheme: light)" srcset="../../docs/images/sandwich_architecture_black.png" width="666">
+  <img alt="The architecture of Sandwich.">
+</picture>
 
 ## Getting Started
 
-[Insert separate installation instructions for python, rust, go, etc.]
-
-### Python
-
-```sh
-pip install pysandwich
-```
-
-Our documentation offers further python support for [installation](), [API](), [configuration](), [examples](), [etc](). [or we link to a unified homepage for Python, i.e. a Python-How-To, which itself links to installation, API, config, examples, etc.]
-
-## Contributing
-Any contributions towards this project, ranging from bug patches to library extensions, would be great appreciated. We have set out some instructions for contributors [here]().
+The documentation contains [installation & integration instructions](https://sandbox-quantum.github.io/sandwich/install.html) for each supported language.
 
 ## License
 

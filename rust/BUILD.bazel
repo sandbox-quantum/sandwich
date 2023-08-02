@@ -15,6 +15,7 @@ _SANDWICH_SRCS = [
     "//rust/implementation/ossl/boringssl",
     "//rust/implementation/ossl/openssl1_1_1",
     "//rust/io",
+    "//rust/io/helpers",
     "//rust/support",
     "//rust/tunnel",
     "//rust/tunnel/tls",
@@ -22,8 +23,8 @@ _SANDWICH_SRCS = [
 
 # Protobuf dependencies for Sandwich.
 _SANDWICH_PROTOBUF_DEPS = [
-    "//proto:sandwich_rust_proto",
-    "//proto/api/v1:api_rust_proto",
+    "//proto:sandwich-proto",
+    "//proto/api/v1:sandwich-api-proto",
     "@crate_index//:protobuf",
 ]
 

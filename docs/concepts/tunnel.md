@@ -48,7 +48,7 @@ Let's create a TLS server tunnel in Go. First, let's create a protobuf server co
 
 ```go
 import (
---8<-- "docs/examples/go/echo_tls_server/main.go:go_pb_import"
+--8<-- "docs/examples/go/echo_tls_server/main.go:go_imports"
 )
 
 --8<-- "docs/examples/go/echo_tls_server/main.go:go_server_cfg"

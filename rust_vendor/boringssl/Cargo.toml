@@ -1,0 +1,18 @@
+[package]
+name = "boringssl"
+version = "0.1.0"
+edition = "2018"
+authors = ["SandboxAQ"]
+description = "BoringSSL dependency for Sandwich"
+repository = "https://github.com/sandbox-quantum/sandwich"
+license = "Apache-2.0"
+build = "build.rs"
+
+[lib]
+path = "lib.rs"
+
+[build-dependencies]
+bazelisk = { path = "../bazelisk-rs" }
+build-support = { path = "../build-support" }
+env_logger = "0.10.0"
+log = "0.4.19"

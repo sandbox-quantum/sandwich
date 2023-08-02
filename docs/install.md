@@ -88,6 +88,30 @@ $ export CGO_CFLAGS="-I$SANDWICH_ROOT/include"
 $ export CGO_LDFLAGS="-L$SANDWICH_ROOT/lib"
 ```
 
+## Python API
+
+The Python API can be installed with pip with:
+
+```
+$ pip install pysandwich
+```
+
+It can also be installed from source:
+```
+$ cd /path/to/sandwich
+$ pip install .
+```
+
+At runtime, the Sandwich Python bindings will be looking for
+`libsandwich_full.so`, which can be either [directly downloaded from the
+Sandwich releases Github
+section](https://github.com/sandbox-quantum/sandwich/releases), or [built from
+source](#building-from-source).
+
+The `SANDWICH_C_LIB` environment variable can point to the path where
+`libsandwich_full.so` has been installed. The bindings will also look for the
+library in standard operating system's paths.
+
 ## Unit tests
 
 Sandwich unit tests can be run directly using Bazel:

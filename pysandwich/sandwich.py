@@ -28,77 +28,6 @@ The following classes are defined:
 To be able to use this API, the user has to define its own I/O interface.
 See `io.py` for more information.
 
-Here is an example of how to use Sandwich in Python:
-
-```
-from pysandwich.sandwich import (
-    Context,
-    Error,
-    Sandwich,
-    Tunnel,
-    errors,
-    io
-)
-import pysandwich.proto.sandwich_pb2 as SandwichProto
-
-# Initialize a Sandwich handle
-sandwich_handle = Sandwich()
-
-# Create a Sandwich context, using a Sandwich Configuration from protobuf.
-conf = SandwichProto.Configuration()
-conf.impl = SandwichProto.Implementation.IMPL_OPENSSL_1_1_1
-
-# Set KEM
-conf.client.tls.common_options.kem.append("kyber512")
-
-# Add certificate
-cert = conf.client.tls.common_options.x509_verifier.trusted_cas.add().static
-cert.path = "cert.der"
-cert.format = SandwichProto.EncodingFormat.ENCODING_FORMAT_DER
-
-# Create the Sandwich context
-ctx = None
-try:
-    ctx = Context(sandwich_handle, conf)
-except Error as e:
-    print(f"Failed to create a context: {e} (code: {e.code})")
-    fail()
-
-# Get an I/O.
-io = create_custom_io()
-
-# Create a verifier (empty, i.e. server name will not be checked)
-verifier = SandwichVerifiers.TunnelVerifier()
-verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
-
-# Create a tunnel.
-tun = None
-try:
-    tun = Tunnel(ctx, io, verifier)
-except Error as e:
-    print(f"Failed to create the tunnel: {e} (code: {e.code})")
-    fail()
-
-# Perform the handshake.
-try:
-    tun.handshake()
-except errors.HandshakeWantReadException as e:
-    # Handle WANT_READ
-except errors.HandshakeWantWriteException as e:
-    # Handle WANT_WRITE
-except errors.HandshakeErrorException as e:
-    # Handle ERROR
-
-# Do I/O.
-data = None
-try:
-    data = tun.read(1337)
-except errors.RecordPlaneException as e:
-    print(f"Failed to read 1337 bytes: record plane error: {e} (code {e.code})")
-
-tun.close()
-```
-
 Author: sb
 """
 
@@ -113,29 +42,36 @@ import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 
+_ext = {"Darwin": "dylib", "Windows": "dll"}.get(platform.system(), "so")
 
-def _find_sandwich_dll(extension=".so") -> typing.Optional[pathlib.Path]:
-    """Finds the path to the libsandwich dll (`libsandwich_shared.so`, or
-    `libsandwich_shared.dylib`).
 
-    Finds the path to the file `libsandwich_shared.so` or
-    `libsandwich_shared.dylib`, using a list of default path.
+def _find_sandwich_dll() -> typing.Optional[pathlib.Path]:
+    """Finds the path to the libsandwich dll (`libsandwich_full.so`, or
+    `libsandwich_full.dylib`).
+
+    Finds the path to the file `libsandwich_full.so` or
+    `libsandwich_full.dylib`, using a list of default path.
 
     Args:
         extension:
             Library extension: `so` or `dylib`.
     Returns:
-        The path to `libsandwich_shared.so` or `libsandwich_shared.dylib` if
+        The path to `libsandwich_shared.so` or `libsandwich_full.dylib` if
         it was successfully found, else None.
     """
-    _ext = {"Darwin": "dylib", "Windows": "dll"}.get(platform.system(), "so")
-    libpath = pathlib.Path(__file__).parent / "libsandwich_shared.{}".format(_ext)
-    if libpath.exists():
-        return libpath
-    from bazel_tools.tools.python.runfiles import runfiles
+    import os
+
+    sandwich_c_lib = os.getenv("SANDWICH_C_LIB")
+    if sandwich_c_lib is not None:
+        return pathlib.Path(sandwich_c_lib)
+
+    try:
+        from bazel_tools.tools.python.runfiles import runfiles
+    except ImportError:
+        return None
 
     r = runfiles.Create()
-    libpath = f"sandwich/rust/libsandwich_shared.{extension}"
+    libpath = "sandwich/pysandwich/libsandwich_full.so"
     ret = r.Rlocation(libpath)
     return pathlib.Path(ret)
 
@@ -654,6 +590,20 @@ class Sandwich:
         "sandwich_tunnel_io_release": ([ctypes.c_void_p], ctypes.c_void_p),
         # void sandwich_tunnel_free(struct SandwichTunnel *tun);
         "sandwich_tunnel_free": ([ctypes.c_void_p], None),
+        # enum SandwichCIOError sandwich_client_io_tcp_new(
+        #       const char *hostname, const uint16_t port, bool async,
+        #       struct SandwichCIOSettings **cio);
+        "sandwich_client_io_tcp_new": (
+            [
+                ctypes.c_char_p,
+                ctypes.c_ushort,
+                ctypes.c_bool,
+                ctypes.POINTER(ctypes.POINTER(SandwichIO.IO.Settings)),
+            ],
+            ctypes.c_uint,
+        ),
+        # void sandwich_client_io_free(struct SandwichCIOSettings *cio)
+        "sandwich_client_io_free": ([ctypes.c_void_p], None),
     }
 
     def __init__(self, dllpath: typing.Optional[pathlib.Path] = None):
@@ -667,25 +617,18 @@ class Sandwich:
         Raises:
             FileNotFoundError: The Sandwich shared library could not be found.
         """
-        self._platform = platform.system()
-        extension = "so"
-        if self._platform == "Darwin":
-            extension = "dylib"
-
-        path: pathlib.Path = ""
-        if (path := dllpath) is None and (
-            dllpath := _find_sandwich_dll(extension)
-        ) is None:
-            raise FileNotFoundError(f"Failed to find `libsandwich.{extension}`")
-
-        if isinstance(dllpath, pathlib.Path):
-            if dllpath.is_symlink():
-                path = dllpath.readlink()
-            else:
-                path = dllpath.absolute()
 
         if Sandwich.lib is None:
-            Sandwich.lib = ctypes.cdll.LoadLibrary(path)
+            if dllpath is None:
+                dllpath = _find_sandwich_dll()
+
+            if dllpath is None:
+                dllpath = "libsandwich_full.so"
+
+            if isinstance(dllpath, pathlib.Path):
+                dllpath = dllpath.resolve()
+
+            Sandwich.lib = ctypes.cdll.LoadLibrary(dllpath)
 
         if Sandwich.syms is None:
             Sandwich.syms = {}

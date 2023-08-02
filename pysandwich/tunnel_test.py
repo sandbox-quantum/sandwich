@@ -332,6 +332,8 @@ def main():
         raise AssertionError(f"expected Tunnel.HandshakeError, got {e}") from e
     client.close()
     server.close()
+    client_io.close()
+    server_io.close()
 
 
 if __name__ == "__main__":

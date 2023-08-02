@@ -226,3 +226,59 @@ class IO(abc.ABC):
             IOException.
         """
         pass
+
+
+"""Sandwich I/O Helper API.
+
+This API creates commonly used IO objects (such as TCP).
+
+Author: jgoertzen-sb
+"""
+
+
+class SwRawIOWrapper(IO):
+    """A SwRawIOWrapper to allow python to use rust created IO objects."""
+
+    def __init__(self, sandwich, io):
+        self._handle = sandwich
+        self._io = io
+
+    def read(self, n, tunnel_state: SandwichTunnelProto.State) -> bytes:
+        b = bytes(bytearray([0] * n))
+        buf = ctypes.create_string_buffer(b, len(b))
+        err = ctypes.pointer(ctypes.c_int(0))
+        bytes_read = self._io.readfn(self._io.uarg, buf, len(buf), tunnel_state, err)
+        if err.contents.value != SandwichIOProto.IOERROR_OK:
+            raise IOException(err.contents.value)
+        buf = buf[0 : bytes_read + 1]
+        return bytes(buf)
+
+    def write(self, buf, tunnel_state: SandwichTunnelProto.State) -> int:
+        err = ctypes.pointer(ctypes.c_int(0))
+        bytes_written = self._io.writefn(
+            self._io.uarg, buf, len(buf), tunnel_state, err
+        )
+        if err.contents.value != SandwichIOProto.IOERROR_OK:
+            raise IOException(err.contents.value)
+        return bytes_written
+
+    def close(self):
+        self._io.closefn(self._io.uarg)
+
+    def __del__(self):
+        self._handle.c_call("sandwich_client_io_free", ctypes.pointer(self._io))
+
+
+def client_io_tcp_new(sandwich, hostname, port, is_blocking) -> SwRawIOWrapper:
+    settings_ptr = ctypes.POINTER(IO.Settings)()
+    err = sandwich.c_call(
+        "sandwich_client_io_tcp_new",
+        ctypes.c_char_p(hostname.encode("utf-8")),
+        ctypes.c_ushort(port),
+        ctypes.c_bool(is_blocking),
+        ctypes.byref(settings_ptr),
+    )
+    if err != SandwichIOProto.IOERROR_OK:
+        raise IOException(err)
+    io = SwRawIOWrapper(sandwich, settings_ptr.contents)
+    return io

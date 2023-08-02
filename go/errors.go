@@ -263,10 +263,11 @@ type ProtobufError struct {
 
 // ErrorMap is a map code -> string for protobuf errors.
 var protobufErrorMap = map[pb.ProtobufError]string{
-	pb.ProtobufError_PROTOBUFERROR_EMPTY:        "empty message",
-	pb.ProtobufError_PROTOBUFERROR_TOO_BIG:      "message too large",
-	pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED: "message parsing failed",
-	pb.ProtobufError_PROTOBUFERROR_NULLPTR:      "null pointer",
+	pb.ProtobufError_PROTOBUFERROR_EMPTY:            "empty message",
+	pb.ProtobufError_PROTOBUFERROR_TOO_BIG:          "message too large",
+	pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED:     "message parsing failed",
+	pb.ProtobufError_PROTOBUFERROR_NULLPTR:          "null pointer",
+	pb.ProtobufError_PROTOBUFERROR_INVALID_ARGUMENT: "invalid argument",
 }
 
 // newProtobufError creates a ProtobufError from an error code.

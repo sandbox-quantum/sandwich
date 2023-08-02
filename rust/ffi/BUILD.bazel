@@ -4,6 +4,7 @@ filegroup(
         "context.rs",
         "error.rs",
         "io.rs",
+        "io_helpers.rs",
         "mod.rs",
         "tunnel.rs",
     ],

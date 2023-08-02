@@ -88,7 +88,7 @@ go_proto_library(
 ################
 
 rust_proto_library(
-    name = "sandwich_rust_proto",
+    name = "sandwich-proto",
     rustc_flags = [
         "-A",
         "ambiguous_glob_reexports",

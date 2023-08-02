@@ -15,6 +15,8 @@
 package sandwich
 
 /*
+  #include <stdbool.h>
+  #include <stdint.h>
   #include "sandwich_c/sandwich.h"
   #include <stdlib.h>
 */
@@ -118,8 +120,8 @@ type Tunnel struct {
 	// handle is the C handle to the `struct SandwichTunnel *`.
 	handle *C.struct_SandwichTunnel
 
-	// cIO is the I/O interface.
-	cIO *cIO
+	// goIO is the I/O interface.
+	goIO *goIOWrapper
 }
 
 // NewTunnel creates a Sandwich tunnel from a context, an io and a verifier.
@@ -135,15 +137,15 @@ func NewTunnel(ctx *Context, io IO, verifier *api.TunnelVerifier) (*Tunnel, erro
 	}
 
 	tun := new(Tunnel)
-	tun.cIO = new(cIO)
-	newcIO(tun.cIO, io)
+	tun.goIO = new(goIOWrapper)
+	newgoIOWrapper(tun.goIO, io)
 
 	ver := C.struct_SandwichTunnelVerifierSerialized{
 		src: unsafe.Pointer(&out[0]),
 		n:   C.size_t(n),
 	}
 
-	errc := C.sandwich_tunnel_new(ctx.handle, tun.cIO.settings, ver, &tun.handle)
+	errc := C.sandwich_tunnel_new(ctx.handle, tun.goIO.settings, ver, &tun.handle)
 	if errc != nil {
 		err := createError(errc)
 		C.sandwich_error_free(errc)
@@ -209,7 +211,7 @@ func (tun *Tunnel) Close() error {
 // IO returns the IO interface used by a tunnel.
 // The interface is borrowed to the user. Its ownership remains to the Tunnel.
 func (tun *Tunnel) IO() *IO {
-	return tun.cIO.io
+	return tun.goIO.io
 }
 
 // free frees the memory allocated for a `struct SandwichTunnel*`.

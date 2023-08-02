@@ -16,7 +16,7 @@
 //!
 //! A [`DataSource`] struct provides a way to retrieve materials from various
 //! sources. The source is given by the protobuf configuration (see
-//! [`api_rust_proto::DataSource`].
+//! [`sandwich_api_proto::DataSource`].
 
 /// A DataSource.
 /// Source of the material is either from the local filesystem (`Fs`), from

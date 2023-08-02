@@ -27,7 +27,7 @@
 //! I/O interfaces are used to abstract the I/O plane.
 
 /// An I/O error.
-/// To see the list of I/O errors, see [`sandwich_rust_proto::IOError`].
+/// To see the list of I/O errors, see [`sandwich_proto::IOError`].
 pub struct Error(pb::IOError);
 
 /// Implements [`std::fmt::Display`] for [`Error`].
@@ -69,14 +69,14 @@ impl std::fmt::Debug for Error {
 }
 
 /// Instantiates an [`Error`] with an enum value from the
-/// [`sandwich_rust_proto::IOError`] enum.
+/// [`sandwich_proto::IOError`] enum.
 impl std::convert::From<pb::IOError> for Error {
     fn from(e: pb::IOError) -> Self {
         Self(e)
     }
 }
 
-/// Consumes an [`Error`] back into the the [`sandwich_rust_proto::IOError`]
+/// Consumes an [`Error`] back into the the [`sandwich_proto::IOError`]
 /// enum value.
 impl std::convert::From<Error> for pb::IOError {
     fn from(e: Error) -> Self {
@@ -93,7 +93,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 ///
 /// ```
 ///
-/// use sandwich_rust_proto as pb;
+/// use sandwich_proto as pb;
 /// use sandwich::io::Result as IOResult;
 ///
 /// /// A simple variable-sized buffer.
@@ -203,3 +203,5 @@ impl std::fmt::Debug for dyn IO {
         write!(f, "IO")
     }
 }
+
+pub(crate) mod helpers;

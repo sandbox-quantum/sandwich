@@ -299,7 +299,6 @@ constexpr struct ::SandwichCIOSettings SandwichSocketCIOSettings = {
     .uarg = nullptr};
 // --8<-- [end:cio_socket]
 
-
 /// \brief Deleter for Sandwich Tunnel.
 using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 

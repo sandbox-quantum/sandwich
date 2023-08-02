@@ -1,0 +1,39 @@
+[package]
+name = "sandwich"
+version = "0.1.0"
+edition = '2021'
+authors = ["SandboxAQ"]
+description = "A simple, unified, and hard to misuse API for developers to use cryptographic algorithms and protocols."
+repository = "https://github.com/sandbox-quantum/sandwich"
+license = "Apache-2.0"
+keywords = ["cryptography"]
+categories = ["cryptography"]
+
+
+
+[workspace]
+members = [
+    "rust_vendor/bazelisk-rs",
+    "rust_vendor/boringssl",
+    "rust_vendor/build-support",
+    "rust_vendor/openssl1_1_1",
+    "rust_vendor/sandwich-api-proto",
+    "rust_vendor/sandwich-proto",
+]
+
+[lib]
+crate-type = ["cdylib", "lib", "staticlib"]
+path = "rust/lib.rs"
+
+[features]
+default = ["openssl1_1_1", "boringssl"]
+openssl1_1_1 = []
+boringssl = []
+ffi = []
+
+[dependencies]
+protobuf = "3.2.0"
+sandwich-proto = { path = "rust_vendor/sandwich-proto" }
+sandwich-api-proto = { path = "rust_vendor/sandwich-api-proto" }
+openssl1_1_1 = { path = "rust_vendor/openssl1_1_1" }
+boringssl = { path = "rust_vendor/boringssl" }

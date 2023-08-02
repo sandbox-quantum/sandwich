@@ -2,6 +2,7 @@ version: 2.1
 
 jobs:
   run-all-tests:
+    resource_class: xlarge
     docker:
       - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
         auth:
@@ -18,7 +19,7 @@ jobs:
               --google_default_credentials \
               //...
       - run:
-          name: "Build the Go bindings natively"
+          name: "Test the external Go & Python integrations"
           command: |
             export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
             echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
@@ -27,8 +28,21 @@ jobs:
               sandwich_c/...
             export CC=clang-13
             export CXX=clang++-13
-            cd go && CGO_CFLAGS=-I$PWD/.. go build
+
+            export CGO_CFLAGS="-I$PWD -I$PWD/bazel-bin/"
+            export CGO_LDFLAGS="-L$PWD/bazel-bin/rust/"
+            export GO_EXAMPLE_DIR="$PWD/examples/go/echo_tls_server"
+            echo "replace github.com/sandbox-quantum/sandwich/go => $PWD/go" >>"$GO_EXAMPLE_DIR/go.mod"
+            pushd "$GO_EXAMPLE_DIR" && go build && popd
+
+            sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -yyq python3-{pip,venv}
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install .
+            SANDWICH_C_LIB="$PWD/bazel-bin/rust/libsandwich_full.so" python -c 'from pysandwich import sandwich; sandwich.Sandwich()'
+
   publish-doc:
+    resource_class: xlarge
     docker:
       - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
         auth:
@@ -42,10 +56,9 @@ jobs:
       - run:
           name: "Deploy documentation"
           command: |
-            doczip=$(bazelisk cquery --output files //rust:sandwich_full_doc)
-            bazelisk build //rust:sandwich_full_doc
-            cp -r ${doczip} docs/rust
-            mkdocs gh-deploy --force --config-file mkdocs.yml
+            DOC_HTML=$(bazelisk cquery --output files //docs:docs)
+            bazelisk build //docs:docs
+            ghp-import "$DOC_HTML" -p -o
 
 workflows:
   presubmit:

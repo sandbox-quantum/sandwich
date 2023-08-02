@@ -1,0 +1,16 @@
+[package]
+name = "build-support"
+version = "0.1.0"
+edition = "2018"
+authors = ["SandboxAQ"]
+description = "A companion for building Sandwich and its dependencies"
+repository = "https://github.com/sandbox-quantum/sandwich"
+license = "Apache-2.0"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+bazelisk = { path = "../bazelisk-rs" }
+log = "0.4.19"
+protobuf = "3.2.0"

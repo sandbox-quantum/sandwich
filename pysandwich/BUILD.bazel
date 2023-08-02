@@ -1,7 +1,11 @@
-load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@rules_python//python:versions.bzl", "gen_python_config_settings")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+copy_file(
+    name = "sandwich_c_lib",
+    src = "//rust:sandwich_full_ffi_shared",
+    out = "libsandwich_full.so",
+)
 
 py_library(
     name = "errors",
@@ -56,6 +60,7 @@ py_test(
     timeout = "short",
     srcs = ["tunnel_test.py"],
     data = [
+        ":sandwich_c_lib",
         "//testdata",
     ],
     deps = [
@@ -63,62 +68,17 @@ py_test(
     ],
 )
 
-copy_file(
-    name = "sandwich_c_lib",
-    src = "//rust:sandwich_full_ffi_shared",
-    out = "libsandwich_shared.so",
+py_test(
+    name = "tcp_test",
+    timeout = "short",
+    srcs = ["tcp_test.py"],
+    data = [
+        ":sandwich_c_lib",
+        "//testdata",
+    ],
+    deps = [
+        ":python",
+    ],
 )
 
 gen_python_config_settings()
-
-py_wheel(
-    name = "wheel",
-    # See PEP 425 for the meaning of python_tag, platform and abi.
-    abi = "abi3",
-    author = "pysandwich",
-    author_email = "pysandwich@sandboxaq.com",
-    classifiers = [
-        "License :: OSI Approved :: Apache Software License",
-        "Intended Audience :: Developers",
-    ],
-    distribution = "pysandwich",
-    platform = select(
-        {
-            ":x86_64-unknown-linux-gnu": "manylinux2014_x86_64",
-            ":aarch64-apple-darwin": "macosx_11_0_arm64",
-            ":aarch64-unknown-linux-gnu": "manylinux2014_aarch64",
-            ":x86_64-apple-darwin": "macosx_11_0_x86_64",  # this is typically macosx_10_9_x86_64?
-            ":x86_64-pc-windows-msvc": "win_amd64",
-        },
-    ),
-    python_tag = "cp310",
-    target_compatible_with = select({
-        "@platforms//os:osx": [],
-        "@platforms//os:linux": [],
-        "@platforms//os:windows": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
-    version = "0.0.1",
-    deps = [
-        ":errors",
-        ":io",
-        ":python",
-        ":sandwich_c_lib",
-        "//pysandwich/proto:errors_python_proto",
-        "//pysandwich/proto:io_python_proto",
-        "//pysandwich/proto:sandwich_python_proto",
-        "//pysandwich/proto:tunnel_python_proto",
-        "//pysandwich/proto/api/v1:api_python_proto",
-        "//pysandwich/proto/api/v1:certificate_python_proto",
-        "//pysandwich/proto/api/v1:compliance_python_proto",
-        "//pysandwich/proto/api/v1:data_source_python_proto",
-        "//pysandwich/proto/api/v1:encoding_format_python_proto",
-        "//pysandwich/proto/api/v1:private_key_python_proto",
-        "//pysandwich/proto/api/v1:tls_python_proto",
-    ],
-)
-
-build_test(
-    name = "wheel_build_test",
-    targets = [":wheel"],
-)

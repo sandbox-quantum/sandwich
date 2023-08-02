@@ -1,0 +1,22 @@
+[package]
+name = "sandwich-proto"
+version = "0.1.0"
+edition = "2021"
+authors = ["SandboxAQ"]
+description = "Protobuf definitions of common types used in Sandwich"
+repository = "https://github.com/sandbox-quantum/sandwich"
+license = "Apache-2.0"
+build = "build.rs"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+protobuf = "3.2.0"
+
+
+[build-dependencies]
+bazelisk = { path = "../bazelisk-rs" }
+build-support = { path = "../build-support" }
+env_logger = "0.10.0"
+log = "0.4.19"

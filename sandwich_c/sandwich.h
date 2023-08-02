@@ -228,6 +228,26 @@ sandwich_tunnel_state(const struct SandwichTunnel *tun);
 /// NULL for `tun` is allowed.
 SANDWICH_API void sandwich_tunnel_free(struct SandwichTunnel *tun);
 
+/// \brief Creates a TCP based IO object to be used for a client tunnel
+///
+/// \param[in] hostname the hostname of the target server.
+/// \param[in] port the port number of the target server.
+/// \param[in] async indicates whether sockets should be non-blocking or not.
+/// \param[out] cio the created TCP based IO object.
+///
+/// \return IOERROR_OK if the operation was a success, otherwise returns the
+///         error that occured.
+SANDWICH_API enum SandwichIOError
+sandwich_client_io_tcp_new(const char *hostname, const uint16_t port,
+                           bool async, struct SandwichCIOSettings **cio);
+
+/// \brief Frees a SandwichCIOSettings created by one of the
+///        sandwich_client_io_*_new() functions.
+///
+/// Using this function with user created SandwichCIOSettings objects
+/// will cause undefined behaviour.
+SANDWICH_API void sandwich_client_io_free(struct SandwichCIOSettings *cio);
+
 #ifdef __cplusplus
 } // end extern "C"
 #endif
