@@ -40,6 +40,57 @@ jobs:
             source venv/bin/activate
             pip install .
             SANDWICH_C_LIB="$PWD/bazel-bin/rust/libsandwich_full.so" python -c 'from pysandwich import sandwich; sandwich.Sandwich()'
+  release-linux-dockerbuild:
+    parameters:
+      mode:
+        description: "Build release mode"
+        type: enum
+        enum:
+          - debug
+          - release
+        default: release
+      arch:
+        description: "Build machine architecture"
+        type: enum
+        enum:
+          - arm.xlarge
+          - xlarge
+    machine:
+      image: ubuntu-2204:2023.04.2
+    resource_class: << parameters.arch >>
+    steps:
+      - checkout
+      - run:
+          name: "Compile through docker"
+          command: |
+            if [[ "<< parameters.arch >>" == arm* ]]; then
+              dockerfile="Dockerfile.linux_arm64"
+            else
+              dockerfile="Dockerfile.linux_amd64"
+            fi
+
+            if [[ "<< parameters.mode >>" -eq "release" ]]; then
+              bazelArgs=(--build-arg bazelArgs='-c opt')
+            fi
+            docker build . -t="sandwich" -f $dockerfile "${bazelArgs[@]}" 
+
+            # TODO: Update docker vesion, the one provided does not support `--output`
+            docker cp $(docker create --name sw sandwich sleep 100):/export.tar.bz2 export.tar.bz2 && docker rm sw
+      - run:
+          name: "Rename export"
+          command: |
+            finalName=sandwich_<< parameters.mode >>
+            if [[ "<< parameters.arch >>" == arm* ]]; then
+              finalName=${finalName}_aarch64
+            else
+              finalName=${finalName}_amd64
+            fi
+            
+            mkdir -p ~/export_artifacts
+            mv export.tar.bz2  ~/export_artifacts/${finalName}.tar.bz2
+      - store_artifacts:
+          name: "Export build artifacts"
+          path: ~/export_artifacts/
 
   publish-doc:
     resource_class: xlarge
@@ -71,3 +122,11 @@ workflows:
             branches:
               only:
                 - main
+      - release-linux-dockerbuild:
+          name: release-linux-dockerbuild_amd64
+          mode: release
+          arch: xlarge
+      - release-linux-dockerbuild:
+          name: release-linux-dockerbuild_arm64
+          mode: release
+          arch: arm.xlarge

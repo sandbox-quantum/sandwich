@@ -1,0 +1,50 @@
+FROM ubuntu:22.04 as build-stage
+
+ARG bazeliskV="v1.17.0"
+ENV bazeliskVEnv=${bazeliskV}
+
+ARG llvm="15"
+ENV llvmEnv=${llvm}
+
+ARG buildArgs=""
+ENV buildArgsEnv=$buildArgs
+
+RUN apt update && apt install wget -y
+
+RUN echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${llvmEnv} main" | tee /etc/apt/sources.list.d/llvm.list
+RUN wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+
+RUN apt update && apt install zip git ca-certificates clang-${llvmEnv} lld-${llvmEnv} -y
+
+# bazel(isk)
+RUN wget https://github.com/bazelbuild/bazelisk/releases/download/${bazeliskVEnv}/bazelisk-linux-$(dpkg --print-architecture) && \
+    chmod +x bazelisk-linux-$(dpkg --print-architecture) && \
+    mv bazelisk-linux-$(dpkg --print-architecture) /usr/local/bin/bazel
+
+RUN groupadd -r user && useradd -m -r -g user user
+WORKDIR /home/user/src
+COPY . .
+
+# Behond the absolute state of engineering
+# for some reason the CC is not getting picked up
+RUN ln -s $(which clang-${llvm})  /usr/bin/c++
+
+RUN chown -R user /home/user
+USER user
+
+ENV CC=clang-${llvmEnv}
+ENV CXX=clang++-${llvmEnv}
+ENV LD=lld-${llvmEnv}
+ENV LLVM_CONFIG=/usr/lib/llvm-${llvmEnv}/bin/llvm-config
+
+# compile sandwich
+RUN bazel build \
+    --action_env=CC=$CC   \
+    --action_env=CXX=$CXX \
+    --action_env=LD=$LD \
+    --action_env=LLVM_CONFIG=$LLVM_CONFIG \
+    //:export ${buildArgsEnv}
+
+# export to separate layer for easy copy out
+FROM scratch as release-stage
+COPY --from=build-stage /home/user/src/bazel-bin/export.tar.bz2 /export.tar.bz2
