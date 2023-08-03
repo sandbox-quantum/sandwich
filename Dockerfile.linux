@@ -27,7 +27,7 @@ COPY . .
 
 # Behond the absolute state of engineering
 # for some reason the CC is not getting picked up
-RUN ln -s $(which clang-${llvm})  /usr/bin/c++
+RUN ln -s $(which clang-${llvm}) /usr/bin/c++
 
 RUN chown -R user /home/user
 USER user

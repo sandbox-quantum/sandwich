@@ -63,29 +63,16 @@ jobs:
       - run:
           name: "Compile through docker"
           command: |
-            if [[ "<< parameters.arch >>" == arm* ]]; then
-              dockerfile="Dockerfile.linux_arm64"
-            else
-              dockerfile="Dockerfile.linux_amd64"
-            fi
-
             if [[ "<< parameters.mode >>" -eq "release" ]]; then
               bazelArgs=(--build-arg bazelArgs='-c opt')
             fi
-            docker build . -t="sandwich" -f $dockerfile "${bazelArgs[@]}" 
-
+            docker build . -t="sandwich" -f Dockerfile.linux "${bazelArgs[@]}"
             # TODO: Update docker vesion, the one provided does not support `--output`
             docker cp $(docker create --name sw sandwich sleep 100):/export.tar.bz2 export.tar.bz2 && docker rm sw
       - run:
           name: "Rename export"
           command: |
-            finalName=sandwich_<< parameters.mode >>
-            if [[ "<< parameters.arch >>" == arm* ]]; then
-              finalName=${finalName}_aarch64
-            else
-              finalName=${finalName}_amd64
-            fi
-            
+            finalName=sandwich_<< parameters.mode >>_$(dpkg --print-architecture)
             mkdir -p ~/export_artifacts
             mv export.tar.bz2  ~/export_artifacts/${finalName}.tar.bz2
       - store_artifacts:
