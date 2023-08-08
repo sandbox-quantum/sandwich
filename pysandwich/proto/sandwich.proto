@@ -1,0 +1,27 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+syntax = "proto3";
+
+package saq.sandwich.proto;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich";
+
+// Tunnel modes.
+enum Mode {
+  // Unspecified mode.
+  MODE_UNSPECIFIED = 0;
+  // Client mode.
+  MODE_CLIENT = 1;
+  // Server mode.
+  MODE_SERVER = 2;
+}
+
+// Information that can be obtained from a tunnel.
+enum TunnelInfo {
+  // The network address (string).
+  TUNNEL_INFO_NETADDRESS = 0;
+
+  // The network port (integer)..
+  TUNNEL_INFO_NETPORT = 1;
+}

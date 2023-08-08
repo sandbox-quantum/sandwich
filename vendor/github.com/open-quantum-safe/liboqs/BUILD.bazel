@@ -1,0 +1,58 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+load("//common/rules/cmake:rules.bzl", "cmake_processor_flags")
+
+cmake(
+    name = "liboqs",
+    generate_args = [
+        "-G Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DOQS_BUILD_ONLY_LIB=ON",
+        "-DOQS_DIST_BUILD=ON",
+        "-DOQS_USE_OPENSSL=OFF",
+    ] + cmake_processor_flags() + select({
+        # liboqs uses `SecRandomCopyBytes` for the iPhones,
+        # There is an CMake variable for that: `IOS`, but it isn't documented.
+        "@platforms//os:ios": ["-DIOS=ON"],
+        "//conditions:default": [],
+    }),
+    lib_source = "@open-quantum-safe.liboqs//:all_srcs",
+    linkopts = select({
+        # liboqs uses `SecRandomCopyBytes` for the iPhones,
+        # but forgot to link against `Security` Framework.
+        "@platforms//os:ios": [
+            "-Wl,-framework,Security",
+        ],
+        "//conditions:default": [],
+    }),
+    out_static_libs = ["liboqs.a"],
+    visibility = ["//visibility:public"],
+)
+
+cmake(
+    name = "liboqs-fpemu",
+    generate_args = [
+        "-G Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DOQS_BUILD_ONLY_LIB=ON",
+        "-DOQS_DIST_BUILD=ON",
+        "-DOQS_USE_OPENSSL=OFF",
+        "-DOQS_ENABLE_SIG_falcon_1024_avx2=OFF",
+        "-DOQS_ENABLE_SIG_falcon_512_avx2=OFF",
+    ] + cmake_processor_flags() + select({
+        # liboqs uses `SecRandomCopyBytes` for the iPhones,
+        # There is an CMake variable for that: `IOS`, but it isn't documented.
+        "@platforms//os:ios": ["-DIOS=ON"],
+        "//conditions:default": [],
+    }),
+    lib_source = "@open-quantum-safe.liboqs//:all_srcs",
+    linkopts = select({
+        # liboqs uses `SecRandomCopyBytes` for the iPhones,
+        # but forgot to link against `Security` Framework.
+        "@platforms//os:ios": [
+            "-Wl,-framework,Security",
+        ],
+        "//conditions:default": [],
+    }),
+    out_static_libs = ["liboqs.a"],
+    visibility = ["//visibility:public"],
+)

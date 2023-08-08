@@ -1,0 +1,39 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
+
+import "proto/api/v1/encoding_format.proto";
+
+// Data source consisting of either a file or an inline value.
+message DataSource {
+  oneof specifier {
+    // Local filesystem data source.
+    string filename = 1;
+
+    // Bytes inlined in the configuration.
+    bytes inline_bytes = 2;
+
+    // String inlined in the configuration.
+    string inline_string = 3;
+  }
+}
+
+// A Data source consisting of ASN.1 encoded data.
+//
+// The data [DataSource](DataSource.md) points to consists of ASN.1 encoded
+// data. The format of the data is described in
+// [ASN1EncodingFormat](ASN1EncodingFormat.md).
+message ASN1DataSource {
+  // The raw data source.
+  // See [DataSource](DataSource.md).
+  DataSource data = 1;
+
+  // The ASN1 encoding format of that data source.
+  // See [ASN1EncodingFormat](ASN1EncodingFormat.md).
+  ASN1EncodingFormat format = 2;
+}

@@ -1,0 +1,43 @@
+import %workspace%/clang.bazelrc
+
+startup --host_jvm_args=-Xmx4g
+
+# This flag hints Bazel about the use of incompatible platforms for repositories.
+# Without this flag, Bazel may raise an error about a repo that is not compatible
+# with a specific platform, even if it is not the actual platform it is building
+# on.
+build --noincompatible_use_platforms_repo_for_constraints
+
+build --config=clang
+
+test --test_env=LANG=C
+test --test_output=errors
+test --build_tests_only
+test --test_summary=short
+
+# This flag is needed for building LLVM.
+build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+
+###
+# Performance fixes
+###
+build --experimental_remote_merkle_tree_cache
+query --experimental_remote_merkle_tree_cache
+build --noexperimental_check_output_files --noexperimental_check_external_repository_files
+fetch --noexperimental_check_output_files --noexperimental_check_external_repository_files
+query --noexperimental_check_output_files --noexperimental_check_external_repository_files
+build --incompatible_remote_results_ignore_disk
+build --experimental_reuse_sandbox_directories
+
+
+###
+# Correctness guarantees
+###
+startup --host_jvm_args=-DBAZEL_TRACK_SOURCE_DIRECTORIES=1
+build --sandbox_default_allow_network=false
+test --incompatible_exclusive_test_sandboxed
+build --incompatible_strict_action_env
+build --nolegacy_external_runfiles
+build --incompatible_remote_results_ignore_disk
+build --incompatible_default_to_explicit_init_py
+common --incompatible_allow_tags_propagation

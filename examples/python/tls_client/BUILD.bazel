@@ -1,0 +1,29 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+load("@rules_python//python:defs.bzl", "py_binary")
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        "main.py",
+    ],
+    path = "examples/python/tls_client",
+    visibility = ["//docs:__subpackages__"],
+)
+
+py_binary(
+    name = "tls_client",
+    srcs = [
+        "main.py",
+    ],
+    data = [
+        "//testdata",
+    ],
+    main = "main.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pysandwich:python",
+    ],
+)

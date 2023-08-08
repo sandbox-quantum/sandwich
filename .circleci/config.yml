@@ -1,0 +1,194 @@
+version: 2.1
+
+jobs:
+  run-all-tests:
+    resource_class: xlarge
+    docker:
+      - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
+        auth:
+          username: _json_key
+          password: $RUNNER_GCR_SA_KEY
+    steps:
+      - checkout
+      - run:
+          name: "Run all test targets"
+          command: |
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+            bazelisk test --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
+              --google_default_credentials \
+              //...
+      - run:
+          name: "Test the external Go & Python integrations"
+          command: |
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+            bazelisk build --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
+              --google_default_credentials \
+              sandwich_c/...
+            export CC=clang-13
+            export CXX=clang++-13
+
+            export CGO_CFLAGS="-I$PWD -I$PWD/bazel-bin/"
+            export CGO_LDFLAGS="-L$PWD/bazel-bin/rust/"
+            export GO_EXAMPLE_DIR="$PWD/examples/go/echo_tls_server"
+            echo "replace github.com/sandbox-quantum/sandwich/go => $PWD/go" >>"$GO_EXAMPLE_DIR/go.mod"
+            pushd "$GO_EXAMPLE_DIR" && go build && popd
+
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install .
+            SANDWICH_C_LIB="$PWD/bazel-bin/rust/libsandwich_full.so" python -c 'from pysandwich import sandwich; sandwich.Sandwich()'
+      - run:
+          name: "Build the Rust package natively"
+          command: |
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+
+            export CARGO_BAZELISK_EXTRA_ARGS="--remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 --google_default_credentials"
+            export CC=clang-13
+            export CXX=clang++-13
+
+            cargo build --release -vv
+            cargo test --release --lib -vv
+
+  release-linux-dockerbuild:
+    parameters:
+      mode:
+        description: "Build release mode"
+        type: enum
+        enum:
+          - debug
+          - release
+        default: release
+      arch:
+        description: "Build machine architecture"
+        type: enum
+        enum:
+          - arm.xlarge
+          - xlarge
+    machine:
+      image: ubuntu-2204:2023.04.2
+    resource_class: << parameters.arch >>
+    steps:
+      - checkout
+      - run:
+          name: "Compile through docker"
+          command: |
+            if [[ "<< parameters.mode >>" -eq "release" ]]; then
+              bazelArgs=(--build-arg bazelArgs='-c opt')
+            fi
+            docker build . -t="sandwich" -f Dockerfile.linux "${bazelArgs[@]}"
+
+            # TODO: Update docker vesion, the one provided does not support `--output`
+            docker cp $(docker create --name sw sandwich sleep 100):/export.tar.bz2 export.tar.bz2 && docker rm sw
+      - run:
+          name: "Rename export"
+          command: |
+            finalName=sandwich_<< parameters.mode >>_$(dpkg --print-architecture)
+            mkdir -p ~/export_artifacts
+            mv export.tar.bz2  ~/export_artifacts/${finalName}.tar.bz2
+      - store_artifacts:
+          name: "Export build artifacts"
+          path: ~/export_artifacts/
+
+  release-macos:
+    macos:
+      xcode: 14.0.0
+    resource_class: << parameters.resource >>
+    parameters:
+      resource:
+        description: "Resource class"
+        type: enum
+        enum:
+          - macos.m1.large.gen1
+          - macos.x86.medium.gen2
+      arch:
+        description: "Arch name"
+        type: enum
+        enum:
+          - arm64
+          - amd64
+    steps:
+      - checkout
+      - run:
+          name: "Install bazelisk"
+          command: |
+            curl -L --output /usr/local/bin/bazelisk "https://github.com/bazelbuild/bazelisk/releases/download/v1.17.0/bazelisk-darwin-<< parameters.arch >>"
+            chmod +x /usr/local/bin/bazelisk
+      - run:
+          name: "Build release"
+          command: |
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+
+            # Not sourced by default on macOS executor
+            if [[ -f "${BASH_ENV}" ]]; then
+              source "${BASH_ENV}"
+            fi
+
+            bazelisk build //:export \
+              -c opt \
+              --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
+              --google_default_credentials \
+              --profile=/tmp/bazel-profile-<< parameters.resource >>.gz \
+
+            finalName=sandwich_macos_<< parameters.arch >>
+            mkdir -p ~/export_artifacts
+            mv "$(bazelisk cquery -c opt --output=files //:export)" ~/export_artifacts/${finalName}.tar.bz2
+
+      - store_artifacts:
+          name: "Export build artifacts"
+          path: ~/export_artifacts/
+
+
+  publish-doc:
+    resource_class: xlarge
+    docker:
+      - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
+        auth:
+          username: _json_key
+          password: $RUNNER_GCR_SA_KEY
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "cb:67:a0:71:3b:89:1b:19:d6:40:d5:b8:84:38:33:a4"
+      - run:
+          name: "Deploy documentation"
+          command: |
+            DOC_HTML=$(bazelisk cquery --output files //docs:docs)
+            bazelisk build //docs:docs
+            ghp-import "$DOC_HTML" -p -o
+
+workflows:
+  presubmit:
+    jobs:
+      - run-all-tests:
+          context:
+            - bazel-cache
+      - publish-doc:
+          filters:
+            branches:
+              only:
+                - main
+      - release-linux-dockerbuild:
+          name: release-linux-dockerbuild_amd64
+          mode: release
+          arch: xlarge
+      - release-linux-dockerbuild:
+          name: release-linux-dockerbuild_arm64
+          mode: release
+          arch: arm.xlarge
+      - release-macos:
+          context:
+            - bazel-cache
+          name: release-macos-aarch64
+          resource: macos.m1.large.gen1
+          arch: arm64
+      - release-macos:
+          context:
+            - bazel-cache
+          name: release-macos-x86_64
+          resource: macos.x86.medium.gen2
+          arch: amd64

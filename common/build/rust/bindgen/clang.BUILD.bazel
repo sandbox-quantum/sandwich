@@ -1,0 +1,17 @@
+load("@rules_cc//cc:defs.bzl", "cc_import")
+
+sh_binary(
+    name = "clang",
+    srcs = ["bin/clang"],
+    visibility = ["//visibility:public"],
+)
+
+cc_import(
+    name = "libclang",
+    shared_library = select({
+        "@platforms//os:macos": "lib/libclang.dylib",
+        "@platforms//os:ios": "lib/libclang.dylib",
+        "//conditions:default": "lib/libclang.so",
+    }),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,17 @@
+load("@rules_rust//proto/protobuf:toolchain.bzl", "rust_proto_toolchain")
+
+rust_proto_toolchain(
+    name = "rust_proto_impl",
+    edition = "2021",
+    proto_compile_deps = [
+        "@crate_index//:protobuf",
+        "@crate_index//:protobuf-codegen",
+    ],
+    proto_plugin = "@crate_index//:protobuf-codegen__protoc-gen-rust",
+)
+
+toolchain(
+    name = "rust_proto",
+    toolchain = ":rust_proto_impl",
+    toolchain_type = "@rules_rust//proto/protobuf:toolchain_type",
+)

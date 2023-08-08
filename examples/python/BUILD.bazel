@@ -1,0 +1,20 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+py_test(
+    name = "test_examples",
+    srcs = [
+        "test_examples.py",
+    ],
+    data = [
+        "//testdata",
+    ],
+    main = "test_examples.py",
+    tags = ["requires-network"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/python/echo_tls_server",
+        "//examples/python/tls_client",
+    ],
+)

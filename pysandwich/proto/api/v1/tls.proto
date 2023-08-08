@@ -1,0 +1,87 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
+
+import "pysandwich/proto/api/v1/certificate.proto";
+import "pysandwich/proto/api/v1/private_key.proto";
+import "pysandwich/proto/api/v1/verifiers.proto";
+
+// An X.509 identity.
+//
+// It consists of a [certificate](Certificate.md) and its associated
+// [private key](PrivateKey.md).
+message X509Identity {
+  // A certificate or a chain of certificates.
+  //
+  // The leaf certificate is expected to be the first one if the value points
+  // to a chain of certificates.
+  //
+  // See also [Certificate](Certificate.md).
+  Certificate certificate = 1;
+
+  // The private key.
+  //
+  // See also [PrivateKey](PrivateKey.md).
+  PrivateKey private_key = 2;
+}
+
+// TLS options, for both client and server modes.
+message TLSOptions {
+  // The kex or kem to enforce.
+  //
+  // If the remote peer does not support at least one KEX algorithm specified
+  // in this list, an error will be returned.
+  repeated string kem = 1;
+
+  // The verifier configuration to verify the remote peer.
+  oneof peer_verifier {
+    // Use an X.509 verifier.
+    //
+    // See [X509Verifier](X509Verifier.md).
+    X509Verifier x509_verifier = 3;
+
+    // Use an empty verifier.
+    //
+    // > **Warning**: when used in a context where a certificate
+    // is requested from the remote peer, such as a TLS client or in mTLS,
+    // no signature will be verified!
+    EmptyVerifier empty_verifier = 4;
+  }
+
+  // An identity.
+  //
+  // In server mode, the identity is used to perform the TLS handshake
+  // (the [private key](PrivateKey.md) is used to sign the transcript, and the
+  // [certificate](Certificate.md) is presented to clients).
+  //
+  // See [X509Identity](X509Identity.md).
+  X509Identity identity = 5;
+
+  // Application-Layer Protocol Negotiation.
+  //
+  // This list of strings specifies the different protocols to be negotiated.
+  repeated string alpn_protocols = 6;
+
+  // Next id: 7
+}
+
+// TLS options, specific to the client mode.
+message TLSClientOptions {
+  // Common TLS options.
+  //
+  // See [TLSOptions](TLSOptions.md).
+  TLSOptions common_options = 1;
+}
+
+// TLS options, specific to the server mode.
+message TLSServerOptions {
+  // Common TLS options.
+  //
+  // See [TLSOptions](TLSOptions.md).
+  TLSOptions common_options = 1;
+}

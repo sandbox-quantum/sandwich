@@ -1,0 +1,98 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
+
+// Whether to allow or forbid classical algorithms. We define "classical
+// algorithms" as something that is not quantum-safe, such as ECC or RSA.
+//
+// By default, classical algorithms are **not** allowed.
+//
+// This enum is part of the [Compliance](Compliance.md) configuration.
+//
+// See also [QuantumSafeAlgoChoice](QuantumSafeAlgoChoice.md) and
+// [HybridAlgoChoice](HybridAlgoChoice.md).
+enum ClassicalAlgoChoice {
+  // Forbids classical algorithms.
+  CLASSICAL_ALGORITHMS_FORBID = 0;
+
+  // Allows classical algorithms.
+  CLASSICAL_ALGORITHMS_ALLOW = 1;
+};
+
+// Whether to allow or forbid quantum-safe algorithms.
+//
+// By default, quantum-safe algorithms are allowed.
+//
+// This enum is part of the [Compliance](Compliance.md) configuration.
+//
+// See also [ClassicalAlgoChoice](ClassicalAlgoChoice.md) and
+// [HybridAlgoChoice](HybridAlgoChoice.md).
+enum QuantumSafeAlgoChoice {
+  // Allows quantum-safe algorithms.
+  QUANTUM_SAFE_ALGORITHMS_ALLOW = 0;
+
+  // Forbids quantum-safe algorithms.
+  QUANTUM_SAFE_ALGORITHMS_FORBID = 1;
+};
+
+// Whether to allow or forbid hybrid algorithms. In this context "hybrid" means
+// a combination of a quantum-safe algorithm and a classical one.
+//
+// By default, hybrid algorithms are allowed.
+//
+// This enum is part of the [Compliance](Compliance.md) configuration.
+//
+// See also [ClassicalAlgoChoice](ClassicalAlgoChoice.md) and
+// [QuantumSafeAlgoChoice](QuantumSafeAlgoChoice.md).
+enum HybridAlgoChoice {
+  // Allows hybrid algorithms.
+  HYBRID_ALGORITHMS_ALLOW = 0;
+
+  // Forbids hybrid algorithms.
+  HYBRID_ALGORITHMS_FORBID = 1;
+};
+
+// The desired security level expressed as "bit strength".
+//
+// The default value is 128.
+//
+// This enum is part of the [Compliance](Compliance.md) configuration.
+enum NISTSecurityStrengthBits {
+  BIT_STRENGTH_AT_LEAST_128 = 0;
+  BIT_STRENGTH_AT_LEAST_192 = 1;
+  BIT_STRENGTH_AT_LEAST_256 = 2;
+};
+
+// `Compliance` lists high level security constraints on the choice of
+// algorithms within a Sandwich configuration. If a Sandwich configuration
+// specifies algorithms that violate those constraints, an error will be
+// returned.
+//
+// See also:
+//
+//   - [ClassicalAlgoChoice](ClassicalAlgoChoice.md)
+//   - [HybridAlgoChoice](HybridAlgoChoice.md)
+//   - [NISTSecurityStrengthBits](NISTSecurityStrengthBits.md)
+//   - [QuantumSafeAlgoChoice](QuantumSafeAlgoChoice.md)
+message Compliance {
+  // Controls the use of hybrid algorithms. See
+  // [HybridAlgoChoice](HybridAlgoChoice.md).
+  HybridAlgoChoice hybrid_choice = 1;
+
+  // Controls the use of quantum-safe algorithms.
+  // See [QuantumSafeAlgoChoice](QuantumSafeAlgoChoice.md).
+  QuantumSafeAlgoChoice quantum_safe_choice = 2;
+
+  // Controls the use of classical algorithms.
+  // See [ClassicalAlgoChoice](ClassicalAlgoChoice.md).
+  ClassicalAlgoChoice classical_choice = 3;
+
+  // Minimum bit strength to enforce.
+  // See [NISTSecurityStrengthBits](NISTSecurityStrengthBits.md).
+  NISTSecurityStrengthBits bit_strength_choice = 4;
+};

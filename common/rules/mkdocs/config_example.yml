@@ -1,0 +1,8 @@
+site_name: "An example"
+
+theme:
+  name: material
+  feature:
+    - search.share
+    - navigation.tracking
+    - navigation.expand

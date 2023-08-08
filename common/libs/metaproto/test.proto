@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package com.example;
+
+// `TestMsg` defines a test message.
+// multiline
+message TestMsg {
+  // Defines a field with a string.
+  string field1 = 1;
+};
+
+// `TestEnum` defines a test enum.
+// multiline too.
+enum TestEnum {
+  // First value of the test enum.
+  TESTENUM_VALUE_UNSPECIFIED = 0;
+};
+
+// `TestOneOfMsg` defines a test message with a oneof.
+message TestOneOfMsg {
+  // Defines a field.
+  int32 field1 = 1;
+
+  // The oneof.
+  oneof choice {
+    // Choice 1.
+    string choice1 = 2;
+
+    // Choice 2.
+    string choice2 = 3;
+  };
+}

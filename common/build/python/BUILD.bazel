@@ -1,0 +1,12 @@
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+
+exports_files(["requirements_lock.txt"])
+
+compile_pip_requirements(
+    name = "requirements",
+    timeout = "moderate",
+    extra_args = [
+    ],
+    requirements_in = ":requirements.txt",
+    requirements_txt = ":requirements_lock.txt",
+)

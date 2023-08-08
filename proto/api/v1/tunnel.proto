@@ -1,0 +1,22 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
+
+import "proto/api/v1/verifiers.proto";
+
+// Configuration for a tunnel.
+//
+// This configuration is applied at tunnel-time, i.e. when a tunnel is created
+// from a context.
+message TunnelConfiguration {
+  /// The verifier to use at tunnel-tine.
+  TunnelVerifier verifier = 1;
+
+  /// Server name indication (SNI) to set.
+  string server_name_indication = 2;
+}

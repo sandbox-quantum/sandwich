@@ -1,0 +1,12 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+filegroup(
+    name = "support",
+    srcs = [
+        "data_source.rs",
+        "mod.rs",
+        "pimpl.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

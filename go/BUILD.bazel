@@ -1,0 +1,70 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sandwich",
+    srcs = [
+        "errors.go",
+        "io.go",
+        "sandwich.go",
+        "tunnel.go",
+    ],
+    cdeps = [
+        "//sandwich_c:sandwich",
+    ],
+    cgo = True,
+    importpath = "github.com/sandbox-quantum/sandwich/go",
+    importpath_aliases = ["github.com/sandbox-quantum/sandwich/go"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@org_golang_google_protobuf//proto:go_default_library",
+    ],
+)
+
+go_test(
+    name = "sandwich_test",
+    timeout = "short",
+    srcs = ["sandwich_test.go"],
+    cgo = True,
+    data = [
+        "//testdata",
+    ],
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@io_bazel_rules_go//go/tools/bazel",
+    ],
+)
+
+go_test(
+    name = "tcp_test",
+    timeout = "short",
+    srcs = ["tcp_test.go"],
+    cgo = True,
+    data = [
+        "//testdata",
+    ],
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@io_bazel_rules_go//go/tools/bazel",
+    ],
+)
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        "io.go",
+    ],
+    path = "go",
+    visibility = ["//docs:__subpackages__"],
+)

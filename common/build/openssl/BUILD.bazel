@@ -1,0 +1,24 @@
+load(":rules.bzl", "openssl_build")
+
+cc_library(
+    name = "dep_test",
+    srcs = ["dep_test.c"],
+    copts = [
+        "-fvisibility=hidden",
+    ],
+    linkstatic = True,
+)
+
+openssl_build(
+    name = "openssl_dep_test",
+    liboqs_srcs = "@open-quantum-safe.liboqs//:all_srcs",
+    openssl_srcs = "@open-quantum-safe.openssl_no_liboqs//:all_srcs",
+    visibility = ["//visibility:public"],
+    deps = [":dep_test"],
+)
+
+cc_test(
+    name = "openssl_dep_link_test",
+    srcs = ["dep_link_test.c"],
+    deps = [":openssl_dep_test"],
+)

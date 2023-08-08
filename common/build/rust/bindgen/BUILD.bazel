@@ -1,0 +1,9 @@
+load(":rules.bzl", "rust_bindgen_register_toolchain")
+
+rust_bindgen_register_toolchain("linux", "aarch64")
+
+rust_bindgen_register_toolchain("linux", "x86_64")
+
+rust_bindgen_register_toolchain("macos", "aarch64")
+
+rust_bindgen_register_toolchain("macos", "x86_64")

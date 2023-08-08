@@ -1,0 +1,13 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+filegroup(
+    name = "ffi",
+    srcs = [
+        "error.rs",
+        "io.rs",
+        "io_helpers.rs",
+        "mod.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

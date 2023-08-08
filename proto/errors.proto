@@ -1,0 +1,275 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// This protobuf aims to describe any types of errors.
+// The idea is to be as accurate as possible. However, there may be overlaps
+// between multiple error codes, for instance `ERROR_INVALID_ARGUMENT` and
+// `ERROR_PROTOBUF`. The strategy is to choose the error that best fits the
+// case. New type of errors can be introduced if the existing ones are not
+// accurate enough.
+
+syntax = "proto3";
+
+package saq.sandwich.proto;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich";
+
+// API errors.
+// The following errors can occur during a call to the Context API.
+enum APIError {
+  // Configuration error.
+  APIERROR_CONFIGURATION = 0;
+
+  // Socket error.
+  APIERROR_SOCKET = 1;
+
+  // Tunnel error.
+  APIERROR_TUNNEL = 2;
+};
+
+// Errors regarding configurations.
+enum ConfigurationError {
+  // The selected implementation is invalid.
+  CONFIGURATIONERROR_INVALID_IMPLEMENTATION = 0;
+
+  // The selected implementation isn't supported.
+  CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION = 1;
+
+  // Invalid configuration.
+  CONFIGURATIONERROR_INVALID = 2;
+};
+
+// Errors regarding protobuf.
+enum ProtobufError {
+  // The protobuf message is empty.
+  PROTOBUFERROR_EMPTY = 0;
+
+  // The protobuf message is too large.
+  PROTOBUFERROR_TOO_BIG = 1;
+
+  // Failed to parse the protobuf message.
+  PROTOBUFERROR_PARSE_FAILED = 2;
+
+  /// A null pointer was supplied.
+  /// This error is thrown by `sandwich_context_new`, when the given source
+  /// buffer is a null pointer.
+  PROTOBUFERROR_NULLPTR = 3;
+
+  /// An invalid value was given.
+  PROTOBUFERROR_INVALID_ARGUMENT = 4;
+};
+
+// Errors regarding TLS configurations.
+enum TLSConfigurationError {
+  // The selected implementation isn't supported.
+  TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION = 0;
+
+  // The configuration case (client/server) isn't valid.
+  TLSCONFIGURATIONERROR_INVALID_CASE = 1;
+
+  // The configuration is empty.
+  TLSCONFIGURATIONERROR_EMPTY = 2;
+
+  // Unsupported protocol version error.
+  TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION = 3;
+
+  /// Inconsistency between a private key and the corresponding certificate.
+  TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE = 4;
+
+  // Invalid configuration.
+  TLSCONFIGURATIONERROR_INVALID = 5;
+};
+
+// Certificate errors.
+enum CertificateError {
+  // Malformed certificate.
+  CERTIFICATEERROR_MALFORMED = 0;
+
+  // Expired certificate.
+  CERTIFICATEERROR_EXPIRED = 1;
+
+  // Certificate not found.
+  CERTIFICATEERROR_NOT_FOUND = 2;
+
+  // Unknown error. Can wrap a SystemError.
+  CERTIFICATEERROR_UNKNOWN = 3;
+
+  // Certificate not supported by the underlying implementation.
+  CERTIFICATEERROR_UNSUPPORTED = 4;
+};
+
+// Private key errors.
+enum PrivateKeyError {
+  // Malformed private key.
+  PRIVATEKEYERROR_MALFORMED = 0;
+
+  // Private key not found.
+  PRIVATEKEYERROR_NOT_FOUND = 1;
+
+  // Unknown error. Can wrap a SystemError.
+  PRIVATEKEYERROR_UNKNOWN = 2;
+
+  // Certificate not supported by the underlying implementation.
+  PRIVATEKEYERROR_UNSUPPORTED = 3;
+
+  // Not a server configuration.
+  PRIVATEKEYERROR_NOT_SERVER = 4;
+};
+
+// ASN.1 errors.
+enum ASN1Error {
+  // Invalid format.
+  ASN1ERROR_INVALID_FORMAT = 0;
+
+  // Malformed ASN.1 document.
+  ASN1ERROR_MALFORMED = 1;
+};
+
+// ALPN errors.
+enum ALPNError {
+  // Protocol length is longer than 255 bytes.
+  ALPNERROR_LENGTH_ERROR = 0;
+  // Protocol contains '\x00' byte or invalid string.
+  ALPNERROR_INVALID_STRING = 1;
+}
+
+// DataSource errors.
+enum DataSourceError {
+  // Empty data source.
+  DATASOURCEERROR_EMPTY = 0;
+
+  // Invalid case for data source.
+  DATASOURCEERROR_INVALID_CASE = 1;
+
+  // Data not found on local filesystem.
+  DATASOURCEERROR_NOT_FOUND = 2;
+};
+
+// KEM errors.
+enum KEMError {
+  // Invalid or unsupported KEM.
+  KEMERROR_INVALID = 0;
+
+  // Too many KEMs.
+  KEMERROR_TOO_MANY = 1;
+};
+
+// System errors.
+enum SystemError {
+  // Memory error (e.g. allocation failed).
+  SYSTEMERROR_MEMORY = 0;
+
+  // Integer overflow.
+  SYSTEMERROR_INTEGER_OVERFLOW = 1;
+};
+
+// Socket errors.
+// These errors are used in io/socket.
+enum SocketError {
+  // Bad file descriptor.
+  SOCKETERROR_BAD_FD = 0;
+
+  // Socket creation failed.
+  SOCKETERROR_CREATION_FAILED = 1;
+
+  // Invalid network address.
+  SOCKETERROR_BAD_NETADDR = 2;
+
+  // Failed to resolve network address.
+  SOCKETERROR_NETADDR_UNKNOWN = 3;
+
+  // Syscall `fstat` failed.
+  SOCKETERROR_FSTAT_FAILED = 4;
+
+  // File descriptor is not a socket.
+  SOCKETERROR_NOT_SOCK = 5;
+
+  // Syscall getsockname failed.
+  SOCKETERROR_GETSOCKNAME_FAILED = 6;
+
+  // Syscall setsockopt failed.
+  SOCKETERROR_SETSOCKOPT_FAILED = 7;
+
+  // Invalid AI family.
+  SOCKETERROR_INVALID_AI_FAMILY = 8;
+};
+
+enum HandshakeError {
+  // Invalid Server Name.
+  HANDSHAKEERROR_INVALID_SERVER_NAME = 0;
+
+  // Certficate verification failed.
+  HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED = 1;
+
+  // Certificate has expired.
+  HANDSHAKEERROR_CERTIFICATE_EXPIRED = 2;
+
+  // Certificate was revoked.
+  HANDSHAKEERROR_CERTIFICATE_REVOKED = 3;
+
+  // Invalid Certificate.
+  HANDSHAKEERROR_INVALID_CERTIFICATE = 4;
+
+  // Signature verification error.
+  HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED = 5;
+
+  // Unknown handshake error.
+  HANDSHAKEERROR_UNKNOWN_ERROR = 6;
+};
+
+// Tunnel error.
+enum TunnelError {
+  // Invalid tunnel configuration.
+  TUNNELERROR_INVALID = 0;
+
+  // Invalid tunnel verifier.
+  TUNNELERROR_VERIFIER = 1;
+
+  // Unknown error.
+  TUNNELERROR_UNKNOWN = 2;
+}
+
+// Error kinds.
+enum ErrorKind {
+  // API errors. See APIError.
+  ERRORKIND_API = 0;
+
+  // Configuration errors. See ConfigurationError.
+  ERRORKIND_CONFIGURATION = 1;
+
+  // TLS configuration errors. See TLSConfigurationError.
+  ERRORKIND_TLS_CONFIGURATION = 2;
+
+  // Certificate errors. See CertificateError.
+  ERRORKIND_CERTIFICATE = 3;
+
+  // System errors. See SystemError.
+  ERRORKIND_SYSTEM = 4;
+
+  // Socket errors. See SocketError.
+  ERRORKIND_SOCKET = 5;
+
+  // Protobuf errors. see ProtobufError.
+  ERRORKIND_PROTOBUF = 6;
+
+  // Private key errors. See PrivateKeyError.
+  ERRORKIND_PRIVATE_KEY = 7;
+
+  // ASN1 errors. See ASN1Error.
+  ERRORKIND_ASN1 = 8;
+
+  // DataSource errors. See DataSourceError.
+  ERRORKIND_DATA_SOURCE = 9;
+
+  // KEM errors. See KEMError.
+  ERRORKIND_KEM = 10;
+
+  // Handshake errors. See HandshakeError.
+  ERRORKIND_HANDSHAKE = 11;
+
+  // Tunnel errors. See TunnelError.
+  ERRORKIND_TUNNEL = 12;
+
+  // ALPN erros. See ALPNError.
+  ERRORKIND_ALPN = 13;
+};

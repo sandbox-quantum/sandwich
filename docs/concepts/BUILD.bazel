@@ -1,0 +1,16 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+_MD_FILES = [
+    "io.md",
+    "tunnel.md",
+]
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = glob(["*"]),
+    path = "concepts",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,17 @@
+[project]
+name = "pysandwich"
+version = "0.1.0"
+description = "Sandwich Python bindings"
+authors = [
+    {name = "SandboxAQ", email = "sandwich@sandboxaq.com"},
+]
+readme = "README.md"
+dependencies = ["protobuf"]
+license = {text = "AGPL-3.0-only"}
+
+[project.urls]
+Homepage = "https://github.com/sandbox-quantum/sandwich"
+
+[build-system]
+requires = ["setuptools", "wheel", "grpcio-tools"]
+build-backend = "setuptools.build_meta"

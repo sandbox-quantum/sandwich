@@ -1,0 +1,30 @@
+load(":rules.bzl", "mkdocs_project", "mkdocs_tree")
+
+py_binary(
+    name = "mkdocs",
+    srcs = ["@pypi_mkdocs//:site-packages/mkdocs/__main__.py"],
+    main = "@pypi_mkdocs//:site-packages/mkdocs/__main__.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@pypi_mkdocs//:pkg",
+        "@pypi_mkdocs_material//:pkg",
+        "@pypi_mkdocstrings//:pkg",
+        "@pypi_mkdocstrings_python//:pkg",
+        "@pypi_mkdoxy//:pkg",
+    ],
+)
+
+mkdocs_tree(
+    name = "example_tree",
+    srcs = [
+        "example.md",
+        "example2.md",
+    ],
+    path = "examples",
+)
+
+mkdocs_project(
+    name = "example_doc",
+    config = "config_example.yml",
+    trees = [":example_tree"],
+)

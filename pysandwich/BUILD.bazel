@@ -1,0 +1,99 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+load("@rules_python//python:versions.bzl", "gen_python_config_settings")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+
+copy_file(
+    name = "sandwich_c_lib",
+    src = "//rust:sandwich_full_ffi_shared",
+    out = "libsandwich_full.so",
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "errors",
+    srcs = [
+        "errors.py",
+    ],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pysandwich/proto:sandwich_python_proto",
+    ],
+)
+
+py_library(
+    name = "io",
+    srcs = [
+        "io.py",
+    ],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":errors",
+    ],
+)
+
+py_library(
+    name = "python",
+    srcs = [
+        "sandwich.py",
+        "tunnel.py",
+    ],
+    data = [
+        ":sandwich_c_lib",
+    ],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":errors",
+        ":io",
+        "//pysandwich/proto:sandwich_python_proto",
+        "//pysandwich/proto/api/v1:api_python_proto",
+        "@bazel_tools//tools/python/runfiles",
+    ],
+)
+
+py_test(
+    name = "tunnel_test",
+    timeout = "short",
+    srcs = ["tunnel_test.py"],
+    data = [
+        ":sandwich_c_lib",
+        "//testdata",
+    ],
+    deps = [
+        ":python",
+    ],
+)
+
+py_test(
+    name = "tcp_test",
+    timeout = "short",
+    srcs = ["tcp_test.py"],
+    data = [
+        ":sandwich_c_lib",
+        "//testdata",
+    ],
+    deps = [
+        ":python",
+    ],
+)
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        ":errors",
+        ":io",
+        ":python",
+    ],
+    # HACK: mkdocstrings consider the Python module path relatively to
+    # mkdocs.yml. Our current mkdocs bazel-based system puts all the
+    # mkdocs_trees into a "docs" directory, so we need the ".." here.
+    path = "../pysandwich",
+    visibility = ["//docs:__subpackages__"],
+)
+
+gen_python_config_settings()

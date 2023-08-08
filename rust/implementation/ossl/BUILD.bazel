@@ -1,0 +1,10 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+filegroup(
+    name = "ossl",
+    srcs = [
+        "mod.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

@@ -1,0 +1,138 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        "tunnels_test.cc",
+        ":sandwich_hdrs_all_files",
+    ],
+    path = "sandwich_c/",
+    visibility = ["//docs:__subpackages__"],
+)
+
+filegroup(
+    name = "sandwich_hdrs_file",
+    srcs = ["sandwich.h"],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+filegroup(
+    name = "sandwich_hdrs_all_files",
+    srcs = [
+        "error_codes.h",
+        "ioerrors.h",
+        "sandwich.h",
+        "tunnel_types.h",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+cc_library(
+    name = "sandwich_hdrs",
+    hdrs = [
+        "error_codes.h",
+        "ioerrors.h",
+        "sandwich.h",
+        "tunnel_types.h",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+cc_library(
+    name = "sandwich",
+    hdrs = ["sandwich.h"],
+    linkopts = [] + select({
+        "@platforms//os:ios": [
+            "-framework",
+            "Security",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":sandwich_hdrs",
+        "//proto/api/v1:api_cc_proto",
+        "//rust:sandwich_full_ffi_static",
+    ],
+    alwayslink = True,
+)
+
+cc_import(
+    name = "sandwich_shared_import",
+    hdrs = ["sandwich.h"],
+    shared_library = "//rust:sandwich_full_ffi_shared",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":sandwich_hdrs",
+    ],
+)
+
+cc_test(
+    name = "tunnels_test",
+    timeout = "short",
+    srcs = ["tunnels_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata",
+    ],
+    linkstatic = True,
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_cc_proto",
+        "//proto/api/v1:api_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+)
+
+cc_test(
+    name = "tcp_test",
+    timeout = "short",
+    srcs = ["tcp_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata",
+    ],
+    linkstatic = True,
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_cc_proto",
+        "//proto/api/v1:api_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+)
+
+cc_test(
+    name = "errors_test",
+    timeout = "short",
+    srcs = ["errors_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata",
+    ],
+    linkstatic = True,
+    deps = [
+        ":sandwich",
+        "//proto:sandwich_cc_proto",
+        "//proto/api/v1:api_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+)

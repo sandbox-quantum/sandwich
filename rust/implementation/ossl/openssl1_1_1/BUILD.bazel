@@ -1,0 +1,19 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+filegroup(
+    name = "openssl1_1_1",
+    srcs = [
+        "io.rs",
+        "mod.rs",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)
+
+filegroup(
+    name = "bindgen",
+    srcs = [
+        "bindgen.h",
+    ],
+    visibility = ["//rust:__subpackages__"],
+)

@@ -1,0 +1,23 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
+
+import "pysandwich/proto/api/v1/data_source.proto";
+
+// An X509 certificate.
+//
+// The [ASN1DataSource](ASN1DataSource.md) message is used to specify the source
+// of the certificate.
+message Certificate {
+  oneof source {
+    // Static source of bytes.
+    //
+    // See also [ASN1DataSource](ASN1DataSource.md).
+    ASN1DataSource static = 1;
+  }
+}

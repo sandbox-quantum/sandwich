@@ -1,0 +1,13 @@
+load("//common/build/openssl:rules.bzl", "openssl_build")
+
+openssl_build(
+    name = "openssl",
+    liboqs_srcs = "@open-quantum-safe.liboqs//:all_srcs",
+    openssl_srcs = "@open-quantum-safe.openssl_no_liboqs//:all_srcs",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "openssl-conf",
+    srcs = [":openssl"],
+)

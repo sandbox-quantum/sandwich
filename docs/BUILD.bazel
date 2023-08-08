@@ -1,0 +1,47 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_project", "mkdocs_tree")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+mkdocs_tree(
+    name = "mkdocs_homepage",
+    srcs = [
+        "CHANGELOG.md",
+        "c_api.md",
+        "index.md",
+        "install.md",
+        "python_api.md",
+    ],
+)
+
+mkdocs_project(
+    name = "docs",
+    config = "mkdocs.yml",
+    trees = [
+        "//sandwich_c:mkdocs",
+        "//examples/go/echo_tls_server:mkdocs",
+        "//examples/rust/echo_tls_server:mkdocs",
+        "//examples/python/echo_tls_server:mkdocs",
+        "//examples/go/tls_client:mkdocs",
+        "//examples/rust/tls_client:mkdocs",
+        "//examples/python/tls_client:mkdocs",
+        "//go:mkdocs",
+        "//pysandwich:mkdocs",
+        "//rust:mkdocs",
+        "//docs/concepts:mkdocs",
+        "//docs/examples:mkdocs",
+        "//docs/protobuf/api/v1:mkdocs",
+        "//docs/protobuf/api:mkdocs",
+        "//docs/protobuf:mkdocs",
+        "//docs/images:mkdocs",
+        ":mkdocs_homepage",
+    ],
+)
+
+build_test(
+    name = "sandwich_docs_build_test",
+    targets = [
+        ":docs",
+    ],
+)

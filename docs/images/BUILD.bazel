@@ -1,0 +1,14 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = glob(
+        ["*"],
+        exclude = ["BUILD.bazel"],
+    ),
+    path = "images",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,320 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
+load("@rules_rust//rust:defs.bzl", "rust_shared_library", "rust_static_library")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//common/rules/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
+load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+load(":rules.bzl", "sandwich_variant")
+
+# Source files of Sandwich.
+_SANDWICH_SRCS = [
+    "//rust/error",
+    "//rust/ffi",
+    "//rust/implementation",
+    "//rust/implementation/ossl",
+    "//rust/implementation/ossl/boringssl",
+    "//rust/implementation/ossl/openssl1_1_1",
+    "//rust/io",
+    "//rust/io/helpers",
+    "//rust/support",
+    "//rust/tunnel",
+    "//rust/tunnel/ffi",
+    "//rust/tunnel/tls",
+    "lib.rs",
+]
+
+# Protobuf dependencies for Sandwich.
+_SANDWICH_PROTOBUF_DEPS = [
+    "//proto:sandwich-proto",
+    "//proto/api/v1:sandwich-api-proto",
+    "@crate_index//:protobuf",
+]
+
+# Rust dependencies for unit tests.
+_SANDWICH_RUNFILES_DEPS = [
+    "@rules_rust//tools/runfiles",
+]
+
+sandwich_variant(
+    name = "naked",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [],
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+        "-A",
+        "dead_code",
+        "-A",
+        "unused_imports",
+        "-A",
+        "unused_macros",
+    ],
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_PROTOBUF_DEPS,
+)
+
+##########################################
+### BEGIN OpenSSL 1.1.1 related rules  ###
+###                                    ###
+### The following rules enable the     ###
+### support of OpenSSL in Sandwich.    ###
+##########################################
+
+_OPENSSL1_1_1_LINK_PREFIX = "__private_ossl1_1_1_"
+
+# OpenSSL 1.1.1, prefixed with Bartleby.
+bartleby(
+    name = "openssl1_1_1_bartleby",
+    srcs = ["//vendor/github.com/open-quantum-safe/liboqs-openssl:openssl"],
+    prefix = _OPENSSL1_1_1_LINK_PREFIX,
+)
+
+# C library to guide Rust-bindgen for generating OpenSSL 1.1.1 bindings.
+cc_library(
+    name = "openssl1_1_1_bindgen_library",
+    hdrs = [
+        "//rust/implementation/ossl/openssl1_1_1:bindgen",
+    ],
+    deps = [
+        ":openssl1_1_1_bartleby",
+    ],
+)
+
+# OpenSSL 1.1.1 bindings.
+rust_bindgen_library(
+    name = "openssl1_1_1_bindgen",
+    bindgen_flags = bindgen_add_prefix_link_name(_OPENSSL1_1_1_LINK_PREFIX),
+    cc_lib = ":openssl1_1_1_bindgen_library",
+    clang_flags = select({
+        "@platforms//os:ios": [
+            "-target",
+            "arm64-ios",
+        ],
+        "//conditions:default": [],
+    }),
+    crate_name = "openssl1_1_1",
+    header = "//rust/implementation/ossl/openssl1_1_1:bindgen",
+    rustc_flags = [
+        "-A",
+        "non-camel-case-types",
+        "-A",
+        "non-upper-case-globals",
+        "-A",
+        "non_snake_case",
+        "-A",
+        "improper_ctypes",
+    ],
+)
+
+sandwich_variant(
+    name = "openssl1_1_1",
+    srcs = _SANDWICH_SRCS,
+    crate_features = ["openssl1_1_1"],
+    generate_ffi = True,
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [":openssl1_1_1_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_static_library(
+    name = "sandwich_openssl1_1_1_ffi_static",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl1_1_1",
+    ],
+    crate_name = "sandwich_openssl1_1_1",
+    visibility = ["//visibility:public"],
+    deps = [":openssl1_1_1_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_openssl1_1_1_ffi_shared",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl1_1_1",
+    ],
+    crate_name = "sandwich_openssl1_1_1",
+    visibility = ["//visibility:public"],
+    deps = [":openssl1_1_1_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+######################################
+### END OpenSSL 1.1.1 related rules###
+######################################
+
+######################################
+### BEGIN BoringSSL related rules  ###
+###                                ###
+### The following rules enable the ###
+### support of BoringSSL           ###
+### in Sandwich.                   ###
+######################################
+
+_BORINGSSL_LINK_PREFIX = "__private_boringssl_"
+
+# BoringSSL, prefixed with Bartleby.
+bartleby(
+    name = "boringssl_bartleby",
+    srcs = ["//vendor/github.com/open-quantum-safe/boringssl"],
+    prefix = _BORINGSSL_LINK_PREFIX,
+)
+
+# C library to guide Rust-bindgen for generating BoringSSL bindings.
+cc_library(
+    name = "boringssl_bindgen_library",
+    hdrs = [
+        "//rust/implementation/ossl/boringssl:bindgen",
+    ],
+    deps = [
+        ":boringssl_bartleby",
+    ],
+)
+
+# BoringSSL bindings.
+rust_bindgen_library(
+    name = "boringssl_bindgen",
+    bindgen_flags = bindgen_add_prefix_link_name(_BORINGSSL_LINK_PREFIX),
+    cc_lib = ":boringssl_bindgen_library",
+    clang_flags = select({
+        # This flag is needed for the CircleCI macos job to cross-compile
+        # Sandwich to Rust from an x86_64 host, because `bindgen` does not
+        # officially support iOS and aarch64.
+        "@platforms//os:ios": [
+            "-target",
+            "arm64-ios",
+        ],
+        "//conditions:default": [],
+    }),
+    crate_name = "boringssl",
+    header = "//rust/implementation/ossl/boringssl:bindgen",
+    rustc_flags = [
+        "-A",
+        "non-camel-case-types",
+        "-A",
+        "non-upper-case-globals",
+        "-A",
+        "non_snake_case",
+        "-A",
+        "improper_ctypes",
+    ],
+)
+
+sandwich_variant(
+    name = "boringssl",
+    srcs = _SANDWICH_SRCS,
+    crate_features = ["boringssl"],
+    generate_ffi = True,
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [":boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_static_library(
+    name = "sandwich_boringssl_ffi_static",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+    ],
+    crate_name = "sandwich_boringssl",
+    visibility = ["//visibility:public"],
+    deps = [":boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_boringssl_ffi_shared",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "ffi",
+        "boringssl",
+    ],
+    crate_name = "sandwich_boringssl",
+    visibility = ["//visibility:public"],
+    deps = [":boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+######################################
+### END BoringSSL related rules    ###
+######################################
+
+######################################
+### BEGIN Sandwich "full" variant  ###
+###                                ###
+### The "full" variant supports    ###
+### OpenSSL 1.1.1 and BoringSSL    ###
+######################################
+
+# Dependencies for the Sandwich "full" variant.
+_SANDWICH_FULL_VARIANT_DEPS = [
+    ":boringssl_bindgen",
+    ":openssl1_1_1_bindgen",
+] + _SANDWICH_PROTOBUF_DEPS
+
+sandwich_variant(
+    name = "full",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "boringssl",
+        "openssl1_1_1",
+    ],
+    generate_doc = True,
+    generate_ffi = True,
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+rust_static_library(
+    name = "sandwich_full_ffi_static",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+        "openssl1_1_1",
+    ],
+    crate_name = "sandwich_full",
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_full_ffi_shared",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "ffi",
+        "boringssl",
+        "openssl1_1_1",
+    ],
+    crate_name = "sandwich_full",
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [":sandwich_full_ffi_doc"],
+    path = "rust_api",
+    visibility = ["//docs:__subpackages__"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":sandwich_full_ffi_doc",
+        ":sandwich_full_ffi_clippy",
+    ],
+)
