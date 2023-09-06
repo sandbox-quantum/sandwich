@@ -92,8 +92,6 @@ disk, and accepts `kyber768` and `prime256v1` as key exchange mechanisms.
 Assuming we have a valid [Sandwich I/O object](io.md), we can then create a sandwich tunnel:
 
 ```python
---8<-- "docs/examples/python/echo_tls_server/main.py:py_imports_tunnel"
-
 def my_func():
     --8<-- "docs/examples/python/echo_tls_server/main.py:py_ctx"
         swio = # ...

@@ -195,7 +195,7 @@ def _generate_openssl_configure_args(ctx):
     args = ctx.attr.configure_flags[:]
 
     if is_debug_mode(ctx):
-        args.insert(0, "-d")
+        args.insert(0, "--debug")
 
     for flag in ctx.attr.additional_configure_flags:
         args.append(flag)
@@ -271,6 +271,12 @@ def _generate_compilers_env(ctx):
     if "PATH" in ctx.configuration.default_shell_env and \
        ctx.configuration.default_shell_env["PATH"] != "":
         env["PATH"] = ctx.configuration.default_shell_env["PATH"]
+
+    # Set LD_LIBRARY_PATH if available in ctx.configuration.default_shell_env
+    # LD_LIBRARY_PATH is used for loading dynamic libraries.
+    if "LD_LIBRARY_PATH" in ctx.configuration.default_shell_env and \
+       ctx.configuration.default_shell_env["LD_LIBRARY_PATH"] != "":
+        env["LD_LIBRARY_PATH"] = ctx.configuration.default_shell_env["LD_LIBRARY_PATH"]
 
     # Merge with environment variables required by the cc toolchain.
     env.update(get_env_vars(ctx))

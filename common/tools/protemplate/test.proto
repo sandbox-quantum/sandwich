@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.example;
+
+// A simple error enum.
+enum TestErrorEnum { // KIND_TESTERROR
+  // First value of the test enum.
+  TESTERRORENUM_VALUE_UNSPECIFIED = 0;
+};

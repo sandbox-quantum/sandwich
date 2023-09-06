@@ -23,6 +23,9 @@ fn get_kems(cfg: &pb_api::Configuration) -> crate::Result<&Vec<String>> {
 /// Represents the AES bit size equivalent hardness of breaking an algorithm.
 #[derive(Copy, Clone, PartialEq, PartialOrd, Eq)]
 enum BitStrength {
+    Bits80 = 80,
+    Bits96 = 96,
+    Bits112 = 112,
     Bits128 = 128, // AES-128
     Bits192 = 192, // AES-192
     Bits256 = 256, // AES-256
@@ -44,64 +47,84 @@ impl TryFrom<&str> for AlgorithmQuantumness {
         match alg {
             "brainpoolP384r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
             "brainpoolP512r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
-            "prime256v1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
-            "secp160k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "secp160r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "secp160r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "secp192k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "secp224k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "secp224r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "secp256k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
-            "secp384r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
+
+            "prime256v1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
+
+            "secp160k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+            "secp160r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+            "secp160r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+
+            "secp192k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits96)),
+
+            "secp224k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
+            "secp224r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
+
+            "secp256k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
+            "secp384r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
             "secp521r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
-            "sect163k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "sect163r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "sect163r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "sect193r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "sect193r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "sect233k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "sect233r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "sect239k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "sect283k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
-            "sect283r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
-            "sect409k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "sect409r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
+
+            "sect163k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+            "sect163r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+            "sect163r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+
+            "sect193r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits96)),
+            "sect193r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits96)),
+
+            "sect233k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
+            "sect233r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
+
+            "sect239k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
+            "sect283k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
+            "sect283r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
+
+            "sect409k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
+            "sect409r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
+
             "sect571k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
             "sect571r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
+
             "bikel1" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "bikel3" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "frodo1344aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "frodo1344shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
+            "bikel3" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+
+            "frodo1344aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
+            "frodo1344shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
             "frodo640aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
             "frodo640shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "frodo976aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "frodo976shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
+            "frodo976aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+            "frodo976shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+
             "hqc128" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
             "hqc192" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
             "hqc256" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
-            "kyber1024" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
+
+            "kyber1024" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
             "kyber512" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "kyber768" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "kyber90s1024" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
+            "kyber768" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+
+            "kyber90s1024" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
             "kyber90s512" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "kyber90s768" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "p256_bikel1" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+            "kyber90s768" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+
+            "p256_bikel1" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
             "p256_frodo640aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
             "p256_frodo640shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
             "p256_hqc128" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p256_kyber512" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+            "p256_kyber512" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
             "p256_kyber90s512" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p384_bikel3" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p384_frodo976aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p384_frodo976shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p384_hqc192" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p384_kyber768" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p384_kyber90s768" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p521_frodo1344aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p521_frodo1344shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p521_hqc256" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p521_kyber1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p521_kyber90s1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
+
+            "p384_bikel3" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
+            "p384_frodo976aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
+            "p384_frodo976shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
+            "p384_hqc192" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
+            "p384_kyber768" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
+            "p384_kyber90s768" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
+
+            "p521_frodo1344aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+            "p521_frodo1344shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+            "p521_hqc256" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+            "p521_kyber1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+            "p521_kyber90s1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+
             _ => Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into()),
         }
     }
@@ -241,7 +264,7 @@ mod test {
             >
           >
           compliance <
-            bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
+            bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
           >
           "#,
         )

@@ -26,11 +26,11 @@ pub extern "C" fn sandwich_tunnel_context_new(
     let mut configuration = pb_api::Configuration::new();
 
     match <pb_api::Configuration as protobuf::Message>::merge_from_bytes(&mut configuration, slice) {
-        Ok(_) => match crate::tunnel::context::try_from(&configuration) {
+        Ok(_) => match crate::tunnel::Context::try_from(&configuration) {
             Ok(ctx) => {
                 if !out.is_null() {
                     unsafe {
-                        *out = Box::into_raw(Box::new(ctx)) as *mut c_void;
+                        *out = Box::into_raw(Box::new(ctx)).cast();
                     }
                 }
                 std::ptr::null_mut()
@@ -45,8 +45,7 @@ pub extern "C" fn sandwich_tunnel_context_new(
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_context_free(ctx: *mut c_void) {
     if !ctx.is_null() {
-        let _: Box<Box<dyn crate::tunnel::context::Context>> =
-            unsafe { Box::from_raw(ctx as *mut _) };
+        let _: Box<crate::tunnel::Context> = unsafe { Box::from_raw(ctx.cast()) };
     }
 }
 
@@ -88,14 +87,14 @@ mod test {
         drop(config);
 
         let mut ptr: *mut c_void = std::ptr::null_mut();
-        super::sandwich_tunnel_context_new(
+        sandwich_tunnel_context_new(
             encoded.as_ptr() as *const c_void,
             encoded.len(),
             &mut ptr as *mut *mut c_void,
         );
         assert!(!ptr.is_null());
 
-        super::sandwich_tunnel_context_free(ptr);
+        sandwich_tunnel_context_free(ptr);
     }
 
     /// Tests [`sandwich_tunnel_context_new`] with an error.
@@ -130,13 +129,13 @@ mod test {
         let encoded = config.write_to_bytes().unwrap();
 
         let mut ptr: *mut c_void = std::ptr::null_mut();
-        let err = super::sandwich_tunnel_context_new(
+        let err = sandwich_tunnel_context_new(
             encoded.as_ptr() as *const c_void,
             encoded.len(),
             &mut ptr as *mut *mut c_void,
         );
         assert_eq!(ptr, std::ptr::null_mut());
-        super::sandwich_tunnel_context_free(ptr);
+        sandwich_tunnel_context_free(ptr);
         crate::ffi::error::sandwich_error_free(err);
     }
 
@@ -144,11 +143,7 @@ mod test {
     #[test]
     fn test_context_ctor_nullptr() {
         let mut ptr: *mut c_void = std::ptr::null_mut();
-        let err = super::sandwich_tunnel_context_new(
-            std::ptr::null(),
-            0x41,
-            &mut ptr as *mut *mut c_void,
-        );
+        let err = sandwich_tunnel_context_new(std::ptr::null(), 0x41, &mut ptr as *mut *mut c_void);
         assert!(!err.is_null());
         assert!(ptr.is_null());
 
@@ -161,13 +156,13 @@ mod test {
         let data = [0u8; 42];
 
         let mut ptr: *mut c_void = std::ptr::null_mut();
-        let err = super::sandwich_tunnel_context_new(
+        let err = sandwich_tunnel_context_new(
             data.as_ptr() as *const c_void,
             data.len(),
             &mut ptr as *mut *mut c_void,
         );
         assert_eq!(ptr, std::ptr::null_mut());
-        super::sandwich_tunnel_context_free(ptr);
+        sandwich_tunnel_context_free(ptr);
         crate::ffi::error::sandwich_error_free(err);
     }
 }

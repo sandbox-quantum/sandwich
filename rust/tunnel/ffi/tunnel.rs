@@ -44,7 +44,7 @@ pub extern "C" fn sandwich_tunnel_new(
     configuration_serialized: SandwichTunnelConfigurationSerialized,
     tun: *mut *mut c_void,
 ) -> *mut Error {
-    let mut b: Box<Box<dyn Context>> = unsafe { Box::from_raw(ctx as *mut _) };
+    let b: &mut Context = unsafe { &mut *ctx.cast() };
 
     let slice = unsafe {
         std::slice::from_raw_parts(
@@ -67,12 +67,11 @@ pub extern "C" fn sandwich_tunnel_new(
 
     let io: Box<dyn crate::IO> = Box::new(unsafe { *cio });
     let r = b.new_tunnel(io, tunnel_configuration);
-    Box::into_raw(b);
     match r {
         Ok(t) => {
             if !tun.is_null() {
                 unsafe {
-                    *tun = Box::into_raw(Box::new(t)) as *mut c_void;
+                    *tun = Box::into_raw(Box::new(t)).cast();
                 }
             }
             std::ptr::null_mut()
@@ -85,7 +84,7 @@ pub extern "C" fn sandwich_tunnel_new(
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_free(tun: *mut c_void) {
     if !tun.is_null() {
-        let _: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(tun as *mut _) };
+        let _: Box<Tunnel> = unsafe { Box::from_raw(tun.cast()) };
     }
 }
 
@@ -93,7 +92,7 @@ pub extern "C" fn sandwich_tunnel_free(tun: *mut c_void) {
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_handshake(tun: *mut c_void, state: *mut c_int) -> *mut Error {
     use protobuf::Enum;
-    let mut b: Box<Box<dyn Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
+    let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let r = b.handshake();
     Box::into_raw(b);
     match r {
@@ -117,7 +116,7 @@ pub extern "C" fn sandwich_tunnel_read(
     r: *mut usize,
 ) -> i32 {
     use protobuf::Enum;
-    let mut b: Box<Box<dyn Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
+    let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let res = b.read(unsafe { std::slice::from_raw_parts_mut(dst as *mut u8, n) });
     Box::into_raw(b);
     match res {
@@ -139,7 +138,7 @@ pub extern "C" fn sandwich_tunnel_write(
     w: *mut usize,
 ) -> i32 {
     use protobuf::Enum;
-    let mut b: Box<Box<dyn Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
+    let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let res = b.write(unsafe { std::slice::from_raw_parts(src as *const u8, n) });
     Box::into_raw(b);
     match res {
@@ -155,7 +154,7 @@ pub extern "C" fn sandwich_tunnel_write(
 /// Performs a close operation.
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_close(tun: *mut c_void) {
-    let mut b: Box<Box<dyn Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
+    let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let _ = b.close();
     Box::into_raw(b);
 }
@@ -164,7 +163,7 @@ pub extern "C" fn sandwich_tunnel_close(tun: *mut c_void) {
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_state(tun: *mut c_void) -> i32 {
     use protobuf::Enum;
-    let b: Box<Box<dyn Tunnel>> = unsafe { Box::from_raw(tun as *mut _) };
+    let b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let r = b.state();
     Box::into_raw(b);
     r.value().value()

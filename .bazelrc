@@ -6,9 +6,9 @@ startup --host_jvm_args=-Xmx4g
 # Without this flag, Bazel may raise an error about a repo that is not compatible
 # with a specific platform, even if it is not the actual platform it is building
 # on.
-build --noincompatible_use_platforms_repo_for_constraints
+build:cicd --noincompatible_use_platforms_repo_for_constraints
 
-build --config=clang
+build:cicd --config=clang
 
 test --test_env=LANG=C
 test --test_output=errors
@@ -41,3 +41,14 @@ build --nolegacy_external_runfiles
 build --incompatible_remote_results_ignore_disk
 build --incompatible_default_to_explicit_init_py
 common --incompatible_allow_tags_propagation
+
+# Enable cross-compilation
+build --platform_mappings=common/platforms/platform_mappings
+build --incompatible_enable_cc_toolchain_resolution
+
+###
+# Rules rust: use coverage metadata files.
+###
+build --@rules_rust//rust/settings:experimental_use_coverage_metadata_files=false
+run --@rules_rust//rust/settings:experimental_use_coverage_metadata_files=false
+test --@rules_rust//rust/settings:experimental_use_coverage_metadata_files=false

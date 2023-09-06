@@ -1,20 +1,17 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import array
-import fcntl
-import select
+import selectors
 import socket
-import termios
+import sys
 
 import pysandwich.proto.api.v1.compliance_pb2 as Compliance
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichTunnelProto
 import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.errors as SandwichErrors
-import pysandwich.io as SandwichIO
+import pysandwich.io_helpers as SandwichIOHelpers
 import pysandwich.tunnel as SandwichTunnel
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
-from pysandwich.sandwich import Sandwich
 
 
 def create_client_conf() -> SandwichTunnelProto:
@@ -24,7 +21,6 @@ def create_client_conf() -> SandwichTunnelProto:
     conf.impl = SandwichTunnelProto.IMPL_BORINGSSL_OQS
 
     conf.compliance.classical_choice = Compliance.CLASSICAL_ALGORITHMS_ALLOW
-    conf.client.tls.common_options.kem.append("kyber768")
     conf.client.tls.common_options.kem.append("prime256v1")
 
     conf.client.tls.common_options.empty_verifier.CopyFrom(
@@ -34,18 +30,37 @@ def create_client_conf() -> SandwichTunnelProto:
     return conf
 
 
-def run_client(peer_address, input_, output, client_ctx: SandwichTunnel.Context):
+def is_localhost(hostname):
+    try:
+        # Get the IP address for the given hostname
+        ip_address = socket.gethostbyname(hostname)
+
+        # Check if the IP address is a localhost IP address
+        return ip_address in ("127.0.0.1", "::1")
+    except socket.gaierror:
+        # If the hostname cannot be resolved, it's not localhost
+        return False
+
+
+def create_client_tun_conf(hostname) -> TunnelConfiguration:
+    tun_conf = TunnelConfiguration()
+    if not is_localhost(hostname):
+        tun_conf.server_name_indication = hostname
+    tun_conf.verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
+
+    return tun_conf
+
+
+def run_client(host, port, input_r, output_w, client_ctx_conf: SandwichTunnel.Context):
     """Connect to server with a Context"""
-    client_io = socket.create_connection(peer_address)
-    tunnel_configuration = TunnelConfiguration()
-    tunnel_configuration.verifier.empty_verifier.CopyFrom(
-        SandwichVerifiers.EmptyVerifier()
-    )
+    client_io = socket.create_connection((host, port))
+    swio = SandwichIOHelpers.io_socket_wrap(client_io)
+    client_tun_conf = create_client_tun_conf(host)
 
     client = SandwichTunnel.Tunnel(
-        client_ctx,
-        SandwichIO.io_socket_wrap(Sandwich(), client_io),
-        tunnel_configuration,
+        client_ctx_conf,
+        swio,
+        client_tun_conf,
     )
     assert client is not None
 
@@ -55,31 +70,40 @@ def run_client(peer_address, input_, output, client_ctx: SandwichTunnel.Context)
         state == client.State.STATE_HANDSHAKE_DONE
     ), f"Expected state HANDSHAKE_DONE, got {state}"
 
+    sel = selectors.DefaultSelector()
+    sel.register(input_r, selectors.EVENT_READ, data=None)
+    sel.register(client_io, selectors.EVENT_READ, data=None)
+
     client_io.setblocking(False)
-    inputs = [client_io, input_]
-    outputs = []
 
-    avail_arr = array.array("i", [0])
-    while inputs:
-        readable, writable, exceptional = select.select(inputs, outputs, inputs)
+    while True:
+        events = sel.select(timeout=None)
 
-        for r in readable:
-            if r is client_io:
+        for key, _ in events:
+            if key.fileobj is client_io:
                 try:
                     data = client.read(1024)
                 except SandwichErrors.RecordPlaneWantReadException:
                     continue
 
                 if not data:
-                    inputs.remove(r)
+                    sel.unregister(client_io)
                 else:
-                    output.write(data)
-                    output.flush()
-            elif r is input_:
-                fcntl.ioctl(input_.fileno(), termios.FIONREAD, avail_arr)
-                data = input_.read(avail_arr[0])
+                    if isinstance(output_w, type(sys.stdout.buffer)):
+                        output_w.write(b">")
+                        output_w.write(data)
+                        output_w.flush()
+                    else:
+                        output_w.send_bytes(data)
+
+            elif key.fileobj is input_r:
+                if isinstance(input_r, type(sys.stdin.buffer)):
+                    data = input_r.readline()
+                else:
+                    data = input_r.recv_bytes(16)
+
                 if not data:
-                    inputs.remove(r)
+                    sel.unregister(input_r)
                 else:
                     client_io.setblocking(True)
                     client.write(data)
@@ -88,16 +112,15 @@ def run_client(peer_address, input_, output, client_ctx: SandwichTunnel.Context)
     client.close()
 
 
-def main(host, port, input_, output):
+def main(hostname, port, input_r, output_w):
     client_conf = create_client_conf()
-    client_ctx = SandwichTunnel.Context.from_config(Sandwich(), client_conf)
+    client_ctx = SandwichTunnel.Context.from_config(client_conf)
 
-    run_client((host, port), input_, output, client_ctx)
+    run_client(hostname, port, input_r, output_w, client_ctx)
 
 
 if __name__ == "__main__":
     import argparse
-    import sys
 
     parser = argparse.ArgumentParser(prog="TLS client using Sandwich")
     parser.add_argument(

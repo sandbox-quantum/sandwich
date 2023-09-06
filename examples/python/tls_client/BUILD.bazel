@@ -1,8 +1,8 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
 
 mkdocs_tree(
     name = "mkdocs",

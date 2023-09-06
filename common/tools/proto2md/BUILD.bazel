@@ -1,6 +1,6 @@
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy")
 load(":rules.bzl", "md_proto_library")
 
 rust_binary(

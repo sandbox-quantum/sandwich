@@ -1,5 +1,5 @@
-load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test")
 
 rust_library(
     name = "metaproto",
@@ -16,6 +16,7 @@ rust_library(
     crate_name = "metaproto",
     visibility = [
         "//common/libs/metaproto:__subpackages__",
+        "//common/tools/protemplate:__subpackages__",
         "//common/tools/proto2md:__subpackages__",
     ],
     deps = [

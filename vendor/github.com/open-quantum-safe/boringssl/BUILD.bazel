@@ -1,5 +1,5 @@
-load("//common/build/boringssl:rules.bzl", "boringssl_build")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//common/build/boringssl:rules.bzl", "boringssl_build")
 
 boringssl_build(
     name = "boringssl",

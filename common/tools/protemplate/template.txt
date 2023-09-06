@@ -1,0 +1,8 @@
+{{ for symbol in symbols }}    \{
+      kind: {symbol.trailing_comment},
+      sym: {symbol.name},
+      desc: {symbol.leading_comment},
+      values: [
+        {{ for v in symbol.values }}{v.name} => "{v.leading_comment}",{{ endfor }}
+      ],
+  },{{ endfor }}

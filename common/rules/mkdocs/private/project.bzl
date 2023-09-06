@@ -36,6 +36,7 @@ def _compile_project(ctx, project):
         command = 'export WK="$PWD" && cd "{project_path}" && "$WK/$1" build --site-dir "$2" --config-file "$WK/$3" --clean'.format(project_path = project.yaml_configuration.dirname),
         arguments = [args],
         mnemonic = "RunMkDocs",
+        use_default_shell_env = True,
         tools = [ctx.executable._mkdocs_binary],
     )
 

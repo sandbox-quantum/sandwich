@@ -22,6 +22,11 @@ _RUSTDOC_FLAGS = [
     "rustdoc::broken_intra_doc_links",
 ]
 
+# Default features.
+_DEFAULT_FEATURES = [
+    "tunnel",
+]
+
 def sandwich_variant(
         name,
         srcs,
@@ -69,21 +74,27 @@ def sandwich_variant(
     deps = kwargs.get("deps", [])
     deps_test = deps + _SANDWICH_RUNFILES_DEPS
 
-    crate_features = kwargs.get("crate_features", [])
-    crate_features_test = crate_features + ["bazel"]
+    crate_features = kwargs.get("crate_features", []) + _DEFAULT_FEATURES
+    crate_features_test = crate_features + ["bazel"] + _DEFAULT_FEATURES
 
     [kwargs.pop(k) for k in ("deps", "crate_features")]
 
-    targets = [name]
+    targets = [(name, False)]
     if generate_ffi:
-        targets.append("{name}_ffi".format(name = name))
+        targets.append(("{name}_ffi".format(name = name), True))
 
-    for name in targets:
+    for (name, is_ffi) in targets:
         named_target = ":{name}".format(name = name)
+        features = crate_features
+        features_test = crate_features_test
+        if is_ffi:
+            features.append("ffi")
+            features_test.append("ffi")
+
         rust_library(
             name = name,
             srcs = srcs,
-            crate_features = crate_features,
+            crate_features = features,
             crate_name = crate_name,
             deps = deps,
             **kwargs
@@ -93,7 +104,7 @@ def sandwich_variant(
             name = "{name}_test".format(name = name),
             timeout = "short",
             crate = named_target,
-            crate_features = crate_features_test,
+            crate_features = features_test,
             data = _SANDWICH_TESTDATA,
             deps = deps_test,
         )

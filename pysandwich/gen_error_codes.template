@@ -1,0 +1,17 @@
+import pysandwich.proto.errors_pb2 as SandwichErrorProto
+from pysandwich.error_base import SandwichException
+
+{{ for symbol in symbols }}{{ if symbol.trailing_comment }}
+class {symbol.name}(SandwichException):
+    """{symbol.name} exception."""
+
+    _ERRORS_MAP = \{{{ for value in symbol.values }}
+        SandwichErrorProto.{value.name}: \{
+            "msg": """{value.leading_comment}""",
+        },{{ endfor }}
+    }
+
+{{ endif }}{{ endfor }}
+_ERROR_KIND_MAP = \{{{ for symbol in symbols }}{{ if symbol.trailing_comment }}
+    SandwichErrorProto.{symbol.trailing_comment}: {symbol.name},{{ endif }}{{ endfor }}
+}

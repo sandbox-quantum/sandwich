@@ -25,16 +25,11 @@ impl From<crate::Error> for *mut Error {
         let mut cur: *mut Error = null_mut();
         for ec in e.iter().rev() {
             let (kind, code) = <_ as Into<(i32, i32)>>::into(ec);
-            let msg = match ec.msg() {
-                Some(s) => {
-                    if let Ok(cstring) = CString::new(s) {
-                        cstring.into_raw()
-                    } else {
-                        null_mut()
-                    }
-                }
-                None => null_mut(),
-            };
+            let msg = ec
+                .msg()
+                .and_then(|s| CString::new(s).ok())
+                .map(CString::into_raw)
+                .unwrap_or_else(null_mut);
             let e_c = Box::<Error>::new(Error {
                 details: null_mut(),
                 msg,
@@ -156,21 +151,21 @@ mod test {
             let ptr = (*ptr).details;
             assert!(ptr.is_null());
         }
-        super::sandwich_error_free(ptr);
+        sandwich_error_free(ptr);
     }
 
     /// Tests [`sandwich_error_free`] with a null pointer.
     #[test]
     fn test_error_free_null_ptr() {
-        super::sandwich_error_free(null_mut());
+        sandwich_error_free(null_mut());
     }
     #[test]
     fn test_c_error_stack_str_null_error_and_free() {
-        let err_str = super::sandwich_error_stack_str_new(null_mut());
+        let err_str = sandwich_error_stack_str_new(null_mut());
         let safe_err_str = cstr_to_safe_string(err_str);
         let expect_str = "Error Stack:\n";
         unsafe {
-            super::sandwich_error_stack_str_free(err_str);
+            sandwich_error_stack_str_free(err_str);
         }
         assert_eq!(safe_err_str, expect_str);
     }
@@ -191,13 +186,13 @@ mod test {
         let p_err: *mut Error = &mut err;
         assert!(!p_err.is_null());
         // Get string from C Error pointer...
-        let err_str = super::sandwich_error_stack_str_new(p_err);
+        let err_str = sandwich_error_stack_str_new(p_err);
         // Convert the C String to a rust String
         let safe_err_str = cstr_to_safe_string(err_str);
-        let expect_str = "Error Stack:\nerr:[api error: tunnel error],code:[0,2],msg:[Tunnel failed to open successfully!]]\n";
+        let expect_str = "Error Stack:\nerr:[API errors.\n The following errors can occur during a call to the Context API.: Tunnel error.],code:[0,2],msg:[Tunnel failed to open successfully!]]\n";
         // Free the Error string (owned by the C code)
         unsafe {
-            super::sandwich_error_stack_str_free(err_str);
+            sandwich_error_stack_str_free(err_str);
         }
         assert_eq!(safe_err_str, expect_str);
         // cleanup
@@ -219,13 +214,13 @@ mod test {
         let p_err: *mut Error = &mut err;
         assert!(!p_err.is_null());
         // Get string from C Error pointer...
-        let err_str = super::sandwich_error_stack_str_new(p_err);
+        let err_str = sandwich_error_stack_str_new(p_err);
         let safe_err_str = cstr_to_safe_string(err_str);
         let expect_str =
-            "Error Stack:\nerr:[protobuf error: invalid argument],code:[99999,91717],msg:[]]\n";
+            "Error Stack:\nerr:[Errors regarding protobuf.: / An invalid value was given.],code:[99999,91717],msg:[]]\n";
         // Free the Error string (owned by the C code)
         unsafe {
-            super::sandwich_error_stack_str_free(err_str);
+            sandwich_error_stack_str_free(err_str);
         }
         assert_eq!(safe_err_str, expect_str);
     }
@@ -263,13 +258,13 @@ mod test {
         let p_err: *mut Error = &mut err1;
         assert!(!p_err.is_null());
         // Get string from C Error pointer...
-        let err_str = super::sandwich_error_stack_str_new(p_err);
+        let err_str = sandwich_error_stack_str_new(p_err);
         // Convert the C String to a rust String
         let safe_err_str = cstr_to_safe_string(err_str);
-        let expect_str = "Error Stack:\nerr:[TLS configuration error: private key is not consistent with the provided certificate],code:[2,4],msg:[This is the root error message]]\nerr:[TLS configuration error: invalid TLS configuration],code:[2,5],msg:[This is the middle error message]]\nerr:[tunnel error: unknown error],code:[12,2],msg:[This is the final error message]]\n";
+        let expect_str = "Error Stack:\nerr:[Errors regarding TLS configurations.: / Inconsistency between a private key and the corresponding certificate.],code:[2,4],msg:[This is the root error message]]\nerr:[Errors regarding TLS configurations.: Invalid configuration.],code:[2,5],msg:[This is the middle error message]]\nerr:[Tunnel error.: Unknown error.],code:[12,2],msg:[This is the final error message]]\n";
         // Free the Error string (owned by the C code)
         unsafe {
-            super::sandwich_error_stack_str_free(err_str);
+            sandwich_error_stack_str_free(err_str);
         }
         assert_eq!(safe_err_str, expect_str);
         // cleanup
@@ -313,13 +308,13 @@ mod test {
         let p_err: *mut Error = &mut err1;
         assert!(!p_err.is_null());
         // Get string from C Error pointer...
-        let err_str = super::sandwich_error_stack_str_new(p_err);
+        let err_str = sandwich_error_stack_str_new(p_err);
         // Convert the C String to a rust String
         let safe_err_str = cstr_to_safe_string(err_str);
-        let expect_str = "Error Stack:\nerr:[TLS configuration error: private key is not consistent with the provided certificate],code:[2,4],msg:[This is the root error message]]\nerr:[protobuf error: invalid argument],code:[99911,917881],msg:[This is the middle error message]]\nerr:[tunnel error: unknown error],code:[12,2],msg:[This is the final error message]]\n";
+        let expect_str = "Error Stack:\nerr:[Errors regarding TLS configurations.: / Inconsistency between a private key and the corresponding certificate.],code:[2,4],msg:[This is the root error message]]\nerr:[Errors regarding protobuf.: / An invalid value was given.],code:[99911,917881],msg:[This is the middle error message]]\nerr:[Tunnel error.: Unknown error.],code:[12,2],msg:[This is the final error message]]\n";
         // Free the Error string (owned by the C code)
         unsafe {
-            super::sandwich_error_stack_str_free(err_str);
+            sandwich_error_stack_str_free(err_str);
         }
         assert_eq!(safe_err_str, expect_str);
         // cleanup

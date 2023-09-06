@@ -235,163 +235,7 @@ macro_rules! GenProtoBasedErrorCode {
     };
 }
 
-GenProtoBasedErrorCode!(
-    {
-        kind: ERRORKIND_API,
-        sym: APIError,
-        desc: "api error",
-        values: [
-            APIERROR_CONFIGURATION => "invalid configuration",
-            APIERROR_SOCKET => "socket error",
-            APIERROR_TUNNEL => "tunnel error",
-        ],
-    },
-    {
-        kind: ERRORKIND_CONFIGURATION,
-        sym: ConfigurationError,
-        desc: "configuration error",
-        values: [
-            CONFIGURATIONERROR_INVALID_IMPLEMENTATION => "invalid implementation",
-            CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION => "unsupported implementation",
-            CONFIGURATIONERROR_INVALID => "invalid configuration",
-        ],
-    },
-    {
-        kind: ERRORKIND_TLS_CONFIGURATION,
-        sym: TLSConfigurationError,
-        desc: "TLS configuration error",
-        values: [
-            TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION => "unsupported implementation",
-            TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION => "unsupported TLS version",
-            TLSCONFIGURATIONERROR_EMPTY => "empty configuration",
-            TLSCONFIGURATIONERROR_INVALID_CASE => "invalid oneof case",
-            TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE => "private key is not consistent with the provided certificate",
-            TLSCONFIGURATIONERROR_INVALID => "invalid TLS configuration",
-        ],
-    },
-    {
-        kind: ERRORKIND_CERTIFICATE,
-        sym: CertificateError,
-        desc: "certificate error",
-        values: [
-            CERTIFICATEERROR_MALFORMED => "certificate malformed",
-            CERTIFICATEERROR_EXPIRED => "certificate expired",
-            CERTIFICATEERROR_NOT_FOUND => "certificate not found on disk",
-            CERTIFICATEERROR_UNKNOWN => "unknown error",
-            CERTIFICATEERROR_UNSUPPORTED => "certificate not supported by underlying implementation",
-        ],
-    },
-    {
-        kind: ERRORKIND_PRIVATE_KEY,
-        sym: PrivateKeyError,
-        desc: "private key error",
-        values: [
-            PRIVATEKEYERROR_MALFORMED => "private key malformed",
-            PRIVATEKEYERROR_NOT_FOUND => "private key not found on disk",
-            PRIVATEKEYERROR_UNKNOWN => "unknown error",
-            PRIVATEKEYERROR_UNSUPPORTED => "private key not supported by underlying implementation",
-            PRIVATEKEYERROR_NOT_SERVER => "not a server configuration",
-        ],
-    },
-    {
-        kind: ERRORKIND_PROTOBUF,
-        sym: ProtobufError,
-        desc: "protobuf error",
-        values: [
-            PROTOBUFERROR_EMPTY => "empty message",
-            PROTOBUFERROR_TOO_BIG => "message too large",
-            PROTOBUFERROR_PARSE_FAILED => "message parsing failed",
-            PROTOBUFERROR_NULLPTR => "null pointer",
-            PROTOBUFERROR_INVALID_ARGUMENT => "invalid argument",
-        ],
-    },
-    {
-        kind: ERRORKIND_ASN1,
-        sym: ASN1Error,
-        desc: "ASN.1 error",
-        values: [
-            ASN1ERROR_INVALID_FORMAT => "invalid format",
-            ASN1ERROR_MALFORMED => "ASN.1 or PEM malformed",
-        ],
-    },
-    {
-        kind: ERRORKIND_ALPN,
-        sym: ALPNError,
-        desc: "ALPN error",
-        values: [
-            ALPNERROR_LENGTH_ERROR => "protocol length is longer than 255 bytes",
-            ALPNERROR_INVALID_STRING => "protocol contains NULL byte or invalid string",
-        ],
-    },
-    {
-        kind: ERRORKIND_DATA_SOURCE,
-        sym: DataSourceError,
-        desc: "DataSource error",
-        values: [
-            DATASOURCEERROR_EMPTY => "empty DataSource",
-            DATASOURCEERROR_INVALID_CASE => "invalid oneof case",
-            DATASOURCEERROR_NOT_FOUND => "data not found on local filesystem",
-        ],
-    },
-    {
-        kind: ERRORKIND_KEM,
-        sym: KEMError,
-        desc: "KEM error",
-        values: [
-            KEMERROR_INVALID => "invalid or unsupported KEM",
-            KEMERROR_TOO_MANY => "too many KEMs",
-        ],
-    },
-    {
-        kind: ERRORKIND_SYSTEM,
-        sym: SystemError,
-        desc: "system error",
-        values: [
-            SYSTEMERROR_MEMORY => "memory error",
-            SYSTEMERROR_INTEGER_OVERFLOW => "integer overflow",
-        ],
-    },
-    {
-        kind: ERRORKIND_SOCKET,
-        sym: SocketError,
-        desc: "socket error",
-        values: [
-            SOCKETERROR_BAD_FD => "bad file descriptor",
-            SOCKETERROR_CREATION_FAILED => "socket creation failed",
-            SOCKETERROR_BAD_NETADDR => "bad network address",
-            SOCKETERROR_NETADDR_UNKNOWN => "network address resolution failed",
-            SOCKETERROR_FSTAT_FAILED => "fstat failed",
-            SOCKETERROR_NOT_SOCK => "not a socket",
-            SOCKETERROR_GETSOCKNAME_FAILED => "getsockname failed",
-            SOCKETERROR_SETSOCKOPT_FAILED => "setsockopt failed",
-            SOCKETERROR_INVALID_AI_FAMILY => "invalid AI family",
-        ],
-    },
-    {
-        kind: ERRORKIND_HANDSHAKE,
-        sym: HandshakeError,
-        desc: "handshake error",
-        values: [
-            HANDSHAKEERROR_INVALID_SERVER_NAME => "invalid server name",
-            HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED => "certificate verification failed",
-            HANDSHAKEERROR_CERTIFICATE_EXPIRED => "certificate has expired",
-            HANDSHAKEERROR_CERTIFICATE_REVOKED => "certificate was revoked",
-            HANDSHAKEERROR_INVALID_CERTIFICATE => "certificate is invalid",
-            HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED => "certificate signature verification failed",
-            HANDSHAKEERROR_UNKNOWN_ERROR => "unknown handshake error",
-        ],
-    },
-    {
-        kind: ERRORKIND_TUNNEL,
-        sym: TunnelError,
-        desc: "tunnel error",
-        values: [
-            TUNNELERROR_INVALID => "invalid tunnel configuration",
-            TUNNELERROR_VERIFIER => "invalid verifier",
-            TUNNELERROR_UNKNOWN => "unknown error",
-        ],
-    },
-);
+include!("generated_error_codes.rs");
 
 /// An error code.
 /// An error code consists of an error code based on a protobuf enum - [`ProtoBasedErrorCode`]
@@ -525,7 +369,7 @@ mod test {
     pub fn test_display_impl_proto_based_error_code() {
         let e = ProtoBasedErrorCode::from(pb::APIError::APIERROR_SOCKET);
         let s = format!("{}", e);
-        assert_eq!(s, "api error: socket error");
+        assert_eq!(s, "API errors.\n The following errors can occur during a call to the Context API.: Socket error.");
     }
 
     /// Tests the [`std::fmt::Display`] and [`std::fmt::Debug`] implementations of `ErrorCode`.
@@ -533,7 +377,7 @@ mod test {
     pub fn test_display_impl_error_code() {
         let e = super::ErrorCode::from(pb::APIError::APIERROR_SOCKET);
         let s = format!("{}", e);
-        assert_eq!(s, "api error: socket error");
+        assert_eq!(s, "API errors.\n The following errors can occur during a call to the Context API.: Socket error.");
 
         let s = format!("{:?}", e);
         assert_eq!(s, "ErrorCode { ec: APIError(APIERROR_SOCKET), msg: None }");
@@ -561,7 +405,7 @@ mod test {
         );
         assert_eq!(
             format!("{}", ec),
-            "api error: socket error: port already in use"
+            "API errors.\n The following errors can occur during a call to the Context API.: Socket error.: port already in use"
         );
         assert_eq!(ec.msg(), Some("port already in use"));
 
@@ -573,7 +417,7 @@ mod test {
         );
         assert_eq!(
             format!("{}", ec),
-            "api error: socket error: port already in use"
+            "API errors.\n The following errors can occur during a call to the Context API.: Socket error.: port already in use"
         );
         assert_eq!(ec.msg(), Some("port already in use"));
 
@@ -586,7 +430,7 @@ mod test {
         );
         assert_eq!(
             format!("{}", ec),
-            "api error: socket error: port already in use"
+            "API errors.\n The following errors can occur during a call to the Context API.: Socket error.: port already in use"
         );
         assert_eq!(ec.msg(), Some("port already in use"));
     }

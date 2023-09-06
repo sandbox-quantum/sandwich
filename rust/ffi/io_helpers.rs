@@ -166,7 +166,7 @@ fn setup_helper_io(io: Box<dyn crate::IO>, owned_io: *mut *mut OwnedIo) -> i32 {
             io: Box::into_raw(boxed_cio) as *mut super::io::Settings,
             freeptr: Some(sandwich_helper_owned_io_free),
         });
-        unsafe { *owned_io = Box::into_raw(b) as *mut OwnedIo };
+        unsafe { *owned_io = Box::into_raw(b) };
     }
     IOError::IOERROR_OK.value()
 }

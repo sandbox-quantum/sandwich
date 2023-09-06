@@ -1,8 +1,8 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("//common/rules/mkdocs:rules.bzl", "mkdocs_project", "mkdocs_tree")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_project", "mkdocs_tree")
 
 mkdocs_tree(
     name = "mkdocs_homepage",
@@ -20,6 +20,7 @@ mkdocs_project(
     config = "mkdocs.yml",
     trees = [
         "//sandwich_c:mkdocs",
+        "//examples:mkdocs",
         "//examples/go/echo_tls_server:mkdocs",
         "//examples/rust/echo_tls_server:mkdocs",
         "//examples/python/echo_tls_server:mkdocs",

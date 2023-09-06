@@ -28,9 +28,10 @@ path = "rust/lib.rs"
 
 [features]
 boringssl = []
-default = ["openssl1_1_1", "boringssl"]
+default = ["openssl1_1_1", "boringssl", "tunnel"]
 ffi = []
 openssl1_1_1 = []
+tunnel = []
 
 [dependencies]
 boringssl = { path = "rust_vendor/boringssl" }

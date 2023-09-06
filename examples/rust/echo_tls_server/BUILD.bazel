@@ -1,16 +1,29 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rustfmt_test")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rustfmt_test")
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+filegroup(
+    name = "mod",
+    srcs = [
+        "echo_tls_server.rs",
+    ],
+    visibility = ["//examples/rust:__subpackages__"],
+)
 
 rust_binary(
     name = "echo_tls_server",
     srcs = [
         "main.rs",
+        ":mod",
+    ],
+    data = [
+        "//testdata",
     ],
     tags = ["requires-network"],
+    visibility = ["//examples/rust:__subpackages__"],
     deps = [
         "//rust:sandwich_full",
         "@crate_index//:clap",
@@ -46,7 +59,7 @@ build_test(
 mkdocs_tree(
     name = "mkdocs",
     srcs = [
-        "main.rs",
+        "echo_tls_server.rs",
     ],
     path = "examples/rust/echo_tls_server",
     visibility = ["//docs:__subpackages__"],

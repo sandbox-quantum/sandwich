@@ -444,7 +444,7 @@ mod test {
         assert!(it.next().as_ref().unwrap().is(&ErrorCode::from(p0)));
         assert!(it.next().as_ref().unwrap().is(&ErrorCode::from(p1)));
         assert!(it.next().as_ref().unwrap().is(&ErrorCode::from(p2)));
-        assert!(matches!(it.next(), None));
+        assert!(it.next().is_none());
     }
 
     /// Tests macro errors.
@@ -460,7 +460,7 @@ mod test {
         it.next().as_ref().unwrap().is(&ErrorCode::from(
             pb::CertificateError::CERTIFICATEERROR_MALFORMED,
         ));
-        assert!(matches!(it.next(), None));
+        assert!(it.next().is_none());
     }
 
     /// Tests the [`Error`] constructor from an enum value and a string.
@@ -636,11 +636,11 @@ mod test {
         let e = errors! {pb::ASN1Error::ASN1ERROR_INVALID_FORMAT => pb::CertificateError::CERTIFICATEERROR_MALFORMED};
         assert_eq!(
             format!("{e}"),
-            "ASN.1 error: invalid formatcertificate error: certificate malformed"
+            "ASN.1 errors.: Invalid format.Certificate errors.: Malformed certificate."
         );
         assert_eq!(
             format!("{e:?}"),
-            "~>#0: ASN.1 error: invalid format\n\t~>#1: certificate error: certificate malformed\n"
+            "~>#0: ASN.1 errors.: Invalid format.\n\t~>#1: Certificate errors.: Malformed certificate.\n"
         );
     }
 

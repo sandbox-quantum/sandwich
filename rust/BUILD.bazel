@@ -1,12 +1,12 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_library")
 load("@rules_rust//rust:defs.bzl", "rust_shared_library", "rust_static_library")
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("//common/rules/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
-load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
 load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+load("//common/rules/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
 load(":rules.bzl", "sandwich_variant")
 
 # Source files of Sandwich.
@@ -28,8 +28,8 @@ _SANDWICH_SRCS = [
 
 # Protobuf dependencies for Sandwich.
 _SANDWICH_PROTOBUF_DEPS = [
-    "//proto:sandwich-proto",
-    "//proto/api/v1:sandwich-api-proto",
+    "//proto:sandwich_rust_proto",
+    "//proto/api/v1:api_rust_proto",
     "@crate_index//:protobuf",
 ]
 
@@ -128,6 +128,7 @@ rust_static_library(
     crate_features = [
         "ffi",
         "openssl1_1_1",
+        "tunnel",
     ],
     crate_name = "sandwich_openssl1_1_1",
     visibility = ["//visibility:public"],
@@ -140,6 +141,7 @@ rust_shared_library(
     crate_features = [
         "ffi",
         "openssl1_1_1",
+        "tunnel",
     ],
     crate_name = "sandwich_openssl1_1_1",
     visibility = ["//visibility:public"],
@@ -226,6 +228,7 @@ rust_static_library(
     crate_features = [
         "boringssl",
         "ffi",
+        "tunnel",
     ],
     crate_name = "sandwich_boringssl",
     visibility = ["//visibility:public"],
@@ -238,6 +241,7 @@ rust_shared_library(
     crate_features = [
         "ffi",
         "boringssl",
+        "tunnel",
     ],
     crate_name = "sandwich_boringssl",
     visibility = ["//visibility:public"],
@@ -285,6 +289,7 @@ rust_static_library(
         "boringssl",
         "ffi",
         "openssl1_1_1",
+        "tunnel",
     ],
     crate_name = "sandwich_full",
     visibility = ["//visibility:public"],
@@ -295,9 +300,10 @@ rust_shared_library(
     name = "sandwich_full_ffi_shared",
     srcs = _SANDWICH_SRCS,
     crate_features = [
-        "ffi",
         "boringssl",
+        "ffi",
         "openssl1_1_1",
+        "tunnel",
     ],
     crate_name = "sandwich_full",
     visibility = ["//visibility:public"],
@@ -317,4 +323,10 @@ build_test(
         ":sandwich_full_ffi_doc",
         ":sandwich_full_ffi_clippy",
     ],
+)
+
+alias(
+    name = "protobuf",
+    actual = "@crate_index//:protobuf",
+    visibility = ["//visibility:public"],
 )

@@ -1,0 +1,35 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//proto/protobuf:defs.bzl", "rust_proto_library")
+
+proto_library(
+    name = "build_proto",
+    srcs = [
+        "build.proto",
+    ],
+    import_prefix = "src/main/protobuf/",
+    strip_import_prefix = "/rust_vendor/bazelisk-rs/proto/",
+)
+
+proto_library(
+    name = "analysis_v2_proto",
+    srcs = [
+        "analysis_v2.proto",
+    ],
+    import_prefix = "src/main/protobuf/",
+    strip_import_prefix = "/rust_vendor/bazelisk-rs/proto/",
+    deps = [
+        ":build_proto",
+    ],
+)
+
+rust_proto_library(
+    name = "build_rust_proto",
+    rustc_flags = [
+        "-A",
+        "ambiguous_glob_reexports",
+    ],
+    visibility = ["//rust_vendor/bazelisk-rs:__subpackages__"],
+    deps = [
+        ":analysis_v2_proto",
+    ],
+)

@@ -9,7 +9,9 @@
 //! information.
 
 pub(crate) use context::Mode;
-pub use context::{try_from as context_try_from, Context, TunnelResult};
+pub use context::{Context, TunnelResult};
+
+use crate::implementation::ossl;
 
 mod context;
 
@@ -20,7 +22,7 @@ mod ffi;
 pub struct ProtoStateErrorBase<Enum: protobuf::Enum>(Enum, Option<crate::Error>);
 
 /// Implements [`std::cmp::PartialEq`] with Enum for [`ProtoStateErrorBase`].
-impl<Enum: protobuf::Enum> std::cmp::PartialEq<Enum> for ProtoStateErrorBase<Enum> {
+impl<Enum: protobuf::Enum> PartialEq<Enum> for ProtoStateErrorBase<Enum> {
     fn eq(&self, other: &Enum) -> bool {
         self.0 == *other
     }
@@ -166,32 +168,75 @@ impl std::fmt::Display for RecordError {
 pub type RecordResult<T> = Result<T, RecordError>;
 
 /// A tunnel.
-/// A tunnel is tied with a Context, using the 'ctx lifetime.
-/// A tunnel is also tied with an I/O interface.
-pub trait Tunnel<'io: 'ctx, 'ctx>: Send {
+pub enum Tunnel<'a> {
+    /// An OpenSSL 1.1.1 tunnel.
+    #[cfg(feature = "openssl1_1_1")]
+    OpenSSL1_1_1(ossl::openssl1_1_1::Tunnel<'a>),
+
+    /// An BoringSSL tunnel.
+    #[cfg(feature = "boringssl")]
+    BoringSSL(ossl::boringssl::Tunnel<'a>),
+}
+
+macro_rules! dispatch {
+    ($self:ident, $func:ident, $($arg:tt) *) => {
+        match $self {
+            #[cfg(feature = "openssl1_1_1")]
+            Self::OpenSSL1_1_1(t) => t.0.$func($($arg)*),
+
+            #[cfg(feature = "boringssl")]
+            Self::BoringSSL(t) => t.0.$func($($arg)*),
+        }
+    };
+    ($self:ident, $func:ident) => {
+        match $self {
+            #[cfg(feature = "openssl1_1_1")]
+            Self::OpenSSL1_1_1(t) => t.0.$func(),
+
+            #[cfg(feature = "boringssl")]
+            Self::BoringSSL(t) => t.0.$func(),
+        }
+    };
+}
+
+impl Tunnel<'_> {
     /// Returns the state of the tunnel.
-    fn state(&self) -> State;
+    pub fn state(&self) -> State {
+        dispatch!(self, state)
+    }
 
     /// Performs the handshake.
     ///
     /// Depending on the return value, this method may need to be called
     /// more than once.
-    fn handshake(&mut self) -> crate::Result<HandshakeState>;
+    pub fn handshake(&mut self) -> crate::Result<HandshakeState> {
+        dispatch!(self, handshake)
+    }
 
     /// Writes data to the tunnel.
-    fn write(&mut self, buf: &[u8]) -> RecordResult<usize>;
+    pub fn write(&mut self, buf: &[u8]) -> RecordResult<usize> {
+        dispatch!(self, write, buf)
+    }
 
     /// Reads data from the tunnel.
-    fn read(&mut self, buf: &mut [u8]) -> RecordResult<usize>;
+    pub fn read(&mut self, buf: &mut [u8]) -> RecordResult<usize> {
+        dispatch!(self, read, buf)
+    }
 
     /// Closes the tunnel.
-    fn close(&mut self) -> RecordResult<()>;
+    pub fn close(&mut self) -> RecordResult<()> {
+        dispatch!(self, close)
+    }
 }
 
-/// Implements [`std::fmt::Debug`] for [`Tunnel`].
-impl std::fmt::Debug for dyn Tunnel<'_, '_> {
+impl std::fmt::Debug for Tunnel<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Tunnel")
+        match self {
+            #[cfg(feature = "openssl1_1_1")]
+            Self::OpenSSL1_1_1(t) => write!(f, "Tunnel(OpenSSL1_1_1({t:?}))"),
+            #[cfg(feature = "boringssl")]
+            Self::BoringSSL(t) => write!(f, "Tunnel(BoringSSL({t:?}))"),
+        }
     }
 }
 
