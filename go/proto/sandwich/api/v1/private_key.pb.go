@@ -26,6 +26,7 @@ type PrivateKey struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Source:
+	//
 	//	*PrivateKey_Static
 	Source isPrivateKey_Source `protobuf_oneof:"source"`
 }

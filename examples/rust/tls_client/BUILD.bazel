@@ -1,9 +1,9 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rustfmt_test")
 load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rustfmt_test")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 filegroup(
     name = "mod",

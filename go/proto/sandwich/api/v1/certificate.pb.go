@@ -26,6 +26,7 @@ type Certificate struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Source:
+	//
 	//	*Certificate_Static
 	Source isCertificate_Source `protobuf_oneof:"source"`
 }

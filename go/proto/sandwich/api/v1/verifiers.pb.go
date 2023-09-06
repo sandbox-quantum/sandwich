@@ -127,6 +127,7 @@ type SANMatcher struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to San:
+	//
 	//	*SANMatcher_Email
 	//	*SANMatcher_Dns
 	//	*SANMatcher_IpAddress
@@ -268,6 +269,7 @@ type TunnelVerifier struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Verifier:
+	//
 	//	*TunnelVerifier_SanVerifier
 	//	*TunnelVerifier_EmptyVerifier
 	Verifier isTunnelVerifier_Verifier `protobuf_oneof:"verifier"`

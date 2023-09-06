@@ -3,7 +3,6 @@
 
 load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_doc", "rust_library", "rust_test")
 
-
 # Rust dependencies for unit tests.
 _SANDWICH_RUNFILES_DEPS = [
     "@rules_rust//tools/runfiles",
@@ -124,5 +123,3 @@ def sandwich_variant(
                 crate = named_target,
                 rustdoc_flags = _RUSTDOC_FLAGS,
             )
-
-

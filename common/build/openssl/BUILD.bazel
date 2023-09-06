@@ -1,4 +1,5 @@
 load(":rules.bzl", "openssl_build")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 cc_library(
     name = "dep_test",

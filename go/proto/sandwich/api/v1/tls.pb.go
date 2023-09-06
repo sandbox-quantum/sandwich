@@ -82,6 +82,7 @@ type TLSOptions struct {
 
 	Kem []string `protobuf:"bytes,1,rep,name=kem,proto3" json:"kem,omitempty"`
 	// Types that are assignable to PeerVerifier:
+	//
 	//	*TLSOptions_X509Verifier
 	//	*TLSOptions_EmptyVerifier
 	PeerVerifier  isTLSOptions_PeerVerifier `protobuf_oneof:"peer_verifier"`

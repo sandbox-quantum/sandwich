@@ -1,5 +1,6 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test", "rustfmt_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rustfmt_test")
 
 _SRCS = [
     "action_graph.rs",

@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test", "rustfmt_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rustfmt_test")
 
 rust_library(
     name = "build-support",
     srcs = ["lib.rs"],
     crate_name = "build_support",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//rust_vendor/bazelisk-rs/src:bazelisk",
         "@crate_index//:log",

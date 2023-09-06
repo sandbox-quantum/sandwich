@@ -1,8 +1,8 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
 load("//common/tools/protemplate:rules.bzl", "template_proto_library")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
 
 template_proto_library(
     name = "gen_error_codes",

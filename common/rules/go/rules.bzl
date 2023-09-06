@@ -29,4 +29,3 @@ get_go_sdk = rule(
     },
     toolchains = ["@io_bazel_rules_go//go:toolchain"],
 )
-
