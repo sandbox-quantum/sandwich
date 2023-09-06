@@ -1,11 +1,11 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
-load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_rust//proto/protobuf:defs.bzl", "rust_proto_library")
 load("//common/tools/proto2md:rules.bzl", "md_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+load("@rules_rust//proto/protobuf:defs.bzl", "rust_proto_library")
 
 proto_library(
     name = "encoding_format_proto",
@@ -16,7 +16,7 @@ proto_library(
     name = "data_source_proto",
     srcs = ["data_source.proto"],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
     deps = [
         ":encoding_format_proto",
@@ -27,7 +27,7 @@ proto_library(
     name = "certificate_proto",
     srcs = ["certificate.proto"],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
     deps = [
         ":data_source_proto",
@@ -38,7 +38,7 @@ proto_library(
     name = "compliance_proto",
     srcs = ["compliance.proto"],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
 )
 
@@ -80,7 +80,7 @@ proto_library(
     name = "api_proto",
     srcs = ["configuration.proto"],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
     deps = [
         ":compliance_proto",
@@ -138,7 +138,7 @@ md_proto_library(
         "TunnelVerifier",
     ],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
 )
 
@@ -151,7 +151,7 @@ py_proto_library(
     srcs = [
         "encoding_format.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 py_proto_library(
@@ -159,7 +159,7 @@ py_proto_library(
     srcs = [
         "data_source.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":encoding_format_python_proto",
     ],
@@ -170,7 +170,7 @@ py_proto_library(
     srcs = [
         "certificate.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":data_source_python_proto",
     ],
@@ -181,7 +181,7 @@ py_proto_library(
     srcs = [
         "compliance.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":data_source_python_proto",
     ],
@@ -192,7 +192,7 @@ py_proto_library(
     srcs = [
         "private_key.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":data_source_python_proto",
     ],
@@ -203,7 +203,7 @@ py_proto_library(
     srcs = [
         "verifiers.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":certificate_python_proto",
     ],
@@ -214,7 +214,7 @@ py_proto_library(
     srcs = [
         "tls.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":certificate_python_proto",
         ":private_key_python_proto",
@@ -227,7 +227,7 @@ py_proto_library(
     srcs = [
         "tunnel.proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":verifiers_python_proto",
     ],
@@ -237,7 +237,7 @@ py_proto_library(
     name = "api_python_proto",
     srcs = ["configuration.proto"],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
     deps = [
         ":compliance_python_proto",
@@ -265,7 +265,7 @@ go_proto_library(
         ":verifiers_proto",
     ],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
 )
 
@@ -281,7 +281,7 @@ rust_proto_library(
         "ambiguous-glob-reexports",
     ],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
     deps = [
         ":api_proto",
@@ -295,7 +295,7 @@ rust_proto_library(
 cc_proto_library(
     name = "api_cc_proto",
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
     deps = [
         ":api_proto",

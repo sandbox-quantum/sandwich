@@ -35,7 +35,7 @@ def sandwich_deps():
 
     go_rules_dependencies()
 
-    go_register_toolchains(version = "1.18.4")
+    go_register_toolchains(version = "1.20.5")
 
     # See https://github.com/bazelbuild/bazel-gazelle/issues/678
     gazelle_dependencies(go_repository_default_config = "@//:WORKSPACE.bazel")

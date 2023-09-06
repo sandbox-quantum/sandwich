@@ -5,7 +5,6 @@ _COMMIT = "70d83cacc85b0c45331c16bcb9acf6a233e895e3"
 _SHA256SUM = "f13d9e0ee6d39a9085dcff7b478ea352d12f67aab437fd42206cd84737f3d9a5"
 _OSSL_VERSION = "1.1.1u"
 
-
 def open_quantum_safe_openssl_no_liboqs_fetch_archive():
     maybe(
         http_archive,

@@ -1,5 +1,5 @@
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load(":rules.bzl", "gen_certificate", "gen_private_key")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 gen_private_key(
     name = "private_key_test",

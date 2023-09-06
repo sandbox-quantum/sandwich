@@ -17,7 +17,7 @@ filegroup(
     name = "sandwich_hdrs_file",
     srcs = ["sandwich.h"],
     visibility = [
-        "//visibility:public",
+        "//:__subpackages__",
     ],
 )
 
@@ -30,7 +30,7 @@ filegroup(
         "tunnel_types.h",
     ],
     visibility = [
-        "//visibility:public",
+        "//:__subpackages__",
     ],
 )
 
@@ -43,7 +43,7 @@ cc_library(
         "tunnel_types.h",
     ],
     visibility = [
-        "//visibility:public",
+        "//:__subpackages__",
     ],
 )
 
@@ -58,7 +58,7 @@ cc_library(
         "//conditions:default": [],
     }),
     visibility = [
-        "//visibility:public",
+        "//:__subpackages__",
     ],
     deps = [
         ":sandwich_hdrs",

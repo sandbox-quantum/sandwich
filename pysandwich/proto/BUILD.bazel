@@ -9,26 +9,26 @@ load("@rules_rust//proto/protobuf:defs.bzl", "rust_proto_library")
 proto_library(
     name = "errors_proto",
     srcs = ["errors.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 proto_library(
     name = "tunnel_proto",
     srcs = ["tunnel.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 proto_library(
     name = "io_proto",
     srcs = ["io.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 proto_library(
     name = "sandwich_proto",
     srcs = ["sandwich.proto"],
     visibility = [
-        "//visibility:public",
+        "//pysandwich:__subpackages__",
     ],
     deps = [
         ":errors_proto",
@@ -44,25 +44,25 @@ proto_library(
 py_proto_library(
     name = "errors_python_proto",
     srcs = ["errors.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 py_proto_library(
     name = "tunnel_python_proto",
     srcs = ["tunnel.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 py_proto_library(
     name = "io_python_proto",
     srcs = ["io.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 py_proto_library(
     name = "sandwich_python_proto",
     srcs = ["sandwich.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":errors_python_proto",
         ":io_python_proto",
@@ -83,7 +83,7 @@ go_proto_library(
         ":sandwich_proto",
         ":tunnel_proto",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//pysandwich:__subpackages__"],
 )
 
 ################
@@ -97,7 +97,7 @@ rust_proto_library(
         "-A",
         "ambiguous_glob_reexports",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":sandwich_proto",
     ],
@@ -109,7 +109,7 @@ rust_proto_library(
 
 cc_proto_library(
     name = "sandwich_cc_proto",
-    visibility = ["//visibility:public"],
+    visibility = ["//pysandwich:__subpackages__"],
     deps = [
         ":sandwich_proto",
     ],

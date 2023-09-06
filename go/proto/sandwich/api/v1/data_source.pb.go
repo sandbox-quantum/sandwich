@@ -26,6 +26,7 @@ type DataSource struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Specifier:
+	//
 	//	*DataSource_Filename
 	//	*DataSource_InlineBytes
 	//	*DataSource_InlineString

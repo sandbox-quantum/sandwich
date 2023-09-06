@@ -2,36 +2,30 @@ version: 2.1
 
 jobs:
   run-all-tests:
-    resource_class: xlarge
     docker:
       - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
         auth:
           username: _json_key
           password: $RUNNER_GCR_SA_KEY
-    environment:
-      BAZEL_CACHE_ARGS: "--remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 --google_default_credentials"
-      CC: clang-13
-      CXX: clang++-13
+    resource_class: xlarge
     steps:
-      - run:
-          name: "Export custom environment variables"
-          command: |
-            echo 'export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"' >> "${BASH_ENV}"
-            source "${BASH_ENV}"
-            echo "${BAZEL_CACHE_GCS_SA_KEY}" > "${GOOGLE_APPLICATION_CREDENTIALS}"
-
       - checkout
       - run:
           name: "Run all test targets"
           command: |
-            source "${BASH_ENV}"
-            bazelisk test ${BAZEL_CACHE_ARGS} //...
-
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+            bazelisk --bazelrc .circleci/cache.bazelrc test --config=cicd //...
       - run:
-          name: "Test external Go integration"
+          name: "Test the external Go & Python integrations"
           command: |
-            source "${BASH_ENV}"
-            bazelisk build ${BAZEL_CACHE_ARGS} sandwich_c/...
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+            bazelisk build --config=cicd --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
+              --google_default_credentials \
+              sandwich_c/...
+            export CC=clang-13
+            export CXX=clang++-13
 
             export CGO_CFLAGS="-I$PWD -I$PWD/bazel-bin/"
             export CGO_LDFLAGS="-L$PWD/bazel-bin/rust/"
@@ -39,22 +33,21 @@ jobs:
             echo "replace github.com/sandbox-quantum/sandwich/go => $PWD/go" >>"$GO_EXAMPLE_DIR/go.mod"
             pushd "$GO_EXAMPLE_DIR" && go build && popd
 
-      - run:
-          name: "Test external Python integration"
-          command: |
-            source "${BASH_ENV}"
-            bazelisk build ${BAZEL_CACHE_ARGS} sandwich_c/...
-
             python3 -m venv venv
             source venv/bin/activate
             pip install .
             SANDWICH_C_LIB="$PWD/bazel-bin/rust/libsandwich_full.so" python -c 'from pysandwich import sandwich; sandwich.sandwich()'
-
       - run:
           name: "Build the Rust package natively"
           command: |
-            source "${BASH_ENV}"
-            export CARGO_BAZELISK_EXTRA_ARGS="${BAZEL_CACHE_ARGS}"
+            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
+            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
+
+            export CARGO_BAZELISK_EXTRA_ARGS="--config=cicd --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 --google_default_credentials"
+            export CC=clang-13
+            export CXX=clang++-13
+
+            cargo build --release -vv
             cargo test --release --lib -vv
 
   release-linux-dockerbuild:
@@ -151,14 +144,13 @@ jobs:
           name: "Export build artifacts"
           path: ~/export_artifacts/
 
-
   publish-doc:
-    resource_class: xlarge
     docker:
       - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
         auth:
           username: _json_key
           password: $RUNNER_GCR_SA_KEY
+    resource_class: xlarge
     steps:
       - checkout
       - add_ssh_keys:
@@ -171,17 +163,41 @@ jobs:
             bazelisk build //docs:docs
             ghp-import "$DOC_HTML" -p -o
 
+
+  push-to-oss:
+    docker:
+      - image: "us-docker.pkg.dev/pqc-infra-test/circleci-runner/runner:latest"
+        auth:
+          username: _json_key
+          password: $RUNNER_GCR_SA_KEY
+    resource_class: xlarge
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "cb:67:a0:71:3b:89:1b:19:d6:40:d5:b8:84:38:33:a4"
+      - run:
+          name: "Run copybara"
+          command: |
+            git config --global user.email "invalid@circleci.com"
+            git config --global user.name "CircleCI Presubmit"
+            git config --global init.defaultBranch main
+            COPYBARA_EXIT=0
+            copybara .circleci/copy.bara.sky push \
+              || COPYBARA_EXIT=$?
+            # Exit code of 4 means "nothing to do" and should be accepted.
+            # See https://github.com/google/copybara/blob/2afcc6413be20ba2ea2732e04b2b32e039631ade/java/com/google/copybara/util/ExitCode.java#L42
+            if [ $COPYBARA_EXIT -ne 0 -a $COPYBARA_EXIT -ne 4 ]; then
+              echo Copybara failed.
+              exit 1
+            fi
+
 workflows:
   presubmit:
     jobs:
       - run-all-tests:
           context:
             - bazel-cache
-      - publish-doc:
-          filters:
-            branches:
-              only:
-                - main
       - release-linux-dockerbuild:
           name: release-linux-dockerbuild_amd64
           mode: release
@@ -204,3 +220,17 @@ workflows:
           resource: macos.m1.large.gen1
           platform: macos_x86_64
           artifact_file_name: "sandwich-macos-x86_64.tar.bz2"
+      - publish-doc:
+          context:
+            - bazel-cache
+          requires:
+            - run-all-tests
+      - push-to-oss:
+          context:
+            - bazel-cache
+          requires:
+            - run-all-tests
+          filters:
+            branches:
+              only:
+                - main

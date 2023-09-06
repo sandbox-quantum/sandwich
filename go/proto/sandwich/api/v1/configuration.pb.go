@@ -75,6 +75,7 @@ type ClientOptions struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Opts:
+	//
 	//	*ClientOptions_Tls
 	Opts isClientOptions_Opts `protobuf_oneof:"opts"`
 }
@@ -141,6 +142,7 @@ type ServerOptions struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Opts:
+	//
 	//	*ServerOptions_Tls
 	Opts isServerOptions_Opts `protobuf_oneof:"opts"`
 }
@@ -208,6 +210,7 @@ type Configuration struct {
 
 	Impl Implementation `protobuf:"varint,1,opt,name=impl,proto3,enum=saq.sandwich.proto.api.v1.Implementation" json:"impl,omitempty"`
 	// Types that are assignable to Opts:
+	//
 	//	*Configuration_Client
 	//	*Configuration_Server
 	Opts       isConfiguration_Opts `protobuf_oneof:"opts"`

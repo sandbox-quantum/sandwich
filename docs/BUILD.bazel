@@ -1,8 +1,8 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//common/rules/mkdocs:rules.bzl", "mkdocs_project", "mkdocs_tree")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 mkdocs_tree(
     name = "mkdocs_homepage",

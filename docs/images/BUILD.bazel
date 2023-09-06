@@ -10,5 +10,5 @@ mkdocs_tree(
         exclude = ["BUILD.bazel"],
     ),
     path = "images",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )

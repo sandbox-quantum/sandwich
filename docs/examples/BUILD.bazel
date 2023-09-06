@@ -7,5 +7,5 @@ mkdocs_tree(
     name = "mkdocs",
     srcs = glob(["*"]),
     path = "examples",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
