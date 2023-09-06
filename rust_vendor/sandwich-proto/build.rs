@@ -7,7 +7,7 @@ extern crate env_logger;
 extern crate log;
 
 /// Target to build.
-const TARGETS: [&str; 1] = ["//proto:sandwich-proto"];
+const TARGETS: [&str; 1] = ["//proto:sandwich_rust_proto"];
 
 /// Parent directory's name for the generated Rust file.
 const RUST_FILES_PARENT: &str = "sandwich_proto.proto.rust";

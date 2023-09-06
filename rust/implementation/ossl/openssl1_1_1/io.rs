@@ -10,6 +10,8 @@ use openssl1_1_1 as openssl;
 
 use super::Ossl;
 
+use crate::implementation::ossl;
+
 /// Clears the BIO retry flag.
 fn clear_bio_retry_flags(bio: *mut openssl::bio_st) {
     unsafe {
@@ -24,6 +26,8 @@ fn clear_bio_retry_flags(bio: *mut openssl::bio_st) {
 fn get_bio_ssl(bio: *mut openssl::bio_st) -> Result<*mut openssl::SSL, i64> {
     let mut ssl: *mut openssl::SSL = std::ptr::null_mut();
     let e = unsafe {
+        // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+        // openssl::BIO_get_ssl(bio, &mut ssl as *mut *mut openssl::SSL)
         openssl::BIO_ctrl(
             bio,
             openssl::BIO_C_GET_SSL as i32,
@@ -69,6 +73,13 @@ fn set_bio_close(bio: *mut openssl::bio_st) {
     }
 }
 
+/// Returns the tunnel from a BIO.
+fn get_tunnel_from_bio<'a>(bio: *mut openssl::bio_st) -> &'a mut ossl::OsslTunnel<'a, Ossl> {
+    let tun = unsafe { &mut *(openssl::BIO_get_data(bio) as *mut ossl::OsslTunnel<Ossl>) };
+    debug_assert!(tun.bio.as_ptr() == bio);
+    tun
+}
+
 /// BIO write callback.
 unsafe extern "C" fn bio_write(
     bio: *mut openssl::bio_st,
@@ -77,13 +88,11 @@ unsafe extern "C" fn bio_write(
     written: *mut usize,
 ) -> i32 {
     clear_bio_retry_flags(bio);
-    let tun = &mut *(openssl::BIO_get_data(bio) as *mut super::ossl::OsslTunnel<Ossl>);
-
-    debug_assert!(tun.bio.as_ptr() == bio);
+    let tun = get_tunnel_from_bio(bio);
 
     if tun.state != pb::State::STATE_HANDSHAKE_DONE {
         if let Ok(ssl) = get_bio_ssl(bio) {
-            debug_assert!(tun.ssl.as_ptr() == ssl);
+            debug_assert!(tun.ssl.as_nonnull().as_ptr() == ssl);
             if openssl::SSL_get_state(ssl) == openssl::OSSL_HANDSHAKE_STATE_TLS_ST_OK {
                 tun.state = pb::State::STATE_HANDSHAKE_DONE;
             }
@@ -91,10 +100,7 @@ unsafe extern "C" fn bio_write(
     }
 
     (tun.io)
-        .write(
-            std::slice::from_raw_parts(data as *const u8, len),
-            tun.state,
-        )
+        .write(std::slice::from_raw_parts(data.cast(), len), tun.state)
         .map(|n| {
             *written = n;
             1
@@ -120,13 +126,11 @@ unsafe extern "C" fn bio_read(
     read: *mut usize,
 ) -> i32 {
     clear_bio_retry_flags(bio);
-    let tun = &mut *(openssl::BIO_get_data(bio) as *mut super::ossl::OsslTunnel<Ossl>);
-
-    debug_assert!(tun.bio.as_ptr() == bio);
+    let tun = get_tunnel_from_bio(bio);
 
     if tun.state != pb::State::STATE_HANDSHAKE_DONE {
         if let Ok(ssl) = get_bio_ssl(bio) {
-            debug_assert!(tun.ssl.as_ptr() == ssl);
+            debug_assert!(tun.ssl.as_nonnull().as_ptr() == ssl);
             if openssl::SSL_get_state(ssl) == openssl::OSSL_HANDSHAKE_STATE_TLS_ST_OK {
                 tun.state = pb::State::STATE_HANDSHAKE_DONE;
             }
@@ -134,10 +138,7 @@ unsafe extern "C" fn bio_read(
     }
 
     (tun.io)
-        .read(
-            std::slice::from_raw_parts_mut(data as *mut u8, len),
-            tun.state,
-        )
+        .read(std::slice::from_raw_parts_mut(data.cast(), len), tun.state)
         .map(|n| {
             *read = n;
             1

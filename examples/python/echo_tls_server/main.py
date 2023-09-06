@@ -8,15 +8,11 @@ import pysandwich.proto.api.v1.compliance_pb2 as Compliance
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichTunnelProto
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
 import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
-import pysandwich.io as SandwichIO
+import pysandwich.io_helpers as SandwichIOHelpers
 import pysandwich.tunnel as SandwichTunnel
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
 
 # --8<-- [end:py_imports_proto]
-# --8<-- [start:py_imports_tunnel]
-from pysandwich.sandwich import Sandwich
-
-# --8<-- [end:py_imports_tunnel]
 
 
 # --8<-- [start:py_server_cfg]
@@ -26,7 +22,7 @@ def create_server_conf(cert_path: str, key_path: str) -> SandwichTunnelProto:
 
     conf.compliance.classical_choice = Compliance.CLASSICAL_ALGORITHMS_ALLOW
     conf.server.tls.common_options.kem.append("prime256v1")
-    conf.server.tls.common_options.kem.append("kyber768")
+
     conf.server.tls.common_options.empty_verifier.CopyFrom(
         SandwichVerifiers.EmptyVerifier()
     )
@@ -43,19 +39,22 @@ def create_server_conf(cert_path: str, key_path: str) -> SandwichTunnelProto:
     return conf
 
 
+def create_server_tun_conf() -> TunnelConfiguration:
+    tun_conf = TunnelConfiguration()
+    tun_conf.verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
+    return tun_conf
+
+
 # --8<-- [end:py_server_cfg]
 
 
 class EchoHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        swio = SandwichIO.io_socket_wrap(Sandwich(), self.request)
-        server_ctx = self.ctx
+        swio = SandwichIOHelpers.io_socket_wrap(self.request)
+        server_ctx_conf = self.ctx_conf
         # --8<-- [start:py_new_tunnel]
-        tunnel_configuration = TunnelConfiguration()
-        tunnel_configuration.verifier.empty_verifier.CopyFrom(
-            SandwichVerifiers.EmptyVerifier()
-        )
-        server = SandwichTunnel.Tunnel(server_ctx, swio, tunnel_configuration)
+        server_tun_conf = create_server_tun_conf()
+        server = SandwichTunnel.Tunnel(server_ctx_conf, swio, server_tun_conf)
         # --8<-- [end:py_new_tunnel]
 
         server.handshake()
@@ -78,14 +77,9 @@ class EchoHandler(socketserver.BaseRequestHandler):
 
 def tcp_handler(key, cert):
     # --8<-- [start:py_ctx]
-    server_ctx = SandwichTunnel.Context.from_config(
-        Sandwich(), create_server_conf(cert, key)
-    )
+    server_ctx_conf = SandwichTunnel.Context.from_config(create_server_conf(cert, key))
     # --8<-- [end:py_ctx]
-    verifier = SandwichVerifiers.TunnelVerifier()
-    verifier.empty_verifier.CopyFrom(SandwichVerifiers.EmptyVerifier())
-    EchoHandler.ctx = server_ctx
-    EchoHandler.verifier = verifier
+    EchoHandler.ctx_conf = server_ctx_conf
     return EchoHandler
 
 

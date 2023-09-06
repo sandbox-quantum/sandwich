@@ -1,64 +1,68 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import os
 import signal
 import socketserver
 import sys
-from multiprocessing import Process
+from multiprocessing import Pipe, Process
 
 from echo_tls_server.main import tcp_handler as server_tcp_handler
 from tls_client.main import main as client_main
 
 
-def thread_server(server):
+def thread_server(port_w: Pipe) -> None:
+    CERT_PATH = "testdata/dilithium5.cert.pem"
+    KEY_PATH = "testdata/dilithium5.key.pem"
+
+    server_handler = server_tcp_handler(KEY_PATH, CERT_PATH)
+
+    server = socketserver.TCPServer(("127.0.0.1", 0), server_handler)
+
+    port_w.send_bytes(server.server_address[1].to_bytes(2, "big"))
+
     server.serve_forever()
 
 
-def thread_client(port, input_, output):
-    client_main("127.0.0.1", port, os.fdopen(input_, "rb"), os.fdopen(output, "wb"))
+def thread_client(port_r: Pipe, input_r: Pipe, output_w: Pipe) -> None:
+    port = int.from_bytes(port_r.recv_bytes(), "big")
+
+    client_main("127.0.0.1", port, input_r, output_w)
 
 
-def killme(sig, handler):
-    pserver.terminate()
+def killme(sig, handle):
     pclient.terminate()
-    pserver.join()
+    pserver.terminate()
+
     pclient.join()
+    pserver.join()
     sys.exit(1)
 
 
-input_r, input_w = os.pipe()
-output_r, output_w = os.pipe()
+if __name__ == "__main__":
+    port_r, port_w = Pipe(duplex=False)
+    input_r, input_w = Pipe(duplex=False)
+    output_r, output_w = Pipe(duplex=False)
 
-CERT_PATH = "testdata/dilithium5.cert.pem"
-KEY_PATH = "testdata/dilithium5.key.pem"
+    signal.signal(signal.SIGCHLD, killme)
 
-server_handler = server_tcp_handler(KEY_PATH, CERT_PATH)
-server = socketserver.TCPServer(("127.0.0.1", 0), server_handler)
-port = server.server_address[1]
+    pserver = Process(target=thread_server, args=(port_w,))
+    pclient = Process(target=thread_client, args=(port_r, input_r, output_w))
 
-signal.signal(signal.SIGCHLD, killme)
+    pserver.start()
+    pclient.start()
 
-pserver = Process(target=thread_server, args=(server,))
-pclient = Process(target=thread_client, args=(port, input_r, output_w))
+    hello = b"hello\n"
+    world = b"world\n"
 
-pserver.start()
-pclient.start()
+    input_w.send_bytes(hello)
+    assert output_r.recv_bytes() == hello
 
-input_w = os.fdopen(input_w, "wb")
-output_r = os.fdopen(output_r, "rb")
+    input_w.send_bytes(world)
+    assert output_r.recv_bytes() == world
 
-input_w.write(b"HELLO\n")
-input_w.flush()
-assert output_r.read(6) == b"HELLO\n"
+    signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 
-input_w.write(b"WORLD\n")
-input_w.flush()
-assert output_r.read(6) == b"WORLD\n"
-
-signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-
-pclient.terminate()
-pserver.terminate()
-pserver.join()
-pclient.join()
+    pclient.terminate()
+    pserver.terminate()
+    pclient.join()
+    pserver.join()

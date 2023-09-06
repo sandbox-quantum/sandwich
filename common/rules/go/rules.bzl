@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_context")
+load("@io_bazel_rules_go//go/private:providers.bzl", "GoSource")
 
 def _get_go_sdk_impl(ctx):
     """Implements the `get_go_sdk` rule.
@@ -28,3 +29,4 @@ get_go_sdk = rule(
     },
     toolchains = ["@io_bazel_rules_go//go:toolchain"],
 )
+

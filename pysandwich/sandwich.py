@@ -24,7 +24,7 @@ import platform
 import typing
 
 import pysandwich.errors as errors
-import pysandwich.io as SandwichIO
+from pysandwich.io import OwnedIO
 
 _ext = {"Darwin": "dylib", "Windows": "dll"}.get(platform.system(), "so")
 
@@ -92,7 +92,22 @@ def _error_code_to_exception(ptr: ctypes.c_void_p):
     return head_excp
 
 
-class Sandwich:
+class TunnelConfigurationSerialized(ctypes.Structure):
+    """The `struct SandwichTunnelConfigurationSerialized`."""
+
+    _fields_ = [
+        (
+            "src",
+            ctypes.c_char_p,
+        ),
+        (
+            "n",
+            ctypes.c_size_t,
+        ),
+    ]
+
+
+class _Sandwich:
     """A Sandwich handle.
 
     This handle is responsible for doing the glue with the C code.
@@ -105,24 +120,10 @@ class Sandwich:
     lib: typing.Optional[ctypes.CDLL] = None
     syms: typing.Dict[str, typing.Callable] = {}
 
-    class TunnelConfigurationSerialized(ctypes.Structure):
-        """The `struct SandwichTunnelConfigurationSerialized`."""
-
-        _fields_ = [
-            (
-                "src",
-                ctypes.c_char_p,
-            ),
-            (
-                "n",
-                ctypes.c_size_t,
-            ),
-        ]
-
     func_types = {
         # void sandwich_error_free(struct SandwichError *chain)
         "sandwich_error_free": ([ctypes.c_void_p], None),
-        # char * sandwich_error_stack_str_new(const struct SandwichError *chain)
+        # char* sandwich_error_stack_str_new(const struct SandwichError *chain)
         "sandwich_error_stack_str_new": ([ctypes.c_void_p], ctypes.c_char_p),
         # void sandwich_error_stack_str_free(const char *err_str);
         "sandwich_error_stack_str_free": ([ctypes.c_char_p], None),
@@ -200,7 +201,7 @@ class Sandwich:
                 ctypes.c_char_p,
                 ctypes.c_uint16,
                 ctypes.c_bool,
-                ctypes.POINTER(ctypes.POINTER(SandwichIO.OwnedIO)),
+                ctypes.POINTER(ctypes.POINTER(OwnedIO)),
             ],
             ctypes.c_int32,
         ),
@@ -209,7 +210,7 @@ class Sandwich:
         "sandwich_io_socket_wrap_new": (
             [
                 ctypes.c_int,
-                ctypes.POINTER(ctypes.POINTER(SandwichIO.OwnedIO)),
+                ctypes.POINTER(ctypes.POINTER(OwnedIO)),
             ],
             ctypes.c_int32,
         ),
@@ -229,7 +230,7 @@ class Sandwich:
             FileNotFoundError: The Sandwich shared library could not be found.
         """
 
-        if Sandwich.lib is None:
+        if _Sandwich.lib is None:
             if dllpath is None:
                 dllpath = _find_sandwich_dll()
 
@@ -239,10 +240,10 @@ class Sandwich:
             if isinstance(dllpath, pathlib.Path):
                 dllpath = dllpath.resolve()
 
-            Sandwich.lib = ctypes.cdll.LoadLibrary(dllpath)
+            _Sandwich.lib = ctypes.cdll.LoadLibrary(dllpath)
 
-        if Sandwich.syms is None:
-            Sandwich.syms = {}
+        if _Sandwich.syms is None:
+            _Sandwich.syms = {}
 
     @staticmethod
     def c_call(name: str, *args: typing.Any) -> typing.Any:
@@ -259,13 +260,13 @@ class Sandwich:
         """
 
         f: typing.Callable
-        if name in Sandwich.syms:
-            f = Sandwich.syms[name]
+        if name in _Sandwich.syms:
+            f = _Sandwich.syms[name]
         else:
-            f = Sandwich.resolve(name)
-            Sandwich.syms[name] = f
+            f = _Sandwich.resolve(name)
+            _Sandwich.syms[name] = f
 
-        f.argtypes, f.restype = Sandwich.func_types[name]
+        f.argtypes, f.restype = _Sandwich.func_types[name]
         return f(*args)
 
     @staticmethod
@@ -283,8 +284,21 @@ class Sandwich:
         """
 
         try:
-            return getattr(Sandwich.lib, name)
+            return getattr(_Sandwich.lib, name)
         except AttributeError:
             raise AttributeError(
                 f"Sandwich lib does not have symbol {name!r}"
             ) from None
+
+
+_sandwich_hdl = None
+
+
+def sandwich():
+    """Returns the global handler to _Sandwich.
+    This function performs a lazy initialization of the Sandwich handler.
+    """
+    global _sandwich_hdl
+    if _sandwich_hdl is None:
+        _sandwich_hdl = _Sandwich()
+    return _sandwich_hdl

@@ -1,0 +1,35 @@
+diff --git a/ssl/s3_lib.c b/ssl/s3_lib.c
+index 98608c48ad..2a6ce65083 100644
+--- a/ssl/s3_lib.c
++++ b/ssl/s3_lib.c
+@@ -3335,6 +3335,9 @@ void ssl3_free(SSL *s)
+     OPENSSL_free(s->s3->alpn_selected);
+     OPENSSL_free(s->s3->alpn_proposed);
+ 
++    OQS_KEM_free(s->s3->tmp.oqs_kem);
++    free(s->s3->tmp.oqs_kem_client);
++
+ #ifndef OPENSSL_NO_SRP
+     SSL_SRP_CTX_free(s);
+ #endif
+diff --git a/ssl/statem/extensions_srvr.c b/ssl/statem/extensions_srvr.c
+index 8d75b8bdda..1035e21ad1 100644
+--- a/ssl/statem/extensions_srvr.c
++++ b/ssl/statem/extensions_srvr.c
+@@ -1827,7 +1827,7 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
+ 
+       /* this code has been moved up from the bottom of the function, because
+          oqs code below needs it in case of hybrid */
+-      /* OQS note: only derive the secret if we don't do hybrid. In case of hybrid, the 
++      /* OQS note: only derive the secret if we don't do hybrid. In case of hybrid, the
+          shared key will be store in s->s3->tmp.pms */
+       if (ssl_derive(s, skey, ckey, do_hybrid ? 0 : 1) == 0) {
+         /* SSLfatal() already called */
+@@ -1902,6 +1902,7 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
+       OQS_MEM_secure_free(shared_secret, shared_secret_len);
+       OQS_KEM_free(oqs_kem);
+       OPENSSL_free(s->s3->tmp.oqs_kem_client);
++      s->s3->tmp.oqs_kem_client = NULL;
+       if (has_error) {
+         return EXT_RETURN_FAIL;
+       }

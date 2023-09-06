@@ -150,9 +150,10 @@ auto TestInvalidServerContextCreation(std::unique_ptr<Runfiles> &runfiles)
       invalid_config.data(), invalid_config.size(), &ctx);
 
   const char *expected_err =
-      "Error Stack:err:[api error: invalid "
-      "configuration],code:[0,0],msg:[]]err:[protobuf error: message parsing "
-      "failed],code:[6,2],msg:[]]";
+      "Error Stack:err:[API errors. The following errors can occur during a "
+      "call to the Context API.: Configuration "
+      "error.],code:[0,0],msg:[]]err:[Errors regarding protobuf.: Failed to "
+      "parse the protobuf message.],code:[6,2],msg:[]]";
   sandwich_assert(err_invalid_config != nullptr);
   const auto *err_stack_str_invalid_config =
       ::sandwich_error_stack_str_new(err_invalid_config);

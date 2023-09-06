@@ -1,0 +1,10 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "tls_hello_world",
+    srcs = ["main.rs"],
+    deps = [
+        "@sandwich//rust:protobuf",
+        "@sandwich//rust:sandwich_full",
+    ],
+)

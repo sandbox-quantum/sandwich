@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
-load("@rules_python//python:versions.bzl", "gen_python_config_settings")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_python//python:versions.bzl", "gen_python_config_settings")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
+load("//common/tools/protemplate:rules.bzl", "template_proto_library")
 
 copy_file(
     name = "sandwich_c_lib",
@@ -12,10 +14,26 @@ copy_file(
     visibility = ["//visibility:public"],
 )
 
+template_proto_library(
+    name = "gen_error_codes",
+    out = "code_gen.py_tmp",
+    proto = "//pysandwich/proto:errors_proto",
+    template = "gen_error_codes.template",
+    visibility = ["//pysandwich:__subpackages__"],
+)
+
+write_source_file(
+    name = "write_gen_error_codes",
+    in_file = ":gen_error_codes",
+    out_file = "generated_error_codes.py",
+)
+
 py_library(
     name = "errors",
     srcs = [
+        "error_base.py",
         "errors.py",
+        "generated_error_codes.py",
     ],
     srcs_version = "PY3",
     visibility = ["//visibility:public"],
@@ -28,6 +46,7 @@ py_library(
     name = "io",
     srcs = [
         "io.py",
+        "io_helpers.py",
     ],
     srcs_version = "PY3",
     visibility = ["//visibility:public"],

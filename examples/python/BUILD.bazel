@@ -3,6 +3,7 @@
 
 py_test(
     name = "test_examples",
+    timeout = "short",
     srcs = [
         "test_examples.py",
     ],
@@ -11,7 +12,6 @@ py_test(
     ],
     main = "test_examples.py",
     tags = ["requires-network"],
-    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
     deps = [
         "//examples/python/echo_tls_server",

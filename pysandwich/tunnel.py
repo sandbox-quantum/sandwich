@@ -38,22 +38,18 @@ class Context:
         * `sandwich_tunnel_context_free`
 
     Attributes:
-        _sandwich: Sandwich handle. See class `Sandwich`.
         _configuration: Configuration for Sandwich, using the protobuf definition.
         _handle : C pointer to a `struct SandwichContext`. This is the main handle.
     """
 
     def __init__(
         self,
-        sandwich: "sandwich.Sandwich",
         configuration: SandwichAPI.Configuration,
         serialized_conf: bytes,
     ):
         """Inits Context with a Sandwich handle and a protobuf configuration.
 
         Args:
-            sandwich:
-                A Sandwich handle. See class `Sandwich`.
             configuration:
                 Configuration for building a `SandwichContext` handle.
 
@@ -62,7 +58,6 @@ class Context:
             returned an error.
         """
 
-        self._sandwich = sandwich
         self._configuration = configuration
         self._handle = ctypes.c_void_p(None)
         self._serialized_conf = serialized_conf
@@ -72,28 +67,24 @@ class Context:
             len(self._serialized_conf),
             ctypes.byref(self._handle),
         )
-        err = self._sandwich.c_call("sandwich_tunnel_context_new", *args)
+        err = sandwich.sandwich().c_call("sandwich_tunnel_context_new", *args)
         if err is not None:
             excp = sandwich._error_code_to_exception(err)
-            self._sandwich.c_call("sandwich_error_free", err)
+            sandwich.sandwich().c_call("sandwich_error_free", err)
             raise excp
 
     @classmethod
-    def from_config(
-        cls, sandwich: "sandwich.Sandwich", configuration: SandwichAPI.Configuration
-    ):
+    def from_config(cls, configuration: SandwichAPI.Configuration):
         serialized_conf = configuration.SerializeToString()
 
-        return Context(sandwich, configuration, serialized_conf)
+        return Context(configuration, serialized_conf)
 
     @classmethod
-    def from_bytes(
-        cls, sandwich: "sandwich.Sandwich", serialized_conf_bytestring: bytes
-    ):
+    def from_bytes(cls, serialized_conf_bytestring: bytes):
         configuration = SandwichAPI.Configuration()
         configuration.ParseFromString(serialized_conf_bytestring)
 
-        return Context(sandwich, configuration, serialized_conf_bytestring)
+        return Context(configuration, serialized_conf_bytestring)
 
     def implementation(self) -> SandwichAPI.Implementation:
         """The selected implementation."""
@@ -116,7 +107,7 @@ class Context:
         This destructor is responsible for freeing the memory.
         """
 
-        self._sandwich.c_call("sandwich_tunnel_context_free", self._handle)
+        sandwich.sandwich().c_call("sandwich_tunnel_context_free", self._handle)
         self._handle = ctypes.c_void_p(None)
 
 
@@ -167,7 +158,7 @@ class Tunnel:
         self._io = io
 
         conf_bytes = configuration.SerializeToString()
-        conf = sandwich.Sandwich.TunnelConfigurationSerialized()
+        conf = sandwich.TunnelConfigurationSerialized()
         conf.src = conf_bytes
         conf.n = len(conf_bytes)
 
@@ -185,7 +176,7 @@ class Tunnel:
             )
         )
 
-        err = self._C.c_call(
+        err = sandwich.sandwich().c_call(
             "sandwich_tunnel_new",
             self._ctx._handle,
             ctypes.byref(self._settings),
@@ -194,7 +185,7 @@ class Tunnel:
         )
         if err is not None:
             excp = sandwich._error_code_to_exception(err)
-            self._C.c_call("sandwich_error_free", err)
+            sandwich.sandwich().c_call("sandwich_error_free", err)
             raise excp
 
     def state(self) -> State:
@@ -203,7 +194,7 @@ class Tunnel:
         Returns:
             State of the tunnel.
         """
-        return self._C.c_call("sandwich_tunnel_state", self._handle)
+        return sandwich.sandwich().c_call("sandwich_tunnel_state", self._handle)
 
     def error(self) -> sandwich.Error:
         """Returns the last saved error.
@@ -211,7 +202,7 @@ class Tunnel:
         Returns:
             The last saved error.
         """
-        return self._C.c_call("sandwich_tunnel_last_error", self._handle)
+        return sandwich.sandwich().c_call("sandwich_tunnel_last_error", self._handle)
 
     @property
     def io(self) -> SandwichIO.IO:
@@ -243,14 +234,14 @@ class Tunnel:
         """
 
         handshake_state = ctypes.c_int32()
-        err = self._C.c_call(
+        err = sandwich.sandwich().c_call(
             "sandwich_tunnel_handshake",
             self._handle,
             ctypes.byref(handshake_state),
         )
         if err is not None:
             excp = sandwich._error_code_to_exception(err)
-            self._C.c_call("sandwich_error_free", err)
+            sandwich.sandwich().c_call("sandwich_error_free", err)
             raise excp
         handshake_state = handshake_state.value
         if handshake_state != errors.HandshakeException.ERROR_OK:
@@ -272,7 +263,7 @@ class Tunnel:
 
         read_n = ctypes.c_size_t(0)
         buf = (ctypes.c_uint8 * n)()
-        err = self._C.c_call(
+        err = sandwich.sandwich().c_call(
             "sandwich_tunnel_read",
             self._handle,
             buf,
@@ -300,7 +291,7 @@ class Tunnel:
         """
 
         write_n = ctypes.c_size_t(0)
-        err = self._C.c_call(
+        err = sandwich.sandwich().c_call(
             "sandwich_tunnel_write",
             self._handle,
             src,
@@ -316,7 +307,7 @@ class Tunnel:
     def close(self):
         """Closes the tunnel."""
 
-        self._C.c_call("sandwich_tunnel_close", self._handle)
+        sandwich.sandwich().c_call("sandwich_tunnel_close", self._handle)
 
     @property
     def _C(self):
@@ -392,7 +383,7 @@ class Tunnel:
         w = 0
         try:
             w = self._io.write(
-                bytes(ctypes.cast(buf, ctypes.POINTER(ctypes.c_ubyte))[:count]),
+                ctypes.string_at(buf, count),
                 tunnel_state,
             )
         except SandwichIO.IOException as e:
@@ -407,5 +398,5 @@ class Tunnel:
         This destructor is responsible for freeing the memory.
         """
 
-        self._C.c_call("sandwich_tunnel_free", self._handle)
+        sandwich.sandwich().c_call("sandwich_tunnel_free", self._handle)
         self._handle = ctypes.c_void_p(None)

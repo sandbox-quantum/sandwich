@@ -1,23 +1,32 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rustfmt_test")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rustfmt_test")
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+
+filegroup(
+    name = "mod",
+    srcs = [
+        "tls_client.rs",
+    ],
+    visibility = ["//examples/rust:__subpackages__"],
+)
 
 rust_binary(
     name = "tls_client",
     srcs = [
         "main.rs",
+        ":mod",
     ],
     tags = ["requires-network"],
-    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//examples/rust:__subpackages__"],
     deps = [
         "//rust:sandwich_full",
         "@crate_index//:clap",
         "@crate_index//:env_logger",
-        "@crate_index//:libc",
         "@crate_index//:log",
+        "@crate_index//:polling",
         "@crate_index//:protobuf",
     ],
 )
@@ -39,7 +48,6 @@ rustfmt_test(
 
 build_test(
     name = "build_test",
-    target_compatible_with = ["@platforms//os:linux"],
     targets = [
         ":tls_client",
         ":clippy",
@@ -49,7 +57,7 @@ build_test(
 mkdocs_tree(
     name = "mkdocs",
     srcs = [
-        "main.rs",
+        "tls_client.rs",
     ],
     path = "examples/rust/tls_client",
     visibility = ["//docs:__subpackages__"],

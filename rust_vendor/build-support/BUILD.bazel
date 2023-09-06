@@ -1,0 +1,50 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test", "rustfmt_test")
+
+rust_library(
+    name = "build-support",
+    srcs = ["lib.rs"],
+    crate_name = "build_support",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust_vendor/bazelisk-rs/src:bazelisk",
+        "@crate_index//:log",
+        "@crate_index//:protobuf",
+        "@crate_index//:shlex",
+    ],
+)
+
+rust_clippy(
+    name = "clippy",
+    deps = [
+        ":build-support",
+    ],
+)
+
+rust_test(
+    name = "test",
+    timeout = "short",
+    crate = "build-support",
+    deps = [
+        "@crate_index//:tempfile",
+    ],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":clippy",
+    ],
+)
+
+rustfmt_test(
+    name = "rustfmt_test",
+    timeout = "short",
+    targets = [
+        ":build-support",
+        ":test",
+    ],
+)

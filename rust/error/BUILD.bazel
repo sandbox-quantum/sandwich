@@ -1,11 +1,29 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
+load("//common/tools/protemplate:rules.bzl", "template_proto_library")
+
+template_proto_library(
+    name = "gen_error_codes",
+    out = "code_gen.rs_tmp",
+    proto = "//proto:errors_proto",
+    template = "gen_error_codes.template",
+    visibility = ["//rust:__subpackages__"],
+)
+
 filegroup(
     name = "error",
     srcs = [
         "code.rs",
+        "generated_error_codes.rs",
         "mod.rs",
     ],
     visibility = ["//rust:__subpackages__"],
+)
+
+write_source_file(
+    name = "write_gen_error_codes",
+    in_file = ":gen_error_codes",
+    out_file = "generated_error_codes.rs",
 )

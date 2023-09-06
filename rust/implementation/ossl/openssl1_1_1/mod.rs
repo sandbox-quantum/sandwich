@@ -6,7 +6,8 @@
 
 extern crate openssl1_1_1;
 
-use std::ptr;
+use std::pin::Pin;
+use std::ptr::{self, NonNull};
 
 use openssl1_1_1 as openssl;
 use pb::RecordError as PbRecordError;
@@ -18,7 +19,23 @@ use crate::tunnel::{tls, Mode, RecordError};
 
 mod io;
 
-struct Ossl {}
+/// Context backed by OpenSSL 1.1.1.
+#[derive(Debug)]
+pub struct Context<'a>(pub(crate) ossl::OsslContext<'a, Ossl>);
+
+impl<'a> TryFrom<&pb_api::Configuration> for Context<'a> {
+    type Error = crate::Error;
+
+    fn try_from(cfg: &pb_api::Configuration) -> Result<Self, Self::Error> {
+        Ok(Self(ossl::OsslContext::<Ossl>::try_from(cfg)?))
+    }
+}
+
+/// Tunnel backed by OpenSSL 1.1.1.
+#[derive(Debug)]
+pub struct Tunnel<'a>(pub(crate) Pin<Box<ossl::OsslTunnel<'a, Ossl>>>);
+
+pub struct Ossl {}
 
 /// Converts an OpenSSL error to a [`RecordError`].
 fn openssl_error_to_record_error(e: i32, errno: std::io::Error) -> RecordError {
@@ -68,66 +85,67 @@ impl OsslTrait for Ossl {
 
     fn new_ssl_context(mode: Mode) -> crate::Result<Pimpl<'static, Self::NativeSslCtx>> {
         let ctx = unsafe {
-            openssl::SSL_CTX_new(match mode {
-                Mode::Client => openssl::TLS_client_method(),
-                Mode::Server => openssl::TLS_server_method(),
-            })
-        };
-        if ctx.is_null() {
-            Err(pb::SystemError::SYSTEMERROR_MEMORY.into())
-        } else {
-            unsafe {
-                openssl::SSL_CTX_set_quiet_shutdown(ctx, 0);
-                openssl::SSL_CTX_ctrl(
-                    ctx,
-                    openssl::SSL_CTRL_SET_SESS_CACHE_MODE as i32,
-                    openssl::SSL_SESS_CACHE_OFF.into(),
-                    ptr::null_mut(),
-                );
-                openssl::SSL_CTX_ctrl(ctx, openssl::SSL_CTRL_SET_GROUPS as i32, 0, ptr::null_mut());
-            }
-            let mut pimpl = Pimpl::<openssl::SSL_CTX>::from_raw(
-                ctx,
-                Some(|x| unsafe {
-                    openssl::SSL_CTX_free(x);
+            Pimpl::new(
+                openssl::SSL_CTX_new(match mode {
+                    Mode::Client => openssl::TLS_client_method(),
+                    Mode::Server => openssl::TLS_server_method(),
                 }),
-            );
-            if mode == Mode::Client {
-                unsafe {
-                    openssl::SSL_CTX_set_verify(
-                        pimpl.as_mut_ptr(),
-                        openssl::SSL_VERIFY_PEER as i32,
-                        Some(Self::verify_callback),
-                    )
-                };
+                |x| openssl::SSL_CTX_free(x),
+            )
+        }
+        .ok_or(pb::SystemError::SYSTEMERROR_MEMORY)?;
 
-                let ptr = unsafe { openssl::X509_STORE_new() };
-                if ptr.is_null() {
-                    return Err(pb::SystemError::SYSTEMERROR_MEMORY)?;
-                }
-                unsafe {
-                    openssl::SSL_CTX_set_cert_store(pimpl.as_mut_ptr(), ptr);
-                    openssl::X509_STORE_set_trust(ptr, 1);
-                }
+        unsafe {
+            openssl::SSL_CTX_set_quiet_shutdown(ctx.as_nonnull().as_ptr(), 0);
+            // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+            // SSL_CTX_set_session_cache_mode(ctx, openssl::SSL_SESS_CACHE_OFF).
+            openssl::SSL_CTX_ctrl(
+                ctx.as_nonnull().as_ptr(),
+                openssl::SSL_CTRL_SET_SESS_CACHE_MODE as i32,
+                openssl::SSL_SESS_CACHE_OFF.into(),
+                ptr::null_mut(),
+            );
+            // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+            // SSL_CTX_set1_groups(ctx, NULL, 0);
+            openssl::SSL_CTX_ctrl(
+                ctx.as_nonnull().as_ptr(),
+                openssl::SSL_CTRL_SET_GROUPS as i32,
+                0,
+                ptr::null_mut(),
+            );
+        }
+        if mode == Mode::Client {
+            Self::ssl_context_set_verify_mode(ctx.as_nonnull(), VerifyMode::Peer);
+            let ptr = unsafe { openssl::X509_STORE_new() };
+            if ptr.is_null() {
+                return Err(pb::SystemError::SYSTEMERROR_MEMORY)?;
             }
-            match unsafe {
-                openssl::SSL_CTX_ctrl(
-                    pimpl.as_mut_ptr(),
-                    openssl::SSL_CTRL_SET_MIN_PROTO_VERSION as i32,
-                    openssl::TLS1_3_VERSION.into(),
-                    ptr::null_mut(),
-                )
-            } {
-                1 => Ok(pimpl),
-                _ => Err(
-                    pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
-                        .into(),
-                ),
+            unsafe {
+                openssl::SSL_CTX_set_cert_store(ctx.as_nonnull().as_ptr(), ptr);
+                openssl::X509_STORE_set_trust(ptr, 1);
             }
+        }
+        // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+        // SSL_CTX_set_min_proto_version(pimpl.as_mut_ptr(), openssl::TLS1_3_VERSION.into());
+        if unsafe {
+            openssl::SSL_CTX_ctrl(
+                ctx.as_nonnull().as_ptr(),
+                openssl::SSL_CTRL_SET_MIN_PROTO_VERSION as i32,
+                openssl::TLS1_3_VERSION.into(),
+                ptr::null_mut(),
+            )
+        } == 1
+        {
+            Ok(ctx)
+        } else {
+            Err(
+                pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
+                    .into(),
+            )
         }
     }
 
-    fn ssl_context_set_verify_mode(pimpl: &mut Pimpl<'_, Self::NativeSslCtx>, mode: VerifyMode) {
+    fn ssl_context_set_verify_mode(ssl_ctx: NonNull<Self::NativeSslCtx>, mode: VerifyMode) {
         let flag = match mode {
             VerifyMode::None => openssl::SSL_VERIFY_NONE,
             VerifyMode::Peer => openssl::SSL_VERIFY_PEER,
@@ -136,18 +154,18 @@ impl OsslTrait for Ossl {
             }
         } as i32;
         unsafe {
-            openssl::SSL_CTX_set_verify(pimpl.as_mut_ptr(), flag, Some(Self::verify_callback));
+            openssl::SSL_CTX_set_verify(ssl_ctx.as_ptr(), flag, Some(Self::verify_callback));
         }
     }
 
-    fn ssl_context_set_verify_depth(pimpl: &mut Pimpl<'_, Self::NativeSslCtx>, depth: u32) {
+    fn ssl_context_set_verify_depth(ssl_ctx: NonNull<Self::NativeSslCtx>, depth: u32) {
         unsafe {
-            openssl::SSL_CTX_set_verify_depth(pimpl.as_mut_ptr(), depth as i32);
+            openssl::SSL_CTX_set_verify_depth(ssl_ctx.as_ptr(), depth as i32);
         }
     }
 
     fn ssl_context_set_kems(
-        ssl_ctx: &mut Pimpl<'_, Self::NativeSslCtx>,
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
         kems: std::slice::Iter<'_, String>,
     ) -> crate::Result<()> {
         let mut nids = Vec::<i32>::new();
@@ -167,9 +185,11 @@ impl OsslTrait for Ossl {
             }
         }
         if !nids.is_empty() {
+            // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+            // SSL_CTX_set1_groups(ssl_ctx.as_mut_ptr(), nids.as_nonnull(), nids.len());
             match unsafe {
                 openssl::SSL_CTX_ctrl(
-                    ssl_ctx.as_mut_ptr(),
+                    ssl_ctx.as_ptr(),
                     openssl::SSL_CTRL_SET_GROUPS as i32,
                     nids.len() as i64,
                     nids.as_ptr() as *mut std::ffi::c_void,
@@ -197,23 +217,15 @@ impl OsslTrait for Ossl {
         } else {
             Err(pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW)
         }?;
-        if !ptr.is_null() {
-            Ok(Pimpl::from_raw(
-                ptr,
-                Some(|p| unsafe {
-                    openssl::BIO_free_all(p);
-                }),
-            ))
-        } else {
-            Err(pb::SystemError::SYSTEMERROR_MEMORY.into())
-        }
+        unsafe { Pimpl::new(ptr, |p| openssl::BIO_free_all(p)) }
+            .ok_or_else(|| pb::SystemError::SYSTEMERROR_MEMORY.into())
     }
 
-    fn bio_eof(bio: &mut Pimpl<'_, Self::NativeBio>) -> bool {
+    fn bio_eof(bio: NonNull<Self::NativeBio>) -> bool {
         // BIO_eof(bio)
         unsafe {
             openssl::BIO_ctrl(
-                bio.as_mut_ptr(),
+                bio.as_ptr(),
                 openssl::BIO_CTRL_EOF as std::ffi::c_int,
                 0,
                 ptr::null_mut(),
@@ -222,43 +234,40 @@ impl OsslTrait for Ossl {
     }
 
     fn ssl_context_append_certificate_to_trust_store(
-        ssl_ctx: &Pimpl<'_, Self::NativeSslCtx>,
-        mut cert: Pimpl<'_, Self::NativeCertificate>,
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        cert: NonNull<Self::NativeCertificate>,
     ) -> crate::Result<()> {
-        let store = unsafe { openssl::SSL_CTX_get_cert_store(ssl_ctx.as_ptr()) };
-        if store.is_null() {
-            Err(
-                errors! {pb::SystemError::SYSTEMERROR_MEMORY => pb::CertificateError::CERTIFICATEERROR_UNKNOWN},
-            )
-        } else {
-            unsafe {
-                openssl::X509_STORE_add_cert(store, cert.as_mut_ptr());
-            };
-            Ok(())
+        let store = NonNull::new( unsafe { openssl::SSL_CTX_get_cert_store(ssl_ctx.as_ptr()) } )
+            .ok_or_else(|| errors! {pb::SystemError::SYSTEMERROR_MEMORY => pb::CertificateError::CERTIFICATEERROR_UNKNOWN})?;
+        unsafe {
+            openssl::X509_STORE_add_cert(store.as_ptr(), cert.as_ptr());
         }
+        Ok(())
     }
 
     fn ssl_context_set_certificate(
-        ssl_ctx: &mut Pimpl<'_, Self::NativeSslCtx>,
-        mut cert: Pimpl<'_, Self::NativeCertificate>,
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        cert: NonNull<Self::NativeCertificate>,
     ) -> crate::Result<()> {
-        match unsafe { openssl::SSL_CTX_use_certificate(ssl_ctx.as_mut_ptr(), cert.as_mut_ptr()) } {
-            1 => Ok(()),
-            _ => Err(pb::CertificateError::CERTIFICATEERROR_UNSUPPORTED.into()),
+        if unsafe { openssl::SSL_CTX_use_certificate(ssl_ctx.as_ptr(), cert.as_ptr()) } == 1 {
+            Ok(())
+        } else {
+            Err(pb::CertificateError::CERTIFICATEERROR_UNSUPPORTED.into())
         }
     }
 
     fn ssl_context_add_extra_chain_cert(
-        ssl_ctx: &mut Pimpl<'_, Self::NativeSslCtx>,
-        mut cert: Pimpl<'_, Self::NativeCertificate>,
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        cert: Pimpl<'static, Self::NativeCertificate>,
     ) -> crate::Result<()> {
-        // SSL_CTX_add_extra_chain_cert
+        // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+        // SSL_CTX_add_extra_chain_cert(ssl_ctx.as_mut_ptr(), cert.as_mut_ptr());
         if unsafe {
             openssl::SSL_CTX_ctrl(
-                ssl_ctx.as_mut_ptr(),
+                ssl_ctx.as_ptr(),
                 openssl::SSL_CTRL_EXTRA_CHAIN_CERT as std::ffi::c_int,
                 0,
-                cert.as_mut_ptr().cast(),
+                cert.as_nonnull().as_ptr().cast(),
             )
         } == 1
         {
@@ -270,25 +279,26 @@ impl OsslTrait for Ossl {
     }
 
     fn ssl_context_set_private_key(
-        ssl_ctx: &mut Pimpl<'_, Self::NativeSslCtx>,
-        mut pkey: Pimpl<'_, Self::NativePrivateKey>,
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        pkey: NonNull<Self::NativePrivateKey>,
     ) -> crate::Result<()> {
-        match unsafe { openssl::SSL_CTX_use_PrivateKey(ssl_ctx.as_mut_ptr(), pkey.as_mut_ptr()) } {
-            1 => Ok(()),
-            _ => Err(pb::PrivateKeyError::PRIVATEKEYERROR_UNSUPPORTED.into()),
+        if unsafe { openssl::SSL_CTX_use_PrivateKey(ssl_ctx.as_ptr(), pkey.as_ptr()) } == 1 {
+            Ok(())
+        } else {
+            Err(pb::PrivateKeyError::PRIVATEKEYERROR_UNSUPPORTED.into())
         }
     }
 
-    fn ssl_context_check_private_key(ssl_ctx: &Pimpl<'_, Self::NativeSslCtx>) -> crate::Result<()> {
-        if unsafe { openssl::SSL_CTX_check_private_key(ssl_ctx.as_ptr()) } != 1 {
-            Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE.into())
-        } else {
+    fn ssl_context_check_private_key(ssl_ctx: NonNull<Self::NativeSslCtx>) -> crate::Result<()> {
+        if unsafe { openssl::SSL_CTX_check_private_key(ssl_ctx.as_ptr()) } == 1 {
             Ok(())
+        } else {
+            Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE.into())
         }
     }
 
     fn ssl_context_set_alpn_protos(
-        ssl_ctx: &mut Pimpl<'_, Self::NativeSslCtx>,
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
         alpn_protocols: std::slice::Iter<'_, String>,
     ) -> crate::Result<()> {
         let mut protos: String = String::new();
@@ -310,29 +320,24 @@ impl OsslTrait for Ossl {
         let cstr = std::ffi::CString::new(protos.as_bytes()).unwrap();
 
         if unsafe {
-            openssl::SSL_CTX_set_alpn_protos(
-                ssl_ctx.as_mut_ptr(),
-                cstr.as_ptr() as *const u8,
-                len as u32,
-            )
-        } as u64
-            != 0
+            openssl::SSL_CTX_set_alpn_protos(ssl_ctx.as_ptr(), cstr.as_ptr().cast(), len as u32)
+        } == 0
         {
-            Err(pb::ALPNError::ALPNERROR_INVALID_STRING.into())
-        } else {
             Ok(())
+        } else {
+            Err(pb::ALPNError::ALPNERROR_INVALID_STRING.into())
         }
     }
 
     fn certificate_from_bio(
-        bio: &mut Pimpl<'_, Self::NativeBio>,
+        bio: NonNull<Self::NativeBio>,
         format: pb_api::ASN1EncodingFormat,
     ) -> crate::Result<Pimpl<'static, Self::NativeCertificate>> {
         #[allow(unreachable_patterns)]
         let cert = match format {
             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM => unsafe {
                 openssl::PEM_read_bio_X509(
-                    bio.as_mut_ptr(),
+                    bio.as_ptr(),
                     ptr::null_mut::<*mut Self::NativeCertificate>(),
                     None,
                     ptr::null_mut(),
@@ -340,33 +345,25 @@ impl OsslTrait for Ossl {
             },
             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_DER => unsafe {
                 openssl::d2i_X509_bio(
-                    bio.as_mut_ptr(),
+                    bio.as_ptr(),
                     ptr::null_mut::<*mut Self::NativeCertificate>(),
                 )
             },
             _ => unreachable!(),
         };
-        if !cert.is_null() {
-            Ok(Pimpl::from_raw(
-                cert,
-                Some(|x| unsafe {
-                    openssl::X509_free(x);
-                }),
-            ))
-        } else {
-            Err(read_certificate_asn1_error())
-        }
+        unsafe { Pimpl::new(cert, |x| openssl::X509_free(x)) }
+            .ok_or_else(read_certificate_asn1_error)
     }
 
     fn private_key_from_bio(
-        bio: &mut Pimpl<'_, Self::NativeBio>,
+        bio: NonNull<Self::NativeBio>,
         format: pb_api::ASN1EncodingFormat,
     ) -> crate::Result<Pimpl<'static, Self::NativePrivateKey>> {
         #[allow(unreachable_patterns)]
-        let cert = match format {
+        let private_key = match format {
             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM => unsafe {
                 openssl::PEM_read_bio_PrivateKey(
-                    bio.as_mut_ptr(),
+                    bio.as_ptr(),
                     ptr::null_mut::<*mut Self::NativePrivateKey>(),
                     None,
                     ptr::null_mut(),
@@ -374,83 +371,77 @@ impl OsslTrait for Ossl {
             },
             pb_api::ASN1EncodingFormat::ENCODING_FORMAT_DER => unsafe {
                 openssl::d2i_PrivateKey_bio(
-                    bio.as_mut_ptr(),
+                    bio.as_ptr(),
                     ptr::null_mut::<*mut Self::NativePrivateKey>(),
                 )
             },
             _ => unreachable!(),
         };
-        if !cert.is_null() {
-            Ok(Pimpl::from_raw(
-                cert,
-                Some(|x| unsafe {
-                    openssl::EVP_PKEY_free(x);
-                }),
-            ))
-        } else {
-            Err(read_private_key_asn1_error())
-        }
+        unsafe { Pimpl::new(private_key, |x| openssl::EVP_PKEY_free(x)) }
+            .ok_or_else(read_private_key_asn1_error)
     }
 
     fn new_ssl_handle<'ctx, 'ssl>(
-        ssl_context: &mut Pimpl<'ctx, Self::NativeSslCtx>,
+        ssl_context: &Pimpl<'ctx, Self::NativeSslCtx>,
     ) -> crate::Result<Pimpl<'ssl, Self::NativeSsl>>
     where
         'ctx: 'ssl,
     {
-        let ptr = unsafe { openssl::SSL_new(ssl_context.as_mut_ptr()) };
-        if ptr.is_null() {
-            return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
+        unsafe {
+            Pimpl::new(openssl::SSL_new(ssl_context.as_nonnull().as_ptr()), |x| {
+                openssl::SSL_free(x)
+            })
         }
-        Ok(Pimpl::from_raw(
-            ptr,
-            Some(|x| unsafe {
-                openssl::SSL_free(x);
-            }),
-        ))
+        .ok_or_else(|| pb::SystemError::SYSTEMERROR_MEMORY.into())
     }
 
-    fn new_ssl_bio<'pimpl>() -> crate::Result<Pimpl<'pimpl, Self::NativeBio>> {
-        let bio = unsafe { openssl::BIO_new(&io::BIO_METH as *const openssl::bio_method_st) };
-        if bio.is_null() {
-            return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
+    fn new_ssl_bio() -> crate::Result<Pimpl<'static, Self::NativeBio>> {
+        unsafe {
+            Pimpl::new(
+                openssl::BIO_new(&io::BIO_METH as *const openssl::bio_method_st),
+                |x| openssl::BIO_free_all(x),
+            )
         }
-        Ok(Pimpl::from_raw(
-            bio,
-            Some(|x| unsafe {
-                openssl::BIO_free_all(x);
-            }),
-        ))
+        .ok_or_else(|| pb::SystemError::SYSTEMERROR_MEMORY.into())
     }
 
-    fn ssl_set_bio<'pimpl>(
-        bio: *mut Self::NativeBio,
-        ssl: *mut Self::NativeSsl,
-        data: *mut std::ffi::c_void,
+    fn bio_set_data(bio: NonNull<Self::NativeBio>, data: *mut std::ffi::c_void) {
+        unsafe {
+            openssl::BIO_set_data(bio.as_ptr(), data);
+        }
+    }
+
+    fn ssl_set_bio(
+        ssl: NonNull<Self::NativeSsl>,
+        bio: NonNull<Self::NativeBio>,
     ) -> crate::Result<()> {
         unsafe {
-            openssl::BIO_set_data(bio, data);
-            openssl::BIO_set_init(bio, 1);
-            openssl::SSL_set_bio(ssl, bio, bio);
+            openssl::BIO_set_init(bio.as_ptr(), 1);
+            openssl::SSL_set_bio(ssl.as_ptr(), bio.as_ptr(), bio.as_ptr());
         }
         Ok(())
     }
 
     fn ssl_set_extra_data_for_verify<T>(
-        ssl: *mut Self::NativeSsl,
+        ssl: NonNull<Self::NativeSsl>,
         extra_data: *mut T,
     ) -> Result<(), pb::SystemError> {
-        if unsafe { openssl::SSL_set_ex_data(ssl, ossl::VERIFY_TUNNEL_INDEX, extra_data.cast()) }
-            as u64
-            == 0
+        if unsafe {
+            openssl::SSL_set_ex_data(
+                ssl.as_ptr(),
+                ossl::VERIFY_TUNNEL_SECURITY_REQUIREMENTS_INDEX,
+                extra_data.cast(),
+            )
+        } == 1
         {
-            return Err(pb::SystemError::SYSTEMERROR_MEMORY);
+            Ok(())
+        } else {
+            Err(pb::SystemError::SYSTEMERROR_MEMORY)
         }
-        Ok(())
     }
 
     fn ssl_set_server_name_indication(
-        ssl: *mut Self::NativeSsl,
+        ssl: NonNull<Self::NativeSsl>,
         hostname: impl Into<String>,
     ) -> crate::Result<()> {
         use std::ffi::{c_int, c_void, CString};
@@ -458,120 +449,174 @@ impl OsslTrait for Ossl {
             CString::new(hostname.into()).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
         if unsafe {
             openssl::SSL_ctrl(
-                ssl,
+                ssl.as_ptr(),
                 openssl::SSL_CTRL_SET_TLSEXT_HOSTNAME as c_int,
                 openssl::TLSEXT_NAMETYPE_host_name as i64,
                 cstr.as_c_str().as_ptr().cast::<c_void>().cast_mut(),
             )
-        } != 1
+        } == 1
         {
+            Ok(())
+        } else {
             Err((
                 pb::SystemError::SYSTEMERROR_MEMORY,
                 "OpenSSL failed to set the SNI",
             )
                 .into())
-        } else {
-            Ok(())
         }
     }
 
     fn ssl_handshake(
-        ssl: *mut Self::NativeSsl,
+        ssl: NonNull<Self::NativeSsl>,
         mode: Mode,
-        tun: &super::OsslTunnel<Ossl>,
     ) -> (crate::Result<pb::tunnel::HandshakeState>, Option<pb::State>) {
         let err = match mode {
-            Mode::Client => unsafe { openssl::SSL_connect(ssl) },
-            Mode::Server => unsafe { openssl::SSL_accept(ssl) },
+            Mode::Client => unsafe { openssl::SSL_connect(ssl.as_ptr()) },
+            Mode::Server => unsafe { openssl::SSL_accept(ssl.as_ptr()) },
         } as u32;
         if err == 1 {
-            (
+            return (
                 Ok(pb::HandshakeState::HANDSHAKESTATE_DONE),
                 Some(pb::State::STATE_HANDSHAKE_DONE),
-            )
-        } else {
-            let e = unsafe { openssl::SSL_get_error(ssl, err as i32) } as u32;
-            match e {
-                openssl::SSL_ERROR_WANT_READ => (
-                    Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_READ),
-                    Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
-                ),
-                openssl::SSL_ERROR_WANT_WRITE => (
-                    Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_WRITE),
-                    Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
-                ),
-                openssl::SSL_ERROR_ZERO_RETURN => (
-                    Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
-                    Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
-                ),
-                openssl::SSL_ERROR_WANT_ACCEPT | openssl::SSL_ERROR_WANT_CONNECT => (
-                    Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
-                    Some(pb::State::STATE_NOT_CONNECTED),
-                ),
-                openssl::SSL_ERROR_WANT_X509_LOOKUP => (
-                        Err(crate::Error::from((
-                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
-                                        "OpenSSL error: application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again.".to_string()
-                                    ))
-                        ),
-                        Some(pb::State::STATE_ERROR),
-                ),
-                openssl::SSL_ERROR_WANT_ASYNC => (
-                        Err(crate::Error::from((
-                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
-                                        "OpenSSL error: asynchronous engine is still processing data.".to_string()
-                                    ))
-                        ),
-                        Some(pb::State::STATE_ERROR),
-                ),
-                openssl::SSL_ERROR_WANT_ASYNC_JOB => (
-                        Err(crate::Error::from((
-                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
-                                        "OpenSSL error: no async jobs are available in the pool.".to_string()
-                                    ))
-                        ),
-                        Some(pb::State::STATE_ERROR),
-                ),
-                openssl::SSL_ERROR_WANT_CLIENT_HELLO_CB => (
-                        Err(crate::Error::from((
-                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
-                                        "OpenSSL error: application callback set by SSL_CTX_set_client_hello_cb() has asked to be called again.".to_string()
-                                    ))
-                        ),
-                        Some(pb::State::STATE_ERROR),
-                ),
-                openssl::SSL_ERROR_SYSCALL | openssl::SSL_ERROR_SSL => {
-                    let err = unsafe { openssl::ERR_get_error() } as u32;
-                    if err == 0 && tun.verify_error == 0 {
-                        return (
-                            Err(crate::Error::from((
-                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
-                                        match e {
-                                          openssl::SSL_ERROR_SYSCALL => "OpenSSL error: Returned SSL_ERROR_SYSCALL with no additional info.",
-                                          openssl::SSL_ERROR_SSL => "OpenSSL error: Returned SSL_ERROR_SSL with no additional info.",
-                                          _ => "OpenSSL error: Reached an unreachable point.",
-                                        }.to_string()
+            );
+        }
+        let e = unsafe { openssl::SSL_get_error(ssl.as_ptr(), err as i32) } as u32;
+        let last_verify_error = Ossl::ssl_get_last_verify_error(ssl);
+        match e {
+            openssl::SSL_ERROR_WANT_READ => (
+                Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_READ),
+                Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
+            ),
+            openssl::SSL_ERROR_WANT_WRITE => (
+                Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_WRITE),
+                Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
+            ),
+            openssl::SSL_ERROR_ZERO_RETURN => (
+                Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
+                Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
+            ),
+            openssl::SSL_ERROR_WANT_ACCEPT | openssl::SSL_ERROR_WANT_CONNECT => (
+                Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
+                Some(pb::State::STATE_NOT_CONNECTED),
+            ),
+            openssl::SSL_ERROR_WANT_X509_LOOKUP => (
+                    Err(crate::Error::from((
+                                    pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                    "OpenSSL error: application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again.".to_string()
                                 ))
-                            ),
-                            Some(pb::State::STATE_ERROR),
-                        );
-                    }
-                    let errlib = (err >> 24) & 0xFF;
-                    let e_r =
-                        unsafe { openssl::ERR_error_string(err as u64, ptr::null_mut()) };
-                    let err_cstring = unsafe { std::ffi::CStr::from_ptr(e_r) };
-                    let mut err_string: String = "OpenSSL error: ".into();
-                    if let Ok(s) = err_cstring.to_str() {
-                        err_string.push_str(s);
+                    ),
+                    Some(pb::State::STATE_ERROR),
+            ),
+            openssl::SSL_ERROR_WANT_ASYNC => (
+                    Err(crate::Error::from((
+                                    pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                    "OpenSSL error: asynchronous engine is still processing data.".to_string()
+                                ))
+                    ),
+                    Some(pb::State::STATE_ERROR),
+            ),
+            openssl::SSL_ERROR_WANT_ASYNC_JOB => (
+                    Err(crate::Error::from((
+                                    pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                    "OpenSSL error: no async jobs are available in the pool.".to_string()
+                                ))
+                    ),
+                    Some(pb::State::STATE_ERROR),
+            ),
+            openssl::SSL_ERROR_WANT_CLIENT_HELLO_CB => (
+                    Err(crate::Error::from((
+                                    pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                    "OpenSSL error: application callback set by SSL_CTX_set_client_hello_cb() has asked to be called again.".to_string()
+                                ))
+                    ),
+                    Some(pb::State::STATE_ERROR),
+            ),
+            openssl::SSL_ERROR_SYSCALL | openssl::SSL_ERROR_SSL => {
+                let err = unsafe { openssl::ERR_get_error() } as u32;
+                if err == 0 && last_verify_error == 0 {
+                    return (
+                        Err(crate::Error::from((
+                                    pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                    match e {
+                                      openssl::SSL_ERROR_SYSCALL => "OpenSSL error: Returned SSL_ERROR_SYSCALL with no additional info.",
+                                      openssl::SSL_ERROR_SSL => "OpenSSL error: Returned SSL_ERROR_SSL with no additional info.",
+                                      _ => "OpenSSL error: Reached an unreachable point.",
+                                    }.to_string()
+                            ))
+                        ),
+                        Some(pb::State::STATE_ERROR),
+                    );
+                }
+                let errlib = (err >> 24) & 0xFF;
+                let e_r =
+                    unsafe { openssl::ERR_error_string(err as u64, ptr::null_mut()) };
+                let err_cstring = unsafe { std::ffi::CStr::from_ptr(e_r) };
+                let mut err_string: String = "OpenSSL error: ".into();
+                if let Ok(s) = err_cstring.to_str() {
+                    err_string.push_str(s);
+                } else {
+                    return (
+                        Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                        Some(pb::State::STATE_ERROR),
+                    );
+                }
+                if errlib != openssl::ERR_LIB_SSL {
+                    let x_e_s = unsafe {
+                        openssl::X509_verify_cert_error_string(last_verify_error as i64)
+                    } as *mut std::os::raw::c_char;
+                    let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
+                    let mut x509_error_str = err_string + "; ";
+                    if let Ok(s) = x509_error_cstr.to_str() {
+                        x509_error_str.push_str(s);
                     } else {
                         return (
-                            Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                            Err(crate::Error::from((
+                                pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                                x509_error_str,
+                            ))),
                             Some(pb::State::STATE_ERROR),
                         );
                     }
-                    if errlib != openssl::ERR_LIB_SSL {
+                    return match last_verify_error as u32 {
+                        openssl::X509_V_OK => {
+                            (
+                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, x509_error_str))),
+                                Some(pb::State::STATE_ERROR),
+                            )
+                        }
+                        openssl::X509_V_ERR_CERT_HAS_EXPIRED => (
+                            Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED, x509_error_str))),
+                            Some(pb::State::STATE_ERROR),
+                        ),
+                        openssl::X509_V_ERR_CERT_REVOKED => (
+                            Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_REVOKED, x509_error_str))),
+                            Some(pb::State::STATE_ERROR),
+                        ),
+                        openssl::X509_V_ERR_CERT_SIGNATURE_FAILURE => (
+                            Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED, x509_error_str))),
+                            Some(pb::State::STATE_ERROR),
+                        ),
+                        openssl::X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY
+                        | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD
+                        | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD
+                        | openssl::X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN
+                        | openssl::X509_V_ERR_CERT_CHAIN_TOO_LONG
+                        | openssl::X509_V_ERR_INVALID_PURPOSE
+                        | openssl::X509_V_ERR_CERT_UNTRUSTED
+                        | openssl::X509_V_ERR_CERT_REJECTED => (
+                            Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_INVALID_CERTIFICATE, x509_error_str))),
+                            Some(pb::State::STATE_ERROR),
+                        ),
+                        _ => (
+                            Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED, x509_error_str))),
+                            Some(pb::State::STATE_ERROR),
+                            )
+                    };
+                }
+                match err & 0xFFF {
+                    openssl::SSL_R_CERTIFICATE_VERIFY_FAILED => {
                         let x_e_s = unsafe {
-                            openssl::X509_verify_cert_error_string(tun.verify_error as i64)
+                            openssl::X509_verify_cert_error_string(last_verify_error as i64)
                         } as *mut std::os::raw::c_char;
                         let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
                         let mut x509_error_str = err_string + "; ";
@@ -586,13 +631,7 @@ impl OsslTrait for Ossl {
                                 Some(pb::State::STATE_ERROR),
                             );
                         }
-                        return match tun.verify_error as u32 {
-                            openssl::X509_V_OK => {
-                                (
-                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, x509_error_str))),
-                                    Some(pb::State::STATE_ERROR),
-                                )
-                            }
+                        match last_verify_error as u32 {
                             openssl::X509_V_ERR_CERT_HAS_EXPIRED => (
                                 Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED, x509_error_str))),
                                 Some(pb::State::STATE_ERROR),
@@ -619,130 +658,74 @@ impl OsslTrait for Ossl {
                             _ => (
                                 Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED, x509_error_str))),
                                 Some(pb::State::STATE_ERROR),
-                                )
-                        };
-                    }
-                    match err & 0xFFF {
-                        openssl::SSL_R_CERTIFICATE_VERIFY_FAILED => {
-                            let x_e_s = unsafe {
-                                openssl::X509_verify_cert_error_string(tun.verify_error as i64)
-                            } as *mut std::os::raw::c_char;
-                            let x509_error_cstr = unsafe { std::ffi::CStr::from_ptr(x_e_s) };
-                            let mut x509_error_str = err_string + "; ";
-                            if let Ok(s) = x509_error_cstr.to_str() {
-                                x509_error_str.push_str(s);
-                            } else {
-                                return (
-                                    Err(crate::Error::from((
-                                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
-                                        x509_error_str,
-                                    ))),
-                                    Some(pb::State::STATE_ERROR),
-                                );
-                            }
-                            match tun.verify_error as u32 {
-                                openssl::X509_V_ERR_CERT_HAS_EXPIRED => (
-                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_EXPIRED, x509_error_str))),
-                                    Some(pb::State::STATE_ERROR),
                                 ),
-                                openssl::X509_V_ERR_CERT_REVOKED => (
-                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_REVOKED, x509_error_str))),
-                                    Some(pb::State::STATE_ERROR),
-                                ),
-                                openssl::X509_V_ERR_CERT_SIGNATURE_FAILURE => (
-                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED, x509_error_str))),
-                                    Some(pb::State::STATE_ERROR),
-                                ),
-                                openssl::X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY
-                                | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD
-                                | openssl::X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD
-                                | openssl::X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN
-                                | openssl::X509_V_ERR_CERT_CHAIN_TOO_LONG
-                                | openssl::X509_V_ERR_INVALID_PURPOSE
-                                | openssl::X509_V_ERR_CERT_UNTRUSTED
-                                | openssl::X509_V_ERR_CERT_REJECTED => (
-                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_INVALID_CERTIFICATE, x509_error_str))),
-                                    Some(pb::State::STATE_ERROR),
-                                ),
-                                _ => (
-                                    Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED, x509_error_str))),
-                                    Some(pb::State::STATE_ERROR),
-                                    ),
-                            }
                         }
-                        _ => (
-                            Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
-                            Some(pb::State::STATE_ERROR),
-                        ),
                     }
+                    _ => (
+                        Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                        Some(pb::State::STATE_ERROR),
+                    ),
                 }
-                _ => (
-                    Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
-                    Some(pb::State::STATE_ERROR),
-                ),
             }
+            _ => (
+                Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                Some(pb::State::STATE_ERROR),
+            ),
         }
     }
 
-    fn ssl_read(ssl: *mut Self::NativeSsl, buf: &mut [u8]) -> crate::tunnel::RecordResult<usize> {
+    fn ssl_read(
+        ssl: NonNull<Self::NativeSsl>,
+        buf: &mut [u8],
+    ) -> crate::tunnel::RecordResult<usize> {
         if buf.len() > (i32::MAX as usize) {
             return Err(PbRecordError::RECORDERROR_TOO_BIG.into());
         }
 
-        let err = unsafe {
-            openssl::SSL_read(
-                ssl,
-                buf.as_mut_ptr() as *mut std::ffi::c_void,
-                buf.len() as i32,
-            )
-        };
+        let err =
+            unsafe { openssl::SSL_read(ssl.as_ptr(), buf.as_mut_ptr().cast(), buf.len() as i32) };
         let os_error = std::io::Error::last_os_error();
 
         if err > 0 {
             return Ok(err as usize);
         }
 
-        let serr = unsafe { openssl::SSL_get_error(ssl, err) };
+        let serr = unsafe { openssl::SSL_get_error(ssl.as_ptr(), err) };
         if (serr == (openssl::SSL_ERROR_SYSCALL as i32)) && (err == 0) {
             return Err(PbRecordError::RECORDERROR_CLOSED.into());
         }
         Err(openssl_error_to_record_error(serr, os_error))
     }
 
-    fn ssl_write(ssl: *mut Self::NativeSsl, buf: &[u8]) -> crate::tunnel::RecordResult<usize> {
+    fn ssl_write(ssl: NonNull<Self::NativeSsl>, buf: &[u8]) -> crate::tunnel::RecordResult<usize> {
         if buf.len() > (i32::MAX as usize) {
             return Err(PbRecordError::RECORDERROR_TOO_BIG.into());
         }
 
-        let err = unsafe {
-            openssl::SSL_write(
-                ssl,
-                buf.as_ptr() as *const std::ffi::c_void,
-                buf.len() as i32,
-            )
-        };
+        let err =
+            unsafe { openssl::SSL_write(ssl.as_ptr(), buf.as_ptr().cast(), buf.len() as i32) };
         let os_error = std::io::Error::last_os_error();
 
         if err > 0 {
             return Ok(err as usize);
         }
 
-        let serr = unsafe { openssl::SSL_get_error(ssl, err) };
+        let serr = unsafe { openssl::SSL_get_error(ssl.as_ptr(), err) };
         if (serr == (openssl::SSL_ERROR_SYSCALL as i32)) && (err == 0) {
             return Err(PbRecordError::RECORDERROR_CLOSED.into());
         }
         Err(openssl_error_to_record_error(serr, os_error))
     }
 
-    fn ssl_close(ssl: *mut Self::NativeSsl) -> crate::tunnel::RecordResult<()> {
+    fn ssl_close(ssl: NonNull<Self::NativeSsl>) -> crate::tunnel::RecordResult<()> {
         unsafe {
-            openssl::SSL_shutdown(ssl);
-        };
+            openssl::SSL_shutdown(ssl.as_ptr());
+        }
         Ok(())
     }
 
-    fn ssl_get_shutdown_state(ssl: *const Self::NativeSsl) -> Option<pb::State> {
-        let err = unsafe { openssl::SSL_get_shutdown(ssl) } as u32;
+    fn ssl_get_shutdown_state(ssl: NonNull<Self::NativeSsl>) -> Option<pb::State> {
+        let err = unsafe { openssl::SSL_get_shutdown(ssl.as_ptr()) } as u32;
         if (err & openssl::SSL_SENT_SHUTDOWN) != 0 {
             // According to the OpenSSL documentation:
             // > SSL_SENT_SHUTDOWN:
@@ -758,9 +741,10 @@ impl OsslTrait for Ossl {
         }
     }
 
-    fn ssl_get_handshake_state(ssl: *const Self::NativeSsl) -> pb::HandshakeState {
-        let s = unsafe { openssl::SSL_get_state(ssl) };
-        if s == openssl::OSSL_HANDSHAKE_STATE_TLS_ST_OK {
+    fn ssl_get_handshake_state(ssl: NonNull<Self::NativeSsl>) -> pb::HandshakeState {
+        if unsafe { openssl::SSL_get_state(ssl.as_ptr()) }
+            == openssl::OSSL_HANDSHAKE_STATE_TLS_ST_OK
+        {
             pb::HandshakeState::HANDSHAKESTATE_DONE
         } else {
             pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS
@@ -768,28 +752,25 @@ impl OsslTrait for Ossl {
     }
 
     fn x509_store_context_get_ssl(
-        store_ctx: *mut Self::NativeX509StoreCtx,
-    ) -> Option<*const Self::NativeSsl> {
+        store_ctx: NonNull<Self::NativeX509StoreCtx>,
+    ) -> Option<NonNull<Self::NativeSsl>> {
         let ssl_idx = unsafe { openssl::SSL_get_ex_data_X509_STORE_CTX_idx() };
         if ssl_idx < 0 {
             return None;
         }
-        let ssl = unsafe { openssl::X509_STORE_CTX_get_ex_data(store_ctx, ssl_idx) }
-            as *const Self::NativeSsl;
-        if ssl.is_null() {
-            None
-        } else {
-            Some(ssl)
-        }
+        NonNull::new(
+            unsafe { openssl::X509_STORE_CTX_get_ex_data(store_ctx.as_ptr(), ssl_idx) }
+                .cast::<Self::NativeSsl>(),
+        )
     }
 
-    fn x509_store_context_get_error(store_ctx: *mut Self::NativeX509StoreCtx) -> i32 {
-        unsafe { openssl::X509_STORE_CTX_get_error(store_ctx) }
+    fn x509_store_context_get_error(store_ctx: NonNull<Self::NativeX509StoreCtx>) -> i32 {
+        unsafe { openssl::X509_STORE_CTX_get_error(store_ctx.as_ptr()) }
     }
 
-    fn x509_store_context_set_error(store_ctx: *mut Self::NativeX509StoreCtx, error: i32) {
+    fn x509_store_context_set_error(store_ctx: NonNull<Self::NativeX509StoreCtx>, error: i32) {
         unsafe {
-            openssl::X509_STORE_CTX_set_error(store_ctx, error);
+            openssl::X509_STORE_CTX_set_error(store_ctx.as_ptr(), error);
         }
     }
 
@@ -801,35 +782,53 @@ impl OsslTrait for Ossl {
         error == openssl::X509_V_ERR_CERT_HAS_EXPIRED as i32
     }
 
-    fn ssl_get_tunnel<'a>(
-        ssl: *const Self::NativeSsl,
-    ) -> Option<&'a mut super::OsslTunnel<'a, 'a, Self>> {
+    fn ssl_get_tunnel_security_requirements<'a>(
+        ssl: NonNull<Self::NativeSsl>,
+    ) -> Option<&'a tls::TunnelSecurityRequirements> {
         unsafe {
-            openssl::SSL_get_ex_data(ssl, ossl::VERIFY_TUNNEL_INDEX)
-                .cast::<super::OsslTunnel<Self>>()
-                .as_mut::<'a>()
+            openssl::SSL_get_ex_data(
+                ssl.as_ptr(),
+                ossl::VERIFY_TUNNEL_SECURITY_REQUIREMENTS_INDEX,
+            )
+            .cast::<tls::TunnelSecurityRequirements>()
+            .as_ref::<'a>()
+        }
+    }
+
+    fn ssl_set_last_verify_error(ssl: NonNull<Self::NativeSsl>, err: i32) {
+        unsafe {
+            openssl::SSL_set_ex_data(
+                ssl.as_ptr(),
+                ossl::VERIFY_TUNNEL_LAST_VERIFY_ERROR_INDEX,
+                err as _,
+            );
+        }
+    }
+
+    fn ssl_get_last_verify_error(ssl: NonNull<Self::NativeSsl>) -> i32 {
+        unsafe {
+            openssl::SSL_get_ex_data(ssl.as_ptr(), ossl::VERIFY_TUNNEL_LAST_VERIFY_ERROR_INDEX)
+                as i32
         }
     }
 
     fn ssl_get_x509_verify_parameters(
-        ssl: *mut Self::NativeSsl,
-    ) -> Option<*mut Self::NativeX509VerifyParams> {
-        let params = unsafe { openssl::SSL_get0_param(ssl) };
-        if !params.is_null() {
-            unsafe {
-                openssl::X509_VERIFY_PARAM_set_hostflags(
-                    params,
-                    openssl::X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT,
-                );
-            }
-            Some(params)
-        } else {
-            None
+        ssl: NonNull<Self::NativeSsl>,
+    ) -> Option<NonNull<Self::NativeX509VerifyParams>> {
+        let Some(params) = NonNull::new(unsafe { openssl::SSL_get0_param(ssl.as_ptr()) }) else {
+            return None;
+        };
+        unsafe {
+            openssl::X509_VERIFY_PARAM_set_hostflags(
+                params.as_ptr(),
+                openssl::X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT,
+            );
         }
+        Some(params)
     }
 
     fn x509_verify_parameters_add_san_dns(
-        verify_params: *mut Self::NativeX509VerifyParams,
+        verify_params: NonNull<Self::NativeX509VerifyParams>,
         dns: &str,
     ) -> crate::Result<()> {
         let cstring = std::ffi::CString::new(dns.as_bytes()).map_err(|e| {
@@ -840,7 +839,7 @@ impl OsslTrait for Ossl {
         })?;
         let cstr = cstring.as_c_str();
         let err = unsafe {
-            openssl::X509_VERIFY_PARAM_add1_host(verify_params, cstr.as_ptr(), dns.len())
+            openssl::X509_VERIFY_PARAM_add1_host(verify_params.as_ptr(), cstr.as_ptr(), dns.len())
         };
         if err == 1 {
             Ok(())
@@ -854,7 +853,7 @@ impl OsslTrait for Ossl {
     }
 
     fn x509_verify_parameters_set_san_email(
-        verify_params: *mut Self::NativeX509VerifyParams,
+        verify_params: NonNull<Self::NativeX509VerifyParams>,
         email: &str,
     ) -> crate::Result<()> {
         let cstring = std::ffi::CString::new(email.as_bytes()).map_err(|e| {
@@ -865,7 +864,11 @@ impl OsslTrait for Ossl {
         })?;
         let cstr = cstring.as_c_str();
         let err = unsafe {
-            openssl::X509_VERIFY_PARAM_set1_email(verify_params, cstr.as_ptr(), email.len())
+            openssl::X509_VERIFY_PARAM_set1_email(
+                verify_params.as_ptr(),
+                cstr.as_ptr(),
+                email.len(),
+            )
         };
         if err == 1 {
             Ok(())
@@ -879,7 +882,7 @@ impl OsslTrait for Ossl {
     }
 
     fn x509_verify_parameters_set_san_ip_address(
-        verify_params: *mut Self::NativeX509VerifyParams,
+        verify_params: NonNull<Self::NativeX509VerifyParams>,
         ip_addr: &str,
     ) -> crate::Result<()> {
         let cstring = std::ffi::CString::new(ip_addr.as_bytes()).map_err(|e| {
@@ -889,7 +892,9 @@ impl OsslTrait for Ossl {
             )
         })?;
         let cstr = cstring.as_c_str();
-        let err = unsafe { openssl::X509_VERIFY_PARAM_set1_ip_asc(verify_params, cstr.as_ptr()) };
+        let err = unsafe {
+            openssl::X509_VERIFY_PARAM_set1_ip_asc(verify_params.as_ptr(), cstr.as_ptr())
+        };
         if err == 1 {
             Ok(())
         } else {
@@ -900,16 +905,6 @@ impl OsslTrait for Ossl {
                 .into())
         }
     }
-}
-
-/// Instantiates a [`crate::tunnel::Context`] from a protobuf configuration message.
-pub(crate) fn try_from<'ctx>(
-    configuration: &pb_api::Configuration,
-) -> crate::Result<Box<dyn crate::tunnel::Context<'ctx> + 'ctx>> {
-    tls::assert_compliance(configuration)?;
-    Ok(Box::new(super::OsslContext::<Ossl>::try_from(
-        configuration,
-    )?))
 }
 
 GenOsslUnitTests!(
@@ -923,57 +918,46 @@ mod additional_tests {
     /// Tests creation of SSL handles.
     #[test]
     fn test_ssl_creation() {
-        let ctx = Ossl::new_ssl_context(Mode::Client);
-        let mut ctx = ctx.unwrap();
-        assert!(!ctx.as_ptr().is_null());
+        let ctx = Ossl::new_ssl_context(Mode::Client).unwrap();
 
-        let ssl = Ossl::new_ssl_handle(&mut ctx);
-        let ssl = ssl.unwrap();
-        assert!(!ssl.as_ptr().is_null());
+        let ssl = Ossl::new_ssl_handle(&ctx).unwrap();
 
-        let ptr = unsafe { openssl::SSL_get_SSL_CTX(ssl.as_ptr()) };
-        assert_eq!(ptr as *const _, ctx.as_ptr());
+        let ptr = unsafe { openssl::SSL_get_SSL_CTX(ssl.as_nonnull().as_ptr()) };
+        assert_eq!(ptr as *const _, ctx.as_nonnull().as_ptr());
 
-        let ctx = Ossl::new_ssl_context(Mode::Server);
-        let mut ctx = ctx.unwrap();
-        assert!(!ctx.as_ptr().is_null());
+        let ctx = Ossl::new_ssl_context(Mode::Server).unwrap();
 
-        let ssl = Ossl::new_ssl_handle(&mut ctx);
-        let ssl = ssl.unwrap();
-        assert!(!ssl.as_ptr().is_null());
+        let ssl = Ossl::new_ssl_handle(&ctx).unwrap();
 
-        let ptr = unsafe { openssl::SSL_get_SSL_CTX(ssl.as_ptr()) };
-        assert_eq!(ptr as *const _, ctx.as_ptr());
+        let ptr = unsafe { openssl::SSL_get_SSL_CTX(ssl.as_nonnull().as_ptr()) };
+        assert_eq!(ptr as *const _, ctx.as_nonnull().as_ptr());
     }
 
     /// Tests [`Ossl::ssl_context_set_verify_mode`].
     #[test]
     fn test_ssl_ctx_set_verify_mode() {
-        let ssl = Ossl::new_ssl_context(Mode::Client);
-        let mut ssl = ssl.unwrap();
-        assert!(!ssl.as_ptr().is_null());
+        let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
 
-        let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
+        let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_nonnull().as_ptr()) };
         assert_eq!(mode, openssl::SSL_VERIFY_PEER as i32);
 
-        Ossl::ssl_context_set_verify_mode(&mut ssl, VerifyMode::Peer);
+        Ossl::ssl_context_set_verify_mode(ssl.as_nonnull(), VerifyMode::Peer);
 
-        let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
+        let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_nonnull().as_ptr()) };
         assert_eq!(mode, openssl::SSL_VERIFY_PEER as i32);
 
-        Ossl::ssl_context_set_verify_mode(&mut ssl, VerifyMode::None);
+        Ossl::ssl_context_set_verify_mode(ssl.as_nonnull(), VerifyMode::None);
 
-        let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_ptr()) };
+        let mode = unsafe { openssl::SSL_CTX_get_verify_mode(ssl.as_nonnull().as_ptr()) };
         assert_eq!(mode, openssl::SSL_VERIFY_NONE as i32);
     }
 }
 
 #[cfg(test)]
 pub(crate) mod additional_test {
-    use super::*;
     use crate::io::Result as IOResult;
     use crate::test::resolve_runfile;
-    use crate::tunnel::context_try_from;
+    use crate::tunnel::{tls, Context};
 
     /// A simple I/O interface.
     struct IOBuffer {
@@ -1072,7 +1056,6 @@ pub(crate) mod additional_test {
         }
     }
 
-    /// Test tunnel constructor for client.
     #[test]
     fn test_client() {
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1102,7 +1085,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut ctx = context_try_from(&config).unwrap();
+        let ctx = Context::try_from(&config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1161,7 +1144,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut ctx = context_try_from(&config).unwrap();
+        let ctx = Context::try_from(&config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1212,7 +1195,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1252,7 +1235,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1317,7 +1300,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1357,7 +1340,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1457,7 +1440,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1504,7 +1487,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1574,7 +1557,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1621,7 +1604,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1690,7 +1673,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1730,7 +1713,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1796,7 +1779,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut ctx = context_try_from(&config).unwrap();
+        let ctx = Context::try_from(&config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration = pb_api::TunnelConfiguration::new();
@@ -1836,7 +1819,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut ctx = context_try_from(&config).unwrap();
+        let ctx = Context::try_from(&config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1886,7 +1869,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut ctx = context_try_from(&config).unwrap();
+        let ctx = Context::try_from(&config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1932,7 +1915,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut ctx = context_try_from(&config).unwrap();
+        let ctx = Context::try_from(&config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1989,7 +1972,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2029,7 +2012,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2109,7 +2092,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2149,7 +2132,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2231,7 +2214,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2271,7 +2254,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2351,7 +2334,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2391,7 +2374,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2473,7 +2456,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2513,7 +2496,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2593,7 +2576,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2633,7 +2616,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2715,7 +2698,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2755,7 +2738,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2835,7 +2818,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut client_ctx = context_try_from(&config).unwrap();
+        let client_ctx = Context::try_from(&config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2875,7 +2858,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let mut server_ctx = context_try_from(&config).unwrap();
+        let server_ctx = Context::try_from(&config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =

@@ -75,7 +75,7 @@ mod test {
 
         super::Enum::try_from(&e).expect_err("constructor succeed, but it should have failed");
 
-        let mut v = e.value.last_mut().expect("no last element");
+        let v = e.value.last_mut().expect("no last element");
         v.name = Some("name".into());
 
         let e = super::Enum::try_from(&e).expect("constructor failed");

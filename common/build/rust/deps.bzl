@@ -9,16 +9,26 @@ load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
 def rust_deps():
     crates_repository(
         name = "crate_index",
-        cargo_lockfile = "//common/build/rust:Cargo.lock",
-        lockfile = "//common/build/rust:Cargo.Bazel.lock",
+        cargo_lockfile = "@sandwich//common/build/rust:Cargo.lock",
+        lockfile = "@sandwich//common/build/rust:Cargo.Bazel.lock",
         annotations = {
             "protobuf-codegen": [crate.annotation(
                 gen_binaries = ["protoc-gen-rust"],
             )],
         },
         packages = {
+            "bytes": crate.spec(
+                version = "1.4.0",
+            ),
+            "clap": crate.spec(
+                version = "4.1.4",
+                features = ["derive"],
+            ),
             "env_logger": crate.spec(
                 version = "0.10.0",
+            ),
+            "hex-literal": crate.spec(
+                version = "0.4.1",
             ),
             "log": crate.spec(
                 version = "0.4.17",
@@ -30,12 +40,31 @@ def rust_deps():
             "protobuf-codegen": crate.spec(
                 version = "3.2.0",
             ),
-            "libc": crate.spec(
-                version = "0.2.147",
+            "reqwest": crate.spec(
+                version = "0.11.18",
+                features = ["blocking"],
             ),
-            "clap": crate.spec(
-                version = "4.1.4",
+            "serde": crate.spec(
+                version = "1.0.185",
                 features = ["derive"],
+            ),
+            "sha2": crate.spec(
+                version = "0.10.7",
+            ),
+            "shlex": crate.spec(
+                version = "1.1.0",
+            ),
+            "syn": crate.spec(
+                version = "2.0.29",
+            ),
+            "tempfile": crate.spec(
+                version = "3.7.0",
+            ),
+            "tinytemplate": crate.spec(
+                version = "1.2.1",
+            ),
+            "polling": crate.spec(
+                version = "2.8.0",
             ),
         },
     )

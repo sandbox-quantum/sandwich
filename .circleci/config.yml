@@ -8,26 +8,30 @@ jobs:
         auth:
           username: _json_key
           password: $RUNNER_GCR_SA_KEY
+    environment:
+      BAZEL_CACHE_ARGS: "--remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 --google_default_credentials"
+      CC: clang-13
+      CXX: clang++-13
     steps:
+      - run:
+          name: "Export custom environment variables"
+          command: |
+            echo 'export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"' >> "${BASH_ENV}"
+            source "${BASH_ENV}"
+            echo "${BAZEL_CACHE_GCS_SA_KEY}" > "${GOOGLE_APPLICATION_CREDENTIALS}"
+
       - checkout
       - run:
           name: "Run all test targets"
           command: |
-            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
-            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
-            bazelisk test --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
-              --google_default_credentials \
-              //...
+            source "${BASH_ENV}"
+            bazelisk test ${BAZEL_CACHE_ARGS} //...
+
       - run:
-          name: "Test the external Go & Python integrations"
+          name: "Test external Go integration"
           command: |
-            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
-            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
-            bazelisk build --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
-              --google_default_credentials \
-              sandwich_c/...
-            export CC=clang-13
-            export CXX=clang++-13
+            source "${BASH_ENV}"
+            bazelisk build ${BAZEL_CACHE_ARGS} sandwich_c/...
 
             export CGO_CFLAGS="-I$PWD -I$PWD/bazel-bin/"
             export CGO_LDFLAGS="-L$PWD/bazel-bin/rust/"
@@ -35,21 +39,22 @@ jobs:
             echo "replace github.com/sandbox-quantum/sandwich/go => $PWD/go" >>"$GO_EXAMPLE_DIR/go.mod"
             pushd "$GO_EXAMPLE_DIR" && go build && popd
 
+      - run:
+          name: "Test external Python integration"
+          command: |
+            source "${BASH_ENV}"
+            bazelisk build ${BAZEL_CACHE_ARGS} sandwich_c/...
+
             python3 -m venv venv
             source venv/bin/activate
             pip install .
-            SANDWICH_C_LIB="$PWD/bazel-bin/rust/libsandwich_full.so" python -c 'from pysandwich import sandwich; sandwich.Sandwich()'
+            SANDWICH_C_LIB="$PWD/bazel-bin/rust/libsandwich_full.so" python -c 'from pysandwich import sandwich; sandwich.sandwich()'
+
       - run:
           name: "Build the Rust package natively"
           command: |
-            export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"
-            echo ${BAZEL_CACHE_GCS_SA_KEY} > ${GOOGLE_APPLICATION_CREDENTIALS}
-
-            export CARGO_BAZELISK_EXTRA_ARGS="--remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 --google_default_credentials"
-            export CC=clang-13
-            export CXX=clang++-13
-
-            cargo build --release -vv
+            source "${BASH_ENV}"
+            export CARGO_BAZELISK_EXTRA_ARGS="${BAZEL_CACHE_ARGS}"
             cargo test --release --lib -vv
 
   release-linux-dockerbuild:
@@ -103,18 +108,21 @@ jobs:
         enum:
           - macos.m1.large.gen1
           - macos.x86.medium.gen2
-      arch:
-        description: "Arch name"
+      platform:
+        description: "Target platform"
         type: enum
         enum:
-          - arm64
-          - amd64
+          - macos_x86_64
+          - macos_aarch64
+      artifact_file_name:
+        description: "Artifact file name"
+        type: string
     steps:
       - checkout
       - run:
           name: "Install bazelisk"
           command: |
-            curl -L --output /usr/local/bin/bazelisk "https://github.com/bazelbuild/bazelisk/releases/download/v1.17.0/bazelisk-darwin-<< parameters.arch >>"
+            curl -L --output /usr/local/bin/bazelisk "https://github.com/bazelbuild/bazelisk/releases/download/v1.17.0/bazelisk-darwin-arm64"
             chmod +x /usr/local/bin/bazelisk
       - run:
           name: "Build release"
@@ -127,15 +135,17 @@ jobs:
               source "${BASH_ENV}"
             fi
 
+            export PLATFORM_FLAG="--platforms=//common/platforms:<< parameters.platform >>"
+
             bazelisk build //:export \
               -c opt \
+              "${PLATFORM_FLAG}" \
               --remote_cache=https://storage.googleapis.com/bazel-cache-bucket-3100644879 \
               --google_default_credentials \
               --profile=/tmp/bazel-profile-<< parameters.resource >>.gz \
 
-            finalName=sandwich_macos_<< parameters.arch >>
             mkdir -p ~/export_artifacts
-            mv "$(bazelisk cquery -c opt --output=files //:export)" ~/export_artifacts/${finalName}.tar.bz2
+            mv "$(bazelisk cquery -c opt "${PLATFORM_FLAG}" --output=files //:export)" ~/export_artifacts/<< parameters.artifact_file_name >>
 
       - store_artifacts:
           name: "Export build artifacts"
@@ -185,10 +195,12 @@ workflows:
             - bazel-cache
           name: release-macos-aarch64
           resource: macos.m1.large.gen1
-          arch: arm64
+          platform: macos_aarch64
+          artifact_file_name: "sandwich-macos-arm64.tar.bz2"
       - release-macos:
           context:
             - bazel-cache
           name: release-macos-x86_64
-          resource: macos.x86.medium.gen2
-          arch: amd64
+          resource: macos.m1.large.gen1
+          platform: macos_x86_64
+          artifact_file_name: "sandwich-macos-x86_64.tar.bz2"

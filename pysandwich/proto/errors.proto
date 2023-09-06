@@ -3,8 +3,8 @@
 
 // This protobuf aims to describe any types of errors.
 // The idea is to be as accurate as possible. However, there may be overlaps
-// between multiple error codes, for instance `ERROR_INVALID_ARGUMENT` and
-// `ERROR_PROTOBUF`. The strategy is to choose the error that best fits the
+// between multiple error codes, for instance 'ERROR_INVALID_ARGUMENT' and
+// 'ERROR_PROTOBUF'. The strategy is to choose the error that best fits the
 // case. New type of errors can be introduced if the existing ones are not
 // accurate enough.
 
@@ -16,7 +16,7 @@ option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich";
 
 // API errors.
 // The following errors can occur during a call to the Context API.
-enum APIError {
+enum APIError { // ERRORKIND_API
   // Configuration error.
   APIERROR_CONFIGURATION = 0;
 
@@ -28,7 +28,7 @@ enum APIError {
 };
 
 // Errors regarding configurations.
-enum ConfigurationError {
+enum ConfigurationError { // ERRORKIND_CONFIGURATION
   // The selected implementation is invalid.
   CONFIGURATIONERROR_INVALID_IMPLEMENTATION = 0;
 
@@ -40,7 +40,7 @@ enum ConfigurationError {
 };
 
 // Errors regarding protobuf.
-enum ProtobufError {
+enum ProtobufError { // ERRORKIND_PROTOBUF
   // The protobuf message is empty.
   PROTOBUFERROR_EMPTY = 0;
 
@@ -50,9 +50,9 @@ enum ProtobufError {
   // Failed to parse the protobuf message.
   PROTOBUFERROR_PARSE_FAILED = 2;
 
-  /// A null pointer was supplied.
-  /// This error is thrown by `sandwich_context_new`, when the given source
-  /// buffer is a null pointer.
+  // A null pointer was supplied.
+  // This error is thrown by 'sandwich_context_new', when the given source
+  // buffer is a null pointer.
   PROTOBUFERROR_NULLPTR = 3;
 
   /// An invalid value was given.
@@ -60,7 +60,7 @@ enum ProtobufError {
 };
 
 // Errors regarding TLS configurations.
-enum TLSConfigurationError {
+enum TLSConfigurationError { // ERRORKIND_TLS_CONFIGURATION
   // The selected implementation isn't supported.
   TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION = 0;
 
@@ -81,7 +81,7 @@ enum TLSConfigurationError {
 };
 
 // Certificate errors.
-enum CertificateError {
+enum CertificateError { // ERRORKIND_CERTIFICATE
   // Malformed certificate.
   CERTIFICATEERROR_MALFORMED = 0;
 
@@ -99,7 +99,7 @@ enum CertificateError {
 };
 
 // Private key errors.
-enum PrivateKeyError {
+enum PrivateKeyError { // ERRORKIND_PRIVATE_KEY
   // Malformed private key.
   PRIVATEKEYERROR_MALFORMED = 0;
 
@@ -117,7 +117,7 @@ enum PrivateKeyError {
 };
 
 // ASN.1 errors.
-enum ASN1Error {
+enum ASN1Error { // ERRORKIND_ASN1
   // Invalid format.
   ASN1ERROR_INVALID_FORMAT = 0;
 
@@ -126,7 +126,7 @@ enum ASN1Error {
 };
 
 // ALPN errors.
-enum ALPNError {
+enum ALPNError { // ERRORKIND_ALPN
   // Protocol length is longer than 255 bytes.
   ALPNERROR_LENGTH_ERROR = 0;
   // Protocol contains '\x00' byte or invalid string.
@@ -134,7 +134,7 @@ enum ALPNError {
 }
 
 // DataSource errors.
-enum DataSourceError {
+enum DataSourceError { // ERRORKIND_DATA_SOURCE
   // Empty data source.
   DATASOURCEERROR_EMPTY = 0;
 
@@ -146,7 +146,7 @@ enum DataSourceError {
 };
 
 // KEM errors.
-enum KEMError {
+enum KEMError { // ERRORKIND_KEM
   // Invalid or unsupported KEM.
   KEMERROR_INVALID = 0;
 
@@ -155,7 +155,7 @@ enum KEMError {
 };
 
 // System errors.
-enum SystemError {
+enum SystemError { // ERRORKIND_SYSTEM
   // Memory error (e.g. allocation failed).
   SYSTEMERROR_MEMORY = 0;
 
@@ -165,7 +165,7 @@ enum SystemError {
 
 // Socket errors.
 // These errors are used in io/socket.
-enum SocketError {
+enum SocketError { // ERRORKIND_SOCKET
   // Bad file descriptor.
   SOCKETERROR_BAD_FD = 0;
 
@@ -178,7 +178,7 @@ enum SocketError {
   // Failed to resolve network address.
   SOCKETERROR_NETADDR_UNKNOWN = 3;
 
-  // Syscall `fstat` failed.
+  // Syscall 'fstat' failed.
   SOCKETERROR_FSTAT_FAILED = 4;
 
   // File descriptor is not a socket.
@@ -194,7 +194,7 @@ enum SocketError {
   SOCKETERROR_INVALID_AI_FAMILY = 8;
 };
 
-enum HandshakeError {
+enum HandshakeError { // ERRORKIND_HANDSHAKE
   // Invalid Server Name.
   HANDSHAKEERROR_INVALID_SERVER_NAME = 0;
 
@@ -218,7 +218,7 @@ enum HandshakeError {
 };
 
 // Tunnel error.
-enum TunnelError {
+enum TunnelError { // ERRORKIND_TUNNEL
   // Invalid tunnel configuration.
   TUNNELERROR_INVALID = 0;
 

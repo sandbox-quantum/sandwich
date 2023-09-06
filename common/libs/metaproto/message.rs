@@ -177,13 +177,13 @@ mod test {
         mdesc
             .field
             .push(protobuf::descriptor::FieldDescriptorProto::new());
-        let mut field = mdesc.field.last_mut().expect("no last value");
+        let field = mdesc.field.last_mut().expect("no last value");
         field.name = None;
 
         super::Message::try_from(&mdesc)
             .expect_err("constructor succeed, but it should have failed");
 
-        let mut field = mdesc.field.last_mut().expect("no last value");
+        let field = mdesc.field.last_mut().expect("no last value");
         field.name = Some("f13ld".into());
         super::Message::try_from(&mdesc).expect("constructor failed");
     }
@@ -197,7 +197,7 @@ mod test {
         mdesc
             .field
             .push(protobuf::descriptor::FieldDescriptorProto::new());
-        let mut field = mdesc.field.last_mut().expect("no last value");
+        let field = mdesc.field.last_mut().expect("no last value");
 
         field.name = Some("f13ld".into());
         field.oneof_index = Some(42);
@@ -214,7 +214,7 @@ mod test {
         mdesc
             .oneof_decl
             .push(protobuf::descriptor::OneofDescriptorProto::new());
-        let mut oneof = mdesc.oneof_decl.last_mut().expect("no last value");
+        let oneof = mdesc.oneof_decl.last_mut().expect("no last value");
         oneof.name = None;
 
         super::Message::try_from(&mdesc)

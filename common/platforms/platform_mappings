@@ -1,0 +1,22 @@
+# See https://bazel.build/concepts/platforms#platform-mappings
+# for more information.
+
+platforms:
+  # macOS intel-based.
+  //common/platforms:macos_x86_64
+    --cpu=darwin_x86_64
+    --apple_platform_type=macos
+
+  # macOS aarch64-based.
+  //common/platforms:macos_aarch64
+    --cpu=darwin_arm64
+    --apple_platform_type=macos
+
+  # iOS.
+  //common/platforms:ios
+    --cpu=ios_arm64
+    --apple_platform_type=ios
+
+  # Linux 64bits.
+  //common/platforms:linux_x86_64
+    --cpu=k8

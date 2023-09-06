@@ -1,0 +1,71 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_clippy", "rust_library", "rust_test", "rustfmt_test")
+
+_SRCS = [
+    "action_graph.rs",
+    "buffer.rs",
+    "builder.rs",
+    "command.rs",
+    "config.rs",
+    "lib.rs",
+    "platform.rs",
+    "support.rs",
+]
+
+filegroup(
+    name = "lib_srcs",
+    srcs = _SRCS,
+)
+
+rust_library(
+    name = "bazelisk",
+    srcs = [":lib_srcs"],
+    crate_name = "bazelisk",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//rust_vendor/bazelisk-rs/proto:build_rust_proto",
+        "@crate_index//:bytes",
+        "@crate_index//:hex-literal",
+        "@crate_index//:protobuf",
+        "@crate_index//:reqwest",
+        "@crate_index//:sha2",
+        "@crate_index//:tempfile",
+    ],
+)
+
+rust_clippy(
+    name = "clippy",
+    deps = [
+        ":bazelisk",
+    ],
+)
+
+rust_test(
+    name = "test",
+    timeout = "short",
+    crate = ":bazelisk",
+    env = {
+        "RUST_TEST_THREADS": "1",
+    },
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+    deps = ["@rules_rust//tools/runfiles"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":clippy",
+    ],
+)
+
+rustfmt_test(
+    name = "rustfmt_test",
+    timeout = "short",
+    targets = [
+        ":bazelisk",
+        ":test",
+    ],
+)

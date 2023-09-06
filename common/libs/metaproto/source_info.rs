@@ -466,7 +466,7 @@ impl<'s> std::convert::TryFrom<&'s PBSourceCodeInfo> for Info<'s> {
                 [desc_type, unknown_index] => log::warn!(
                     "unknown primary descriptor type {desc_type} with index {unknown_index}"
                 ),
-                _ => log::warn!("unknown path {path:?}"),
+                _ => log::debug!("unknown path {path:?}"),
             }
         }
         Ok(Self { messages, enums })

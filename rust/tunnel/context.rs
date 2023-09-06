@@ -14,7 +14,11 @@
 
 use pb::ConfigurationError;
 
+use crate::implementation::ossl;
+
 use super::Tunnel;
+
+use crate::tunnel::tls;
 
 /// Mode for a [`Context`].
 ///
@@ -35,25 +39,53 @@ pub(crate) enum Mode {
 /// the tunnel.
 /// Returning the I/O interface in case of error allows the caller to re-use it
 /// without having to create a new one.
-pub type TunnelResult<'io, 'tun> =
-    Result<Box<dyn Tunnel<'io, 'tun> + 'tun>, (crate::Error, Box<dyn crate::IO + 'io>)>;
+pub type TunnelResult<'a> = Result<Tunnel<'a>, (crate::Error, Box<dyn crate::IO>)>;
 
 /// A Sandwich context.
-/// A Sandwich context is usually instantiated from a protobuf [`sandwich_api_proto::Configuration`].
-pub trait Context<'ctx>: std::fmt::Debug {
+pub enum Context {
+    /// OpenSSL 1.1.1 context.
+    #[cfg(feature = "openssl1_1_1")]
+    OpenSSL1_1_1(ossl::openssl1_1_1::Context<'static>),
+
+    /// BoringSSL context.
+    #[cfg(feature = "boringssl")]
+    BoringSSL(ossl::boringssl::Context<'static>),
+}
+
+impl std::fmt::Debug for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            #[cfg(feature = "openssl1_1_1")]
+            Self::OpenSSL1_1_1(c) => write!(f, "Context(OpenSSL1_1_1({c:?}))"),
+            #[cfg(feature = "boringssl")]
+            Self::BoringSSL(c) => write!(f, "Context(BoringSSL({c:?}))"),
+        }
+    }
+}
+
+impl Context {
     /// Creates a new tunnel from an I/O interface. See [`crate::IO`] from [`crate::io`] module.
     ///
     /// The I/O interface must outlive the tunnel, as the tunnel makes use
     /// of it to send and receive data.
     ///
     /// If an error occured, the IO interface is returned to the user.
-    fn new_tunnel<'io: 'tun, 'tun>(
-        &mut self,
-        io: Box<dyn crate::IO + 'io>,
+    pub fn new_tunnel(
+        &self,
+        io: Box<dyn crate::IO>,
         configuration: pb_api::TunnelConfiguration,
-    ) -> TunnelResult<'io, 'tun>
-    where
-        'ctx: 'tun;
+    ) -> TunnelResult<'_> {
+        match self {
+            #[cfg(feature = "openssl1_1_1")]
+            Self::OpenSSL1_1_1(c) => Ok(Tunnel::OpenSSL1_1_1(ossl::openssl1_1_1::Tunnel(
+                c.0.new_tunnel(io, configuration)?,
+            ))),
+            #[cfg(feature = "boringssl")]
+            Self::BoringSSL(c) => Ok(Tunnel::BoringSSL(ossl::boringssl::Tunnel(
+                c.0.new_tunnel(io, configuration)?,
+            ))),
+        }
+    }
 }
 
 /// Instantiates a [`Context`] from a protobuf configuration message.
@@ -66,7 +98,7 @@ pub trait Context<'ctx>: std::fmt::Debug {
 ///
 /// // Creates a protobuf configuration
 /// let mut configuration = pb_api::Configuration::new();
-
+///
 /// // Sets the implementation to be used by Sandwich. Here it's OpenSSL 1.1.1
 /// // with liboqs.
 /// configuration.set_impl(pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS);
@@ -85,22 +117,26 @@ pub trait Context<'ctx>: std::fmt::Debug {
 /// };
 ///
 /// ```
-pub fn try_from<'ctx>(
-    configuration: &pb_api::Configuration,
-) -> crate::Result<Box<dyn Context<'ctx> + 'ctx>> {
-    configuration
+impl TryFrom<&pb_api::Configuration> for Context {
+    type Error = crate::Error;
+
+    fn try_from(configuration: &pb_api::Configuration) -> Result<Self, Self::Error> {
+        tls::assert_compliance(configuration)?;
+        configuration
         .impl_
         .enum_value()
         .map_err(|_| errors!{ConfigurationError::CONFIGURATIONERROR_INVALID_IMPLEMENTATION => ConfigurationError::CONFIGURATIONERROR_INVALID})
         .and_then(|v| match v {
             #[cfg(feature = "openssl1_1_1")]
             pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS => {
-                crate::implementation::ossl::openssl1_1_1::try_from(configuration)
+                ossl::openssl1_1_1::Context::try_from(configuration)
+                    .map(Self::OpenSSL1_1_1)
                     .map_err(|e| e >> ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
             #[cfg(feature = "boringssl")]
             pb_api::Implementation::IMPL_BORINGSSL_OQS => {
-                crate::implementation::ossl::boringssl::try_from(configuration)
+                ossl::boringssl::Context::try_from(configuration)
+                    .map(Self::BoringSSL)
                     .map_err(|e| e >> ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
             _ => Err(
@@ -108,6 +144,7 @@ pub fn try_from<'ctx>(
             ),
         })
         .map_err(|e| e >> pb::APIError::APIERROR_CONFIGURATION)
+    }
 }
 
 #[cfg(test)]
@@ -141,10 +178,7 @@ pub(crate) mod test {
 
         /// Creates a [`sandwich_api_proto::Configuration`] for TLS 1.3.
         #[allow(dead_code)]
-        pub(crate) fn create_configuration(
-            mode: crate::tunnel::Mode,
-            skip_impl: bool,
-        ) -> pb_api::Configuration {
+        pub(crate) fn create_configuration(mode: Mode, skip_impl: bool) -> pb_api::Configuration {
             let mut conf = pb_api::Configuration::new();
             match mode {
                 crate::tunnel::Mode::Client => conf.mut_client().mut_tls(),
@@ -188,7 +222,7 @@ pub(crate) mod test {
             )
             .unwrap();
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-            let ctx = super::super::try_from(&config);
+            let ctx = Context::try_from(&config);
             ctx.unwrap();
         }
 
@@ -222,7 +256,7 @@ pub(crate) mod test {
                 .as_str(),
             )
             .unwrap();
-            let ctx = super::super::try_from(&config);
+            let ctx = Context::try_from(&config);
             assert!(ctx.is_err());
             assert!(
                 ctx.unwrap_err().is(
@@ -261,7 +295,7 @@ pub(crate) mod test {
             )
             .unwrap();
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-            let ctx = super::super::try_from(&config);
+            let ctx = Context::try_from(&config);
             assert!(ctx.is_err());
             assert!(ctx.unwrap_err().is(&errors! {
                 pb::ASN1Error::ASN1ERROR_MALFORMED
@@ -322,7 +356,7 @@ pub(crate) mod test {
             )
             .unwrap();
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-            let ctx = super::super::try_from(&config);
+            let ctx = Context::try_from(&config);
             assert!(ctx.is_err());
             assert!(ctx.unwrap_err().is(&errors! {
                 pb::ASN1Error::ASN1ERROR_MALFORMED

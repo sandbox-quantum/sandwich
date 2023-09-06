@@ -106,6 +106,9 @@
 //! tunnel.close();
 //! ```
 
+#![deny(bare_trait_objects)]
+#![deny(unused_qualifications)]
+
 /// The Sandwich API.
 #[doc(inline)]
 pub extern crate sandwich_api_proto as pb_api;
@@ -119,7 +122,7 @@ pub use crate::error::{Error, ErrorCode, ProtoBasedErrorCode};
 pub use crate::io::IO;
 
 /// A [`Result`](std::result::Result) using [`Error`].
-pub type Result<T> = std::result::Result<T, error::Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[macro_use]
 mod error;
@@ -127,7 +130,10 @@ mod implementation;
 pub mod io;
 mod support;
 
-#[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
+#[cfg(all(
+    any(feature = "openssl1_1_1", feature = "boringssl"),
+    feature = "tunnel"
+))]
 pub mod tunnel;
 
 #[cfg(feature = "ffi")]

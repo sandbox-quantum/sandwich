@@ -70,7 +70,7 @@ lib/libsandwich_full.a
 The Sandwich Go bindings can be added in a project using `go get`:
 
 ```
-$ go get github.com/sandbox-quantum/sandwich
+$ go get github.com/sandbox-quantum/sandwich/go
 ```
 
 The Go bindings rely on the Sandwich C API. In order to build a Go
@@ -162,4 +162,14 @@ Sandwich unit tests can be run directly using Bazel:
 
 ```
 $ cd /path/to/sandwich && bazelisk test ...
+```
+
+## Integration with Bazel
+
+To use Sandwich in a Bazel project, add the following to your `WORKSPACE` file:
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+--8<-- "docs/examples/bazel/WORKSPACE.bazel:import"
 ```
