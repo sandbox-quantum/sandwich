@@ -11,7 +11,6 @@ load(
     "copy_openssl_cli",
     "copy_openssl_conf",
     "create_cc_info",
-    "create_linker_input",
     "create_linking_context",
     "is_target_apple",
     "pick_openssl_Configure_os",

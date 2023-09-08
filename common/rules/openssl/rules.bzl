@@ -1,5 +1,3 @@
-load("@bazel_skylib//lib:shell.bzl", "shell")
-
 def _gen_certificate_impl(ctx):
     """Implementation for rule `gen_certificate`."""
 

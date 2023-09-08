@@ -6,7 +6,7 @@ load("@rules_rust//rust:defs.bzl", "rust_shared_library", "rust_static_library")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//common/rules/rust/bindgen:rules.bzl", "bindgen_add_prefix_link_name")
 load("@com_sandboxquantum_bartleby//:rules.bzl", "bartleby")
-load("//common/rules/mkdocs:rules.bzl", "mkdocs_project", "mkdocs_tree")
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
 load(":rules.bzl", "sandwich_variant")
 
 # Source files of Sandwich.
