@@ -1,8 +1,6 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("@rules_python//python:defs.bzl", "py_binary")
-
 py_test(
     name = "test_examples",
     timeout = "short",

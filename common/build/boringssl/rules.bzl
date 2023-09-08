@@ -1,5 +1,4 @@
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
-load("@rules_foreign_cc//foreign_cc:providers.bzl", "ForeignCcDepsInfo")
 
 def _merge_liboqs_into_boringssl_code(ctx):
     """Implements the `merge_liboqs_into_boringssl` rule."""

@@ -2,11 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
-load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@rules_python//python:versions.bzl", "gen_python_config_settings")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@bazel_skylib//lib:selects.bzl", "selects")
 load("//common/tools/protemplate:rules.bzl", "template_proto_library")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
 

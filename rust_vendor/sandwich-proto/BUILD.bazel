@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy")
 load("@rules_rust//rust:defs.bzl", "rustfmt_test")
 
 rust_binary(

@@ -13,10 +13,6 @@
 # limitations under the License.
 
 load("//common/rules/mkdocs:providers.bzl", "MkDocsProjectInfo", "MkDocsTreeInfo")
-load(
-    "@rules_foreign_cc//foreign_cc/private:cc_toolchain_util.bzl",
-    "is_debug_mode",
-)
 
 def _compile_project(ctx, project):
     """Build the MkDocs project. `project` must be a MkDocsProjectInfo."""
