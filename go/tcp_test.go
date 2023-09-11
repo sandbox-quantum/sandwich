@@ -8,7 +8,6 @@ import (
 	"github.com/sandbox-quantum/sandwich/go"
 	"crypto/rand"
 	"fmt"
-	"math/big"
 	"net"
 	"os"
 	"runtime"
@@ -213,14 +212,6 @@ func createClientContext(t *testing.T) (*sandwich.TunnelContext, error) {
 type ioInts struct {
 	client sandwich.IO
 	server sandwich.IO
-}
-
-func generateRandomPort() uint16 {
-	randNum, err := rand.Int(rand.Reader, big.NewInt(64510))
-	if err != nil {
-		return 0
-	}
-	return uint16(randNum.Int64() + 1026)
 }
 
 // createServerClientIOs creates the I/O interfaces for the server and the client.
