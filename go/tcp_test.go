@@ -8,15 +8,17 @@ import (
 	"github.com/sandbox-quantum/sandwich/go"
 	"crypto/rand"
 	"fmt"
-	"github.com/bazelbuild/rules_go/go/tools/bazel"
 	"math/big"
 	"net"
 	"os"
 	"runtime"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 )
@@ -224,13 +226,19 @@ func generateRandomPort() uint16 {
 // createServerClientIOs creates the I/O interfaces for the server and the client.
 func createIOs() ioInts {
 	hostname := "127.0.0.1"
-	port := generateRandomPort()
-	listener, err := net.Listen("tcp", hostname+":"+strconv.FormatUint(uint64(port), 10))
+	// Uses kernel allocated port for realiable test
+	listener, err := net.Listen("tcp", hostname+":0")
 	if err != nil {
 		fmt.Println("Error listening:", err)
 	}
 	defer listener.Close()
-	client, _ := sandwich.IOTCPClient(hostname, port, false)
+
+	// Extracts port number from listener
+	port := strings.Split(listener.Addr().String(), ":")[1]
+	listener_port, _ := strconv.ParseUint(port, 10, 64)
+
+	// Connects to kernel assigned port
+	client, _ := sandwich.IOTCPClient(hostname, uint16(listener_port), false)
 	server := newServerIO()
 	conn, err := listener.Accept()
 	if err != nil {
