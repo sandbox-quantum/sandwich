@@ -19,7 +19,6 @@ template_proto_library(
     out = "code_gen.py_tmp",
     proto = "//pysandwich/proto:errors_proto",
     template = "gen_error_codes.template",
-    visibility = ["//saq/pqc/sandwich/python:__subpackages__"],
 )
 
 write_source_file(
