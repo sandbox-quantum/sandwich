@@ -1,0 +1,6 @@
+---
+- some:
+    test:
+      text:
+        - goes
+        - here
