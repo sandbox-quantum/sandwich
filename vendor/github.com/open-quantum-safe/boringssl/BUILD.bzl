@@ -1,7 +1,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
-# Release date: Aug 14 2023
+# Release date: Jul 4 2023
 _COMMIT = "1ca41b49e9198f510991fb4f350b4a5fd4c1d5ff"
 _SHA256SUM = "a16e5fac8623c1ca3508c143f959a39f1d0b830a7b56ec91c0b0fd70644bd2b8"
 
