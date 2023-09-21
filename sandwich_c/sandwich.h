@@ -159,6 +159,15 @@ sandwich_tunnel_context_new(const void *src, size_t n,
 SANDWICH_API void
 sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
 
+/// \brief Validate a configuration provided as an encoded protobuf message.
+///
+/// \param[in] src Source buffer containing the encoded protobuf message.
+/// \param n Size of the source buffer.
+///
+/// \return NULL if no error occurred, else a chain of errors.
+SANDWICH_API struct SandwichError *
+sandwich_tunnel_config_validate(const void *src, size_t n);
+
 /// \brief Create a tunnel.
 ///
 /// A tunnel is created from an I/O interface. `SandwichCIOSettings` are
