@@ -49,6 +49,16 @@ pub extern "C" fn sandwich_tunnel_context_free(ctx: *mut c_void) {
     }
 }
 
+/// Validate a Sandwich serialized configuration
+///
+///  # Errors
+///
+///
+#[no_mangle]
+pub extern "C" fn sandwich_tunnel_config_validate(src: *const c_void, n: usize) -> *mut Error {
+    sandwich_tunnel_context_new(src, n, std::ptr::null_mut())
+}
+
 #[cfg(all(test, feature = "openssl1_1_1"))]
 mod test {
     use super::*;
@@ -164,5 +174,131 @@ mod test {
         assert_eq!(ptr, std::ptr::null_mut());
         sandwich_tunnel_context_free(ptr);
         crate::ffi::error::sandwich_error_free(err);
+    }
+
+    /// Tests [`sandwich_tunnel_config_validate`] with a good config.
+    #[test]
+    fn test_c_config_validate() {
+        use protobuf::Message;
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+                client <
+                    tls <
+                        common_options <
+                            kem: "kyber1024"
+                            empty_verifier <>
+                            identity <
+                                certificate <
+                                    static <
+                                        data <
+                                            filename: "{}"
+                                        >
+                                    >
+                                >
+                                private_key <
+                                    static <
+                                        data <
+                                            filename: "{}"
+                                        >
+                                    >
+                                >
+
+                            >
+                        >
+                    >
+                >"#,
+                crate::test::resolve_runfile(tls::test::CERT_PEM_PATH),
+                crate::test::resolve_runfile(tls::test::PQ_PRIVATE_KEY_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let encoded = config.write_to_bytes().unwrap();
+        drop(config);
+
+        let err = sandwich_tunnel_config_validate(encoded.as_ptr() as *const c_void, encoded.len());
+        if !err.is_null() {
+            let err_str = crate::ffi::error::sandwich_error_stack_str_new(err);
+            let safe_err_str = crate::ffi::error::cstr_to_safe_string(err_str);
+            println!("Error: {}", safe_err_str);
+            unsafe {
+                crate::ffi::error::sandwich_error_free(err);
+                crate::ffi::error::sandwich_error_stack_str_free(err_str);
+            }
+        }
+        assert!(err.is_null());
+    }
+    /// Tests [`sandwich_tunnel_config_validate`] with a null pointer.
+    #[test]
+    fn test_c_config_validate_nullptr() {
+        let err = sandwich_tunnel_config_validate(std::ptr::null(), 0x41);
+        assert!(!err.is_null());
+
+        let err_str = crate::ffi::error::sandwich_error_stack_str_new(err);
+        let safe_err_str = crate::ffi::error::cstr_to_safe_string(err_str);
+        let expect_str =
+            "Error Stack:\nerr:[API errors.\n The following errors can occur during a call to the Context API.: Configuration error.],code:[0,0],msg:[]]\nerr:[Errors regarding protobuf.: A null pointer was supplied.\n This error is thrown by &#39;sandwich_context_new&#39;, when the given source\n buffer is a null pointer.],code:[6,3],msg:[]]\n";
+        unsafe {
+            crate::ffi::error::sandwich_error_free(err);
+            crate::ffi::error::sandwich_error_stack_str_free(err_str);
+        }
+        assert_eq!(safe_err_str, expect_str);
+    }
+    /// Tests [`sandwich_tunnel_config_validate`] with a bad cert path.
+    #[test]
+    fn test_c_config_validate_bad_cert() {
+        use protobuf::Message;
+
+        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+                client <
+                    tls <
+                        common_options <
+                            kem: "kyber1024"
+                            empty_verifier <>
+                            identity <
+                                certificate <
+                                    static <
+                                        data <
+                                            filename: "/a/b/c/path_should_not_exist/bad_cert.pem"
+                                        >
+                                    >
+                                >
+                                private_key <
+                                    static <
+                                        data <
+                                            filename: "{}"
+                                        >
+                                    >
+                                >
+
+                            >
+                        >
+                    >
+                >"#,
+                crate::test::resolve_runfile(tls::test::PQ_PRIVATE_KEY_PEM_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+        let encoded = config.write_to_bytes().unwrap();
+        drop(config);
+
+        let err = sandwich_tunnel_config_validate(encoded.as_ptr() as *const c_void, encoded.len());
+        assert!(!err.is_null());
+        let err_str = crate::ffi::error::sandwich_error_stack_str_new(err);
+        let safe_err_str = crate::ffi::error::cstr_to_safe_string(err_str);
+        let expect_str =
+            "Error Stack:\nerr:[API errors.\n The following errors can occur during a call to the Context API.: Configuration error.],code:[0,0],msg:[]]\nerr:[Errors regarding configurations.: Invalid configuration.],code:[1,2],msg:[]]\nerr:[Errors regarding TLS configurations.: Invalid configuration.],code:[2,5],msg:[]]\nerr:[DataSource errors.: Data not found on local filesystem.],code:[9,2],msg:[]]\n";
+        unsafe {
+            crate::ffi::error::sandwich_error_free(err);
+            crate::ffi::error::sandwich_error_stack_str_free(err_str);
+        }
+        assert_eq!(safe_err_str, expect_str);
     }
 }

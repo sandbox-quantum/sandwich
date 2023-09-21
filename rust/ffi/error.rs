@@ -106,7 +106,7 @@ pub unsafe extern "C" fn sandwich_error_stack_str_free(ptr: *const std::ffi::c_c
 }
 
 /// Converts an [`std::ffi::c_char`] into a [`String`] that can be safely used.
-fn cstr_to_safe_string(str_ptr: *const std::ffi::c_char) -> String {
+pub fn cstr_to_safe_string(str_ptr: *const std::ffi::c_char) -> String {
     let cstr = unsafe { CStr::from_ptr(str_ptr) };
     String::from_utf8_lossy(cstr.to_bytes()).to_string()
 }

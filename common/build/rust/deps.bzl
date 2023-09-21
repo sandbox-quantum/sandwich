@@ -17,6 +17,9 @@ def rust_deps():
             )],
         },
         packages = {
+            "assert_cmd": crate.spec(
+                version = "2.0.12",
+            ),
             "bytes": crate.spec(
                 version = "1.4.0",
             ),
@@ -33,6 +36,9 @@ def rust_deps():
             "log": crate.spec(
                 version = "0.4.17",
                 features = ["release_max_level_info"],
+            ),
+            "predicates": crate.spec(
+                version = "3.0.3",
             ),
             "protobuf": crate.spec(
                 version = "3.2.0",
