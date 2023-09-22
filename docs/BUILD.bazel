@@ -31,7 +31,6 @@ mkdocs_project(
         "//pysandwich:mkdocs",
         "//rust:mkdocs",
         "//docs/concepts:mkdocs",
-        "//docs/tools:mkdocs",
         "//docs/examples:mkdocs",
         "//docs/protobuf/api/v1:mkdocs",
         "//docs/protobuf/api:mkdocs",

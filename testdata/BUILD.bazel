@@ -83,18 +83,12 @@ gen_certificate(
 filegroup(
     name = "testdata",
     srcs = [
-        "binary_config_good.dat",
-        "binary_config_invalid_certpath.dat",
         "cert_expired.pem",
         "cert_unknown_sig_alg.der",
         "etc_ssl_cert.pem",
         "localhost.cert.pem",
         "localhost.key.pem",
         "private_key_cert_expired.pem",
-        "string_config_bad_backend.config",
-        "string_config_bad_kem_algorithm.config",
-        "string_config_bad_syntax.config",
-        "string_config_good.config",
         ":cert_with_dns",
         ":cert_with_email",
         ":cert_with_email_and_dns_wildcard",
