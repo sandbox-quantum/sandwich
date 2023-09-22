@@ -13,6 +13,7 @@
 #![allow(unused_imports)]
 #![allow(unused_mut)]
 #![allow(unused_results)]
+
 #![allow(ambiguous_glob_reexports)]
 
 extern crate protobuf;
