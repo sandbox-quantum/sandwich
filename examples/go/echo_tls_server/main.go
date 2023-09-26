@@ -133,8 +133,10 @@ func main() {
 		log.Fatalln("Please provide a server port")
 	}
 
+	sw_lib_ctx := sw.NewSandwich()
+
 	conf := createServerConfiguration(serverCert, serverKey)
-	tunnel_ctx, err := sw.NewTunnelContext(conf)
+	tunnel_ctx, err := sw.NewTunnelContext(sw_lib_ctx, conf)
 	if err != nil {
 		log.Fatalln(err)
 	}

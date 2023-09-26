@@ -71,7 +71,8 @@
 //!     >
 //! >
 //! "#).expect("invalid protobuf message");
-//! let context = Context::try_from(&configuration).expect("invalid configuration");
+//! let sw = sandwich::Context;
+//! let context = Context::try_from(&sw, &configuration).expect("invalid configuration");
 //!
 //! let io = new_tcp_connection(); // This returns a `Box<dyn sandwich::IO>`.
 //!
@@ -121,9 +122,6 @@ pub use crate::error::{Error, ErrorCode, ProtoBasedErrorCode};
 #[doc(inline)]
 pub use crate::io::IO;
 
-/// A [`Result`](std::result::Result) using [`Error`].
-pub type Result<T> = std::result::Result<T, Error>;
-
 #[macro_use]
 mod error;
 mod implementation;
@@ -138,6 +136,14 @@ pub mod tunnel;
 
 #[cfg(feature = "ffi")]
 pub(crate) mod ffi;
+
+/// Top-level context.
+///
+/// This context is used to create tunnel contexts.
+pub struct Context;
+
+/// A [`Result`](std::result::Result) using [`Error`].
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]
 mod test {

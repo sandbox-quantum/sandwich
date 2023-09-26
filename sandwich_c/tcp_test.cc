@@ -80,6 +80,9 @@ auto NewTLSConfiguration(
   return config;
 }
 
+/// \brief Deleter for SandwichContext.
+using SandwichContextDeleter = std::function<void(struct ::SandwichContext *)>;
+
 /// \brief Deleter for SandwichTunnelContext
 using SandwichTunnelContextDeleter =
     std::function<void(struct ::SandwichTunnelContext *)>;
@@ -114,8 +117,15 @@ auto CreateClientContext(std::unique_ptr<Runfiles> &runfiles)
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
   struct ::SandwichTunnelContext *ctx = nullptr;
-  const auto *err = ::sandwich_tunnel_context_new(
-      encoded_configuration.data(), encoded_configuration.size(), &ctx);
+  std::unique_ptr<struct SandwichContext, SandwichContextDeleter> sw(
+      ::sandwich_new(),
+      [](struct SandwichContext *sw) { ::sandwich_free(sw); });
+  ::SandwichTunnelContextConfigurationSerialized serialized = {
+      .src = encoded_configuration.data(),
+      .n = encoded_configuration.size(),
+  };
+
+  const auto *err = ::sandwich_tunnel_context_new(&*sw, serialized, &ctx);
   sandwich_assert(err == nullptr);
 
   return {ctx, [](struct ::SandwichTunnelContext *c) {
@@ -167,9 +177,16 @@ auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
   std::string encoded_configuration{};
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
+  std::unique_ptr<struct SandwichContext, SandwichContextDeleter> sw(
+      ::sandwich_new(),
+      [](struct SandwichContext *sw) { ::sandwich_free(sw); });
+
   struct ::SandwichTunnelContext *ctx = nullptr;
-  const auto *err = ::sandwich_tunnel_context_new(
-      encoded_configuration.data(), encoded_configuration.size(), &ctx);
+  struct ::SandwichTunnelContextConfigurationSerialized serialized {
+    .src = encoded_configuration.data(), .n = encoded_configuration.size(),
+  };
+
+  const auto *err = ::sandwich_tunnel_context_new(&*sw, serialized, &ctx);
   sandwich_assert(err == nullptr);
 
   return {ctx, [](struct ::SandwichTunnelContext *c) {

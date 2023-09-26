@@ -79,16 +79,21 @@ auto NewTLSConfiguration(
   return config;
 }
 
-/// \brief Deleter for SandwichTunnelContext
+/// \brief Deleter for SandwichContext.
+using SandwichContextDeleter = std::function<void(struct ::SandwichContext *)>;
+
+/// \brief Deleter for SandwichTunnelContext.
 using SandwichTunnelContextDeleter =
     std::function<void(struct ::SandwichTunnelContext *)>;
 
 /// \brief Create a Sandwich context for the client.
 ///
+/// \param sw Top-level Sandwich context.
 /// \param runfiles Bazel runfiles context.
 ///
 /// \return A Sandwich context for the client.
-auto CreateClientContext(std::unique_ptr<Runfiles> &runfiles)
+auto CreateClientContext(const struct SandwichContext *sw,
+                         std::unique_ptr<Runfiles> &runfiles)
     -> std::unique_ptr<struct ::SandwichTunnelContext,
                        SandwichTunnelContextDeleter> {
   auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_CLIENT,
@@ -113,8 +118,11 @@ auto CreateClientContext(std::unique_ptr<Runfiles> &runfiles)
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
   struct ::SandwichTunnelContext *ctx = nullptr;
-  const auto *err = ::sandwich_tunnel_context_new(
-      encoded_configuration.data(), encoded_configuration.size(), &ctx);
+  const SandwichTunnelContextConfigurationSerialized serialized = {
+      .src = encoded_configuration.data(),
+      .n = encoded_configuration.size(),
+  };
+  const auto *err = ::sandwich_tunnel_context_new(sw, serialized, &ctx);
   sandwich_assert(err == nullptr);
 
   return {ctx, [](struct ::SandwichTunnelContext *c) {
@@ -124,10 +132,12 @@ auto CreateClientContext(std::unique_ptr<Runfiles> &runfiles)
 
 /// \brief Create a Sandwich context for the server.
 ///
+/// \param sw Top-level Sandwich context.
 /// \param runfiles Bazel runfiles context.
 ///
 /// \return A Sandwich context for the server.
-auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
+auto CreateServerContext(const struct SandwichContext *sw,
+                         std::unique_ptr<Runfiles> &runfiles)
     -> std::unique_ptr<struct ::SandwichTunnelContext,
                        SandwichTunnelContextDeleter> {
   auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_SERVER,
@@ -167,8 +177,11 @@ auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
   struct ::SandwichTunnelContext *ctx = nullptr;
-  const auto *err = ::sandwich_tunnel_context_new(
-      encoded_configuration.data(), encoded_configuration.size(), &ctx);
+  const SandwichTunnelContextConfigurationSerialized serialized = {
+      .src = encoded_configuration.data(),
+      .n = encoded_configuration.size(),
+  };
+  const auto *err = ::sandwich_tunnel_context_new(sw, serialized, &ctx);
   sandwich_assert(err == nullptr);
 
   return {ctx, [](struct ::SandwichTunnelContext *c) {
@@ -487,8 +500,12 @@ int main(int argc, char **argv) {
       Runfiles::CreateForTest(BAZEL_CURRENT_REPOSITORY, &error));
   sandwich_assert(runfiles != nullptr);
 
-  auto client = CreateClientContext(runfiles);
-  auto server = CreateServerContext(runfiles);
+  std::unique_ptr<struct SandwichContext, SandwichContextDeleter> sw(
+      ::sandwich_new(),
+      [](struct SandwichContext *sw) { ::sandwich_free(sw); });
+
+  auto client = CreateClientContext(&*sw, runfiles);
+  auto server = CreateServerContext(&*sw, runfiles);
 
   // Create two connected sockets, to use with saq::sandwich::io::Socket.
   std::array<int, 2> fds{0};

@@ -92,6 +92,21 @@ def _error_code_to_exception(ptr: ctypes.c_void_p):
     return head_excp
 
 
+class TunnelContextConfigurationSerialized(ctypes.Structure):
+    """The `struct SandwichContextTunnelConfigurationSerialized`."""
+
+    _fields_ = [
+        (
+            "src",
+            ctypes.c_char_p,
+        ),
+        (
+            "n",
+            ctypes.c_size_t,
+        ),
+    ]
+
+
 class TunnelConfigurationSerialized(ctypes.Structure):
     """The `struct SandwichTunnelConfigurationSerialized`."""
 
@@ -107,7 +122,7 @@ class TunnelConfigurationSerialized(ctypes.Structure):
     ]
 
 
-class _Sandwich:
+class _SandwichCLib:
     """A Sandwich handle.
 
     This handle is responsible for doing the glue with the C code.
@@ -121,6 +136,10 @@ class _Sandwich:
     syms: typing.Dict[str, typing.Callable] = {}
 
     func_types = {
+        # struct SandwichContext* sandwich_new(void);
+        "sandwich_new": ([], ctypes.c_void_p),
+        # void sandwich_free(struct SandwichContext*);
+        "sandwich_free": ([ctypes.c_void_p], None),
         # void sandwich_error_free(struct SandwichError *chain)
         "sandwich_error_free": ([ctypes.c_void_p], None),
         # char* sandwich_error_stack_str_new(const struct SandwichError *chain)
@@ -128,11 +147,11 @@ class _Sandwich:
         # void sandwich_error_stack_str_free(const char *err_str);
         "sandwich_error_stack_str_free": ([ctypes.c_char_p], None),
         # struct SandwichError * sandwich_tunnel_context_new(
-        #       const void *src,
-        #       size_t n,
+        #       const struct SandwichContext *,
+        #       struct SandwichTunnelContextConfigurationSerialized,
         #       struct SandwichTunnelContext **ctx);
         "sandwich_tunnel_context_new": (
-            [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p],
+            [ctypes.c_void_p, TunnelContextConfigurationSerialized, ctypes.c_void_p],
             ctypes.c_void_p,
         ),
         # void sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
@@ -230,7 +249,7 @@ class _Sandwich:
             FileNotFoundError: The Sandwich shared library could not be found.
         """
 
-        if _Sandwich.lib is None:
+        if _SandwichCLib.lib is None:
             if dllpath is None:
                 dllpath = _find_sandwich_dll()
 
@@ -240,10 +259,10 @@ class _Sandwich:
             if isinstance(dllpath, pathlib.Path):
                 dllpath = dllpath.resolve()
 
-            _Sandwich.lib = ctypes.cdll.LoadLibrary(dllpath)
+            _SandwichCLib.lib = ctypes.cdll.LoadLibrary(dllpath)
 
-        if _Sandwich.syms is None:
-            _Sandwich.syms = {}
+        if _SandwichCLib.syms is None:
+            _SandwichCLib.syms = {}
 
     @staticmethod
     def c_call(name: str, *args: typing.Any) -> typing.Any:
@@ -260,13 +279,13 @@ class _Sandwich:
         """
 
         f: typing.Callable
-        if name in _Sandwich.syms:
-            f = _Sandwich.syms[name]
+        if name in _SandwichCLib.syms:
+            f = _SandwichCLib.syms[name]
         else:
-            f = _Sandwich.resolve(name)
-            _Sandwich.syms[name] = f
+            f = _SandwichCLib.resolve(name)
+            _SandwichCLib.syms[name] = f
 
-        f.argtypes, f.restype = _Sandwich.func_types[name]
+        f.argtypes, f.restype = _SandwichCLib.func_types[name]
         return f(*args)
 
     @staticmethod
@@ -284,7 +303,7 @@ class _Sandwich:
         """
 
         try:
-            return getattr(_Sandwich.lib, name)
+            return getattr(_SandwichCLib.lib, name)
         except AttributeError:
             raise AttributeError(
                 f"Sandwich lib does not have symbol {name!r}"
@@ -294,11 +313,27 @@ class _Sandwich:
 _sandwich_hdl = None
 
 
-def sandwich():
-    """Returns the global handler to _Sandwich.
+def sandwich() -> _SandwichCLib:
+    """Returns the global handler to _SandwichCLib.
     This function performs a lazy initialization of the Sandwich handler.
     """
     global _sandwich_hdl
     if _sandwich_hdl is None:
-        _sandwich_hdl = _Sandwich()
+        _sandwich_hdl = _SandwichCLib()
     return _sandwich_hdl
+
+
+class Sandwich:
+    """Top-level Sandwich context library."""
+
+    _handle: ctypes.c_void_p
+
+    def __init__(self):
+        self._handle = sandwich().c_call("sandwich_new")
+
+    def _get_handle(self) -> ctypes.c_void_p:
+        return self._handle
+
+    def __del__(self):
+        sandwich().c_call("sandwich_free", self._handle)
+        self._handle = ctypes.c_void_p(None)

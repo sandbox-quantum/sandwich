@@ -29,7 +29,7 @@ type TunnelContext struct {
 }
 
 // NewTunnelContext fills a Sandwich context from a protobuf configuration.
-func NewTunnelContext(configuration *api.Configuration) (*TunnelContext, error) {
+func NewTunnelContext(sw *Sandwich, configuration *api.Configuration) (*TunnelContext, error) {
 	out, err := proto.Marshal(configuration)
 	if err != nil {
 		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED, "")
@@ -40,8 +40,13 @@ func NewTunnelContext(configuration *api.Configuration) (*TunnelContext, error) 
 		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_EMPTY, "")
 	}
 
+	conf := C.struct_SandwichTunnelContextConfigurationSerialized{
+		src: unsafe.Pointer(&out[0]),
+		n:   C.size_t(n),
+	}
+
 	ctx := new(TunnelContext)
-	errc := C.sandwich_tunnel_context_new(unsafe.Pointer(&out[0]), C.size_t(n), &ctx.handle)
+	errc := C.sandwich_tunnel_context_new(sw.handle, conf, &ctx.handle)
 	if errc != nil {
 		err := createError(errc)
 		C.sandwich_error_free(errc)

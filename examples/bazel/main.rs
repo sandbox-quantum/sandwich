@@ -30,14 +30,15 @@ client <
 >"#;
 
 /// Creates a Sandwich context ([`sandwich::tunnel::Context`]).
-fn create_context() -> tunnel::Context {
+fn create_context(sw: &sandwich::Context) -> tunnel::Context {
     let configuration =
         protobuf::text_format::parse_from_str::<sw_api::Configuration>(TLS_CLIENT_PROTO_CONF)
             .expect("cannot create a configuration");
-    tunnel::Context::try_from(&configuration).expect("cannot create a Sandwich context")
+    tunnel::Context::try_from(sw, &configuration).expect("cannot create a Sandwich context")
 }
 
 fn main() {
-    let _context = create_context();
+    let sw = sandwich::Context;
+    let _context = create_context(&sw);
     // See `/examples/rust` for a more complete example.
 }

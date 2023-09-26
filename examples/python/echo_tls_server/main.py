@@ -11,6 +11,7 @@ import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.io_helpers as SandwichIOHelpers
 import pysandwich.tunnel as SandwichTunnel
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
+from pysandwich.sandwich import Sandwich
 
 # --8<-- [end:py_imports_proto]
 
@@ -77,7 +78,10 @@ class EchoHandler(socketserver.BaseRequestHandler):
 
 def tcp_handler(key, cert):
     # --8<-- [start:py_ctx]
-    server_ctx_conf = SandwichTunnel.Context.from_config(create_server_conf(cert, key))
+    sw = Sandwich()
+    server_ctx_conf = SandwichTunnel.Context.from_config(
+        sw, create_server_conf(cert, key)
+    )
     # --8<-- [end:py_ctx]
     EchoHandler.ctx_conf = server_ctx_conf
     return EchoHandler

@@ -177,14 +177,14 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 }
 
 // createServerContext creates the server context.
-func createServerContext(t *testing.T) (*sandwich.TunnelContext, error) {
+func createServerContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
 	config, err := createServerConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the server configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(config)
+	ctx, err := sandwich.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the server context: %v", err)
 		panic("failed")
@@ -194,14 +194,14 @@ func createServerContext(t *testing.T) (*sandwich.TunnelContext, error) {
 }
 
 // createClientContext creates the client context.
-func createClientContext(t *testing.T) (*sandwich.TunnelContext, error) {
+func createClientContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
 	config, err := createClientConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the client configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(config)
+	ctx, err := sandwich.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the client context: %v", err)
 	}
@@ -263,12 +263,13 @@ func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwi
 }
 
 func TestTunnels(t *testing.T) {
-	serverContext, err := createServerContext(t)
+	sw := sandwich.NewSandwich()
+	serverContext, err := createServerContext(t, sw)
 	if err != nil {
 		t.Errorf("Failed to create Server context: %v", err)
 	}
 
-	clientContext, err := createClientContext(t)
+	clientContext, err := createClientContext(t, sw)
 	if err != nil {
 		t.Errorf("Failed to create Client context: %v", err)
 	}
@@ -367,12 +368,13 @@ func TestTunnels(t *testing.T) {
 }
 
 func TestTunnelLargeReadWriteGC(t *testing.T) {
-	serverContext, err := createServerContext(t)
+	sw := sandwich.NewSandwich()
+	serverContext, err := createServerContext(t, sw)
 	if err != nil {
 		t.Errorf("Failed to create Server context: %v", err)
 	}
 
-	clientContext, err := createClientContext(t)
+	clientContext, err := createClientContext(t, sw)
 	if err != nil {
 		t.Errorf("Failed to create Client context: %v", err)
 	}
@@ -560,14 +562,14 @@ func createClientExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 }
 
 // createServerExpiredContext creates the server context using an expired certificate.
-func createServerExpiredContext(t *testing.T) (*sandwich.TunnelContext, error) {
+func createServerExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
 	config, err := createServerExpiredConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the server configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(config)
+	ctx, err := sandwich.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the server context: %v", err)
 		panic("failed")
@@ -577,14 +579,14 @@ func createServerExpiredContext(t *testing.T) (*sandwich.TunnelContext, error) {
 }
 
 // createClientExpiredContext creates the client context using an expired certificate.
-func createClientExpiredContext(t *testing.T) (*sandwich.TunnelContext, error) {
+func createClientExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
 	config, err := createClientExpiredConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the client configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(config)
+	ctx, err := sandwich.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the client context: %v", err)
 	}
@@ -593,12 +595,13 @@ func createClientExpiredContext(t *testing.T) (*sandwich.TunnelContext, error) {
 }
 
 func TestExpiredTunnels(t *testing.T) {
-	serverContext, err := createServerExpiredContext(t)
+	sw := sandwich.NewSandwich()
+	serverContext, err := createServerExpiredContext(t, sw)
 	if err != nil {
 		t.Errorf("Failed to create Server context: %v", err)
 	}
 
-	clientContext, err := createClientExpiredContext(t)
+	clientContext, err := createClientExpiredContext(t, sw)
 	if err != nil {
 		t.Errorf("Failed to create Client context: %v", err)
 	}

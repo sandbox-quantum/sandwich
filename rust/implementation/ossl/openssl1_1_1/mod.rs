@@ -1085,7 +1085,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1144,7 +1145,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1195,7 +1197,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1235,7 +1238,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1300,7 +1304,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1340,7 +1345,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1440,7 +1446,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1487,7 +1494,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1557,7 +1565,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1604,7 +1613,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1673,7 +1683,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -1713,7 +1724,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let tunnel_configuration =
@@ -1779,7 +1791,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration = pb_api::TunnelConfiguration::new();
@@ -1819,7 +1832,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1869,7 +1883,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1915,7 +1930,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
         let tunnel_configuration =
@@ -1972,7 +1988,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2012,7 +2029,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2092,7 +2110,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2132,7 +2151,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2214,7 +2234,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2254,7 +2275,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2334,7 +2356,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2374,7 +2397,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2456,7 +2480,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2496,7 +2521,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2576,7 +2602,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2616,7 +2643,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2698,7 +2726,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2738,7 +2767,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =
@@ -2818,7 +2848,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let client_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
@@ -2858,7 +2889,8 @@ pub(crate) mod additional_test {
         )
         .unwrap();
         config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-        let server_ctx = Context::try_from(&config).unwrap();
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
         let client_tunnel_configuration =

@@ -25,8 +25,20 @@
 extern "C" {
 #endif
 
+/// \brief Top-level Sandwich context.
+struct SandwichContext;
+
 /// \brief A Sandwich context (PIMPL).
 struct SandwichTunnelContext;
+
+/// \brief A serialized `Configuration` message.
+struct SandwichTunnelContextConfigurationSerialized {
+  /// \brief Buffer containing the serialized `Configuration` message.
+  const void *src;
+
+  /// \brief Size of `src`.
+  size_t n;
+};
 
 /// \brief A Sandwich tunnel (PIMPL).
 struct SandwichTunnel;
@@ -140,18 +152,31 @@ sandwich_error_stack_str_new(const struct SandwichError *chain);
 /// NULL for err_str is allowed.
 SANDWICH_API void sandwich_error_stack_str_free(const char *err_str);
 
+/// \brief Create a top-level Sandwich context.
+///
+/// \return A new top-level Sandwich context.
+SANDWICH_API struct SandwichContext *sandwich_new(void);
+
+/// \brief Free a top-level Sandwich context.
+///
+/// \param[in] sw Top-level Sandwich context to free.
+///
+/// NULL for `sw` is allowed.
+SANDWICH_API void sandwich_free(struct SandwichContext *sw);
+
 /// \brief Create a context from an encoded protobuf message.
 ///
-/// \param[in] src Source buffer containing the encoded protobuf message.
-/// \param n Size of the source buffer.
+/// \param sw Top-level Sandwich context.
+/// \param configuration Serialized configuration.
 /// \param[out] ctx The new Sandwich context object.
 ///
 /// \return NULL if no error occured, else a chain of errors.
-SANDWICH_API struct SandwichError *
-sandwich_tunnel_context_new(const void *src, size_t n,
-                            struct SandwichTunnelContext **ctx);
+SANDWICH_API struct SandwichError *sandwich_tunnel_context_new(
+    const struct SandwichContext *sw,
+    struct SandwichTunnelContextConfigurationSerialized configuration,
+    struct SandwichTunnelContext **ctx);
 
-/// \brief Free a Sandwich context.
+/// \brief Free a Sandwich tunnel context.
 ///
 /// \param[in,out] ctx Context to free.
 ///
