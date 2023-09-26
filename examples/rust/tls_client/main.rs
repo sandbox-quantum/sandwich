@@ -32,7 +32,8 @@ fn main() {
     let client_conf = tls_client::create_client_configuration()
         .expect("failed to create the Sandwich configuration");
 
-    let client_ctx = sandwich::tunnel::Context::try_from(&client_conf)
+    let sw = sandwich::Context;
+    let client_ctx = sandwich::tunnel::Context::try_from(&sw, &client_conf)
         .expect("failed to create a Sandwich context");
 
     let input_r = io::stdin().lock();

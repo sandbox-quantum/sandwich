@@ -87,6 +87,9 @@ auto chomp(const char *in) {
   return s;
 }
 
+/// \brief Deleter for SandwichContext.
+using SandwichContextDeleter = std::function<void(struct ::SandwichContext *)>;
+
 /// \brief Deleter for SandwichTunnelContext
 using SandwichTunnelContextDeleter =
     std::function<void(struct ::SandwichTunnelContext *)>;
@@ -137,8 +140,16 @@ auto TestInvalidServerContextCreation(std::unique_ptr<Runfiles> &runfiles)
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
   struct ::SandwichTunnelContext *ctx = nullptr;
-  const auto *null_err = ::sandwich_tunnel_context_new(
-      encoded_configuration.data(), encoded_configuration.size(), &ctx);
+  SandwichTunnelContextConfigurationSerialized serialized = {
+      .src = encoded_configuration.data(),
+      .n = encoded_configuration.size(),
+  };
+
+  std::unique_ptr<struct SandwichContext, SandwichContextDeleter> sw(
+      ::sandwich_new(),
+      [](struct SandwichContext *sw) { ::sandwich_free(sw); });
+
+  const auto *null_err = ::sandwich_tunnel_context_new(&*sw, serialized, &ctx);
   sandwich_assert(null_err == nullptr);
 
   const auto *err_stack_str_null = ::sandwich_error_stack_str_new(null_err);
@@ -146,8 +157,10 @@ auto TestInvalidServerContextCreation(std::unique_ptr<Runfiles> &runfiles)
   ::sandwich_error_stack_str_free(err_stack_str_null);
 
   std::string invalid_config = "invalid_config";
-  const auto *err_invalid_config = ::sandwich_tunnel_context_new(
-      invalid_config.data(), invalid_config.size(), &ctx);
+  serialized.src = invalid_config.data();
+  serialized.n = invalid_config.size();
+  const auto *err_invalid_config =
+      ::sandwich_tunnel_context_new(&*sw, serialized, &ctx);
 
   const char *expected_err =
       "Error Stack:err:[API errors. The following errors can occur during a "

@@ -11,6 +11,7 @@ import pysandwich.io as SandwichIO
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
 from pysandwich import tunnel
 from pysandwich.io_helpers import io_socket_wrap
+from pysandwich.sandwich import Sandwich
 
 _LISTENING_ADDRESS = "127.0.0.1"
 _LISTENING_PORT = 1339
@@ -26,7 +27,7 @@ _PRIVATE_KEY_EXPIRED_PATH = "testdata/private_key_cert_expired.pem"
 _DEFAULT_KEM = "kyber512"
 
 
-def create_server_conf() -> tunnel.Context:
+def create_server_conf(sw: Sandwich) -> tunnel.Context:
     """Creates the configuration for the server.
 
     Returns:
@@ -54,10 +55,10 @@ def create_server_conf() -> tunnel.Context:
         EncodingFormat.ENCODING_FORMAT_PEM
     )
 
-    return tunnel.Context.from_config(conf)
+    return tunnel.Context.from_config(sw, conf)
 
 
-def create_client_conf() -> tunnel.Context:
+def create_client_conf(sw: Sandwich) -> tunnel.Context:
     """Creates the configuration for the client.
 
     Returns:
@@ -76,10 +77,10 @@ def create_client_conf() -> tunnel.Context:
     cert.format = EncodingFormat.ENCODING_FORMAT_PEM
 
     buf = conf.SerializeToString()
-    return tunnel.Context.from_bytes(buf)
+    return tunnel.Context.from_bytes(sw, buf)
 
 
-def create_expired_server_conf() -> tunnel.Context:
+def create_expired_server_conf(sw: Sandwich) -> tunnel.Context:
     """Creates the configuration for the server using an expired certificate.
 
     Returns:
@@ -106,10 +107,10 @@ def create_expired_server_conf() -> tunnel.Context:
         EncodingFormat.ENCODING_FORMAT_PEM
     )
 
-    return tunnel.Context.from_config(conf)
+    return tunnel.Context.from_config(sw, conf)
 
 
-def create_expired_client_conf() -> tunnel.Context:
+def create_expired_client_conf(sw: Sandwich) -> tunnel.Context:
     """Creates the configuration for the client using an expired certificate.
 
     Returns:
@@ -125,7 +126,7 @@ def create_expired_client_conf() -> tunnel.Context:
     cert.format = EncodingFormat.ENCODING_FORMAT_PEM
 
     buf = conf.SerializeToString()
-    return tunnel.Context.from_bytes(buf)
+    return tunnel.Context.from_bytes(sw, buf)
 
 
 def create_ios() -> tuple[SandwichIO.IO, SandwichIO.IO]:
@@ -136,10 +137,11 @@ def create_ios() -> tuple[SandwichIO.IO, SandwichIO.IO]:
 
 
 def main():
-    client_conf = create_client_conf()
+    sw = Sandwich()
+    client_conf = create_client_conf(sw)
     assert client_conf is not None
 
-    server_conf = create_server_conf()
+    server_conf = create_server_conf(sw)
     assert server_conf is not None
 
     client_io, server_io = create_ios()
@@ -233,10 +235,10 @@ def main():
     server.close()
 
     # Test with expired certificates
-    client_conf = create_expired_client_conf()
+    client_conf = create_expired_client_conf(sw)
     assert client_conf is not None
 
-    server_conf = create_expired_server_conf()
+    server_conf = create_expired_server_conf(sw)
     assert server_conf is not None
 
     client_io, server_io = create_ios()

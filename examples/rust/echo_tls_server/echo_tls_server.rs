@@ -114,7 +114,9 @@ pub fn echo_tls_server(cert: PathBuf, key: PathBuf, host: String, port: u16) {
     let server_conf =
         create_server_configuration(cert, key).expect("failed to create the server configuration");
 
-    let server_ctx = Context::try_from(&server_conf).expect("failed to create a server context");
+    let sw = sandwich::Context;
+    let server_ctx =
+        Context::try_from(&sw, &server_conf).expect("failed to create a server context");
 
     let tunnel_verifier =
         create_tunnel_configuration().expect("failed to create the tunnel configuration object");
@@ -140,7 +142,9 @@ pub fn echo_tls_server_mpsc(cert: PathBuf, key: PathBuf, host: String, port_w: S
     let server_conf =
         create_server_configuration(cert, key).expect("failed to create the server configuration");
 
-    let server_ctx = Context::try_from(&server_conf).expect("failed to create a server context");
+    let sw = sandwich::Context;
+    let server_ctx =
+        Context::try_from(&sw, &server_conf).expect("failed to create a server context");
 
     let tunnel_verifier =
         create_tunnel_configuration().expect("failed to create the tunnel configuration object");

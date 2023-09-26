@@ -25,6 +25,7 @@ import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
 from pysandwich import sandwich
+from pysandwich.sandwich import Sandwich
 
 
 class Context:
@@ -44,6 +45,7 @@ class Context:
 
     def __init__(
         self,
+        sw: Sandwich,
         configuration: SandwichAPI.Configuration,
         serialized_conf: bytes,
     ):
@@ -61,10 +63,15 @@ class Context:
         self._configuration = configuration
         self._handle = ctypes.c_void_p(None)
         self._serialized_conf = serialized_conf
+        self._sw = sw
+
+        conf = sandwich.TunnelContextConfigurationSerialized()
+        conf.src = serialized_conf
+        conf.n = len(serialized_conf)
 
         args = (
-            self._serialized_conf,
-            len(self._serialized_conf),
+            self._sw._get_handle(),
+            conf,
             ctypes.byref(self._handle),
         )
         err = sandwich.sandwich().c_call("sandwich_tunnel_context_new", *args)
@@ -74,17 +81,17 @@ class Context:
             raise excp
 
     @classmethod
-    def from_config(cls, configuration: SandwichAPI.Configuration):
+    def from_config(cls, sw: Sandwich, configuration: SandwichAPI.Configuration):
         serialized_conf = configuration.SerializeToString()
 
-        return Context(configuration, serialized_conf)
+        return Context(sw, configuration, serialized_conf)
 
     @classmethod
-    def from_bytes(cls, serialized_conf_bytestring: bytes):
+    def from_bytes(cls, sw: Sandwich, serialized_conf_bytestring: bytes):
         configuration = SandwichAPI.Configuration()
         configuration.ParseFromString(serialized_conf_bytestring)
 
-        return Context(configuration, serialized_conf_bytestring)
+        return Context(sw, configuration, serialized_conf_bytestring)
 
     def implementation(self) -> SandwichAPI.Implementation:
         """The selected implementation."""

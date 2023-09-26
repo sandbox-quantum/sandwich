@@ -4,6 +4,7 @@
 filegroup(
     name = "ffi",
     srcs = [
+        "context.rs",
         "error.rs",
         "io.rs",
         "io_helpers.rs",

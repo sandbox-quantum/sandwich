@@ -6,31 +6,46 @@
 use std::ffi::c_void;
 
 use crate::ffi::Error;
+use crate::tunnel;
+
+/// A serialized [`pb_api::Configuration`] for FFI.
+#[repr(C)]
+pub struct SandwichTunnelContextConfigurationSerialized {
+    /// Buffer containing the serialized configuration message.
+    src: *const c_void,
+
+    /// Size of the buffer.
+    n: usize,
+}
 
 /// Instantiates a Sandwich context from a serialized configuration.
 ///
 /// # Errors
 ///
-/// See constructors of [`crate::tunnel::Context`].
+/// See constructors of [`tunnel::Context`].
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_context_new(
-    src: *const c_void,
-    n: usize,
-    out: *mut *mut c_void,
+    sw: *const crate::Context,
+    serialized_configuration: SandwichTunnelContextConfigurationSerialized,
+    out: *mut *mut tunnel::Context,
 ) -> *mut Error {
-    if src.is_null() {
+    if serialized_configuration.src.is_null() {
         return errors!{pb::ProtobufError::PROTOBUFERROR_NULLPTR => pb::APIError::APIERROR_CONFIGURATION}.into();
     }
-
-    let slice = unsafe { std::slice::from_raw_parts(src as *const u8, n) };
+    let slice: &[u8] = unsafe {
+        std::slice::from_raw_parts(
+            serialized_configuration.src.cast(),
+            serialized_configuration.n,
+        )
+    };
     let mut configuration = pb_api::Configuration::new();
 
     match <pb_api::Configuration as protobuf::Message>::merge_from_bytes(&mut configuration, slice) {
-        Ok(_) => match crate::tunnel::Context::try_from(&configuration) {
+        Ok(_) => match tunnel::Context::try_from(unsafe { &*sw }, &configuration) {
             Ok(ctx) => {
                 if !out.is_null() {
                     unsafe {
-                        *out = Box::into_raw(Box::new(ctx)).cast();
+                        *out = Box::into_raw(Box::new(ctx));
                     }
                 }
                 std::ptr::null_mut()
@@ -43,16 +58,16 @@ pub extern "C" fn sandwich_tunnel_context_new(
 
 /// Releases a Sandwich context.
 #[no_mangle]
-pub extern "C" fn sandwich_tunnel_context_free(ctx: *mut c_void) {
+pub extern "C" fn sandwich_tunnel_context_free(ctx: *mut tunnel::Context) {
     if !ctx.is_null() {
-        let _: Box<crate::tunnel::Context> = unsafe { Box::from_raw(ctx.cast()) };
+        let _: Box<tunnel::Context> = unsafe { Box::from_raw(ctx) };
     }
 }
 
 #[cfg(all(test, feature = "openssl1_1_1"))]
 mod test {
     use super::*;
-    use crate::tunnel::tls;
+    use tunnel::tls;
 
     /// Tests [`sandwich_tunnel_context_new`] and [`sandwich_tunnel_context_free`].
     #[test]
@@ -60,10 +75,8 @@ mod test {
         use protobuf::Message;
 
         let cert_path = crate::test::resolve_runfile(tls::test::CERT_PEM_PATH);
-        let mut config = crate::tunnel::context::test::openssl1_1_1::create_configuration(
-            crate::tunnel::Mode::Client,
-            false,
-        );
+        let mut config =
+            tunnel::context::test::openssl1_1_1::create_configuration(tunnel::Mode::Client, false);
         config
             .mut_client()
             .mut_tls()
@@ -71,7 +84,7 @@ mod test {
             .mut_or_insert_default()
             .mut_x509_verifier()
             .trusted_cas
-            .push(crate::tunnel::context::test::openssl1_1_1::create_cert(
+            .push(tunnel::context::test::openssl1_1_1::create_cert(
                 &cert_path,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ));
@@ -86,11 +99,15 @@ mod test {
         let encoded = config.write_to_bytes().unwrap();
         drop(config);
 
-        let mut ptr: *mut c_void = std::ptr::null_mut();
+        let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
+        let sw = crate::Context;
         sandwich_tunnel_context_new(
-            encoded.as_ptr() as *const c_void,
-            encoded.len(),
-            &mut ptr as *mut *mut c_void,
+            &sw as *const _,
+            SandwichTunnelContextConfigurationSerialized {
+                src: encoded.as_ptr().cast(),
+                n: encoded.len(),
+            },
+            &mut ptr as *mut *mut tunnel::Context,
         );
         assert!(!ptr.is_null());
 
@@ -103,10 +120,8 @@ mod test {
         use protobuf::Message;
 
         let cert_path = crate::test::resolve_runfile(tls::test::CERT_PEM_PATH);
-        let mut config = crate::tunnel::context::test::openssl1_1_1::create_configuration(
-            crate::tunnel::Mode::Client,
-            false,
-        );
+        let mut config =
+            tunnel::context::test::openssl1_1_1::create_configuration(tunnel::Mode::Client, false);
         config
             .mut_client()
             .mut_tls()
@@ -114,7 +129,7 @@ mod test {
             .mut_or_insert_default()
             .mut_x509_verifier()
             .trusted_cas
-            .push(crate::tunnel::context::test::openssl1_1_1::create_cert(
+            .push(tunnel::context::test::openssl1_1_1::create_cert(
                 &cert_path,
                 Some(pb_api::encoding_format::ASN1EncodingFormat::ENCODING_FORMAT_PEM),
             ));
@@ -128,11 +143,15 @@ mod test {
 
         let encoded = config.write_to_bytes().unwrap();
 
-        let mut ptr: *mut c_void = std::ptr::null_mut();
+        let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
+        let sw = crate::Context;
         let err = sandwich_tunnel_context_new(
-            encoded.as_ptr() as *const c_void,
-            encoded.len(),
-            &mut ptr as *mut *mut c_void,
+            &sw as *const _,
+            SandwichTunnelContextConfigurationSerialized {
+                src: encoded.as_ptr().cast(),
+                n: encoded.len(),
+            },
+            &mut ptr as *mut *mut tunnel::Context,
         );
         assert_eq!(ptr, std::ptr::null_mut());
         sandwich_tunnel_context_free(ptr);
@@ -142,8 +161,16 @@ mod test {
     /// Tests [`sandwich_tunnel_context_new`] with a null pointer.
     #[test]
     fn test_context_ctor_nullptr() {
-        let mut ptr: *mut c_void = std::ptr::null_mut();
-        let err = sandwich_tunnel_context_new(std::ptr::null(), 0x41, &mut ptr as *mut *mut c_void);
+        let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
+        let sw = crate::Context;
+        let err = sandwich_tunnel_context_new(
+            &sw as *const _,
+            SandwichTunnelContextConfigurationSerialized {
+                src: std::ptr::null(),
+                n: 0x41,
+            },
+            &mut ptr as *mut *mut tunnel::Context,
+        );
         assert!(!err.is_null());
         assert!(ptr.is_null());
 
@@ -155,11 +182,15 @@ mod test {
     fn test_context_ctor_invalid_msg() {
         let data = [0u8; 42];
 
-        let mut ptr: *mut c_void = std::ptr::null_mut();
+        let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
+        let sw = crate::Context;
         let err = sandwich_tunnel_context_new(
-            data.as_ptr() as *const c_void,
-            data.len(),
-            &mut ptr as *mut *mut c_void,
+            &sw as *const _,
+            SandwichTunnelContextConfigurationSerialized {
+                src: data.as_ptr().cast(),
+                n: data.len(),
+            },
+            &mut ptr as *mut *mut tunnel::Context,
         );
         assert_eq!(ptr, std::ptr::null_mut());
         sandwich_tunnel_context_free(ptr);

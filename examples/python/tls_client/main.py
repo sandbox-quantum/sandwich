@@ -12,6 +12,7 @@ import pysandwich.errors as SandwichErrors
 import pysandwich.io_helpers as SandwichIOHelpers
 import pysandwich.tunnel as SandwichTunnel
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
+from pysandwich.sandwich import Sandwich
 
 
 def create_client_conf() -> SandwichTunnelProto:
@@ -113,8 +114,9 @@ def run_client(host, port, input_r, output_w, client_ctx_conf: SandwichTunnel.Co
 
 
 def main(hostname, port, input_r, output_w):
+    sw = Sandwich()
     client_conf = create_client_conf()
-    client_ctx = SandwichTunnel.Context.from_config(client_conf)
+    client_ctx = SandwichTunnel.Context.from_config(sw, client_conf)
 
     run_client(hostname, port, input_r, output_w, client_ctx)
 

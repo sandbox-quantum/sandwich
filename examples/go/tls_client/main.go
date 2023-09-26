@@ -59,7 +59,9 @@ func main() {
 		return
 	}
 
-	ctx, err := sw.NewTunnelContext(createClientConfiguration())
+	sw_lib_ctx := sw.NewSandwich()
+
+	ctx, err := sw.NewTunnelContext(sw_lib_ctx, createClientConfiguration())
 	if err != nil {
 		fmt.Println("Error create tunnel context:", err)
 		return
