@@ -22,6 +22,8 @@ import ctypes
 import pathlib
 import platform
 import typing
+from collections import namedtuple
+from types import MappingProxyType
 
 import pysandwich.errors as errors
 from pysandwich.io import OwnedIO
@@ -135,107 +137,117 @@ class _SandwichCLib:
     lib: typing.Optional[ctypes.CDLL] = None
     syms: typing.Dict[str, typing.Callable] = {}
 
-    func_types = {
-        # struct SandwichContext* sandwich_new(void);
-        "sandwich_new": ([], ctypes.c_void_p),
-        # void sandwich_free(struct SandwichContext*);
-        "sandwich_free": ([ctypes.c_void_p], None),
-        # void sandwich_error_free(struct SandwichError *chain)
-        "sandwich_error_free": ([ctypes.c_void_p], None),
-        # char* sandwich_error_stack_str_new(const struct SandwichError *chain)
-        "sandwich_error_stack_str_new": ([ctypes.c_void_p], ctypes.c_char_p),
-        # void sandwich_error_stack_str_free(const char *err_str);
-        "sandwich_error_stack_str_free": ([ctypes.c_char_p], None),
-        # struct SandwichError * sandwich_tunnel_context_new(
-        #       const struct SandwichContext *,
-        #       struct SandwichTunnelContextConfigurationSerialized,
-        #       struct SandwichTunnelContext **ctx);
-        "sandwich_tunnel_context_new": (
-            [ctypes.c_void_p, TunnelContextConfigurationSerialized, ctypes.c_void_p],
-            ctypes.c_void_p,
-        ),
-        # void sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
-        "sandwich_tunnel_context_free": ([ctypes.c_void_p], None),
-        # struct SandwichError *sandwich_tunnel_new(
-        #       struct SandwichTunnelContext *ctx,
-        #       struct SandwichCIO *cio,
-        #       struct SandwichTunnelConfigurationSerialized configuration,
-        #       struct SandwichTunnel **tun);
-        "sandwich_tunnel_new": (
-            [
-                ctypes.c_void_p,
-                ctypes.c_void_p,
-                TunnelConfigurationSerialized,
-                ctypes.c_void_p,
-            ],
-            ctypes.c_void_p,
-        ),
-        # struct SandwichError * sandwich_tunnel_handshake(
-        #       struct SandwichTunnel *tun,
-        #       enum SandwichTunnelHandshakeState *state);
-        "sandwich_tunnel_handshake": (
-            [ctypes.c_void_p, ctypes.c_void_p],
-            ctypes.c_void_p,
-        ),
-        # enum SandwichTunnelRecordError sandwich_tunnel_read(
-        #       struct SandwichTunnel *tun,
-        #       void *dst,
-        #       size_t n,
-        #       size_t *r);
-        "sandwich_tunnel_read": (
-            [
-                ctypes.c_void_p,
-                ctypes.c_void_p,
-                ctypes.c_size_t,
-                ctypes.POINTER(ctypes.c_size_t),
-            ],
-            ctypes.c_int32,
-        ),
-        # enum SandwichTunnelRecordError sandwich_tunnel_write(
-        #       struct SandwichTunnel *tun,
-        #       const void *src,
-        #       size_t n,
-        #       size_t *w);
-        "sandwich_tunnel_write": (
-            [
-                ctypes.c_void_p,
-                ctypes.c_void_p,
-                ctypes.c_size_t,
-                ctypes.POINTER(ctypes.c_size_t),
-            ],
-            ctypes.c_int32,
-        ),
-        # void sandwich_tunnel_close(struct SandwichTunnel *tun);
-        "sandwich_tunnel_close": ([ctypes.c_void_p], None),
-        # enum SandwichTunnelState sandwich_tunnel_state(
-        #       const struct SandwichTunnel *tun);
-        "sandwich_tunnel_state": ([ctypes.c_void_p], ctypes.c_int32),
-        # void sandwich_tunnel_free(struct SandwichTunnel *tun);
-        "sandwich_tunnel_free": ([ctypes.c_void_p], None),
-        # enum SandwichCIOError sandwich_io_client_tcp_new(
-        #       const char *hostname, const uint16_t port, bool async,
-        #       struct SandwichCIOOwned **ownedIO);
-        "sandwich_io_client_tcp_new": (
-            [
-                ctypes.c_char_p,
-                ctypes.c_uint16,
-                ctypes.c_bool,
-                ctypes.POINTER(ctypes.POINTER(OwnedIO)),
-            ],
-            ctypes.c_int32,
-        ),
-        # enum SandwichCIOError sandwich_io_socket_wrap_new(
-        #       int fd, struct SandwichCIOOwned **ownedIO);
-        "sandwich_io_socket_wrap_new": (
-            [
-                ctypes.c_int,
-                ctypes.POINTER(ctypes.POINTER(OwnedIO)),
-            ],
-            ctypes.c_int32,
-        ),
-        # void sandwich_io_owned_free(struct SandwichCIOOwned *ownedIO)
-        "sandwich_io_owned_free": ([ctypes.c_void_p], None),
-    }
+    __fs = namedtuple("function_signature", ["args", "ret"])
+
+    func_dict = MappingProxyType(
+        {
+            # struct SandwichContext* sandwich_new(void);
+            "sandwich_new": __fs(args=[], ret=ctypes.c_void_p),
+            # void sandwich_free(struct SandwichContext*);
+            "sandwich_free": __fs(args=[ctypes.c_void_p], ret=None),
+            # void sandwich_error_free(struct SandwichError *chain)
+            "sandwich_error_free": __fs(args=[ctypes.c_void_p], ret=None),
+            # char* sandwich_error_stack_str_new(const struct SandwichError *chain)
+            "sandwich_error_stack_str_new": __fs(
+                args=[ctypes.c_void_p], ret=ctypes.c_char_p
+            ),
+            # void sandwich_error_stack_str_free(const char *err_str);
+            "sandwich_error_stack_str_free": __fs(args=[ctypes.c_char_p], ret=None),
+            # struct SandwichError * sandwich_tunnel_context_new(
+            #       const struct SandwichContext *,
+            #       struct SandwichTunnelContextConfigurationSerialized,
+            #       struct SandwichTunnelContext **ctx);
+            "sandwich_tunnel_context_new": __fs(
+                args=[
+                    ctypes.c_void_p,
+                    TunnelContextConfigurationSerialized,
+                    ctypes.c_void_p,
+                ],
+                ret=ctypes.c_void_p,
+            ),
+            # void sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
+            "sandwich_tunnel_context_free": __fs(args=[ctypes.c_void_p], ret=None),
+            # struct SandwichError *sandwich_tunnel_new(
+            #       struct SandwichTunnelContext *ctx,
+            #       struct SandwichCIO *cio,
+            #       struct SandwichTunnelConfigurationSerialized configuration,
+            #       struct SandwichTunnel **tun);
+            "sandwich_tunnel_new": __fs(
+                args=[
+                    ctypes.c_void_p,
+                    ctypes.c_void_p,
+                    TunnelConfigurationSerialized,
+                    ctypes.c_void_p,
+                ],
+                ret=ctypes.c_void_p,
+            ),
+            # struct SandwichError * sandwich_tunnel_handshake(
+            #       struct SandwichTunnel *tun,
+            #       enum SandwichTunnelHandshakeState *state);
+            "sandwich_tunnel_handshake": __fs(
+                args=[ctypes.c_void_p, ctypes.c_void_p],
+                ret=ctypes.c_void_p,
+            ),
+            # enum SandwichTunnelRecordError sandwich_tunnel_read(
+            #       struct SandwichTunnel *tun,
+            #       void *dst,
+            #       size_t n,
+            #       size_t *r);
+            "sandwich_tunnel_read": __fs(
+                args=[
+                    ctypes.c_void_p,
+                    ctypes.c_void_p,
+                    ctypes.c_size_t,
+                    ctypes.POINTER(ctypes.c_size_t),
+                ],
+                ret=ctypes.c_int32,
+            ),
+            # enum SandwichTunnelRecordError sandwich_tunnel_write(
+            #       struct SandwichTunnel *tun,
+            #       const void *src,
+            #       size_t n,
+            #       size_t *w);
+            "sandwich_tunnel_write": __fs(
+                args=[
+                    ctypes.c_void_p,
+                    ctypes.c_void_p,
+                    ctypes.c_size_t,
+                    ctypes.POINTER(ctypes.c_size_t),
+                ],
+                ret=ctypes.c_int32,
+            ),
+            # void sandwich_tunnel_close(struct SandwichTunnel *tun);
+            "sandwich_tunnel_close": __fs(args=[ctypes.c_void_p], ret=None),
+            # enum SandwichTunnelState sandwich_tunnel_state(
+            #       const struct SandwichTunnel *tun);
+            "sandwich_tunnel_state": __fs(args=[ctypes.c_void_p], ret=ctypes.c_int32),
+            # void sandwich_tunnel_free(struct SandwichTunnel *tun);
+            "sandwich_tunnel_free": __fs(args=[ctypes.c_void_p], ret=None),
+            # enum SandwichCIOError sandwich_io_client_tcp_new(
+            #       const char *hostname, const uint16_t port, bool async,
+            #       struct SandwichCIOOwned **ownedIO);
+            "sandwich_io_client_tcp_new": __fs(
+                args=[
+                    ctypes.c_char_p,
+                    ctypes.c_uint16,
+                    ctypes.c_bool,
+                    ctypes.POINTER(ctypes.POINTER(OwnedIO)),
+                ],
+                ret=ctypes.c_int32,
+            ),
+            # enum SandwichCIOError sandwich_io_socket_wrap_new(
+            #       int fd, struct SandwichCIOOwned **ownedIO);
+            "sandwich_io_socket_wrap_new": __fs(
+                args=[
+                    ctypes.c_int,
+                    ctypes.POINTER(ctypes.POINTER(OwnedIO)),
+                ],
+                ret=ctypes.c_int32,
+            ),
+            # void sandwich_io_owned_free(struct SandwichCIOOwned *ownedIO)
+            "sandwich_io_owned_free": __fs(args=[ctypes.c_void_p], ret=None),
+        }
+    )
 
     def __init__(self, dllpath: typing.Optional[pathlib.Path] = None):
         """Inits a Sandwich handle, optionally with a path to `libsandwich.so`.
@@ -285,7 +297,11 @@ class _SandwichCLib:
             f = _SandwichCLib.resolve(name)
             _SandwichCLib.syms[name] = f
 
-        f.argtypes, f.restype = _SandwichCLib.func_types[name]
+        # Extract function signature
+        fs = _SandwichCLib.func_dict[name]
+        f.argtypes = fs.args
+        f.restype = fs.ret
+
         return f(*args)
 
     @staticmethod
