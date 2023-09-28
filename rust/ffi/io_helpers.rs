@@ -55,7 +55,7 @@ extern "C" fn sandwich_helper_client_read(
             size
         }
         Err(e) => {
-            unsafe { *err = Into::<IOError>::into(e).value() };
+            unsafe { *err = Into::<IOError>::into(crate::io::Error::from(e)).value() };
             0
         }
     }
@@ -81,7 +81,7 @@ extern "C" fn sandwich_helper_client_write(
             size
         }
         Err(e) => {
-            unsafe { *err = Into::<IOError>::into(e).value() };
+            unsafe { *err = Into::<IOError>::into(crate::io::Error::from(e)).value() };
             0
         }
     }
@@ -133,7 +133,7 @@ pub extern "C" fn sandwich_io_client_tcp_new(
     };
     let io: Box<dyn crate::IO> = match TcpIo::connect((hn, port), is_blocking) {
         Ok(io) => Box::new(io),
-        Err(e) => return Into::<IOError>::into(e).value(),
+        Err(e) => return Into::<IOError>::into(crate::io::Error::from(e)).value(),
     };
     setup_helper_io(io, owned_io)
 }
@@ -147,7 +147,7 @@ pub extern "C" fn sandwich_io_socket_wrap_new(
     use protobuf::Enum;
     let io: Box<dyn crate::IO> = match SystemSocketIo::new(socket as std::os::fd::RawFd) {
         Ok(io) => Box::new(io),
-        Err(e) => return Into::<IOError>::into(e).value(),
+        Err(e) => return Into::<IOError>::into(crate::io::Error::from(e)).value(),
     };
     setup_helper_io(io, owned_io)
 }

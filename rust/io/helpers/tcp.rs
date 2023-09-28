@@ -1,12 +1,8 @@
 // Copyright (c) SandboxAQ. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-use std::io::{ErrorKind, Read, Write};
+use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
-
-use pb::IOError;
-
-use crate::io::Result as IOResult;
 
 /// A [`TcpStream`] sandwich wrapper.
 pub struct TcpIo(TcpStream);
@@ -14,10 +10,12 @@ pub struct TcpIo(TcpStream);
 /// Implements [`TcpIo`]
 impl TcpIo {
     /// Instantiates a [`TcpIo`] by opening a TCP connection to a remote host.
-    pub fn connect(hostname: impl ToSocketAddrs, is_blocking: bool) -> IOResult<TcpIo> {
+    pub fn connect(
+        hostname: impl ToSocketAddrs,
+        is_blocking: bool,
+    ) -> Result<TcpIo, std::io::Error> {
         for tcp in hostname
-            .to_socket_addrs()
-            .map_err::<crate::io::Error, _>(|_| IOError::IOERROR_INVALID.into())?
+            .to_socket_addrs()?
             .filter_map(|sock_addr| TcpStream::connect(sock_addr).ok())
         {
             if tcp.set_nonblocking(!is_blocking).is_err() {
@@ -26,13 +24,16 @@ impl TcpIo {
                 return Ok(TcpIo(tcp));
             }
         }
-        Err(IOError::IOERROR_INVALID.into())
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "An unknown error ocurred",
+        ))
     }
 
     /// Flushes the TCP socket.
     #[allow(dead_code)]
-    pub(crate) fn flush(&mut self) -> IOResult<()> {
-        self.0.flush().map_err(|_| IOError::IOERROR_UNKNOWN.into())
+    pub(crate) fn flush(&mut self) -> Result<(), std::io::Error> {
+        self.0.flush()
     }
 }
 
@@ -45,26 +46,12 @@ impl From<TcpStream> for TcpIo {
 
 /// implements [`crate::IO`] for [`TcpIo`].
 impl crate::IO for TcpIo {
-    fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
-        self.0.read(buf).map_err(|e| match e.kind() {
-            ErrorKind::PermissionDenied => IOError::IOERROR_INVALID.into(),
-            ErrorKind::BrokenPipe => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::ConnectionAborted => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::NotConnected => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::WouldBlock => IOError::IOERROR_WOULD_BLOCK.into(),
-            _ => IOError::IOERROR_UNKNOWN.into(),
-        })
+    fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
+        self.0.read(buf)
     }
 
-    fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
-        self.0.write(buf).map_err(|e| match e.kind() {
-            ErrorKind::PermissionDenied => IOError::IOERROR_INVALID.into(),
-            ErrorKind::BrokenPipe => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::ConnectionAborted => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::NotConnected => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::WouldBlock => IOError::IOERROR_WOULD_BLOCK.into(),
-            _ => IOError::IOERROR_UNKNOWN.into(),
-        })
+    fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
+        self.0.write(buf)
     }
 }
 
