@@ -4,11 +4,8 @@
 //! SystemSocket helper functions
 
 use std::fs::File;
-use std::io::{ErrorKind, Read, Write};
+use std::io::{Read, Write};
 use std::os::fd::RawFd;
-
-use crate::io::Result as IOResult;
-use pb::IOError;
 
 /// A [`File`] sandwich wrapper.
 pub struct SystemSocketIo {
@@ -19,7 +16,7 @@ pub struct SystemSocketIo {
 impl SystemSocketIo {
     #[allow(dead_code)]
     /// Instantiates a [`SystemSocketIo`] given a raw file descriptor.
-    pub fn new(fd: RawFd) -> IOResult<SystemSocketIo> {
+    pub fn new(fd: RawFd) -> Result<SystemSocketIo, std::io::Error> {
         use std::os::fd::FromRawFd;
         let file = unsafe { File::from_raw_fd(fd) };
         Ok(SystemSocketIo { file })
@@ -35,26 +32,12 @@ impl From<File> for SystemSocketIo {
 
 /// Implements [`crate::IO`] for [`SystemSocketIo`].
 impl crate::IO for SystemSocketIo {
-    fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
-        self.file.read(buf).map_err(|e| match e.kind() {
-            ErrorKind::PermissionDenied => IOError::IOERROR_INVALID.into(),
-            ErrorKind::BrokenPipe => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::ConnectionAborted => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::NotConnected => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::WouldBlock => IOError::IOERROR_WOULD_BLOCK.into(),
-            _ => IOError::IOERROR_UNKNOWN.into(),
-        })
+    fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
+        self.file.read(buf)
     }
 
-    fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
-        self.file.write(buf).map_err(|e| match e.kind() {
-            ErrorKind::PermissionDenied => IOError::IOERROR_INVALID.into(),
-            ErrorKind::BrokenPipe => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::ConnectionAborted => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::NotConnected => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::WouldBlock => IOError::IOERROR_WOULD_BLOCK.into(),
-            _ => IOError::IOERROR_UNKNOWN.into(),
-        })
+    fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
+        self.file.write(buf)
     }
 }
 

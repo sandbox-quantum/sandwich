@@ -16,6 +16,7 @@
 
 use pb::IOError;
 
+/// A set of functions that implement common I/O objects.
 pub mod helpers;
 
 /// An I/O error.
@@ -68,7 +69,7 @@ impl From<IOError> for Error {
     }
 }
 
-/// Consumes an [`Error`] back into the the [`sandwich_proto::IOError`]
+/// Consumes an [`Error`] back into the [`sandwich_proto::IOError`]
 /// enum value.
 impl From<Error> for IOError {
     fn from(e: Error) -> Self {
@@ -76,8 +77,50 @@ impl From<Error> for IOError {
     }
 }
 
-/// A Result from an I/O operation.
-pub type Result<T> = std::result::Result<T, Error>;
+/// Instantiates an [`Error`] with an enum value from the
+/// [`std::io::Error`] enum.
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        use std::io::ErrorKind;
+        match e.kind() {
+            ErrorKind::WouldBlock | ErrorKind::WriteZero | ErrorKind::Interrupted => {
+                IOError::IOERROR_WOULD_BLOCK.into()
+            }
+            ErrorKind::NotConnected => IOError::IOERROR_IN_PROGRESS.into(),
+            ErrorKind::ConnectionRefused
+            | ErrorKind::ConnectionReset
+            | ErrorKind::ConnectionAborted
+            | ErrorKind::TimedOut => IOError::IOERROR_REFUSED.into(),
+            ErrorKind::BrokenPipe => IOError::IOERROR_CLOSED.into(),
+            ErrorKind::NotFound
+            | ErrorKind::PermissionDenied
+            | ErrorKind::AlreadyExists
+            | ErrorKind::InvalidInput
+            | ErrorKind::InvalidData => IOError::IOERROR_INVALID.into(),
+            _ => IOError::IOERROR_UNKNOWN.into(),
+        }
+    }
+}
+
+/// Consumes an [`Error`] back into the the [`std::io::Error`]
+/// enum value.
+/// *Note this is a lossy translation.*
+impl From<Error> for std::io::Error {
+    fn from(e: Error) -> Self {
+        use std::io::ErrorKind;
+        match e.into() {
+            IOError::IOERROR_OK => unreachable!(),
+            IOError::IOERROR_IN_PROGRESS => ErrorKind::NotConnected.into(),
+            IOError::IOERROR_WOULD_BLOCK => ErrorKind::WouldBlock.into(),
+            IOError::IOERROR_REFUSED => ErrorKind::ConnectionRefused.into(),
+            IOError::IOERROR_CLOSED => ErrorKind::BrokenPipe.into(),
+            IOError::IOERROR_INVALID => ErrorKind::InvalidInput.into(),
+            IOError::IOERROR_UNKNOWN => {
+                std::io::Error::new(ErrorKind::Other, "An unknown error has occurred")
+            }
+        }
+    }
+}
 
 /// An I/O interface.
 ///
@@ -175,10 +218,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// ```
 pub trait IO: Send {
     /// Reads some bytes from the I/O plane.
-    fn read(&mut self, buf: &mut [u8], state: pb::State) -> Result<usize>;
+    fn read(&mut self, buf: &mut [u8], state: pb::State) -> Result<usize, std::io::Error>;
 
     /// Writes some bytes to the I/O plane.
-    fn write(&mut self, buf: &[u8], state: pb::State) -> Result<usize>;
+    fn write(&mut self, buf: &[u8], state: pb::State) -> Result<usize, std::io::Error>;
 }
 
 /// Implements [`std::fmt::Debug`] for [`IO`].

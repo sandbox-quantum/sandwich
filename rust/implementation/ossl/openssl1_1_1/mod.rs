@@ -955,7 +955,6 @@ mod additional_tests {
 
 #[cfg(test)]
 pub(crate) mod additional_test {
-    use crate::io::Result as IOResult;
     use crate::test::resolve_runfile;
     use crate::tunnel::{tls, Context};
 
@@ -967,10 +966,10 @@ pub(crate) mod additional_test {
 
     /// Implements [`crate::IO`] for [`IOBuffer`].
     impl crate::IO for IOBuffer {
-        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
+        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
             let n = std::cmp::min(buf.len(), self.read.len());
             if n == 0 {
-                Err(pb::IOError::IOERROR_WOULD_BLOCK.into())
+                Err(std::io::ErrorKind::WouldBlock.into())
             } else {
                 buf.copy_from_slice(&self.read[0..n]);
                 self.read.drain(0..n);
@@ -978,7 +977,7 @@ pub(crate) mod additional_test {
             }
         }
 
-        fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
+        fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
             self.write.extend_from_slice(buf);
             Ok(buf.len())
         }
@@ -1004,7 +1003,7 @@ pub(crate) mod additional_test {
 
     /// Implements [`crate::IO`] for [`LinkedIOBuffer`].
     impl crate::IO for LinkedIOBuffer {
-        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
+        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
             let n = std::cmp::min(buf.len(), self.buf.len());
             if n > 0 {
                 buf[0..n].copy_from_slice(&self.buf[0..n]);
@@ -1018,11 +1017,13 @@ pub(crate) mod additional_test {
             match self.recv.try_recv() {
                 Ok(mut v) => {
                     self.buf.append(&mut v);
-                    Ok(())
+                    Ok::<(), std::io::Error>(())
                 }
                 Err(e) => match e {
-                    std::sync::mpsc::TryRecvError::Empty => Err(pb::IOError::IOERROR_WOULD_BLOCK),
-                    _ => Err(pb::IOError::IOERROR_CLOSED),
+                    std::sync::mpsc::TryRecvError::Empty => {
+                        Err(std::io::ErrorKind::WouldBlock.into())
+                    }
+                    _ => Err(std::io::ErrorKind::BrokenPipe.into()),
                 },
             }?;
 
@@ -1033,11 +1034,11 @@ pub(crate) mod additional_test {
             Ok(result + n)
         }
 
-        fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
+        fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
             self.send
                 .send(Vec::from(buf))
                 .map(|_| buf.len())
-                .map_err(|_| pb::IOError::IOERROR_CLOSED.into())
+                .map_err(|_| std::io::ErrorKind::BrokenPipe.into())
         }
     }
 

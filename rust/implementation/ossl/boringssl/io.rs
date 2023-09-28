@@ -102,7 +102,7 @@ unsafe extern "C" fn bio_write(
             tun.state,
         )
         .map(|n| n as i32)
-        .unwrap_or_else(|e| match e.into() {
+        .unwrap_or_else(|e| match crate::io::Error::from(e).into() {
             pb::IOError::IOERROR_IN_PROGRESS | pb::IOError::IOERROR_WOULD_BLOCK => {
                 set_bio_retry_write(bio);
                 -1
@@ -139,7 +139,7 @@ unsafe extern "C" fn bio_read(
             tun.state,
         )
         .map(|n| n as i32)
-        .unwrap_or_else(|e| match e.into() {
+        .unwrap_or_else(|e| match crate::io::Error::from(e).into() {
             pb::IOError::IOERROR_IN_PROGRESS | pb::IOError::IOERROR_WOULD_BLOCK => {
                 set_bio_retry_read(bio);
                 -1

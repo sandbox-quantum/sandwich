@@ -7,7 +7,7 @@ use std::ffi::c_void;
 
 use pb::IOError;
 
-use crate::io::Result as IOResult;
+type IOResult<T> = Result<T, std::io::Error>;
 
 /// A read function.
 pub type ReadFn = extern "C" fn(
@@ -53,7 +53,7 @@ impl crate::IO for Settings {
             &mut err as *mut i32,
         );
         if err != IOError::IOERROR_OK.value() {
-            Err(IOError::from_i32(err).unwrap().into())
+            Err(Into::<crate::io::Error>::into(IOError::from_i32(err).unwrap()).into())
         } else {
             Ok(n)
         }
@@ -70,7 +70,7 @@ impl crate::IO for Settings {
             &mut err as *mut i32,
         );
         if err != IOError::IOERROR_OK.value() {
-            Err(IOError::from_i32(err).unwrap().into())
+            Err(Into::<crate::io::Error>::into(IOError::from_i32(err).unwrap()).into())
         } else {
             Ok(n)
         }
