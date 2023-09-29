@@ -141,10 +141,10 @@ class _SandwichCLib:
 
     func_dict = MappingProxyType(
         {
-            # struct SandwichContext* sandwich_new(void);
-            "sandwich_new": __fs(args=[], ret=ctypes.c_void_p),
-            # void sandwich_free(struct SandwichContext*);
-            "sandwich_free": __fs(args=[ctypes.c_void_p], ret=None),
+            # struct SandwichContext* sandwich_lib_context_new(void);
+            "sandwich_lib_context_new": __fs(args=[], ret=ctypes.c_void_p),
+            # void sandwich_lib_context_free(struct SandwichContext*);
+            "sandwich_lib_context_free": __fs(args=[ctypes.c_void_p], ret=None),
             # void sandwich_error_free(struct SandwichError *chain)
             "sandwich_error_free": __fs(args=[ctypes.c_void_p], ret=None),
             # char* sandwich_error_stack_str_new(const struct SandwichError *chain)
@@ -345,11 +345,11 @@ class Sandwich:
     _handle: ctypes.c_void_p
 
     def __init__(self):
-        self._handle = sandwich().c_call("sandwich_new")
+        self._handle = sandwich().c_call("sandwich_lib_context_new")
 
     def _get_handle(self) -> ctypes.c_void_p:
         return self._handle
 
     def __del__(self):
-        sandwich().c_call("sandwich_free", self._handle)
+        sandwich().c_call("sandwich_lib_context_free", self._handle)
         self._handle = ctypes.c_void_p(None)

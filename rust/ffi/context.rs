@@ -3,13 +3,13 @@
 
 /// Instantiates a top-level Sandwich context.
 #[no_mangle]
-pub extern "C" fn sandwich_new() -> *mut crate::Context {
+pub extern "C" fn sandwich_lib_context_new() -> *mut crate::Context {
     Box::into_raw(Box::new(crate::Context))
 }
 
 /// Frees a top-level Sandwich context.
 #[no_mangle]
-pub extern "C" fn sandwich_free(ctx: *mut crate::Context) {
+pub extern "C" fn sandwich_lib_context_free(ctx: *mut crate::Context) {
     if let Some(ctx) = std::ptr::NonNull::new(ctx) {
         let _ = unsafe { Box::from_raw(ctx.as_ptr()) };
     }

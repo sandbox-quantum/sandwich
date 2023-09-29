@@ -118,8 +118,8 @@ auto CreateClientContext(std::unique_ptr<Runfiles> &runfiles)
 
   struct ::SandwichTunnelContext *ctx = nullptr;
   std::unique_ptr<struct SandwichContext, SandwichContextDeleter> sw(
-      ::sandwich_new(),
-      [](struct SandwichContext *sw) { ::sandwich_free(sw); });
+      ::sandwich_lib_context_new(),
+      [](struct SandwichContext *sw) { ::sandwich_lib_context_free(sw); });
   ::SandwichTunnelContextConfigurationSerialized serialized = {
       .src = encoded_configuration.data(),
       .n = encoded_configuration.size(),
@@ -178,8 +178,8 @@ auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
 
   std::unique_ptr<struct SandwichContext, SandwichContextDeleter> sw(
-      ::sandwich_new(),
-      [](struct SandwichContext *sw) { ::sandwich_free(sw); });
+      ::sandwich_lib_context_new(),
+      [](struct SandwichContext *sw) { ::sandwich_lib_context_free(sw); });
 
   struct ::SandwichTunnelContext *ctx = nullptr;
   struct ::SandwichTunnelContextConfigurationSerialized serialized {
