@@ -311,7 +311,7 @@ where
     }
 }
 
-pub(crate) type PinnelOsslTunnel<'tun, OsslInterface> = Pin<Box<OsslTunnel<'tun, OsslInterface>>>;
+pub(crate) type PinnedOsslTunnel<'tun, OsslInterface> = Pin<Box<OsslTunnel<'tun, OsslInterface>>>;
 
 impl<'a, OsslInterface> OsslContext<'a, OsslInterface>
 where
@@ -321,7 +321,7 @@ where
         &self,
         io: Box<dyn crate::IO>,
         configuration: pb_api::TunnelConfiguration,
-    ) -> Result<PinnelOsslTunnel<'_, OsslInterface>, (crate::Error, Box<dyn crate::IO>)> {
+    ) -> Result<PinnedOsslTunnel<'_, OsslInterface>, (crate::Error, Box<dyn crate::IO>)> {
         OsslTunnel::<OsslInterface>::try_from(TunnelBuilder {
             ctx: self,
             io,
@@ -712,7 +712,7 @@ where
 {
     fn try_from<'b>(
         builder: TunnelBuilder<'b, '_, OsslInterface>,
-    ) -> Result<PinnelOsslTunnel<'a, OsslInterface>, (crate::Error, Box<dyn crate::IO>)>
+    ) -> Result<PinnedOsslTunnel<'a, OsslInterface>, (crate::Error, Box<dyn crate::IO>)>
     where
         'b: 'a,
     {
