@@ -4,7 +4,6 @@
 load("@rules_pkg//:mappings.bzl", "pkg_files")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
-
 # Export sandwich into a self-contained archive
 
 pkg_files(
