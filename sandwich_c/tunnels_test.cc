@@ -501,8 +501,8 @@ int main(int argc, char **argv) {
   sandwich_assert(runfiles != nullptr);
 
   std::unique_ptr<struct SandwichContext, SandwichContextDeleter> sw(
-      ::sandwich_new(),
-      [](struct SandwichContext *sw) { ::sandwich_free(sw); });
+      ::sandwich_lib_context_new(),
+      [](struct SandwichContext *sw) { ::sandwich_lib_context_free(sw); });
 
   auto client = CreateClientContext(&*sw, runfiles);
   auto server = CreateServerContext(&*sw, runfiles);

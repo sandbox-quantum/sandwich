@@ -25,13 +25,13 @@ type Sandwich struct {
 // NewSandwich instantiates a new top-level context.
 func NewSandwich() *Sandwich {
 	sw := new(Sandwich)
-	sw.handle = C.sandwich_new()
+	sw.handle = C.sandwich_lib_context_new()
 
 	runtime.SetFinalizer(sw, (*Sandwich).free)
 	return sw
 }
 
 func (sw *Sandwich) free() {
-	C.sandwich_free(sw.handle)
+	C.sandwich_lib_context_free(sw.handle)
 	sw.handle = nil
 }

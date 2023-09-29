@@ -155,14 +155,14 @@ SANDWICH_API void sandwich_error_stack_str_free(const char *err_str);
 /// \brief Create a top-level Sandwich context.
 ///
 /// \return A new top-level Sandwich context.
-SANDWICH_API struct SandwichContext *sandwich_new(void);
+SANDWICH_API struct SandwichContext *sandwich_lib_context_new(void);
 
 /// \brief Free a top-level Sandwich context.
 ///
 /// \param[in] sw Top-level Sandwich context to free.
 ///
 /// NULL for `sw` is allowed.
-SANDWICH_API void sandwich_free(struct SandwichContext *sw);
+SANDWICH_API void sandwich_lib_context_free(struct SandwichContext *sw);
 
 /// \brief Create a context from an encoded protobuf message.
 ///
