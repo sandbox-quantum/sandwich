@@ -633,7 +633,7 @@ impl OsslTrait for Ossl {
                         }
                     }
                     _ => (
-                        Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                        Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, err_string))),
                         Some(pb::State::STATE_ERROR),
                     ),
                 }

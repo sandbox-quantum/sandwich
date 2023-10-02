@@ -656,13 +656,13 @@ impl OsslTrait for Ossl {
                                 Some(pb::State::STATE_ERROR),
                             ),
                             _ => (
-                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED, x509_error_str))),
+                                Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, x509_error_str))),
                                 Some(pb::State::STATE_ERROR),
                                 ),
                         }
                     }
                     _ => (
-                        Err(pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR.into()),
+                        Err(crate::Error::from((pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR, err_string))),
                         Some(pb::State::STATE_ERROR),
                     ),
                 }
