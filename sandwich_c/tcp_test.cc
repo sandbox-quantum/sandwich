@@ -12,6 +12,7 @@
 #include <thread>
 
 #include "proto/api/v1/configuration.pb.h"
+#include "proto/api/v1/listener_configuration.pb.h"
 #include "proto/sandwich.pb.h"
 
 #include "tools/cpp/runfiles/runfiles.h"
@@ -194,120 +195,32 @@ auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
           }};
 }
 
-/// \brief Read from a socket.
+/// \brief Deleter for SandwichListener
+using SandwichListenerDeleter = std::function<void(struct ::SandwichListener *)>;
+
+/// \brief Create a TCP Listener using sandwich API.
 ///
-/// This method is a SandwichCIOReadFunction.
-auto SandwichReadFromSocket(
-    void *uarg, void *buf, const size_t count,
-    [[maybe_unused]] const enum ::SandwichTunnelState state,
-    enum ::SandwichIOError *err) -> size_t {
-  *err = SANDWICH_IOERROR_OK;
+/// \return A Sandwich TCP Listener for the server.
+auto CreateTCPListener(std::string ipaddr, uint16_t port, bool is_blocking)
+    -> std::unique_ptr<struct ::SandwichListener, SandwichListenerDeleter> {
+  saq::sandwich::proto::api::v1::ListenerConfiguration config{};
 
-  const auto fd = static_cast<int>(reinterpret_cast<uintptr_t>(uarg));
-
-  ssize_t r{0};
-
-  do {
-    if (r = ::read(fd, buf, count); r > -1) {
-      return static_cast<size_t>(r);
-    }
-  } while ((r == -1) && (errno == EINTR));
-
-  switch (errno) {
-  case 0: {
-    return *err = SANDWICH_IOERROR_OK, 0;
+  config.mutable_tcp()->mutable_addr()->set_hostname(ipaddr);
+  config.mutable_tcp()->mutable_addr()->set_port((uint32_t)port);
+  if (is_blocking) {
+  	config.mutable_tcp()->set_blocking_mode(saq::sandwich::proto::api::v1::BlockingMode::BLOCKINGMODE_BLOCKING);
+  } else {
+  	config.mutable_tcp()->set_blocking_mode(saq::sandwich::proto::api::v1::BlockingMode::BLOCKINGMODE_NONBLOCKING);
   }
-  case EINPROGRESS:
-  case EINTR: {
-    return *err = SANDWICH_IOERROR_IN_PROGRESS, 0;
-  }
-
-  case EWOULDBLOCK:
-#if EWOULDBLOCK != EAGAIN
-  case EAGAIN:
-#endif
-  {
-    return *err = SANDWICH_IOERROR_WOULD_BLOCK, 0;
-  }
-
-  case ENOTSOCK:
-  case EPROTOTYPE:
-  case EBADF: {
-    return *err = SANDWICH_IOERROR_INVALID, 0;
-  }
-  case EACCES:
-  case EPERM:
-  case ETIMEDOUT:
-  case ENETUNREACH:
-  case ECONNREFUSED: {
-    return *err = SANDWICH_IOERROR_REFUSED, 0;
-  }
-
-  default: {
-    return *err = SANDWICH_IOERROR_UNKNOWN, 0;
-  }
-  }
+  std::string encoded_configuration{};
+  sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
+  struct ::SandwichListener *listener = nullptr;
+  const auto err = ::sandwich_listener_new(encoded_configuration.data(),
+                                           encoded_configuration.size(), &listener);
+  sandwich_assert(err == nullptr);
+  sandwich_assert(listener != nullptr);
+  return {listener, [](struct ::SandwichListener *l) { ::sandwich_listener_free(l); }};
 }
-
-/// \brief Write to a socket.
-///
-/// This method is a SandwichCIOWriteFunction.
-auto SandwichWriteToSocket(
-    void *uarg, const void *buf, const size_t count,
-    [[maybe_unused]] const enum ::SandwichTunnelState state,
-    enum ::SandwichIOError *err) -> size_t {
-  *err = SANDWICH_IOERROR_OK;
-
-  const auto fd = static_cast<int>(reinterpret_cast<uintptr_t>(uarg));
-
-  ssize_t w{0};
-
-  do {
-    if (w = ::write(fd, buf, count); w > -1) {
-      return static_cast<size_t>(w);
-    }
-  } while ((w == -1) && (errno == EINTR));
-
-  switch (errno) {
-  case 0: {
-    return *err = SANDWICH_IOERROR_OK, 0;
-  }
-  case EINPROGRESS:
-  case EINTR: {
-    return *err = SANDWICH_IOERROR_WOULD_BLOCK, 0;
-  }
-  case ENOTSOCK:
-  case EPROTOTYPE:
-  case EBADF: {
-    return *err = SANDWICH_IOERROR_INVALID, 0;
-  }
-  case EACCES:
-  case EPERM:
-  case ETIMEDOUT:
-  case ENETUNREACH:
-  case ECONNREFUSED: {
-    return *err = SANDWICH_IOERROR_REFUSED, 0;
-  }
-
-  default: {
-    return *err = SANDWICH_IOERROR_UNKNOWN, 0;
-  }
-  }
-}
-
-/// \brief Close a socket.
-///
-/// This method is a SandwichCIOCloseFunction.
-void CloseSocket(void *uarg) {
-  const auto fd = static_cast<int>(reinterpret_cast<uintptr_t>(uarg));
-  ::close(fd);
-}
-
-/// \brief Global CIO settings structure for sockets.
-constexpr struct ::SandwichCIOSettings SandwichSocketCIOSettings = {
-    .read = SandwichReadFromSocket,
-    .write = SandwichWriteToSocket,
-    .uarg = nullptr};
 
 /// \brief Deleter for Sandwich Tunnel.
 using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
@@ -351,10 +264,6 @@ void ClientInitiateHandshake(struct ::SandwichTunnel *client) {
     perror("ClientInitiateHandshake");
   }
   sandwich_assert(err == NULL);
-  sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ);
-
-  sandwich_assert(::sandwich_tunnel_state(client) ==
-                  SANDWICH_TUNNEL_STATE_HANDSHAKE_IN_PROGRESS);
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
 }
@@ -377,10 +286,6 @@ void ServerAnswerHandshake(struct ::SandwichTunnel *server) {
     perror("ServerAnswerHandshake");
   }
   sandwich_assert(err == NULL);
-  sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ);
-
-  sandwich_assert(::sandwich_tunnel_state(server) ==
-                  SANDWICH_TUNNEL_STATE_HANDSHAKE_IN_PROGRESS);
 
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
 }
@@ -400,10 +305,6 @@ void ClientCompleteHandshake(struct ::SandwichTunnel *client) {
     perror("ClientCompleteHandshake");
   }
   sandwich_assert(err == NULL);
-  while (state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ ||
-         state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_WRITE) {
-    err = ::sandwich_tunnel_handshake(client, &state);
-  }
   sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_DONE);
 
   sandwich_assert(sandwich_tunnel_state(client) ==
@@ -427,11 +328,6 @@ void ServerCompleteHandshake(struct ::SandwichTunnel *server) {
     perror("ServerCompleteHandshake");
   }
   sandwich_assert(err == NULL);
-  while (state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ ||
-         state == SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_WRITE) {
-    ::sandwich_tunnel_handshake(server, &state);
-  }
-  sandwich_assert(state == SANDWICH_TUNNEL_HANDSHAKESTATE_DONE);
 
   sandwich_assert(::sandwich_tunnel_state(server) ==
                   SANDWICH_TUNNEL_STATE_HANDSHAKE_DONE);
@@ -461,9 +357,6 @@ void ServerReadPingSendPong(struct ::SandwichTunnel *server) {
   size_t r{0};
 
   auto err{::sandwich_tunnel_read(server, buffer.data(), buffer.size(), &r)};
-  while (err == SANDWICH_TUNNEL_RECORDERROR_WANT_READ && r == 0) {
-    err = ::sandwich_tunnel_read(server, buffer.data(), buffer.size(), &r);
-  }
   sandwich_assert(err == SANDWICH_TUNNEL_RECORDERROR_OK);
   sandwich_assert(r == kPingMsg.size());
   sandwich_assert(buffer == kPingMsg);
@@ -484,9 +377,6 @@ void ClientReadPong(struct ::SandwichTunnel *client) {
   size_t r{0};
 
   auto err{::sandwich_tunnel_read(client, buffer.data(), buffer.size(), &r)};
-  while (err == SANDWICH_TUNNEL_RECORDERROR_WANT_READ && r == 0) {
-    err = ::sandwich_tunnel_read(client, buffer.data(), buffer.size(), &r);
-  }
   sandwich_assert(err == SANDWICH_TUNNEL_RECORDERROR_OK);
   sandwich_assert(r == kPongMsg.size());
   sandwich_assert(buffer == kPongMsg);
@@ -494,23 +384,8 @@ void ClientReadPong(struct ::SandwichTunnel *client) {
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
 }
 
-/// \brief 8. Server tries to read something.
-///
-/// At this stage, the client hasn't written anything. The socket is
-/// non-blocking, so the server MUST receive a `kWantRead`, and
-/// `RecordResult::WouldBlock` MUST return true.
-void ServerTriesRead(struct ::SandwichTunnel *server) {
-  MsgBuffer buffer{};
-  size_t r{0};
 
-  const auto err{
-      ::sandwich_tunnel_read(server, buffer.data(), buffer.size(), &r)};
-  sandwich_assert(err == SANDWICH_TUNNEL_RECORDERROR_WANT_READ);
-
-  std::cout << "OK for " << __builtin_FUNCTION() << '\n';
-}
-
-/// \brief 9. Server closes the tunnel.
+/// \brief 8. Server closes the tunnel.
 ///
 /// At this stage, the server sent a TLS alert `SHUTDOWN`. The tunnel is now
 /// closed to the server side.
@@ -528,116 +403,86 @@ void ServerClosesTunnel(struct ::SandwichTunnel *server) {
 
 } // end anonymous namespace
 
-int main(int argc, char **argv) {
+bool SERVER_READY = false;
+
+void client_thread(std::string server_hostname, uint16_t server_port) {
+  while(!SERVER_READY);
+  struct ::SandwichCIOOwned *client_io;
   std::string error;
   std::unique_ptr<Runfiles> runfiles(
       Runfiles::CreateForTest(BAZEL_CURRENT_REPOSITORY, &error));
   sandwich_assert(runfiles != nullptr);
-
   auto client = CreateClientContext(runfiles);
+  sandwich_io_client_tcp_new(server_hostname.c_str(), server_port, true,
+                             &client_io);
+  // Create tunnels.
+  auto client_tunnel = CreateTunnel(&*client, *(client_io->io),
+                                    SandwichTunnelConfigurationVerifierEmpty);
+
+
+  // Client initiates the handshake.
+  ClientInitiateHandshake(&*client_tunnel);
+
+  // Client is okay with the signature, the handshake is done.
+  ClientCompleteHandshake(&*client_tunnel);
+
+  // Client sends « Ping ».
+  ClientSendPing(&*client_tunnel);
+
+  // Client receives « Pong ».
+  ClientReadPong(&*client_tunnel);
+
+  // Do some cleanup
+  sandwich_io_owned_free(&*client_io);
+}
+
+void server_thread(std::string server_hostname, uint16_t server_port) {
+  std::string error;
+  std::unique_ptr<Runfiles> runfiles(
+      Runfiles::CreateForTest(BAZEL_CURRENT_REPOSITORY, &error));
+  sandwich_assert(runfiles != nullptr);
   auto server = CreateServerContext(runfiles);
+  auto server_listener = CreateTCPListener(server_hostname.c_str(), server_port, true);
+  sandwich_assert(sandwich_listener_listen(&*server_listener) == SANDWICH_IOERROR_OK);
 
-  // Create server socket, to use with saq::sandwich::io::Socket.
-  int fd;
-#ifdef SOCK_NONBLOCK
-  fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-  sandwich_assert(fd != -1);
-#else
-  fd = socket(AF_INET, SOCK_STREAM, 0);
-  sandwich_assert(fd != -1);
-  int flags = ::fcntl(fd, F_GETFL, 0);
-  sandwich_assert(flags != -1);
-  flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-  sandwich_assert(flags != -1);
-#endif
+  SERVER_READY = true;
+  enum SandwichIOError err;
+  struct SandwichCIOOwned *listener_io;
+  err = sandwich_listener_accept(&*server_listener, &listener_io);
+  sandwich_assert(err == SANDWICH_IOERROR_OK);
+  auto server_tunnel = CreateTunnel(&*server, *(listener_io->io),
+                                      SandwichTunnelConfigurationVerifierEmpty);
 
-  // Create I/O interfaces for client and server.
+  // Server answers.
+  ServerAnswerHandshake(&*server_tunnel);
+
+  // The server accesses to the record layer.
+  ServerCompleteHandshake(&*server_tunnel);
+
+  // Server receives « Ping » and sends « Pong ».
+  ServerReadPingSendPong(&*server_tunnel);
+
+  // Server closes the tunnel  by calling `Close`. It triggers a `SHUTDOWN`
+  // TLS alert.
+  ServerClosesTunnel(&*server_tunnel);
+  // Do some cleanup
+  sandwich_io_owned_free(listener_io);
+}
+
+int main(int argc, char **argv) {
+
 
   const std::string server_hostname = "127.0.0.1";
   std::random_device rd;
   std::mt19937 rng(rd());
   std::uniform_int_distribution<int> distribution(1026, 65355);
   const uint16_t server_port = distribution(rng);
-  struct addrinfo hints, *result;
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
-  getaddrinfo(server_hostname.c_str(), std::to_string(server_port).c_str(),
-              &hints, &result);
-
-  struct sockaddr_in serverAddress;
-  memset(&serverAddress, 0, sizeof(serverAddress));
-  serverAddress.sin_family = AF_INET;
-  serverAddress.sin_port = htons(server_port);
-  serverAddress.sin_addr = ((struct sockaddr_in *)result->ai_addr)->sin_addr;
-  bind(fd, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
-  sandwich_assert(listen(fd, 1) != -1);
-  sandwich_assert(accept(fd, NULL, NULL) == -1);
-  sandwich_assert(errno == EWOULDBLOCK);
-
-  struct ::SandwichCIOOwned *client_io;
-  sandwich_io_client_tcp_new(server_hostname.c_str(), server_port, false,
-                             &client_io);
-  struct ::SandwichCIOSettings server_io = SandwichSocketCIOSettings;
-
-  // It might take some time for the connection request to come through,
-  // so try a few times.
-  int retries = 0;
-  int clientfd = accept(fd, NULL, NULL);
-  while (clientfd == -1) {
-    if (retries >= 10) {
-      perror("failed to accept");
-      close(fd);
-      return -1;
-    }
-    retries++;
-    clientfd = accept(fd, NULL, NULL);
+  std::vector<std::thread> threads;
+  threads.push_back(std::thread(client_thread, server_hostname, server_port));
+  threads.push_back(std::thread(server_thread, server_hostname, server_port));
+  for (auto &thread: threads) {
+    thread.join();
   }
-  sandwich_assert(clientfd != -1);
-  int clientflags = ::fcntl(clientfd, F_GETFL, 0);
-  sandwich_assert(clientflags != -1);
-  clientflags = fcntl(clientfd, F_SETFL, clientflags | O_NONBLOCK);
-  sandwich_assert(clientflags != -1);
-  server_io.uarg = reinterpret_cast<void *>(clientfd);
-  // Create tunnels.
-  auto client_tunnel = CreateTunnel(&*client, *(client_io->io),
-                                    SandwichTunnelConfigurationVerifierEmpty);
-  auto server_tunnel = CreateTunnel(&*server, server_io,
-                                    SandwichTunnelConfigurationVerifierEmpty);
 
-  // Client initiates the handshake.
-  ClientInitiateHandshake(&*client_tunnel);
-
-  // Server answers.
-  ServerAnswerHandshake(&*server_tunnel);
-
-  // Client is okay with the signature, the handshake is done.
-  ClientCompleteHandshake(&*client_tunnel);
-
-  // The server accesses to the record layer.
-  ServerCompleteHandshake(&*server_tunnel);
-
-  // Client sends « Ping ».
-  ClientSendPing(&*client_tunnel);
-
-  // Server receives « Ping » and sends « Pong ».
-  ServerReadPingSendPong(&*server_tunnel);
-
-  // Client receives « Pong ».
-  ClientReadPong(&*client_tunnel);
-
-  // Server tries to read, it triggers a `WANT_READ`, and WouldBlock returns
-  // true.
-  ServerTriesRead(&*server_tunnel);
-
-  // Server closes the tunnel  by calling `Close`. It triggers a `SHUTDOWN`
-  // TLS alert.
-  ServerClosesTunnel(&*server_tunnel);
-
-  // Do some cleanup
-  sandwich_io_owned_free(client_io);
-  close(fd);
-  close(clientfd);
-  CloseSocket(server_io.uarg);
   return 0;
 }

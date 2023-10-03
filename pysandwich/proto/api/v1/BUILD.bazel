@@ -69,6 +69,14 @@ proto_library(
 )
 
 proto_library(
+    name = "listener_configuration_proto",
+    srcs = ["listener_configuration.proto"],
+    visibility = [
+        "//pysandwich:__subpackages__",
+    ],
+)
+
+proto_library(
     name = "tunnel_proto",
     srcs = ["tunnel.proto"],
     deps = [
@@ -84,6 +92,7 @@ proto_library(
     ],
     deps = [
         ":compliance_proto",
+        ":listener_configuration_proto",
         ":tls_proto",
         ":tunnel_proto",
     ],
@@ -100,6 +109,12 @@ md_proto_library(
         "ClientOptions",
         "ServerOptions",
         "Configuration",
+
+        # listener_configuration.proto
+        "BlockingMode",
+        "SocketAddress",
+        "ListenerModeTCP",
+        "ListenerConfiguration",
 
         # certificate.proto
         "Certificate",
@@ -188,6 +203,14 @@ py_proto_library(
 )
 
 py_proto_library(
+    name = "listener_configuration_python_proto",
+    srcs = [
+        "listener_configuration.proto",
+    ],
+    visibility = ["//pysandwich:__subpackages__"],
+)
+
+py_proto_library(
     name = "private_key_python_proto",
     srcs = [
         "private_key.proto",
@@ -259,6 +282,7 @@ go_proto_library(
         ":compliance_proto",
         ":data_source_proto",
         ":encoding_format_proto",
+        ":listener_configuration_proto",
         ":private_key_proto",
         ":tls_proto",
         ":tunnel_proto",

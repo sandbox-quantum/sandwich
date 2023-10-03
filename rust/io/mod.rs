@@ -19,6 +19,10 @@ use pb::IOError;
 /// A set of functions that implement common I/O objects.
 pub mod helpers;
 
+/// The listener trait provides an object that can accept
+/// new connections and create I/O objects.
+pub mod listener;
+
 /// An I/O error.
 /// To see the list of I/O errors, see [`IOError`].
 pub struct Error(IOError);
@@ -36,6 +40,8 @@ impl std::fmt::Display for Error {
                 IOError::IOERROR_REFUSED => "refused",
                 IOError::IOERROR_CLOSED => "closed",
                 IOError::IOERROR_INVALID => "invalid I/O plane",
+                IOError::IOERROR_SYSTEM_ERROR => "system error",
+                IOError::IOERROR_ADDRESS_IN_USE => "address already in use",
                 IOError::IOERROR_UNKNOWN => "unknown error",
             }
         )
@@ -55,6 +61,8 @@ impl std::fmt::Debug for Error {
                 IOError::IOERROR_REFUSED => "refused",
                 IOError::IOERROR_CLOSED => "closed",
                 IOError::IOERROR_INVALID => "invalid I/O plane",
+                IOError::IOERROR_SYSTEM_ERROR => "system error",
+                IOError::IOERROR_ADDRESS_IN_USE => "address already in use",
                 IOError::IOERROR_UNKNOWN => "unknown error",
             }
         )
@@ -97,6 +105,10 @@ impl From<std::io::Error> for Error {
             | ErrorKind::AlreadyExists
             | ErrorKind::InvalidInput
             | ErrorKind::InvalidData => IOError::IOERROR_INVALID.into(),
+            ErrorKind::Unsupported | ErrorKind::OutOfMemory => IOError::IOERROR_SYSTEM_ERROR.into(),
+            ErrorKind::AddrInUse | ErrorKind::AddrNotAvailable => {
+                IOError::IOERROR_ADDRESS_IN_USE.into()
+            }
             _ => IOError::IOERROR_UNKNOWN.into(),
         }
     }
@@ -115,6 +127,10 @@ impl From<Error> for std::io::Error {
             IOError::IOERROR_REFUSED => ErrorKind::ConnectionRefused.into(),
             IOError::IOERROR_CLOSED => ErrorKind::BrokenPipe.into(),
             IOError::IOERROR_INVALID => ErrorKind::InvalidInput.into(),
+            IOError::IOERROR_ADDRESS_IN_USE => ErrorKind::AddrInUse.into(),
+            IOError::IOERROR_SYSTEM_ERROR => {
+                std::io::Error::new(ErrorKind::Other, "An unknown system error has occurred")
+            }
             IOError::IOERROR_UNKNOWN => {
                 std::io::Error::new(ErrorKind::Other, "An unknown error has occurred")
             }

@@ -8,9 +8,7 @@ use std::io::{Read, Write};
 use std::os::fd::RawFd;
 
 /// A [`File`] sandwich wrapper.
-pub struct SystemSocketIo {
-    file: File,
-}
+pub struct SystemSocketIo(File);
 
 /// Implements [`SystemSocketIo`]
 impl SystemSocketIo {
@@ -19,25 +17,25 @@ impl SystemSocketIo {
     pub fn new(fd: RawFd) -> Result<SystemSocketIo, std::io::Error> {
         use std::os::fd::FromRawFd;
         let file = unsafe { File::from_raw_fd(fd) };
-        Ok(SystemSocketIo { file })
+        Ok(SystemSocketIo(file))
     }
 }
 
 /// Instantiates a [`SystemSocketIo`] from a [`File`].
 impl From<File> for SystemSocketIo {
     fn from(file: File) -> Self {
-        Self { file }
+        SystemSocketIo(file)
     }
 }
 
 /// Implements [`crate::IO`] for [`SystemSocketIo`].
 impl crate::IO for SystemSocketIo {
     fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
-        self.file.read(buf)
+        self.0.read(buf)
     }
 
     fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
-        self.file.write(buf)
+        self.0.write(buf)
     }
 }
 

@@ -123,6 +123,7 @@ var errConfigurationErrorMap = map[pb.ConfigurationError]string{
   pb.ConfigurationError_CONFIGURATIONERROR_INVALID_IMPLEMENTATION: `The selected implementation is invalid.`,
   pb.ConfigurationError_CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION: `The selected implementation isn&#39;t supported.`,
   pb.ConfigurationError_CONFIGURATIONERROR_INVALID: `Invalid configuration.`,
+  pb.ConfigurationError_CONFIGURATIONERROR_INVALID_LISTENER: `Invalid Listener configuration.`,
 }
 
 func newConfigurationError(code pb.ConfigurationError, msg string) *ConfigurationError {

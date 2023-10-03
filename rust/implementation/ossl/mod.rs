@@ -804,7 +804,6 @@ where
             self.state = pb::State::STATE_HANDSHAKE_DONE;
             return Ok(state.into());
         }
-
         let (handshake_state, tunnel_state) =
             OsslInterface::ssl_handshake(self.ssl.as_nonnull(), self.mode);
         if let Some(tunnel_state) = tunnel_state {

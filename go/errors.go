@@ -102,7 +102,7 @@ func newHandshakeStateErrorFromEnum(err pb.HandshakeState) *HandshakeStateError 
 }
 
 // recordPlaneErrorMap is a map code -> string for errors regarding the record
-// plane. These errors ared defined in `tunnel.proto` defined by `RecordError`.
+// plane. These errors are defined in `tunnel.proto` defined by `RecordError`.
 var recordPlaneErrorMap = map[int32]string{
 	int32(pb.RecordError_RECORDERROR_WANT_READ):      "tunnel wants to read data, but the underlying I/O interface is non-blocking.",
 	int32(pb.RecordError_RECORDERROR_WANT_WRITE):     "tunnel wants to write data, but the underlying I/O interface is non-blocking.",

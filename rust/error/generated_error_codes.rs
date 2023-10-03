@@ -18,6 +18,7 @@ APIERROR_TUNNEL => "Tunnel error.",
         CONFIGURATIONERROR_INVALID_IMPLEMENTATION => "The selected implementation is invalid.",
 CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION => "The selected implementation isn&#39;t supported.",
 CONFIGURATIONERROR_INVALID => "Invalid configuration.",
+CONFIGURATIONERROR_INVALID_LISTENER => "Invalid Listener configuration.",
 
       ],
   },

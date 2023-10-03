@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 use std::io::{Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{TcpListener as RustTcpListener, TcpStream, ToSocketAddrs};
 
 /// A [`TcpStream`] sandwich wrapper.
 pub struct TcpIo(TcpStream);
@@ -44,7 +44,7 @@ impl From<TcpStream> for TcpIo {
     }
 }
 
-/// implements [`crate::IO`] for [`TcpIo`].
+/// Implements [`crate::IO`] for [`TcpIo`].
 impl crate::IO for TcpIo {
     fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
         self.0.read(buf)
@@ -55,11 +55,71 @@ impl crate::IO for TcpIo {
     }
 }
 
+/// A [`std::net::TcpListener`] sandwich wrapper.
+pub(crate) struct TcpListener {
+    /// The [`std::net::TcpListener`] being wrapped.
+    listener: RustTcpListener,
+    /// Indicates whether this listener is blocking or not.
+    is_blocking: bool,
+}
+
+/// Implements [`crate::io::helpers::tcp::TcpListener`].
+impl TcpListener {
+    /// Instantiates a [`crate::io::helpers::tcp::TcpListener`].
+    #[allow(dead_code)]
+    pub(crate) fn new(
+        hostname: impl ToSocketAddrs,
+        is_blocking: bool,
+    ) -> Result<TcpListener, std::io::Error> {
+        for listener in hostname
+            .to_socket_addrs()?
+            .filter_map(|sock_addr| RustTcpListener::bind(sock_addr).ok())
+        {
+            if listener.set_nonblocking(!is_blocking).is_err() {
+                continue;
+            } else {
+                return Ok(TcpListener {
+                    listener,
+                    is_blocking,
+                });
+            }
+        }
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "An unknown error has ocurred.",
+        ))
+    }
+}
+
+/// Implements [`crate::io::listener::Listener`] for [`crate::io::helpers::tcp::TcpListener`].
+impl crate::io::listener::Listener for TcpListener {
+    fn listen(&mut self) -> Result<(), std::io::Error> {
+        // Rust's [`std::net::TcpListener`] performs a listen() call implicitly
+        // when it `bind()`s therefore, this is a no-op.
+        Ok(())
+    }
+
+    fn accept(&mut self) -> Result<Box<dyn crate::IO>, std::io::Error> {
+        self.listener.accept().and_then(|(stream, _)| {
+            stream.set_nonblocking(!self.is_blocking).map(|_| {
+                Box::new(crate::io::helpers::tcp::TcpIo::from(stream)) as Box<dyn crate::IO>
+            })
+        })
+    }
+
+    fn close(&mut self) -> Result<(), std::io::Error> {
+        // Rust's [`std::net::TcpListener`] does not have an explicit close()
+        // function. The connection gets closed when the TcpListener gets
+        // dropped, therefore this is a no-op.
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
     use crate::IO;
-    fn create_server(hostname: &str, port: &u16, is_blocking: bool) -> std::net::TcpListener {
+    fn create_server(hostname: &str, port: &u16, is_blocking: bool) -> RustTcpListener {
         let addr = hostname.to_owned() + ":" + &port.to_string();
         let sock_addr: std::net::SocketAddr = match addr.to_socket_addrs() {
             Ok(sa) => sa.collect::<Vec<_>>()[0],
@@ -67,7 +127,7 @@ pub(crate) mod test {
                 panic!("{e}");
             }
         };
-        let listener = std::net::TcpListener::bind(sock_addr).expect("Failed to bind");
+        let listener = RustTcpListener::bind(sock_addr).expect("Failed to bind");
         match listener.set_nonblocking(!is_blocking) {
             Ok(_) => listener,
             Err(_) => panic!("failed set_nonblocking({}) call", !is_blocking),
@@ -78,7 +138,7 @@ pub(crate) mod test {
         TcpIo::connect((addr, port), is_blocking).expect("Failed to create client")
     }
 
-    fn blocking_listener_thread(listener: std::net::TcpListener) {
+    fn blocking_listener_thread(listener: RustTcpListener) {
         match listener.accept() {
             Ok((stream, _addr)) => {
                 handle_client_blocking(stream);
@@ -141,7 +201,7 @@ pub(crate) mod test {
     }
 
     #[test]
-    fn test_blocking_io() {
+    fn test_blocking_io_with_std() {
         let port = pseudo_random(generate_seed());
         let hostname = "localhost";
         let listener = create_server("localhost", &port, true);

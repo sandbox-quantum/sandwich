@@ -1,16 +1,16 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 import random
-import socket
 import threading
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
+import pysandwich.proto.api.v1.listener_configuration_pb2 as ListenerAPI
 import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.errors as errors
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
-from pysandwich import tunnel
-from pysandwich.io_helpers import io_client_tcp_new, io_socket_wrap
+from pysandwich import listener, tunnel
+from pysandwich.io_helpers import io_client_tcp_new
 from pysandwich.sandwich import Sandwich
 
 _LISTENING_ADDRESS = "127.0.0.1"
@@ -72,14 +72,17 @@ def create_client_conf(sw: Sandwich) -> tunnel.Context:
     return tunnel.Context.from_bytes(sw, buf)
 
 
-def create_server_socket(hostname, port) -> socket.socket:
-    """Creates the server socket.
+def create_tcp_listener(hostname, port) -> listener:
+    """Creates the configuration for a TCP listener.
     Returns:
-        The new server socket to use with a tunnel.
+        A TCP listener which is listening on hostname:port.
     """
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((hostname, port))
-    return server_socket
+    conf = ListenerAPI.ListenerConfiguration()
+    conf.tcp.addr.hostname = hostname
+    conf.tcp.addr.port = port
+    conf.tcp.blocking_mode = ListenerAPI.BLOCKINGMODE_BLOCKING
+
+    return listener.Listener(conf)
 
 
 def server_thread(hostname, port, server_conf, exceptions, server_ready):
@@ -94,8 +97,8 @@ def server_thread(hostname, port, server_conf, exceptions, server_ready):
         SandwichVerifiers.EmptyVerifier()
     )
     try:
-        server_socket = create_server_socket(hostname, port)
-        server_socket.listen(1)
+        listener = create_tcp_listener(hostname, port)
+        listener.listen()
     except Exception as e:
         # prevent the other thread from hanging
         server_ready.set()
@@ -104,8 +107,7 @@ def server_thread(hostname, port, server_conf, exceptions, server_ready):
     server_ready.set()
     server_io = None
     try:
-        server_io, _ = server_socket.accept()
-        server_io = io_socket_wrap(server_io)
+        server_io = listener.accept()
     except Exception as e:
         exceptions.append(e)
         return

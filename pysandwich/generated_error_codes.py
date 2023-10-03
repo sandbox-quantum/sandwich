@@ -31,6 +31,9 @@ class ConfigurationError(SandwichException):
         SandwichErrorProto.CONFIGURATIONERROR_INVALID: {
             "msg": """Invalid configuration.""",
         },
+        SandwichErrorProto.CONFIGURATIONERROR_INVALID_LISTENER: {
+            "msg": """Invalid Listener configuration.""",
+        },
     }
 
 

@@ -246,6 +246,48 @@ class _SandwichCLib:
             ),
             # void sandwich_io_owned_free(struct SandwichCIOOwned *ownedIO)
             "sandwich_io_owned_free": __fs(args=[ctypes.c_void_p], ret=None),
+            # struct SandwichError *sandwich_listener_new(const void *src,
+            #       size_t n, struct SandwichListener **out);
+            "sandwich_listener_new": __fs(
+                [
+                    ctypes.c_void_p,
+                    ctypes.c_size_t,
+                    ctypes.c_void_p,
+                ],
+                ctypes.c_void_p,
+            ),
+            # enum SandwichIOError sandwich_listener_listen(
+            #       struct SandwichListener *listener);
+            "sandwich_listener_listen": __fs(
+                [
+                    ctypes.c_void_p,
+                ],
+                ctypes.c_uint,
+            ),
+            # enum SandwichIOErrorsandwich_listener_accept(
+            #       struct SandwichListener *listener,
+            #       struct SandwichOwnedIO **owned_io);
+            "sandwich_listener_accept": __fs(
+                [
+                    ctypes.c_void_p,
+                    ctypes.POINTER(ctypes.POINTER(OwnedIO)),
+                ],
+                ctypes.c_uint,
+            ),
+            # void sanwich_listener_close(struct SandwichListener *listener)
+            "sandwich_listener_close": __fs(
+                [
+                    ctypes.c_void_p,
+                ],
+                None,
+            ),
+            # void sanwich_listener_free(struct SandwichListener *listener)
+            "sandwich_listener_free": __fs(
+                [
+                    ctypes.c_void_p,
+                ],
+                None,
+            ),
         }
     )
 

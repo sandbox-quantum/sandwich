@@ -7,9 +7,12 @@ package sandwich
 
 import (
 	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
+	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 	"io"
 	"runtime"
 	"unsafe"
+
+	"google.golang.org/protobuf/proto"
 )
 
 /*
@@ -29,9 +32,6 @@ typedef const void* constBuf;
 static struct SandwichCIOSettings* allocSandwichCIOSettings(void) {
   return (struct SandwichCIOSettings*)calloc(1, sizeof(struct SandwichCIOSettings));
 }
-
-extern enum SandwichIOError sandwich_io_client_tcp_new(const char *hostname, const uint16_t port, bool async, struct SandwichCIOOwned **ownedIO);
-extern void sandwich_io_owned_free(struct SandwichCIOOwned *ownedIO);
 
 static size_t client_bridge_read(SandwichCIOReadFunctionPtr read, void *uarg, void *buf, size_t count, enum SandwichTunnelState tunnel_state, enum SandwichIOError *err) {
 	return read(uarg, buf, count, tunnel_state, err);
@@ -109,12 +109,12 @@ func (goio *goIOWrapper) free() {
 
 // swOwnedIOWrapper wraps `struct SandwichCIOOwned`.
 type swOwnedIOWrapper struct {
-	owned_io *C.struct_SandwichCIOOwned
+	handle *C.struct_SandwichCIOOwned
 }
 
 // Reads implements the sandwich.IO interface for bufIO.
 func (rawIO *swOwnedIOWrapper) Read(b []byte, tunnel_state pb.State) (int, *IOError) {
-	settings := rawIO.owned_io.io
+	settings := rawIO.handle.io
 	count := len(b)
 	buf := b
 	state := uint32(tunnel_state)
@@ -129,7 +129,7 @@ func (rawIO *swOwnedIOWrapper) Read(b []byte, tunnel_state pb.State) (int, *IOEr
 
 // Write implements the sandwich.IO interface for bufIO.
 func (rawIO *swOwnedIOWrapper) Write(b []byte, tunnel_state pb.State) (int, *IOError) {
-	settings := rawIO.owned_io.io
+	settings := rawIO.handle.io
 	count := len(b)
 	buf := b
 	state := uint32(tunnel_state)
@@ -144,21 +144,7 @@ func (rawIO *swOwnedIOWrapper) Write(b []byte, tunnel_state pb.State) (int, *IOE
 
 // Frees a swOwnedIOWrapper.
 func (rawIO *swOwnedIOWrapper) free() {
-	C.sandwich_io_owned_free(rawIO.owned_io)
-}
-
-// Creates a Sandwich owned TCP based IO Object.
-func IOTCPClient(hostname string, port uint16, is_blocking bool) (*swOwnedIOWrapper, *IOError) {
-	var io *C.struct_SandwichCIOOwned
-	err := C.sandwich_io_client_tcp_new(C.CString(hostname), C.ushort(port), C.bool(is_blocking), &io)
-	pb_err := pb.IOError(err)
-	if pb_err != pb.IOError_IOERROR_OK {
-		return nil, NewIOErrorFromEnum(pb_err)
-	}
-	client_io := new(swOwnedIOWrapper)
-	client_io.owned_io = io
-	runtime.SetFinalizer(client_io, (*swOwnedIOWrapper).free)
-	return client_io, nil
+	C.sandwich_io_owned_free(rawIO.handle)
 }
 
 // --8<-- [start:go_io_rw]
@@ -190,3 +176,80 @@ func IOWrapRW(conn io.ReadWriter) IORWWrapper {
 }
 
 // --8<-- [end:go_io_rw]
+
+// Listener wraps `struct SandwichListener`.
+type Listener struct {
+	handle *C.struct_SandwichListener
+}
+
+// NewTunnelContext fills a Sandwich context from a protobuf configuration.
+func NewListener(configuration *api.ListenerConfiguration) (*Listener, error) {
+	out, err := proto.Marshal(configuration)
+	if err != nil {
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_PARSE_FAILED, "")
+	}
+
+	n := len(out)
+	if n == 0 {
+		return nil, newProtobufError(pb.ProtobufError_PROTOBUFERROR_EMPTY, "")
+	}
+
+	listener := new(Listener)
+	errc := C.sandwich_listener_new(unsafe.Pointer(&out[0]), C.size_t(n), &listener.handle)
+	if errc != nil {
+		err := createError(errc)
+		C.sandwich_error_free(errc)
+		return nil, err
+	}
+
+	runtime.SetFinalizer(listener, (*Listener).free)
+	return listener, nil
+}
+
+// Reads implements the sandwich.IO interface for bufIO.
+func (clistener *Listener) Listen() *IOError {
+	listener := clistener.handle
+	err := C.sandwich_listener_listen(listener)
+	pb_err := pb.IOError(err)
+	if pb_err != pb.IOError_IOERROR_OK {
+		return NewIOErrorFromEnum(pb_err)
+	}
+	return nil
+}
+
+// Write implements the sandwich.IO interface for bufIO.
+func (clistener *Listener) Accept() (*swOwnedIOWrapper, *IOError) {
+	listener := clistener.handle
+	owned_io := new(swOwnedIOWrapper)
+	err := C.sandwich_listener_accept(listener, &(owned_io.handle))
+	pb_err := pb.IOError(err)
+	if pb_err != pb.IOError_IOERROR_OK {
+		return nil, NewIOErrorFromEnum(pb_err)
+	}
+	runtime.SetFinalizer(owned_io, (*swOwnedIOWrapper).free)
+	return owned_io, nil
+}
+
+func (clistener *Listener) Close() {
+	listener := clistener.handle
+	C.sandwich_listener_close(listener)
+}
+
+func (clistener *Listener) free() {
+	listener := clistener.handle
+	C.sandwich_listener_free(listener)
+}
+
+// Creates a Sandwich owned TCP based IO Object.
+func IOTCPClient(hostname string, port uint16, is_blocking bool) (*swOwnedIOWrapper, *IOError) {
+	var io *C.struct_SandwichCIOOwned
+	err := C.sandwich_io_client_tcp_new(C.CString(hostname), C.ushort(port), C.bool(is_blocking), &io)
+	pb_err := pb.IOError(err)
+	if pb_err != pb.IOError_IOERROR_OK {
+		return nil, NewIOErrorFromEnum(pb_err)
+	}
+	client_io := new(swOwnedIOWrapper)
+	client_io.handle = io
+	runtime.SetFinalizer(client_io, (*swOwnedIOWrapper).free)
+	return client_io, nil
+}

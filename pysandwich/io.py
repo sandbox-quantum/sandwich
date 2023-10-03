@@ -203,7 +203,7 @@ class OwnedIO(ctypes.Structure):
 
     _IO_TYPE = ctypes.POINTER(IO.Settings)
 
-    # typedef void(SandwhichIOOwnedFreeFunction)(struct SandwhichCIOSettings *cio)
+    # void(SandwhichIOOwnedFreeFunction)(struct SandwhichCIOSettings *cio)
     _FREE_PTR_TYPE = ctypes.CFUNCTYPE(
         None, ctypes.POINTER(IO.Settings)  # Return type  # cio
     )
