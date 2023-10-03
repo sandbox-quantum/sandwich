@@ -36,7 +36,7 @@ tunnel = []
 [dependencies]
 boringssl = { path = "rust_vendor/boringssl" }
 openssl1_1_1 = { path = "rust_vendor/openssl1_1_1" }
-protobuf = "3.2.0"
+protobuf = "^3.3.0"
 sandwich-api-proto = { path = "rust_vendor/sandwich-api-proto" }
 sandwich-proto = { path = "rust_vendor/sandwich-proto" }
 

@@ -24,7 +24,7 @@ crates_repository(
     lockfile = "//:Cargo.Bazel.lock",
     packages = {
         "protobuf": crate.spec(
-            version = "3.2.0",
+            version = "3.3.0",
         ),
     },
 )

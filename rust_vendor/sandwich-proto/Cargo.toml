@@ -12,7 +12,7 @@ build = "build.rs"
 path = "lib.rs"
 
 [dependencies]
-protobuf = "3.2.0"
+protobuf = "^3.3.0"
 
 
 [build-dependencies]
