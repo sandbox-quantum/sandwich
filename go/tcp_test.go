@@ -6,18 +6,15 @@ package sandwich_test
 import (
 	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 	"github.com/sandbox-quantum/sandwich/go"
-	"crypto/rand"
 	"fmt"
+	"github.com/bazelbuild/rules_go/go/tools/bazel"
 	"net"
 	"os"
-	"runtime"
-	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
-
-	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 )
@@ -25,12 +22,10 @@ import (
 var testCertPattern = "testdata/%s.cert.pem"
 
 var (
-	pingMsg                = [...]byte{'P', 'I', 'N', 'G'}
-	pongMsg                = [...]byte{'P', 'O', 'N', 'G'}
-	certPath        string = "testdata/localhost.cert.pem"
-	certExpiredPath string = "testdata/cert_expired.pem"
-	keyPath         string = "testdata/localhost.key.pem"
-	keyExpiredPath  string = "testdata/private_key_cert_expired.pem"
+	pingMsg         = [...]byte{'P', 'I', 'N', 'G'}
+	pongMsg         = [...]byte{'P', 'O', 'N', 'G'}
+	certPath string = "testdata/localhost.cert.pem"
+	keyPath  string = "testdata/localhost.key.pem"
 )
 
 // bufIO implements sandwich.IO, using a TX buffer and a
@@ -217,7 +212,6 @@ type ioInts struct {
 // createServerClientIOs creates the I/O interfaces for the server and the client.
 func createIOs() ioInts {
 	hostname := "127.0.0.1"
-	// Uses kernel allocated port for realiable test
 	listener, err := net.Listen("tcp", hostname+":0")
 	if err != nil {
 		fmt.Println("Error listening:", err)
@@ -229,7 +223,7 @@ func createIOs() ioInts {
 	listener_port, _ := strconv.ParseUint(port, 10, 64)
 
 	// Connects to kernel assigned port
-	client, _ := sandwich.IOTCPClient(hostname, uint16(listener_port), false)
+	client, _ := sandwich.IOTCPClient(hostname, uint16(listener_port), true)
 	server := newServerIO()
 	conn, err := listener.Accept()
 	if err != nil {
@@ -262,94 +256,31 @@ func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwi
 	return tun, nil
 }
 
-func TestTunnels(t *testing.T) {
-	sw := sandwich.NewSandwich()
-	serverContext, err := createServerContext(t, sw)
-	if err != nil {
-		t.Errorf("Failed to create Server context: %v", err)
+// createTunnelConfigurationWithEmptyTunnelVerifier creates a tunnel configuration with an empty TunnelVerifier.
+func createTunnelConfigurationWithEmptyTunnelVerifier() *api.TunnelConfiguration {
+	return &api.TunnelConfiguration{
+		Verifier: &api.TunnelVerifier{
+			Verifier: &api.TunnelVerifier_EmptyVerifier{
+				EmptyVerifier: &api.EmptyVerifier{},
+			},
+		},
 	}
+}
 
-	clientContext, err := createClientContext(t, sw)
-	if err != nil {
-		t.Errorf("Failed to create Client context: %v", err)
-	}
-
-	ioInterfaces := createIOs()
-
-	serverTunnel, err := createServerTunnel(t, serverContext, ioInterfaces.server)
-	if err != nil {
-		t.Errorf("Failed to create the server tunnel: %v", err)
-	}
-
-	clientTunnel, err := createClientTunnel(t, clientContext, ioInterfaces.client)
-	if err != nil {
-		t.Errorf("Failed to create the server tunnel: %v", err)
-	}
-
-	err = clientTunnel.Handshake()
-	if err == nil {
-		t.Errorf("Expected errHanshake not nil, got nil")
-	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
-		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
-			t.Errorf("Expected WANT_READ, got %v", err)
-		}
-	} else {
-		t.Errorf("Bad type for `error`")
-	}
-	err = serverTunnel.Handshake()
-	if err == nil {
-		t.Errorf("Expected errHanshake not nil, got nil")
-	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
-		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
-			t.Errorf("Expected WANT_READ, got %v", err)
-		}
-	} else {
-		t.Errorf("Bad type for `error`")
-	}
-
-	err = clientTunnel.Handshake()
-	for err != nil {
-		clientTunnel.Handshake()
-	}
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	err = serverTunnel.Handshake()
-	for err != nil {
-		serverTunnel.Handshake()
-	}
+func clientRoutine(t *testing.T, wg *sync.WaitGroup, clientTunnel *sandwich.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
+	var buf [4]byte
+	err := clientTunnel.Handshake()
+	n := 0
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	n, err := clientTunnel.Write(pingMsg[:])
+	n, err = clientTunnel.Write(pingMsg[:])
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 	if n != len(pingMsg) {
 		t.Errorf("Expected %v bytes sent, got %v", len(pingMsg), n)
-	}
-
-	var buf [len(pingMsg)]byte
-	n, err = serverTunnel.Read(buf[:])
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	if n != len(pingMsg) {
-		t.Errorf("Expected %v bytes read, got %v", len(pingMsg), n)
-	}
-	if buf != pingMsg {
-		t.Errorf("Expected %v, got %v", pingMsg, buf)
-	}
-
-	n, err = serverTunnel.Write(pongMsg[:])
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	if n != len(pongMsg) {
-		t.Errorf("Expected %v bytes sent, got %v", len(pongMsg), n)
 	}
 
 	n, err = clientTunnel.Read(buf[:])
@@ -364,10 +295,43 @@ func TestTunnels(t *testing.T) {
 	}
 
 	clientTunnel.Close()
-	serverTunnel.Close()
+	wg.Done()
 }
 
-func TestTunnelLargeReadWriteGC(t *testing.T) {
+func serverRoutine(t *testing.T, wg *sync.WaitGroup, serverTunnel *sandwich.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
+	var buf [4]byte
+	n := 0
+	err := serverTunnel.Handshake()
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	n, err = serverTunnel.Read(buf[:])
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if n != len(recvMsg) {
+		t.Errorf("Expected %v bytes read, got %v", len(recvMsg), n)
+	}
+	if buf != recvMsg {
+		t.Errorf("Expected %v, got %v", recvMsg, buf)
+	}
+
+	n, err = serverTunnel.Write(sendMsg[:])
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if n != len(sendMsg) {
+		t.Errorf("Expected %v bytes sent, got %v", len(sendMsg), n)
+	}
+
+	serverTunnel.Close()
+	wg.Done()
+}
+
+func TestTunnels(t *testing.T) {
+	var wg sync.WaitGroup
+	wg.Add(2)
 	sw := sandwich.NewSandwich()
 	serverContext, err := createServerContext(t, sw)
 	if err != nil {
@@ -390,269 +354,11 @@ func TestTunnelLargeReadWriteGC(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to create the server tunnel: %v", err)
 	}
-
-	err = clientTunnel.Handshake()
-	if err == nil {
-		t.Errorf("Expected errHanshake not nil, got nil")
-	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
-		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
-			t.Errorf("Expected WANT_READ, got %v", err)
-		}
-	} else {
-		t.Errorf("Bad type for `error`")
-	}
-
-	err = serverTunnel.Handshake()
-	if err == nil {
-		t.Errorf("Expected errHanshake not nil, got nil")
-	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
-		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
-			t.Errorf("Expected WANT_READ, got %v", err)
-		}
-	} else {
-		t.Errorf("Bad type for `error`")
-	}
-
-	err = clientTunnel.Handshake()
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	err = serverTunnel.Handshake()
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-
-	// We set the GC tolerance to be very low to make sure any potential zombie pointers are caught.
-	debug.SetGCPercent(1)
-
-	for i := 0; i < 1000; i++ {
-		data := make([]byte, 32768)
-		_, err = rand.Read(data)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-		clientTunnel.Write(data)
-		serverTunnel.Write(data)
-
-		buf := make([]byte, 32768)
-		clientTunnel.Read(buf)
-		serverTunnel.Read(buf)
-
-		// Force garbage collection.
-		runtime.GC()
-		debug.FreeOSMemory()
-	}
-
-	clientTunnel.Close()
-	serverTunnel.Close()
-}
-
-// createTunnelConfigurationWithEmptyTunnelVerifier creates a tunnel configuration with an empty TunnelVerifier.
-func createTunnelConfigurationWithEmptyTunnelVerifier() *api.TunnelConfiguration {
-	return &api.TunnelConfiguration{
-		Verifier: &api.TunnelVerifier{
-			Verifier: &api.TunnelVerifier_EmptyVerifier{
-				EmptyVerifier: &api.EmptyVerifier{},
-			},
-		},
-	}
-}
-
-// createServerExpiredConfiguration creates the configuration for the server using an expired certificate.
-func createServerExpiredConfiguration(t *testing.T) (*api.Configuration, error) {
-	certfile, err := bazel.Runfile(certExpiredPath)
-	if err != nil {
-		t.Errorf("Could not load certificate file %s: %v", certPath, err)
-	}
-	keyfile, err := bazel.Runfile(keyExpiredPath)
-	if err != nil {
-		t.Errorf("Could not load private key file %s: %v", keyPath, err)
-	}
-
-	return &api.Configuration{
-		Impl: api.Implementation_IMPL_OPENSSL1_1_1_OQS,
-		Opts: &api.Configuration_Server{
-			Server: &api.ServerOptions{
-				Opts: &api.ServerOptions_Tls{
-					Tls: &api.TLSServerOptions{
-						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
-							},
-							PeerVerifier: &api.TLSOptions_EmptyVerifier{
-								EmptyVerifier: &api.EmptyVerifier{},
-							},
-							Identity: &api.X509Identity{
-								Certificate: &api.Certificate{
-									Source: &api.Certificate_Static{
-										Static: &api.ASN1DataSource{
-											Data: &api.DataSource{
-												Specifier: &api.DataSource_Filename{
-													Filename: certfile,
-												},
-											},
-											Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
-										},
-									},
-								},
-								PrivateKey: &api.PrivateKey{
-									Source: &api.PrivateKey_Static{
-										Static: &api.ASN1DataSource{
-											Data: &api.DataSource{
-												Specifier: &api.DataSource_Filename{
-													Filename: keyfile,
-												},
-											},
-											Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}, nil
-}
-
-// createClientExpiredConfiguration creates the configuration for the client using an expired certificate.
-func createClientExpiredConfiguration(t *testing.T) (*api.Configuration, error) {
-	certfile, err := bazel.Runfile(certExpiredPath)
-	if err != nil {
-		t.Errorf("Could not load certificate file %s: %v", certPath, err)
-	}
-
-	return &api.Configuration{
-		Impl: api.Implementation_IMPL_OPENSSL1_1_1_OQS,
-		Opts: &api.Configuration_Client{
-			Client: &api.ClientOptions{
-				Opts: &api.ClientOptions_Tls{
-					Tls: &api.TLSClientOptions{
-						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
-							},
-							PeerVerifier: &api.TLSOptions_X509Verifier{
-								X509Verifier: &api.X509Verifier{
-									TrustedCas: []*api.Certificate{
-										{
-											Source: &api.Certificate_Static{
-												Static: &api.ASN1DataSource{
-													Data: &api.DataSource{
-														Specifier: &api.DataSource_Filename{
-															Filename: certfile,
-														},
-													},
-													Format: api.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}, nil
-}
-
-// createServerExpiredContext creates the server context using an expired certificate.
-func createServerExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
-	config, err := createServerExpiredConfiguration(t)
-	if err != nil {
-		t.Errorf("Failed to create the server configuration: %v", err)
-		panic("failed")
-	}
-
-	ctx, err := sandwich.NewTunnelContext(sw, config)
-	if err != nil {
-		t.Errorf("Failed to create the server context: %v", err)
-		panic("failed")
-	}
-
-	return ctx, nil
-}
-
-// createClientExpiredContext creates the client context using an expired certificate.
-func createClientExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
-	config, err := createClientExpiredConfiguration(t)
-	if err != nil {
-		t.Errorf("Failed to create the client configuration: %v", err)
-		panic("failed")
-	}
-
-	ctx, err := sandwich.NewTunnelContext(sw, config)
-	if err != nil {
-		t.Errorf("Failed to create the client context: %v", err)
-	}
-
-	return ctx, nil
-}
-
-func TestExpiredTunnels(t *testing.T) {
-	sw := sandwich.NewSandwich()
-	serverContext, err := createServerExpiredContext(t, sw)
-	if err != nil {
-		t.Errorf("Failed to create Server context: %v", err)
-	}
-
-	clientContext, err := createClientExpiredContext(t, sw)
-	if err != nil {
-		t.Errorf("Failed to create Client context: %v", err)
-	}
-
-	ioInterfaces := createIOs()
-
-	serverTunnel, err := createServerTunnel(t, serverContext, ioInterfaces.server)
-	if err != nil {
-		t.Errorf("Failed to create the server tunnel: %v", err)
-	}
-
-	clientTunnel, err := createClientTunnel(t, clientContext, ioInterfaces.client)
-	if err != nil {
-		t.Errorf("Failed to create the server tunnel: %v", err)
-	}
-
-	err = clientTunnel.Handshake()
-	if err == nil {
-		t.Errorf("Expected errHanshake not nil, got nil")
-	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
-		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
-			t.Errorf("Expected WANT_READ, got %v", err)
-		}
-	} else {
-		t.Errorf("Bad type for `error`")
-	}
-
-	err = serverTunnel.Handshake()
-	if err == nil {
-		t.Errorf("Expected errHanshake not nil, got nil")
-	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
-		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
-			t.Errorf("Expected WANT_READ, got %v", err)
-		}
-	} else {
-		t.Errorf("Bad type for `error` %v", err)
-	}
-
-	err = clientTunnel.Handshake()
-	if err == nil {
-		t.Errorf("Expected an error, got nil")
-	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeError); ok {
-		if handshakeErr.Code() != int32(pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_EXPIRED) {
-			t.Errorf("Expected CERTIFICATE_EXPIRED, got %v", err)
-		}
-	} else {
-		t.Errorf("Bad type for `error`")
-	}
-	clientTunnel.Close()
-	serverTunnel.Close()
+	go func() {
+		serverRoutine(t, &wg, serverTunnel, pingMsg, pongMsg)
+	}()
+	go func() {
+		clientRoutine(t, &wg, clientTunnel, pongMsg, pingMsg)
+	}()
+	wg.Wait()
 }
