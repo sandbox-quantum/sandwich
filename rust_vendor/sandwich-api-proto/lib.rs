@@ -53,6 +53,10 @@ pub mod configuration {
     include!(concat!(env!("OUT_DIR"), "/configuration.rs"));
 }
 
+pub mod listener_configuration {
+    include!(concat!(env!("OUT_DIR"), "/listener_configuration.rs"));
+}
+
 pub mod tunnel {
     include!(concat!(env!("OUT_DIR"), "/tunnel.rs"));
 }
@@ -62,6 +66,7 @@ pub use compliance::*;
 pub use configuration::*;
 pub use data_source::*;
 pub use encoding_format::*;
+pub use listener_configuration::*;
 pub use private_key::*;
 pub use tls::*;
 pub use tunnel::*;

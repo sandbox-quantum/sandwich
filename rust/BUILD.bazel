@@ -19,6 +19,7 @@ _SANDWICH_SRCS = [
     "//rust/implementation/ossl/openssl1_1_1",
     "//rust/io",
     "//rust/io/helpers",
+    "//rust/io/listener",
     "//rust/support",
     "//rust/tunnel",
     "//rust/tunnel/ffi",

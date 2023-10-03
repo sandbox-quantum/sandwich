@@ -27,16 +27,21 @@ pub type WriteFn = extern "C" fn(
     err: *mut i32,
 ) -> usize;
 
+/// Settings for a helper I/O interface, using pointers.
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct HelperClientSettings {
+pub(crate) struct HelperIOSettings {
+    /// The function that trampolines to the helper's read function.
     readfn: ReadFn,
+    /// The function that trampolines to the helper's write function.
     writefn: WriteFn,
+    /// A helper specific argument which will be passed to the trampoline
+    /// read and written functions when called.
     uarg: *mut c_void,
 }
 
 /// A read function.
-extern "C" fn sandwich_helper_client_read(
+pub(crate) extern "C" fn sandwich_helper_io_read(
     uarg: *mut c_void,
     buf: *mut c_void,
     count: usize,
@@ -44,11 +49,14 @@ extern "C" fn sandwich_helper_client_read(
     err: *mut i32,
 ) -> usize {
     use protobuf::Enum;
-    let mut boxed_helper_client_io: Box<Box<dyn crate::IO>> =
-        unsafe { Box::from_raw(uarg as *mut _) };
+    let mut boxed_helper_io: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(uarg as *mut _) };
     let slice = unsafe { std::slice::from_raw_parts_mut(buf as *mut u8, count) };
-    let r = boxed_helper_client_io.read(slice, pb::State::from_i32(tunnel_state).unwrap());
-    Box::into_raw(boxed_helper_client_io);
+    let Some(tunnel_state) = pb::State::from_i32(tunnel_state) else {
+        unsafe { *err = IOError::IOERROR_SYSTEM_ERROR.value() };
+        return 0;
+    };
+    let r = boxed_helper_io.read(slice, tunnel_state);
+    Box::into_raw(boxed_helper_io);
     match r {
         Ok(size) => {
             unsafe { *err = IOError::IOERROR_OK.value() };
@@ -60,9 +68,8 @@ extern "C" fn sandwich_helper_client_read(
         }
     }
 }
-
 /// A write function.
-extern "C" fn sandwich_helper_client_write(
+pub(crate) extern "C" fn sandwich_helper_io_write(
     uarg: *mut c_void,
     buf: *const c_void,
     count: usize,
@@ -70,11 +77,14 @@ extern "C" fn sandwich_helper_client_write(
     err: *mut i32,
 ) -> usize {
     use protobuf::Enum;
-    let mut boxed_helper_client_io: Box<Box<dyn crate::IO>> =
-        unsafe { Box::from_raw(uarg as *mut _) };
+    let mut boxed_helper_io: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(uarg as *mut _) };
     let slice = unsafe { std::slice::from_raw_parts(buf as *const u8, count) };
-    let r = boxed_helper_client_io.write(slice, pb::State::from_i32(tunnel_state).unwrap());
-    Box::into_raw(boxed_helper_client_io);
+    let Some(tunnel_state) = pb::State::from_i32(tunnel_state) else {
+        unsafe { *err = IOError::IOERROR_SYSTEM_ERROR.value() };
+        return 0;
+    };
+    let r = boxed_helper_io.write(slice, tunnel_state);
+    Box::into_raw(boxed_helper_io);
     match r {
         Ok(size) => {
             unsafe { *err = IOError::IOERROR_OK.value() };
@@ -99,9 +109,9 @@ pub extern "C" fn sandwich_io_owned_free(owned_io: *mut OwnedIo) {
     }
 }
 
-// Called when sandwich_io_owned_free is called.
-extern "C" fn sandwich_helper_owned_io_free(cio: *mut super::io::Settings) {
-    let boxed_cio: Box<HelperClientSettings> = unsafe { Box::from_raw(cio as *mut _) };
+/// Frees an owned IO.
+pub(crate) extern "C" fn sandwich_helper_owned_io_free(cio: *mut super::io::Settings) {
+    let boxed_cio: Box<HelperIOSettings> = unsafe { Box::from_raw(cio as *mut _) };
     let _: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(boxed_cio.uarg as *mut _) };
 }
 
@@ -112,8 +122,8 @@ pub type FreeFn = extern "C" fn(uarg: *mut super::io::Settings);
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct OwnedIo {
-    io: *mut super::io::Settings,
-    freeptr: Option<FreeFn>,
+    pub(crate) io: *mut super::io::Settings,
+    pub(crate) freeptr: Option<FreeFn>,
 }
 
 /// Creates a new client TCP IO object.
@@ -156,9 +166,9 @@ fn setup_helper_io(io: Box<dyn crate::IO>, owned_io: *mut *mut OwnedIo) -> i32 {
     use protobuf::Enum;
     let boxed_io = Box::new(io);
     let io_ptr = Box::into_raw(boxed_io);
-    let boxed_cio = Box::new(HelperClientSettings {
-        readfn: sandwich_helper_client_read,
-        writefn: sandwich_helper_client_write,
+    let boxed_cio = Box::new(HelperIOSettings {
+        readfn: sandwich_helper_io_read,
+        writefn: sandwich_helper_io_write,
         uarg: io_ptr as *mut c_void,
     });
     if !owned_io.is_null() {

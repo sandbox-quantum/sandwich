@@ -37,6 +37,9 @@ enum ConfigurationError { // ERRORKIND_CONFIGURATION
 
   // Invalid configuration.
   CONFIGURATIONERROR_INVALID = 2;
+
+  // Invalid Listener configuration.
+  CONFIGURATIONERROR_INVALID_LISTENER = 3;
 };
 
 // Errors regarding protobuf.
@@ -272,4 +275,9 @@ enum ErrorKind {
 
   // ALPN erros. See ALPNError.
   ERRORKIND_ALPN = 13;
+
+  // IO errors.
+  ERRORKIND_IO = 14;
+
+  // Next id: 15
 };

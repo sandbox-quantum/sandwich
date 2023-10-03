@@ -136,7 +136,6 @@ unsafe extern "C" fn bio_read(
             }
         }
     }
-
     (tun.io)
         .read(std::slice::from_raw_parts_mut(data.cast(), len), tun.state)
         .map(|n| {

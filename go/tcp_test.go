@@ -6,12 +6,12 @@ package sandwich_test
 import (
 	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 	"github.com/sandbox-quantum/sandwich/go"
+	"crypto/rand"
 	"fmt"
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
+	"math/big"
 	"net"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -209,27 +209,43 @@ type ioInts struct {
 	server sandwich.IO
 }
 
+func generateRandomPort() uint16 {
+	randNum, err := rand.Int(rand.Reader, big.NewInt(64510))
+	if err != nil {
+		return 0
+	}
+	return uint16(randNum.Int64() + 1026)
+}
+
+func createListenerConfiguration(ipaddr string, port uint16) *api.ListenerConfiguration {
+	return &api.ListenerConfiguration{
+		Mode: &api.ListenerConfiguration_Tcp{
+			Tcp: &api.ListenerModeTCP{
+				Addr: &api.SocketAddress{
+					Hostname: ipaddr,
+					Port:     uint32(port),
+				},
+				BlockingMode: api.BlockingMode_BLOCKINGMODE_BLOCKING,
+			},
+		},
+	}
+}
+
 // createServerClientIOs creates the I/O interfaces for the server and the client.
 func createIOs() ioInts {
 	hostname := "127.0.0.1"
-	listener, err := net.Listen("tcp", hostname+":0")
+	port := generateRandomPort()
+	listener_config := createListenerConfiguration(hostname, port)
+	listener, err := sandwich.NewListener(listener_config)
 	if err != nil {
 		fmt.Println("Error listening:", err)
 	}
-	defer listener.Close()
-
-	// Extracts port number from listener
-	port := strings.Split(listener.Addr().String(), ":")[1]
-	listener_port, _ := strconv.ParseUint(port, 10, 64)
-
-	// Connects to kernel assigned port
-	client, _ := sandwich.IOTCPClient(hostname, uint16(listener_port), true)
-	server := newServerIO()
-	conn, err := listener.Accept()
-	if err != nil {
+	listener.Listen()
+	client, _ := sandwich.IOTCPClient(hostname, port, true)
+	server, err2 := listener.Accept()
+	if err2 != nil {
 		fmt.Println("Error accepting:", err)
 	}
-	server.io = &conn
 	return ioInts{
 		client: client,
 		server: server,

@@ -32,8 +32,14 @@ enum IOError {
   // The underlying I/O interface is invalid.
   IOERROR_INVALID = 5;
 
+  // A system error.
+  IOERROR_SYSTEM_ERROR = 7;
+
+  // Address is already in use.
+  IOERROR_ADDRESS_IN_USE = 8;
+
   // Unknown I/O error.
   IOERROR_UNKNOWN = 6;
 
-  // Next id: 7
+  // Next id: 9
 };

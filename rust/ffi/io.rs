@@ -31,8 +31,12 @@ pub type WriteFn = extern "C" fn(
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Settings {
+    /// A user supplied read function.
     readfn: ReadFn,
+    /// A user supploed write function.
     writefn: WriteFn,
+    /// A user argument which will be passed to the given
+    /// read and written functions when called.
     uarg: *mut c_void,
 }
 

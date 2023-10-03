@@ -43,7 +43,10 @@ struct SandwichTunnelContextConfigurationSerialized {
 /// \brief A Sandwich tunnel (PIMPL).
 struct SandwichTunnel;
 
-/// \brief An error code. Copy of error.h:ErrorCode.
+/// \brief A Sandwich listener (PIMPL).
+struct SandwichListener;
+
+/// \brief An error code.
 struct SandwichError {
   /// \brief The encapsulated error.
   struct SandwichError *details;
@@ -276,25 +279,66 @@ SANDWICH_API void sandwich_tunnel_free(struct SandwichTunnel *tun);
 /// \param[out] ownedIO the created TCP based sandwich owned IO object.
 ///
 /// \return IOERROR_OK if the operation was a success, otherwise returns the
-///         error that occured.
+///         error that occurred.
 SANDWICH_API enum SandwichIOError
 sandwich_io_client_tcp_new(const char *hostname, const uint16_t port,
                            bool async, struct SandwichCIOOwned **ownedIO);
 
-/// \brief Creates an IO object that wrapps a UNIX socket
+/// \brief Creates an IO object that wraps a UNIX socket
 ///
 /// \param[in] fd the file descriptor of the unix socket.
 /// \param[out] ownedIO the created UNIX socket sandwich owned IO object. The
 /// caller is responsible for freeing that object with ::sandwich_io_owned_free.
 ///
 /// \return IOERROR_OK if the operation was a success, otherwise returns the
-///         error that occured.
+///         error that occurred.
 SANDWICH_API enum SandwichIOError
 sandwich_io_socket_wrap_new(int fd, struct SandwichCIOOwned **ownedIO);
 
 /// \brief Frees a SandwichCIOOwned object created by one of the
 ///        sandwich_io_*_new() functions.
 SANDWICH_API void sandwich_io_owned_free(struct SandwichCIOOwned *ownedIO);
+
+/// \brief Creates a a new Listener object.
+///
+/// \param[in] src a serialized `ListenerConfiguration` protobuf message.
+/// \param[in] n the length of src.
+/// \param[out] out points to the newly created listener.
+///
+/// \return Error, if any.
+SANDWICH_API struct SandwichError *
+sandwich_listener_new(const void *src, size_t n, struct SandwichListener **out);
+
+/// \brief Causes the Listener to start listening for connections.
+///
+/// \param[in] listener The listener object that should start listening
+///            for new connections.
+///
+/// \return IOERROR_OK if the operation was a success, otherwise returns the
+///         error that occurred.
+SANDWICH_API enum SandwichIOError
+sandwich_listener_listen(struct SandwichListener *listener);
+
+/// \brief Prompts the Listener to start accepting connections.
+///
+/// \param[in] listener the listener which should start accepting connections.
+/// \param[out] ownedIO the newly created OwnedIO struct containing the IO object to use with
+///	    a tunnel. Null if an error occurs.
+///
+/// \return IOERROR_OK if the operation was a success, otherwise returns
+/// 	    the error that occurred.
+SANDWICH_API enum SandwichIOError
+sandwich_listener_accept(struct SandwichListener *listener, struct SandwichCIOOwned **ownedIO);
+
+/// \brief Closes the listener to new connections.
+///
+/// \param[in] listener the listener which should close.
+SANDWICH_API void sandwich_listener_close(struct SandwichListener *listener);
+
+/// \brief Frees the given listener.
+///
+/// \param[in] listener the listener which should start accepting connections.
+SANDWICH_API void sandwich_listener_free(struct SandwichListener *listener);
 
 #ifdef __cplusplus
 } // end extern "C"

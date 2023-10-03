@@ -1,0 +1,48 @@
+// Copyright (c) SandboxAQ. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+syntax = "proto3";
+
+package saq.sandwich.proto.api.v1;
+
+option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
+
+
+// Blocking mode.
+enum BlockingMode {
+  // Unspecified.
+  BLOCKINGMODE_UNSPECIFIED = 0;
+
+  // Blocking mode.
+  BLOCKINGMODE_BLOCKING = 1;
+
+  // Non-blocking mode.
+  BLOCKINGMODE_NONBLOCKING = 2;
+}
+
+// A socket address.
+message SocketAddress {
+  // The hostname.
+  string hostname = 1;
+
+  // The port.
+  uint32 port = 2;
+}
+
+// Protobuf configuration for standard mode.
+message ListenerModeTCP {
+  // The socket address.
+  SocketAddress addr = 1;
+
+  // Blocking mode.
+  BlockingMode blocking_mode = 2;
+}
+
+// Protobuf configuration for a Sandwich Listener.
+message ListenerConfiguration {
+  // Transport mode.
+  oneof mode {
+    // Standard mode.
+    ListenerModeTCP tcp = 1;
+  }
+}

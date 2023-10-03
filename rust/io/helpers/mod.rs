@@ -6,5 +6,7 @@
 pub use systemsocket::SystemSocketIo;
 pub use tcp::TcpIo;
 
-mod systemsocket;
-mod tcp;
+/// Contains the system socket implementation for wrapping UNIX file descriptors.
+pub mod systemsocket;
+/// Contains the TCP implementation for both [`TcpIo`] and [`crate::io::helpers::tcp::TcpListener`].
+pub mod tcp;

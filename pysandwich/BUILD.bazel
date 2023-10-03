@@ -46,6 +46,7 @@ py_library(
     srcs = [
         "io.py",
         "io_helpers.py",
+        "listener.py",
     ],
     srcs_version = "PY3",
     visibility = ["//visibility:public"],
@@ -70,6 +71,7 @@ py_library(
         ":io",
         "//pysandwich/proto:sandwich_python_proto",
         "//pysandwich/proto/api/v1:api_python_proto",
+        "//pysandwich/proto/api/v1:listener_configuration_python_proto",
         "@bazel_tools//tools/python/runfiles",
     ],
 )
