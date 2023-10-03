@@ -35,10 +35,10 @@ def rust_deps():
                 features = ["release_max_level_info"],
             ),
             "protobuf": crate.spec(
-                version = "3.2.0",
+                version = "3.3.0",
             ),
             "protobuf-codegen": crate.spec(
-                version = "3.2.0",
+                version = "3.3.0",
             ),
             "reqwest": crate.spec(
                 version = "0.11.18",
