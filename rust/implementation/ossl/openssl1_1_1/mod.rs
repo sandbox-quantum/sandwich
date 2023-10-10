@@ -96,15 +96,28 @@ impl OsslTrait for Ossl {
         .ok_or(pb::SystemError::SYSTEMERROR_MEMORY)?;
 
         unsafe {
+            // When we no longer need a read buffer or a write buffer for a given SSL, then release the memory
+            // we were using to hold it. Using this flag can save around 34k per idle SSL connection.
+            // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+            // openssl::SSL_CTX_set_mode(ctx.as_nonnull(), openssl::SSL_MODE_RELEASE_BUFFERS);
+            openssl::SSL_CTX_ctrl(
+                ctx.as_nonnull().as_ptr(),
+                openssl::SSL_CTRL_MODE as i32,
+                openssl::SSL_MODE_RELEASE_BUFFERS.into(),
+                ptr::null_mut(),
+            );
+
             openssl::SSL_CTX_set_quiet_shutdown(ctx.as_nonnull().as_ptr(), 0);
             // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
-            // SSL_CTX_set_session_cache_mode(ctx, openssl::SSL_SESS_CACHE_OFF).
+            // SSL_CTX_set_session_cache_mode(ctx.as_nonull().as_ptr(), openssl::SSL_SESS_CACHE_OFF).
+
             openssl::SSL_CTX_ctrl(
                 ctx.as_nonnull().as_ptr(),
                 openssl::SSL_CTRL_SET_SESS_CACHE_MODE as i32,
                 openssl::SSL_SESS_CACHE_OFF.into(),
                 ptr::null_mut(),
             );
+
             // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
             // SSL_CTX_set1_groups(ctx, NULL, 0);
             openssl::SSL_CTX_ctrl(
