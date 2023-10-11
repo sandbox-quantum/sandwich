@@ -252,10 +252,11 @@ impl OsslTrait for Ossl {
     ) -> crate::Result<()> {
         let store = NonNull::new( unsafe { openssl::SSL_CTX_get_cert_store(ssl_ctx.as_ptr()) } )
             .ok_or_else(|| errors! {pb::SystemError::SYSTEMERROR_MEMORY => pb::CertificateError::CERTIFICATEERROR_UNKNOWN})?;
-        unsafe {
-            openssl::X509_STORE_add_cert(store.as_ptr(), cert.as_ptr());
+        if unsafe { openssl::X509_STORE_add_cert(store.as_ptr(), cert.as_ptr()) } == 1 {
+            Ok(())
+        } else {
+            Err(pb::SystemError::SYSTEMERROR_MEMORY.into())
         }
-        Ok(())
     }
 
     fn ssl_context_set_certificate(
