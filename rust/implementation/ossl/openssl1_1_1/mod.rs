@@ -6,6 +6,7 @@
 
 extern crate openssl1_1_1;
 
+use std::ffi::c_ulong;
 use std::pin::Pin;
 use std::ptr::{self, NonNull};
 
@@ -18,6 +19,15 @@ use crate::support::Pimpl;
 use crate::tunnel::{tls, Mode, RecordError};
 
 mod io;
+
+/// Offset in error codes where the code library is stored.
+const ERR_LIB_OFFSET: u32 = 24;
+
+/// Mask to extract the code library from an error code.
+const ERR_LIB_MASK: c_ulong = 0xff;
+
+/// Mask to extract the reason from an error code.
+const ERR_REASON_MASK: c_ulong = 0xfff;
 
 /// Context backed by OpenSSL 1.1.1.
 #[derive(Debug)]
@@ -55,7 +65,7 @@ fn openssl_error_to_record_error(e: i32, errno: std::io::Error) -> RecordError {
 
 /// Reads the last OpenSSL error that occurred while parsing a certificate.
 fn read_certificate_asn1_error() -> crate::Error {
-    match (unsafe { openssl::ERR_get_error() } as u32) >> 24 {
+    match err_get_lib(unsafe { openssl::ERR_get_error() }) {
         openssl::ERR_LIB_PEM | openssl::ERR_LIB_ASN1 => {
             errors! {pb::ASN1Error::ASN1ERROR_MALFORMED => pb::CertificateError::CERTIFICATEERROR_MALFORMED}
         }
@@ -65,12 +75,34 @@ fn read_certificate_asn1_error() -> crate::Error {
 
 /// Reads the last OpenSSL error that occurred while parsing a private key.
 fn read_private_key_asn1_error() -> crate::Error {
-    match (unsafe { openssl::ERR_get_error() } as u32) >> 24 {
+    match err_get_lib(unsafe { openssl::ERR_get_error() }) {
         openssl::ERR_LIB_PEM | openssl::ERR_LIB_ASN1 => {
             errors! {pb::ASN1Error::ASN1ERROR_MALFORMED => pb::PrivateKeyError::PRIVATEKEYERROR_MALFORMED}
         }
         _ => pb::PrivateKeyError::PRIVATEKEYERROR_UNSUPPORTED.into(),
     }
+}
+
+/// Returns the code of the library where a given error occurred.
+///
+/// This function replicates the behavior of `ERR_GET_LIB`. Unfortunately,
+/// `ERR_GET_LIB` cannot be used since it's a static function defined in
+/// the header file `openssl/err.h` (bindgen is unable to compile static
+/// functions).
+///
+/// WARNING: this function differs from OpenSSL 3's.
+fn err_get_lib(errcode: c_ulong) -> u32 {
+    ((errcode >> ERR_LIB_OFFSET) & ERR_LIB_MASK) as u32
+}
+
+/// Returns the reason of why an error occurred.
+///
+/// This function replicates the behavior of `ERR_GET_REASON`. For more information,
+/// see `err_get_lib`.
+///
+/// WARNING: this function differs from OpenSSL 3's.
+fn err_get_reason(errcode: c_ulong) -> u32 {
+    (errcode & ERR_REASON_MASK) as u32
 }
 
 /// Implements [`super::Ossl`] for [`Ossl`].
@@ -546,7 +578,7 @@ impl OsslTrait for Ossl {
                     Some(pb::State::STATE_ERROR),
             ),
             openssl::SSL_ERROR_SYSCALL | openssl::SSL_ERROR_SSL => {
-                let err = unsafe { openssl::ERR_get_error() } as u32;
+                let err = unsafe { openssl::ERR_get_error() };
                 if err == 0 && last_verify_error == 0 {
                     return (
                         Err(crate::Error::from((
@@ -561,9 +593,9 @@ impl OsslTrait for Ossl {
                         Some(pb::State::STATE_ERROR),
                     );
                 }
-                let errlib = (err >> 24) & 0xFF;
+                let errlib = err_get_lib(err);
                 let e_r =
-                    unsafe { openssl::ERR_error_string(err as u64, ptr::null_mut()) };
+                    unsafe { openssl::ERR_error_string(err, ptr::null_mut()) };
                 let err_cstring = unsafe { std::ffi::CStr::from_ptr(e_r) };
                 let mut err_string: String = "OpenSSL error: ".into();
                 if let Ok(s) = err_cstring.to_str() {
@@ -627,7 +659,7 @@ impl OsslTrait for Ossl {
                             )
                     };
                 }
-                match err & 0xFFF {
+                match err_get_reason(err) {
                     openssl::SSL_R_CERTIFICATE_VERIFY_FAILED => {
                         let x_e_s = unsafe {
                             openssl::X509_verify_cert_error_string(last_verify_error as i64)
