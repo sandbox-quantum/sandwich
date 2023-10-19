@@ -1,4 +1,5 @@
 import ctypes
+import socket
 
 import pysandwich.proto.io_pb2 as SandwichIOProto
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
@@ -18,6 +19,17 @@ class SwOwnedIOWrapper(IO):
 
     def __init__(self, owned_io):
         self._owned_io = owned_io
+        self._sock = None
+
+    @property
+    def sock(self):
+        return self._sock
+
+    @sock.setter
+    def sock(self, sock: socket.socket):
+        if not isinstance(sock, socket.socket):
+            raise ValueError("sock must be a socket type")
+        self._sock = sock
 
     def read(self, n, tunnel_state: SandwichTunnelProto.State) -> bytes:
         buf = ctypes.create_string_buffer(n)
@@ -46,7 +58,12 @@ class SwOwnedIOWrapper(IO):
         )
 
 
-def io_client_tcp_new(hostname, port, is_blocking) -> SwOwnedIOWrapper:
+def io_client_tcp_new(hostname: str, port: int, is_blocking: bool) -> SwOwnedIOWrapper:
+    if not isinstance(hostname, str):
+        raise ValueError("hostname must be a str type")
+    if not isinstance(port, int):
+        raise ValueError("port must be an int type")
+
     owned_ptr = ctypes.POINTER(OwnedIO)()
     err = sandwich.sandwich().c_call(
         "sandwich_io_client_tcp_new",
@@ -61,11 +78,14 @@ def io_client_tcp_new(hostname, port, is_blocking) -> SwOwnedIOWrapper:
     return io
 
 
-def io_socket_wrap(socket) -> SwOwnedIOWrapper:
+def io_socket_wrap(sock: socket.socket) -> SwOwnedIOWrapper:
+    if not isinstance(sock, socket.socket):
+        raise ValueError("sock must be a socket type")
+
     owned_ptr = ctypes.POINTER(OwnedIO)()
     err = sandwich.sandwich().c_call(
         "sandwich_io_socket_wrap_new",
-        ctypes.c_int(socket.fileno()),
+        ctypes.c_int(sock.fileno()),
         ctypes.byref(owned_ptr),
     )
     if err != SandwichIOProto.IOERROR_OK:
@@ -73,5 +93,5 @@ def io_socket_wrap(socket) -> SwOwnedIOWrapper:
     io = SwOwnedIOWrapper(owned_ptr.contents)
     # We need to keep a reference around to keep the garbage
     # collector happy.
-    io.socket = socket
+    io.sock = sock
     return io
