@@ -7,6 +7,7 @@
 
 extern crate boringssl;
 
+use std::ffi::c_ulong;
 use std::pin::Pin;
 use std::ptr::{self, NonNull};
 
@@ -206,6 +207,38 @@ impl OsslTrait for Ossl {
         unsafe {
             boringssl::SSL_CTX_set_verify(ssl_ctx.as_ptr(), flag, Some(Self::verify_callback));
         }
+    }
+
+    fn ssl_context_initialize_x509_verify_parameters(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+    ) -> crate::Result<()> {
+        let x509_verify_param =
+            NonNull::new(unsafe { boringssl::SSL_CTX_get0_param(ssl_ctx.as_ptr()) }).ok_or((
+                pb::SystemError::SYSTEMERROR_MEMORY,
+                "BoringSSL failed to initialize the X509_VERIFY_PARAM structure",
+            ))?;
+
+        fn enable_flag(
+            x509_verify_param: NonNull<boringssl::X509_VERIFY_PARAM>,
+            flag: impl Into<c_ulong>,
+        ) -> crate::Result<()> {
+            let flag = flag.into();
+            if unsafe { boringssl::X509_VERIFY_PARAM_set_flags(x509_verify_param.as_ptr(), flag) }
+                == 1
+            {
+                Ok(())
+            } else {
+                Err((
+                    pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID,
+                    format!("failed to set flag '{flag}'"),
+                )
+                    .into())
+            }
+        }
+
+        enable_flag(x509_verify_param, boringssl::X509_V_FLAG_X509_STRICT)?;
+        enable_flag(x509_verify_param, boringssl::X509_V_FLAG_TRUSTED_FIRST)?;
+        enable_flag(x509_verify_param, boringssl::X509_V_FLAG_PARTIAL_CHAIN)
     }
 
     fn ssl_context_set_verify_depth(ssl_ctx: NonNull<Self::NativeSslCtx>, depth: u32) {

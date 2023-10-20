@@ -203,6 +203,38 @@ impl OsslTrait for Ossl {
         }
     }
 
+    fn ssl_context_initialize_x509_verify_parameters(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+    ) -> crate::Result<()> {
+        let x509_verify_param =
+            NonNull::new(unsafe { openssl::SSL_CTX_get0_param(ssl_ctx.as_ptr()) }).ok_or((
+                pb::SystemError::SYSTEMERROR_MEMORY,
+                "OpenSSL 1.1.1 failed to initialize the X509_VERIFY_PARAM structure",
+            ))?;
+
+        fn enable_flag(
+            x509_verify_param: NonNull<openssl::X509_VERIFY_PARAM>,
+            flag: impl Into<c_ulong>,
+        ) -> crate::Result<()> {
+            let flag = flag.into();
+            if unsafe { openssl::X509_VERIFY_PARAM_set_flags(x509_verify_param.as_ptr(), flag) }
+                == 1
+            {
+                Ok(())
+            } else {
+                Err((
+                    pb::TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID,
+                    format!("failed to set flag '{flag}'"),
+                )
+                    .into())
+            }
+        }
+
+        enable_flag(x509_verify_param, openssl::X509_V_FLAG_X509_STRICT)?;
+        enable_flag(x509_verify_param, openssl::X509_V_FLAG_TRUSTED_FIRST)?;
+        enable_flag(x509_verify_param, openssl::X509_V_FLAG_PARTIAL_CHAIN)
+    }
+
     fn ssl_context_set_verify_depth(ssl_ctx: NonNull<Self::NativeSslCtx>, depth: u32) {
         unsafe {
             openssl::SSL_CTX_set_verify_depth(ssl_ctx.as_ptr(), depth as i32);
