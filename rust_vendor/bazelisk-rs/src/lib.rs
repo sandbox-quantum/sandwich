@@ -113,6 +113,8 @@
 extern crate hex_literal;
 extern crate tempfile;
 
+use std::path::Path;
+
 mod platform;
 pub use platform::{get_current_platform, Platform};
 
@@ -173,6 +175,29 @@ fn bazelisk_determine_exec_root(bazelisk: &mut Bazelisk) {
         .unwrap_or(bazelisk.configuration.working_dir.to_path_buf());
 }
 
+/// Calls `bazel info bazel-bin` to retrieve the path to produced binaries.
+fn bazelisk_determine_bin_path(bazelisk: &mut Bazelisk) {
+    let mut cmd = Command::from(&*bazelisk)
+        .arg("bazel-bin")
+        .prepare_command("info");
+    cmd.stdout(std::process::Stdio::piped());
+    let res = cmd.output();
+    if res.is_err() {
+        bazelisk.bin_path = bazelisk.configuration.working_dir.to_path_buf();
+        return;
+    }
+
+    let res = res.unwrap();
+    if !res.status.success() {
+        bazelisk.bin_path = bazelisk.configuration.working_dir.to_path_buf();
+        return;
+    }
+    bazelisk.bin_path = String::from_utf8(res.stdout)
+        .map_err(|e| format!("failed to parse stdout as an UTF-* string: {e}"))
+        .map(|s| std::path::PathBuf::from(s.trim()))
+        .unwrap_or(bazelisk.configuration.working_dir.to_path_buf());
+}
+
 /// A [`Bazelisk`] handle.
 pub struct Bazelisk {
     /// Configuration. Values come from [`Builder`].
@@ -184,6 +209,9 @@ pub struct Bazelisk {
 
     /// Execution root path.
     exec_root: std::path::PathBuf,
+
+    /// Binary path.
+    bin_path: std::path::PathBuf,
 }
 
 /// Instantiates a [`Bazelisk`] from a [`Builder`].
@@ -218,8 +246,10 @@ impl std::convert::TryFrom<Builder> for Bazelisk {
             configuration: builder.configuration,
             _tmpdir: tmpdir,
             exec_root: std::path::PathBuf::from("."),
+            bin_path: std::path::PathBuf::from("."),
         };
         bazelisk_determine_exec_root(&mut bazelisk);
+        bazelisk_determine_bin_path(&mut bazelisk);
 
         Ok(bazelisk)
     }
@@ -252,7 +282,7 @@ impl Bazelisk {
     ///
     /// ```no_run
     /// use bazelisk;
-    /// use bazelisk::ConfigurableCommand;
+    /// use bazelisk::Builder;
     ///
     /// // Instantiates a Bazelisk object.
     /// let bazel = Builder::new().build().unwrap();
@@ -275,7 +305,7 @@ impl Bazelisk {
     ///
     /// ```no_run
     /// use bazelisk;
-    /// use bazelisk::ConfigurableCommand;
+    /// use bazelisk::Builder;
     ///
     /// // Instantiates a Bazelisk object.
     /// let bazel = Builder::new().build().unwrap();
@@ -300,7 +330,7 @@ impl Bazelisk {
     ///
     /// ```no_run
     /// use bazelisk;
-    /// use bazelisk::ConfigurableCommand;
+    /// use bazelisk::Builder;
     ///
     /// // Instantiates a Bazelisk object.
     /// let bazel = Builder::new().build().unwrap();
@@ -323,7 +353,7 @@ impl Bazelisk {
     ///
     /// ```no_run
     /// use bazelisk;
-    /// use bazelisk::ConfigurableCommand;
+    /// use bazelisk::Builder;
     ///
     /// // Instantiates a Bazelisk object.
     /// let bazel = Builder::new().build().unwrap();
@@ -342,6 +372,43 @@ impl Bazelisk {
         let mut cmd = self.action_graph();
         cmd.0.target(target);
         cmd
+    }
+
+    /// Returns the execution root directory of the current bazel instance.
+    ///
+    /// This path can be obtained by calling `bazel info execution_root`.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use bazelisk;
+    /// use bazelisk::Builder;
+    ///
+    /// let bazel  = Builder::new().build().unwrap();
+    /// let exec_root = bazel.exec_root();
+    /// println!("exec_root is {}", exec_root.display());
+    /// ```
+    pub fn exec_root(&self) -> &Path {
+        self.exec_root.as_path()
+    }
+
+    /// Returns the binary directory of the current bazel instance.
+    ///
+    /// This path can be obtained by calling `bazel info bazel-bin`.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use bazelisk;
+    /// use bazelisk::Builder;
+    ///
+    /// let bazel  = Builder::new().build().unwrap();
+    /// let bin_path = bazel.bin_path();
+    /// println!("bin_path is {}", bin_path.display());
+    ///
+    /// ```
+    pub fn bin_path(&self) -> &Path {
+        self.bin_path.as_path()
     }
 }
 
