@@ -147,6 +147,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]
 mod test {
+    #[cfg(not(feature = "bazel"))]
+    extern crate testdata;
+    #[cfg(not(feature = "bazel"))]
+    use std::path::Path;
+
     /// Resolves the filepath of a runfiles file (data attributes).
     #[allow(dead_code)]
     #[cfg(feature = "bazel")]
@@ -163,16 +168,14 @@ mod test {
     }
 
     #[cfg(not(feature = "bazel"))]
-    pub(crate) fn resolve_runfile(path: &str) -> String {
-        extern crate testdata;
-        let file_name = std::path::Path::new(path).file_name().unwrap();
-        testdata::resolve_file(file_name)
+    pub(crate) fn resolve_runfile(path: impl AsRef<Path>) -> String {
+        let path = path.as_ref();
+        testdata::resolve_file(path)
             .or_else(|_| {
-                let p = std::path::Path::new("testdata").join(file_name);
-                if !p.is_file() {
-                    panic!("{} does not exist", file_name.to_string_lossy());
+                if !path.is_file() {
+                    panic!("{} does not exist", path.display());
                 }
-                Ok::<String, String>(String::from(p.to_string_lossy()))
+                Ok::<String, String>(String::from(path.to_string_lossy()))
             })
             .unwrap()
     }

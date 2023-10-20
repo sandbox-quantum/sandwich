@@ -305,6 +305,11 @@ pub mod bazel {
             .run()?
         {
             if let Some(out_path) = p(&ar) {
+                if let Some(dir) = out_path.parent() {
+                    std::fs::create_dir_all(dir).map_err(|e| {
+                        format!("failed to create parent directory {}: {e}", dir.display())
+                    })?;
+                }
                 super::fs::copy_file(ar, &out_path)?;
             }
         }
