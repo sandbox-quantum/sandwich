@@ -20,6 +20,16 @@ import "pysandwich/proto/api/v1/certificate.proto";
 message EmptyVerifier {}
 
 // Verifier for X.509-based protocols such as TLS.
+//
+// When `X509Verifier` is used as the peer verifier in
+// [TLSOptions](TLSOptions.md), the following security requirements are
+// enforced:
+//  - Partial certificate chains are forbidden
+//  - CA certificates must include the key usage extension (`keyUsage`), and
+//  must
+//    have the `keyCertSign` usage.
+//
+// Some other default parameters are set to be as close as possible to RFC 5280.
 message X509Verifier {
   // List of trusted certificate authority certificates.
   //

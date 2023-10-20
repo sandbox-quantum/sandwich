@@ -78,6 +78,18 @@ pub(crate) trait Ossl {
     /// Sets the verify mode to a SSL context.
     fn ssl_context_set_verify_mode(ssl_ctx: NonNull<Self::NativeSslCtx>, mode: VerifyMode);
 
+    /// Initializes the X.509 verification parameters by setting default flags.
+    ///
+    /// This function is responsible for managing how X.509 certificates are
+    /// handled by the underlying implementation.
+    /// Default parameters are set to be as close as possible to RFC 5280.
+    ///
+    /// When tunnels are derived from the SSL context object, they inherit from
+    /// these parameters.
+    fn ssl_context_initialize_x509_verify_parameters(
+        ssl: NonNull<Self::NativeSslCtx>,
+    ) -> crate::Result<()>;
+
     /// Sets the maximum depth for the certificate chain verification.
     fn ssl_context_set_verify_depth(ssl_ctx: NonNull<Self::NativeSslCtx>, depth: u32);
 
@@ -486,6 +498,8 @@ where
 
         let ssl_ctx = OsslInterface::new_ssl_context(mode)
             .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+
+        OsslInterface::ssl_context_initialize_x509_verify_parameters(ssl_ctx.as_nonnull())?;
 
         OsslInterface::ssl_context_set_kems(ssl_ctx.as_nonnull(), tls_options.kem.iter())
             .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
