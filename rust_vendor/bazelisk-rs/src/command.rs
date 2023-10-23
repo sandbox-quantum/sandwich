@@ -208,7 +208,7 @@ impl<'a> Command<'a> {
     ///
     /// This method takes care of setting the startup commands, the environment
     /// variables as well as the environment variables for actions.
-    pub(crate) fn prepare_command(
+    pub fn prepare_command(
         &mut self,
         subcommand: impl std::convert::AsRef<str>,
     ) -> std::process::Command {
