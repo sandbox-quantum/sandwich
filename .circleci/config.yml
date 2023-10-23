@@ -163,7 +163,7 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "cb:67:a0:71:3b:89:1b:19:d6:40:d5:b8:84:38:33:a4"
+            - "11:6b:1d:d8:ec:fb:6a:4f:2f:17:89:59:43:d3:12:10"
       - run:
           name: "Deploy documentation"
           command: |
