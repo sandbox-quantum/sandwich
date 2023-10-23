@@ -7,27 +7,26 @@ extern crate bazelisk;
 extern crate log;
 extern crate shlex;
 
+use std::path::{Path, PathBuf};
+
 /// Constructs a path relative to the `OUT_DIR` directory.
 /// If the environment variable `OUT_DIR` is not set, an error is returned.
 /// This function does not create the final path.
-pub fn out_dir_path(
-    path: impl std::convert::AsRef<std::path::Path>,
-) -> Result<std::path::PathBuf, String> {
+pub fn out_dir_path(path: impl std::convert::AsRef<Path>) -> Result<PathBuf, String> {
     std::env::var("OUT_DIR")
-        .map(|s| std::path::Path::new(&s).join(path))
+        .map(|s| Path::new(&s).join(path))
         .map_err(|e| format!("cannot read the environment variable `OUT_DIR`: {e}"))
 }
 
 /// Support methods related to the filesystem.
 pub mod fs {
+    use std::path::Path;
+
     /// _read_ and _write_ owner permissions mask.
     const MASK_RW_OWNER: u32 = 0o600;
 
     /// Applies a OR-bitwise to the permissions of a file.
-    pub fn file_perms_or(
-        path: impl std::convert::AsRef<std::path::Path>,
-        mask: u32,
-    ) -> Result<(), String> {
+    pub fn file_perms_or(path: impl std::convert::AsRef<Path>, mask: u32) -> Result<(), String> {
         use std::os::unix::fs::PermissionsExt;
 
         let path = path.as_ref();
@@ -51,15 +50,13 @@ pub mod fs {
     }
 
     /// Applies +rw to a file or a directory.
-    pub fn file_perms_add_rw(
-        path: impl std::convert::AsRef<std::path::Path>,
-    ) -> Result<(), String> {
+    pub fn file_perms_add_rw(path: impl std::convert::AsRef<Path>) -> Result<(), String> {
         file_perms_or(path, MASK_RW_OWNER)
     }
 
     /// Verifies that a the name of a file matches a pattern.
     pub fn file_name_matches(
-        path: impl std::convert::AsRef<std::path::Path>,
+        path: impl std::convert::AsRef<Path>,
         pattern: impl std::convert::AsRef<std::ffi::OsStr>,
     ) -> bool {
         path.as_ref().file_name() == Some(pattern.as_ref())
@@ -68,7 +65,7 @@ pub mod fs {
     /// Verifies that a path points to a file with a given extension.
     /// The given extension must not contain a leading dot.
     pub fn file_matches_extension(
-        path: impl std::convert::AsRef<std::path::Path>,
+        path: impl std::convert::AsRef<Path>,
         ext: impl std::convert::AsRef<std::ffi::OsStr>,
     ) -> bool {
         let path = path.as_ref();
@@ -84,7 +81,7 @@ pub mod fs {
 
     /// Compares the parent of a given path against a given pattern.
     pub fn parent_matches(
-        path: impl std::convert::AsRef<std::path::Path>,
+        path: impl std::convert::AsRef<Path>,
         pattern: impl std::convert::AsRef<std::ffi::OsStr>,
     ) -> bool {
         path.as_ref().parent().and_then(|p| p.file_name()) == Some(pattern.as_ref())
@@ -92,8 +89,8 @@ pub mod fs {
 
     /// Copies a file to a destination.
     pub fn copy_file(
-        src: impl std::convert::AsRef<std::path::Path>,
-        dst: impl std::convert::AsRef<std::path::Path>,
+        src: impl std::convert::AsRef<Path>,
+        dst: impl std::convert::AsRef<Path>,
     ) -> Result<(), String> {
         let src = src.as_ref();
         let dst = dst.as_ref();
@@ -186,11 +183,13 @@ pub mod fs {
 
 /// Support methods related to protobuf files.
 pub mod protobuf {
+    use std::path::Path;
+
     /// Removes `//!` and `#!` directives from a Rust file generated from a
     /// a protobuf.
     pub fn sanitize(
-        src: impl std::convert::AsRef<std::path::Path>,
-        dst: impl std::convert::AsRef<std::path::Path>,
+        src: impl std::convert::AsRef<Path>,
+        dst: impl std::convert::AsRef<Path>,
     ) -> Result<(), String> {
         let src = src.as_ref();
         let dst = dst.as_ref();
@@ -257,6 +256,8 @@ again, not removed
 
 /// Support methods related to Bazel and Bazelisk.
 pub mod bazel {
+    use std::path::{Path, PathBuf};
+
     use bazelisk::Bazelisk;
     use bazelisk::ConfigurableCommand;
 
@@ -271,6 +272,36 @@ pub mod bazel {
             .unwrap_or_default()
     }
 
+    /// Returns the binary path.
+    pub fn get_bin_path(bazel: &Bazelisk) -> Result<PathBuf, String> {
+        let extra_args = get_extra_flags_from_env();
+
+        let is_release = super::cargo::is_release();
+        let mut cmd = bazelisk::Command::from(bazel)
+            .arg("bazel-bin")
+            .arg("-c")
+            .arg(if is_release { "opt" } else { "fastbuild" })
+            .args(extra_args.iter())
+            .prepare_command("info");
+        cmd.stdout(std::process::Stdio::piped());
+        let res = cmd.output();
+        if let Err(e) = res {
+            return Err(format!("failed to execute command: {e}"));
+        }
+
+        let res = res.unwrap();
+        if !res.status.success() {
+            return Err(format!(
+                "command exited with a non-zero status: {}",
+                res.status
+            ));
+        }
+
+        String::from_utf8(res.stdout)
+            .map_err(|e| format!("failed to parse stdout as an UTF-* string: {e}"))
+            .map(|s| PathBuf::from(s.trim()))
+    }
+
     /// Builds a list of targets and copies some output files based on a predicate.
     /// If the predicate returns a path for a given artifact, then the latter
     /// is copied to the former.
@@ -281,7 +312,7 @@ pub mod bazel {
     ) -> Result<(), String>
     where
         S: std::convert::AsRef<str>,
-        P: std::ops::FnOnce(&std::path::Path) -> Option<std::path::PathBuf> + Copy,
+        P: std::ops::FnOnce(&Path) -> Option<PathBuf> + Copy,
     {
         let targets: Vec<S> = targets.into_iter().collect();
 
@@ -319,6 +350,8 @@ pub mod bazel {
 
 /// Support methods related to Cargo.
 pub mod cargo {
+    use std::path::Path;
+
     /// Reports an error to cargo.
     /// This function reports an error to cargo, and then panics.
     pub fn report_error(e: impl std::fmt::Display) {
@@ -348,7 +381,7 @@ pub mod cargo {
     /// On success, the library's name is returned, i.e. the name given to the
     /// compiler. For instance, `crypto` is returned when this function is called
     /// with the file `libcrypto.a`.
-    pub fn link_against(lib: impl std::convert::AsRef<std::path::Path>) -> Result<String, String> {
+    pub fn link_against(lib: impl std::convert::AsRef<Path>) -> Result<String, String> {
         let lib = lib.as_ref();
 
         let file_name = lib.file_name().ok_or_else(|| {

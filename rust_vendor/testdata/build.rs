@@ -21,8 +21,8 @@ const TARGETS: [&str; 1] = ["//testdata/..."];
 ///
 /// To compute that path, we concatenate the Bazel binary path with the target
 /// path to testdata.
-fn get_testdata_bin_path(bazel: &bazelisk::Bazelisk) -> PathBuf {
-    bazel.bin_path().join("testdata")
+fn get_testdata_bin_path(bazel: &bazelisk::Bazelisk) -> Result<PathBuf, String> {
+    build_support::bazel::get_bin_path(bazel).map(|p| p.join("testdata"))
 }
 
 fn main() {
@@ -35,7 +35,10 @@ fn main() {
         "failed to initialize Bazelisk"
     );
 
-    let testdata_bin_path = get_testdata_bin_path(&bazelisk);
+    let testdata_bin_path = cargo_unwrap!(
+        get_testdata_bin_path(&bazelisk),
+        "failed to get the binary path to testdata"
+    );
 
     cargo_unwrap!(
         build_support::bazel::build_targets(&bazelisk, TARGETS, |artifact| {
