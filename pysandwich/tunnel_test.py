@@ -142,8 +142,8 @@ def create_expired_client_conf(sw: Sandwich) -> tunnel.Context:
 
 def create_ios() -> tuple[SandwichIO.IO, SandwichIO.IO]:
     s1, s2 = socket.socketpair(family=socket.AF_UNIX, type=socket.SOCK_STREAM)
-    s1.setblocking(0)
-    s2.setblocking(0)
+    s1.setblocking(False)
+    s2.setblocking(False)
     return io_socket_wrap(s1), io_socket_wrap(s2)
 
 
