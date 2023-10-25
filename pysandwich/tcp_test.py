@@ -77,7 +77,7 @@ def create_client_conf(sw: Sandwich) -> tunnel.Context:
     return tunnel.Context.from_bytes(sw, buf)
 
 
-def create_tcp_listener(hostname, port) -> listener:
+def create_tcp_listener(hostname, port) -> listener.Listener:
     """Creates the configuration for a TCP listener.
     Returns:
         A TCP listener which is listening on hostname:port.
