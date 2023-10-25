@@ -185,7 +185,7 @@ macro_rules! GenProtoBasedErrorCode {
             }
         }
 
-        /// Implements [`TryFrom`] for [`ErrorCode`]..
+        /// Implements [`TryFrom`] for [`ErrorCode`].
         impl TryFrom<(i32, i32)> for ErrorCode {
             type Error = crate::Error;
 

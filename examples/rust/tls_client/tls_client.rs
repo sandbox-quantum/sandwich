@@ -25,23 +25,58 @@ pub struct TcpIo {
 }
 
 /// Creates the Sandwich configuration.
-pub fn create_client_configuration() -> Result<sw_api::Configuration, String> {
+pub fn create_client_configuration(tls_version: &str) -> Result<sw_api::Configuration, String> {
+    let tls_config = match tls_version {
+        "tls12" => {
+            r#"
+            tls12 <
+                ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
+            >
+            "#
+        }
+        "tls13" => {
+            r#"
+            tls13 <
+                ke: "prime256v1"
+                ke: "kyber768"
+                compliance <
+                    classical_choice: CLASSICAL_ALGORITHMS_ALLOW
+                >
+                ciphersuite: "TLS_CHACHA20_POLY1305_SHA256"
+                ciphersuite: "TLS_AES_256_GCM_SHA384"
+                ciphersuite: "TLS_AES_128_GCM_SHA256"
+            >
+            "#
+        }
+
+        _ => panic!("tls_version is not supported."),
+    };
+
     protobuf::text_format::parse_from_str::<sw_api::Configuration>(
-        r#"
-impl: IMPL_OPENSSL1_1_1_OQS
-compliance <
-    classical_choice: CLASSICAL_ALGORITHMS_ALLOW
->
-client <
-    tls <
-        common_options <
-            kem: "prime256v1"
-            kem: "kyber768"
-            empty_verifier <>
+        format!(
+            r#"
+        impl: IMPL_OPENSSL1_1_1_OQS
+        client <
+            tls <
+                common_options <
+                    tls_config <
+                        {}
+                    >
+                    empty_verifier <>
+                >
+            >
         >
-    >
->
     "#,
+            tls_config,
+        )
+        .as_str(),
     )
     .map_err(|e| format!("failed to create the Sandwich configuration: {e}"))
 }
@@ -75,8 +110,8 @@ pub fn create_tcpio_from_tcpstream(host: &str, port: u16) -> TcpIo {
 }
 
 #[allow(dead_code)]
-/// Connection to server with &Context, TcpIO
-/// For stdin/stdout test
+/// Connection to server with &Context, TcpIO.
+/// For stdin/stdout test.
 pub fn connect_to_server(
     client_ctx: &Context,
     tcp_io: TcpIo,
@@ -105,7 +140,7 @@ pub fn connect_to_server(
 
     let key_input_r = 123;
 
-    // Sets I/O polling
+    // Sets I/O polling.
     let poller = Poller::new().expect("creating poller failed");
     poller
         .add(&tcp_io.socket, Event::readable(tcp_io.fd as usize))
@@ -116,7 +151,7 @@ pub fn connect_to_server(
     let mut static_buffer = [0u8; 256];
     let mut dynamic_buffer = Vec::new();
     'outer: loop {
-        // Waits for I/O
+        // Waits for I/O.
         events.clear();
 
         poller
@@ -125,33 +160,32 @@ pub fn connect_to_server(
 
         for event in &events {
             if event.key == key_input_r {
-                // Event is read
-                // Forwards data to tunnel
+                // Event is read, forwards data to tunnel.
 
                 let n = input_r
                     .read_until(10, &mut dynamic_buffer)
                     .expect("error reading from input_r");
 
                 if n == 0 {
-                    // EOF, removes input_r from poller
+                    // EOF, removes input_r from poller.
                     poller
                         .delete(&input_r)
                         .expect("error removing input_r from poller");
                 } else {
-                    // Writes data to tunnel
+                    // Writes data to tunnel.
                     if tunnel.write(&dynamic_buffer).is_err() {
                         break 'outer;
                     }
                 }
                 dynamic_buffer.clear();
 
-                // Enables input_r event again if it's not removed
+                // Enables input_r event again if it's not removed.
                 poller
                     .modify(&input_r, Event::readable(key_input_r))
                     .unwrap();
             } else if event.key == tcp_io.fd as usize {
-                // Event is socket
-                // Reads from tunnel to output_w
+                // Event is socket.
+                // Reads from tunnel to output_w.
 
                 let n: usize = match tunnel.read(&mut static_buffer) {
                     Ok(n) => n,
@@ -168,7 +202,7 @@ pub fn connect_to_server(
                     .write_all(&static_buffer[..n])
                     .expect("error while writing to output_w");
 
-                // Enables tcp_io event again
+                // Enables tcp_io event again.
                 poller
                     .modify(&tcp_io.socket, Event::readable(tcp_io.fd as usize))
                     .unwrap();
@@ -180,8 +214,8 @@ pub fn connect_to_server(
 }
 
 #[allow(dead_code)]
-/// Connection to server with &Context, TcpIO
-/// For threading test
+/// Connection to server with &Context, TcpIO.
+/// For threading test.
 pub fn connect_to_server_mpsc(
     client_ctx: &Context,
     tcp_io: TcpIo,
@@ -205,16 +239,14 @@ pub fn connect_to_server_mpsc(
 
     let mut static_buffer = [0u8; 256];
 
-    // Reads input_r and
-    // Forwards data to tunnel
+    // Reads input_r and forwards data to tunnel.
     let data = input_r.recv().expect("error reading from input_r");
     tunnel.write(&data).expect("error while writing to tunnel");
 
-    // Reads data from tunnel and
-    // Forwards data to output_w
+    // Reads data from tunnel and forwards data to output_w.
     let mut n = 0;
     while n == 0 {
-        // Waits until data is in the tunnel
+        // Waits until data is in the tunnel.
         n = if let Ok(m) = tunnel.read(&mut static_buffer) {
             m
         } else {

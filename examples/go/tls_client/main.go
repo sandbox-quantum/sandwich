@@ -16,22 +16,38 @@ import (
 	sw "github.com/sandbox-quantum/sandwich/go"
 )
 
-func createClientConfiguration() *swapi.Configuration {
-	return &swapi.Configuration{
-		Impl: swapi.Implementation_IMPL_OPENSSL1_1_1_OQS,
-		Compliance: &swapi.Compliance{
-			ClassicalChoice: swapi.ClassicalAlgoChoice_CLASSICAL_ALGORITHMS_ALLOW,
+func createClientConfiguration(cert *string, tls_version *string) *swapi.Configuration {
+	EmptyVerifier := &swapi.TLSOptions_EmptyVerifier{
+		EmptyVerifier: &swapi.EmptyVerifier{},
+	}
+
+	x509_verifier := &swapi.TLSOptions_X509Verifier{
+		X509Verifier: &swapi.X509Verifier{
+			TrustedCas: []*swapi.Certificate{
+				{
+					Source: &swapi.Certificate_Static{
+						Static: &swapi.ASN1DataSource{
+							Data: &swapi.DataSource{
+								Specifier: &swapi.DataSource_Filename{
+									Filename: *cert,
+								},
+							},
+							Format: swapi.ASN1EncodingFormat_ENCODING_FORMAT_PEM,
+						},
+					},
+				},
+			},
 		},
+	}
+
+	config := &swapi.Configuration{
+		Impl: swapi.Implementation_IMPL_OPENSSL1_1_1_OQS,
 		Opts: &swapi.Configuration_Client{
 			Client: &swapi.ClientOptions{
 				Opts: &swapi.ClientOptions_Tls{
 					Tls: &swapi.TLSClientOptions{
 						CommonOptions: &swapi.TLSOptions{
-							Kem: []string{
-								"kyber768",
-								"p256_kyber512",
-								"prime256v1",
-							},
+							TlsConfig: &swapi.TLSConfig{},
 							PeerVerifier: &swapi.TLSOptions_EmptyVerifier{
 								EmptyVerifier: &swapi.EmptyVerifier{},
 							},
@@ -41,11 +57,58 @@ func createClientConfiguration() *swapi.Configuration {
 			},
 		},
 	}
+
+	tls13config := &swapi.TLSConfig{
+		Tls13: &swapi.TLSv13Config{
+			Compliance: &swapi.Compliance{
+				ClassicalChoice: swapi.ClassicalAlgoChoice_CLASSICAL_ALGORITHMS_ALLOW,
+			},
+			Ke: []string{
+				"kyber768",
+				"p256_kyber512",
+				"prime256v1",
+			},
+		},
+	}
+
+	tls12config := &swapi.TLSConfig{
+		Tls12: &swapi.TLSv12Config{
+			Ciphersuite: []string{
+				"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+				"TLS_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+				"TLS_RSA_WITH_AES_128_GCM_SHA256",
+			},
+		},
+	}
+
+	switch *tls_version {
+	case "tls12":
+		config.GetClient().GetTls().CommonOptions.TlsConfig = tls12config
+	case "tls13":
+		config.GetClient().GetTls().CommonOptions.TlsConfig = tls13config
+	default:
+		log.Fatalln("TLS version is not supported")
+	}
+
+	if len(*cert) == 0 {
+		config.GetClient().GetTls().CommonOptions.PeerVerifier = EmptyVerifier
+	} else {
+		config.GetClient().GetTls().CommonOptions.PeerVerifier = x509_verifier
+	}
+
+	return config
 }
 
 func main() {
 	host := flag.String("host", "", "Host to connect to")
 	port := flag.Int64("port", 0, "TCP port to connect to")
+	tls_version := flag.String("tls_version", "", "TLS version: --tls_version tls13 or tls12")
+	cert := flag.String("server_cert", "", "Server certificates")
 
 	flag.Parse()
 
@@ -53,17 +116,21 @@ func main() {
 		log.Fatalln("Please provide a client host and port!")
 	}
 
+	if *tls_version == "" {
+		log.Fatalln("Please provide a TLS protocol version, e.g --tls_version tls13 or tls12")
+	}
+
 	swio, ioerr := sw.IOTCPClient(*host, uint16(*port), true)
 	if ioerr != nil {
-		fmt.Println("Error connecting to destination:", ioerr)
+		log.Fatalln("Error connecting to destination:", ioerr)
 		return
 	}
 
 	sw_lib_ctx := sw.NewSandwich()
 
-	ctx, err := sw.NewTunnelContext(sw_lib_ctx, createClientConfiguration())
+	ctx, err := sw.NewTunnelContext(sw_lib_ctx, createClientConfiguration(cert, tls_version))
 	if err != nil {
-		fmt.Println("Error create tunnel context:", err)
+		log.Fatalln("Error create tunnel context:", err)
 		return
 	}
 
@@ -74,7 +141,6 @@ func main() {
 			},
 		},
 	})
-
 	if err != nil {
 		log.Fatalln(err)
 	}

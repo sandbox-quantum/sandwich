@@ -21,14 +21,25 @@ fn create_server_configuration(
     protobuf::text_format::parse_from_str::<sw_api::Configuration>(&format!(
         r#"
 impl: IMPL_BORINGSSL_OQS
-compliance <
-    classical_choice: CLASSICAL_ALGORITHMS_ALLOW
->
 server <
     tls <
         common_options <
-            kem: "prime256v1"
-            kem: "kyber768"
+            tls_config <
+                tls13 <
+                    ke: "prime256v1"
+                    ke: "kyber768"
+                    compliance <
+                        classical_choice: CLASSICAL_ALGORITHMS_ALLOW
+                    >
+                >
+                tls12 <
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                    ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                >
+            >
             empty_verifier <>
             identity <
                 certificate <

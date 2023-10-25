@@ -1,190 +1,209 @@
 // Copyright (c) SandboxAQ. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-//! Defines [`BitStrength`], [`AlgorithmQuantumness`] enums and [`assert_compliance`] methof.
+//! Defines [`BitStrength`], [`KESettings`] enums and [`assert_compliance`] method.
+
+use crate::tunnel::tls::get_tlsconfigs;
+use crate::tunnel::tls::security::BitStrength::{Bits128, Bits192, Bits256};
+use crate::tunnel::tls::security::KESettings::{Classical, Hybrid, QuantumSafe};
 
 use pb::TLSConfigurationError;
 
-use pb_api::configuration::configuration as pb_configuration;
-use pb_api::NISTSecurityStrengthBits;
-
-/// Extracts the list of allowed key exchange mechanisms (KEM) from the Configuration.
-fn get_kems(cfg: &pb_api::Configuration) -> crate::Result<&Vec<String>> {
-    cfg.opts
-        .as_ref()
-        .ok_or_else(|| TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into())
-        .and_then(|oneof| match oneof {
-            pb_configuration::Opts::Client(c) => Ok(&c.tls().common_options.kem),
-            pb_configuration::Opts::Server(s) => Ok(&s.tls().common_options.kem),
-            _ => Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into()),
-        })
-}
+use pb_api::compliance::{
+    ClassicalAlgoChoice, HybridAlgoChoice, NISTSecurityStrengthBits, QuantumSafeAlgoChoice,
+};
+use pb_api::tls::TLSv13Config;
 
 /// Represents the AES bit size equivalent hardness of breaking an algorithm.
-#[derive(Copy, Clone, PartialEq, PartialOrd, Eq)]
+#[derive(PartialEq, PartialOrd, Eq)]
 enum BitStrength {
-    Bits80 = 80,
-    Bits96 = 96,
-    Bits112 = 112,
     Bits128 = 128, // AES-128
     Bits192 = 192, // AES-192
     Bits256 = 256, // AES-256
 }
 
+/// Implements [`From`] for [`BitStrength`].
+impl From<NISTSecurityStrengthBits> for BitStrength {
+    fn from(nist_bit_strength: NISTSecurityStrengthBits) -> Self {
+        match nist_bit_strength {
+            NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_128 => Bits128,
+            NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_192 => Bits192,
+            NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_256 => Bits256,
+        }
+    }
+}
+
 /// A cryptographic algorithm: is it safe to attack from quantum computer, unsafe, or a hybrid.
-#[derive(Copy, Clone, PartialEq, Eq)]
-enum AlgorithmQuantumness {
+enum KESettings {
     Classical(BitStrength),
     QuantumSafe(BitStrength),
     Hybrid(BitStrength),
 }
 
-impl TryFrom<&str> for AlgorithmQuantumness {
+/// Implements [`TryFrom`] for [`KESettings`].
+impl TryFrom<&str> for KESettings {
     type Error = crate::Error;
 
-    /// Converts string to AlgorithmQuantumness and its corresponding BitStrength
     fn try_from(alg: &str) -> crate::Result<Self> {
-        match alg {
-            "brainpoolP384r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "brainpoolP512r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
+        let ke_setting: Option<KESettings> = match alg {
+            "brainpoolP256r1" => Some(Classical(Bits128)),
+            "brainpoolP384r1" => Some(Classical(Bits192)),
+            "brainpoolP512r1" => Some(Classical(Bits256)),
 
-            "prime256v1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
+            "sect283k1" => Some(Classical(Bits128)),
+            "sect283r1" => Some(Classical(Bits128)),
 
-            "secp160k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
-            "secp160r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
-            "secp160r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+            "sect409k1" => Some(Classical(Bits192)),
+            "sect409r1" => Some(Classical(Bits192)),
 
-            "secp192k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits96)),
+            "sect571k1" => Some(Classical(Bits256)),
+            "sect571r1" => Some(Classical(Bits256)),
 
-            "secp224k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
-            "secp224r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
+            "X25519" => Some(Classical(Bits128)),
+            "prime256v1" => Some(Classical(Bits128)),
 
-            "secp256k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "secp384r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "secp521r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
+            // Actually it's 224-bit security.
+            // See <https://github.com/openssl/openssl/blob/master/include/crypto/ecx.h#L37C11-L37C29>
+            "X448" => Some(Classical(Bits192)),
 
-            "sect163k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
-            "sect163r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
-            "sect163r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits80)),
+            "secp256k1" => Some(Classical(Bits128)),
+            "secp384r1" => Some(Classical(Bits192)),
+            "secp521r1" => Some(Classical(Bits256)),
 
-            "sect193r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits96)),
-            "sect193r2" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits96)),
+            // See <https://github.com/open-quantum-safe/oqs-provider/blob/main/oqsprov/oqsprov.c#L369>
+            "frodo640aes" => Some(QuantumSafe(Bits128)),
+            "p256_frodo640aes" => Some(Hybrid(Bits128)),
+            "x25519_frodo640aes" => Some(Hybrid(Bits128)),
 
-            "sect233k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
-            "sect233r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
+            "frodo640shake" => Some(QuantumSafe(Bits128)),
+            "p256_frodo640shake" => Some(Hybrid(Bits128)),
+            "x25519_frodo640shake" => Some(Hybrid(Bits128)),
 
-            "sect239k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits112)),
-            "sect283k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
-            "sect283r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits128)),
+            "frodo976aes" => Some(QuantumSafe(Bits192)),
+            "p384_frodo976aes" => Some(Hybrid(Bits192)),
+            "x448_frodo976aes" => Some(Hybrid(Bits192)),
 
-            "sect409k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
-            "sect409r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits192)),
+            "frodo976shake" => Some(QuantumSafe(Bits192)),
+            "p384_frodo976shake" => Some(Hybrid(Bits192)),
+            "x448_frodo976shake" => Some(Hybrid(Bits192)),
 
-            "sect571k1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
-            "sect571r1" => Ok(AlgorithmQuantumness::Classical(BitStrength::Bits256)),
+            "frodo1344aes" => Some(QuantumSafe(Bits256)),
+            "p521_frodo1344aes" => Some(Hybrid(Bits256)),
+            "frodo1344shake" => Some(QuantumSafe(Bits256)),
+            "p521_frodo1344shake" => Some(Hybrid(Bits256)),
 
-            "bikel1" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "bikel3" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+            "kyber512" => Some(QuantumSafe(Bits128)),
+            "p256_kyber512" => Some(Hybrid(Bits128)),
+            "x25519_kyber512" => Some(Hybrid(Bits128)),
 
-            "frodo1344aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
-            "frodo1344shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
-            "frodo640aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "frodo640shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "frodo976aes" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
-            "frodo976shake" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+            "kyber768" => Some(QuantumSafe(Bits192)),
+            "p384_kyber768" => Some(Hybrid(Bits192)),
+            "x448_kyber768" => Some(Hybrid(Bits192)),
+            "x25519_kyber768" => Some(Hybrid(Bits128)),
+            "p256_kyber768" => Some(Hybrid(Bits128)),
 
-            "hqc128" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "hqc192" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
-            "hqc256" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
+            "kyber1024" => Some(QuantumSafe(Bits256)),
+            "p521_kyber1024" => Some(Hybrid(Bits256)),
 
-            "kyber1024" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
-            "kyber512" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "kyber768" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+            "bikel1" => Some(QuantumSafe(Bits128)),
+            "p256_bikel1" => Some(Hybrid(Bits128)),
+            "x25519_bikel1" => Some(Hybrid(Bits128)),
 
-            "kyber90s1024" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits256)),
-            "kyber90s512" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits128)),
-            "kyber90s768" => Ok(AlgorithmQuantumness::QuantumSafe(BitStrength::Bits192)),
+            "bikel3" => Some(QuantumSafe(Bits192)),
+            "p384_bikel3" => Some(Hybrid(Bits192)),
+            "x448_bikel3" => Some(Hybrid(Bits192)),
 
-            "p256_bikel1" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p256_frodo640aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p256_frodo640shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p256_hqc128" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p256_kyber512" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
-            "p256_kyber90s512" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits128)),
+            "bikel5" => Some(QuantumSafe(Bits256)),
+            "p521_bikel5" => Some(Hybrid(Bits256)),
 
-            "p384_bikel3" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
-            "p384_frodo976aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
-            "p384_frodo976shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
-            "p384_hqc192" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
-            "p384_kyber768" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
-            "p384_kyber90s768" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits192)),
+            "hqc128" => Some(QuantumSafe(Bits128)),
+            "p256_hqc128" => Some(Hybrid(Bits128)),
+            "x25519_hqc128" => Some(Hybrid(Bits128)),
 
-            "p521_frodo1344aes" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
-            "p521_frodo1344shake" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
-            "p521_hqc256" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
-            "p521_kyber1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
-            "p521_kyber90s1024" => Ok(AlgorithmQuantumness::Hybrid(BitStrength::Bits256)),
+            "hqc192" => Some(QuantumSafe(Bits192)),
+            "p384_hqc192" => Some(Hybrid(Bits192)),
+            "x448_hqc192" => Some(Hybrid(Bits192)),
 
-            _ => Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into()),
+            "hqc256" => Some(QuantumSafe(Bits256)),
+            "p521_hqc256" => Some(Hybrid(Bits256)),
+
+            _ => None,
+        };
+
+        if let Some(ke) = ke_setting {
+            Ok(ke)
+        } else {
+            Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into())
         }
     }
 }
 
-/// Checks that the bit strength of the key is at least as strong as the desired strength.
-fn assert_bit_strength(
-    bit_strength: BitStrength,
+/// Checks if the TLS 1.3 Key Exchange (KE) are satified the compliance
+fn assert_tls13_ke_compliance(
+    kes: std::slice::Iter<'_, impl AsRef<str>>,
+    classical_choice: ClassicalAlgoChoice,
+    hybrid_choice: HybridAlgoChoice,
+    quantum_safe_choice: QuantumSafeAlgoChoice,
     desired_strength: NISTSecurityStrengthBits,
 ) -> crate::Result<()> {
-    match desired_strength {
-        NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_128 => {
-            if bit_strength < BitStrength::Bits128 {
-                Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
+    for k in kes {
+        let bit_strength = match KESettings::try_from(k.as_ref())? {
+            Hybrid(hybrid_bit_strength) => {
+                if hybrid_choice == pb_api::HybridAlgoChoice::HYBRID_ALGORITHMS_FORBID {
+                    Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
+                }
+                hybrid_bit_strength
             }
-        }
-        NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_192 => {
-            if bit_strength < BitStrength::Bits192 {
-                Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
+            Classical(classical_bit_strength) => {
+                if classical_choice == pb_api::ClassicalAlgoChoice::CLASSICAL_ALGORITHMS_FORBID {
+                    Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
+                }
+                classical_bit_strength
             }
-        }
-        NISTSecurityStrengthBits::BIT_STRENGTH_AT_LEAST_256 => {
-            if bit_strength < BitStrength::Bits256 {
-                Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
+            QuantumSafe(quantum_bit_strength) => {
+                if quantum_safe_choice
+                    == pb_api::QuantumSafeAlgoChoice::QUANTUM_SAFE_ALGORITHMS_FORBID
+                {
+                    Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
+                }
+                quantum_bit_strength
             }
+        };
+
+        if bit_strength < BitStrength::from(desired_strength) {
+            return Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into());
         }
     }
     Ok(())
 }
 
-/// Checks that the policy is satisfied by the configuration.
-pub(crate) fn assert_compliance(cfg: &pb_api::Configuration) -> crate::Result<()> {
-    let kems = get_kems(cfg)?;
-    let compliance = cfg.compliance.as_ref().unwrap_or_default();
+/// Checks that the TLS 1.3 Key Exchange (KE) and Ciphersuite are satisfied by the configuration.
+fn assert_tls13_compliance(tls13_config: &TLSv13Config) -> crate::Result<()> {
+    let kes: &Vec<String> = &tls13_config.ke;
+    let compliance = tls13_config.compliance.as_ref().unwrap_or_default();
     let hybrid_choice = compliance.hybrid_choice.enum_value_or_default();
     let classical_choice = compliance.classical_choice.enum_value_or_default();
-    let quantum_choice = compliance.quantum_safe_choice.enum_value_or_default();
+    let quantum_safe_choice = compliance.quantum_safe_choice.enum_value_or_default();
     let desired_strength = compliance.bit_strength_choice.enum_value_or_default();
-    for k in kems.iter() {
-        match AlgorithmQuantumness::try_from(k.as_str())? {
-            AlgorithmQuantumness::Hybrid(hybrid_bit_strength) => {
-                if hybrid_choice == pb_api::HybridAlgoChoice::HYBRID_ALGORITHMS_FORBID {
-                    Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
-                }
-                assert_bit_strength(hybrid_bit_strength, desired_strength)?;
-            }
-            AlgorithmQuantumness::Classical(classical_bit_strength) => {
-                if classical_choice == pb_api::ClassicalAlgoChoice::CLASSICAL_ALGORITHMS_FORBID {
-                    Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
-                }
-                assert_bit_strength(classical_bit_strength, desired_strength)?;
-            }
-            AlgorithmQuantumness::QuantumSafe(quantum_bit_strength) => {
-                if quantum_choice == pb_api::QuantumSafeAlgoChoice::QUANTUM_SAFE_ALGORITHMS_FORBID {
-                    Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE)?
-                }
-                assert_bit_strength(quantum_bit_strength, desired_strength)?;
-            }
-        }
-    }
+
+    assert_tls13_ke_compliance(
+        kes.iter(),
+        classical_choice,
+        hybrid_choice,
+        quantum_safe_choice,
+        desired_strength,
+    )?;
+
+    Ok(())
+}
+
+/// Checks that the policy is satisfied by the configuration.
+pub(crate) fn assert_compliance(cfg: &pb_api::Configuration) -> crate::Result<()> {
+    let tls_configs = get_tlsconfigs(cfg)?;
+    let tls13_config = &tls_configs.tls13;
+
+    assert_tls13_compliance(tls13_config)?;
+
     Ok(())
 }
 
@@ -195,14 +214,18 @@ mod test {
 
     /// Tests the default compliance: it accepts post quantum and hybrid.
     #[test]
-    fn test_default_compliance() {
+    fn test_default_tls13_compliance() {
         let cfg = parse_from_str::<pb_api::Configuration>(
             r#"
           client <
             tls <
               common_options <
-                kem: "kyber512"
-                kem: "p256_kyber512"
+                tls_config <
+                  tls13 <
+                    ke: "kyber512"
+                    ke: "p256_kyber512"
+                  >
+                >
               >
             >
           >
@@ -212,59 +235,23 @@ mod test {
         assert!(assert_compliance(&cfg).is_ok());
     }
 
-    /// Tests the default compliance: it forbids purely classical kems.
+    /// Tests the default compliance: it allows purely classical kes.
     #[test]
-    fn test_default_compliance_no_classical() {
+    fn test_default_tls13_compliance_classical() {
         let cfg = parse_from_str::<pb_api::Configuration>(
             r#"
           client <
             tls <
               common_options <
-                kem: "prime256v1"
-                kem: "kyber512"
-                kem: "p256_kyber512"
+                tls_config <
+                  tls13 <
+                    ke: "prime256v1"
+                    ke: "X25519"
+                    ke: "X448"
+                  >
+                >
               >
             >
-          >
-          "#,
-        )
-        .unwrap();
-        assert!(assert_compliance(&cfg).is_err());
-    }
-
-    #[test]
-    fn test_compliance_no_hybrid() {
-        let cfg = parse_from_str::<pb_api::Configuration>(
-            r#"
-          client <
-            tls <
-              common_options <
-                kem: "p256_kyber512"
-              >
-            >
-          >
-          compliance <
-            hybrid_choice: HYBRID_ALGORITHMS_FORBID
-          >
-          "#,
-        )
-        .unwrap();
-        assert!(assert_compliance(&cfg).is_err());
-    }
-
-    #[test]
-    fn test_compliance_bit_strength() {
-        let cfg = parse_from_str::<pb_api::Configuration>(
-            r#"
-          client <
-            tls <
-              common_options <
-                kem: "p256_kyber512"
-              >
-            >
-          >
-          compliance <
-            bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
           >
           "#,
         )
@@ -273,22 +260,113 @@ mod test {
     }
 
     #[test]
-    fn test_compliance_insufficient_bit_strength() {
+    fn test_tls13_compliance_no_hybrid() {
         let cfg = parse_from_str::<pb_api::Configuration>(
             r#"
           client <
             tls <
               common_options <
-                kem: "hqc192"
+                tls_config <
+                  tls13 <
+                    ke: "p256_kyber512"
+                    compliance <
+                      hybrid_choice: HYBRID_ALGORITHMS_FORBID
+                    >
+                  >
+                >
               >
             >
-          >
-          compliance <
-            bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
           >
           "#,
         )
         .unwrap();
         assert!(assert_compliance(&cfg).is_err());
+    }
+
+    #[test]
+    fn test_tls13_compliance_bit_strength() {
+        let cfg = parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                tls_config <
+                  tls13 <
+                      ke: "p256_kyber512"
+                      compliance <
+                      bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
+                      >
+                  >
+                >
+              >
+            >
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_ok());
+    }
+
+    #[test]
+    fn test_tls13_compliance_insufficient_bit_strength() {
+        let cfg = parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                tls_config <
+                  tls13 <
+                    ke: "hqc192"
+                    compliance <
+                      bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
+                    >
+                  >
+                >
+              >
+            >
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_err());
+    }
+
+    #[test]
+    fn test_tls13_compliance_classical_bit_strength() {
+        let cfg = parse_from_str::<pb_api::Configuration>(
+            r#"
+          client <
+            tls <
+              common_options <
+                tls_config <
+                  tls13 <
+                    ke: "brainpoolP256r1"
+                    ke: "brainpoolP384r1"
+                    ke: "brainpoolP512r1"
+                    ke: "sect283k1"
+                    ke: "sect283r1"
+                    ke: "sect409k1"
+                    ke: "sect409r1"
+                    ke: "sect571k1"
+                    ke: "sect571r1"
+                    ke: "X25519"
+                    ke: "prime256v1"
+                    ke: "X448"
+                    ke: "secp256k1"
+                    ke: "secp384r1"
+                    ke: "secp521r1"
+                    compliance <
+                      bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
+                      classical_choice: CLASSICAL_ALGORITHMS_ALLOW
+                    >
+                  >
+                >
+              >
+            >
+          >
+          "#,
+        )
+        .unwrap();
+        assert!(assert_compliance(&cfg).is_ok());
     }
 }

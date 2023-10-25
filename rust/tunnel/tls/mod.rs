@@ -3,11 +3,50 @@
 
 //! TLS module.
 
+use pb::TLSConfigurationError;
 use pb::TunnelError;
+use pb_api::configuration::configuration as pb_configuration;
+use pb_api::tls::TLSConfig;
+use protobuf::MessageField;
 
 pub(crate) use security::assert_compliance;
 
 mod security;
+
+/// Default supported TLS 1.2 ciphersuites.
+pub(crate) const DEFAULT_TLS12_CIPHERSUITES: [&str; 8] = [
+    // 256-bit secure encryption.
+    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+    "TLS_RSA_WITH_AES_256_GCM_SHA384",
+    // 128-bit secure encryption.
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+    "TLS_RSA_WITH_AES_128_GCM_SHA256",
+];
+
+/// Default supported TLS 1.3 ciphersuites.
+pub(crate) const DEFAULT_TLS13_CIPHERSUITES: [&str; 3] = [
+    // 256-bit secure encryption.
+    "TLS_CHACHA20_POLY1305_SHA256",
+    "TLS_AES_256_GCM_SHA384",
+    // 128-bit secure encryption.
+    "TLS_AES_128_GCM_SHA256",
+];
+
+/// Retrieves TLSConfig message from the Configuration.
+fn get_tlsconfigs(cfg: &pb_api::Configuration) -> crate::Result<&MessageField<TLSConfig>> {
+    cfg.opts
+        .as_ref()
+        .ok_or_else(|| TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into())
+        .and_then(|oneof| match oneof {
+            pb_configuration::Opts::Client(c) => Ok(&c.tls().common_options.tls_config),
+            pb_configuration::Opts::Server(s) => Ok(&s.tls().common_options.tls_config),
+            _ => Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into()),
+        })
+}
 
 /// A set of security requirements that can be updated with new requirements
 /// described in a given verifier `V`.
@@ -162,6 +201,9 @@ pub(crate) mod test {
     /// Path to a valid PEM certificate.
     pub(crate) const CERT_PEM_PATH: &str = "testdata/dilithium5.cert.pem";
 
+    /// Path to a valid RSA PEM certificate.
+    pub(crate) const CERT_RSA_PEM_PATH: &str = "testdata/rsa.cert.pem";
+
     /// Path to an invalid DER certificate.
     pub(crate) const CERT_INVALID_UNKNOWN_SIG_ALG_DER_PATH: &str =
         "testdata/cert_unknown_sig_alg.der";
@@ -178,6 +220,9 @@ pub(crate) mod test {
 
     /// Path to a valid PEM private key.
     pub(crate) const SK_PATH: &str = "testdata/dilithium5.key.pem";
+
+    /// Path to a valid RSA PEM private key.
+    pub(crate) const RSA_SK_PATH: &str = "testdata/rsa.key.pem";
 
     /// Path to a valid DER private key.
     pub(crate) const SK_DER_PATH: &str = "testdata/dilithium5.key.der";

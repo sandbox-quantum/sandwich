@@ -7,7 +7,6 @@ package saq.sandwich.proto.api.v1;
 
 option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
 
-import "proto/api/v1/compliance.proto";
 import "proto/api/v1/tls.proto";
 
 // Supported implementations.
@@ -71,9 +70,5 @@ message Configuration {
     ServerOptions server = 3;
   }
 
-  // Constraints applied on the choice of algorithms in the configuration.
-  //
-  // See [Compliance](Compliance.md).
-  Compliance compliance = 4;
   // Next id: 5
 }

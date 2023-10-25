@@ -7,13 +7,14 @@
 
 extern crate boringssl;
 
+use std::collections::HashSet;
 use std::ffi::c_ulong;
 use std::pin::Pin;
 use std::ptr::{self, NonNull};
 
 use pb::RecordError as PbRecordError;
 
-use super::super::ossl::{self, VerifyMode};
+use super::super::ossl::{self, TlsVersion, VerifyMode};
 use super::Ossl as OsslTrait;
 use crate::support::Pimpl;
 use crate::tunnel::{tls, Mode, RecordError};
@@ -46,26 +47,31 @@ impl<'a> TryFrom<&pb_api::Configuration> for Context<'a> {
 pub struct Tunnel<'a>(pub(crate) Pin<Box<ossl::OsslTunnel<'a, Ossl>>>);
 
 /// Default supported signing algorithms.
+/// See <https://github.com/google/boringssl/blob/master/include/openssl/ssl.h#L1061-L1073>
 /// This is needed for BoringSSL, because it doesn't support ED25519 by default.
 /// See <https://github.com/grpc/grpc/issues/24252#issuecomment-1305773355>
-const DEFAULT_SIGNATURE_ALGORITHMS: [u16; 17] = [
-    boringssl::SSL_SIGN_RSA_PKCS1_SHA1 as u16,
-    boringssl::SSL_SIGN_RSA_PKCS1_SHA256 as u16,
-    boringssl::SSL_SIGN_RSA_PKCS1_SHA384 as u16,
-    boringssl::SSL_SIGN_RSA_PKCS1_SHA512 as u16,
-    boringssl::SSL_SIGN_ECDSA_SHA1 as u16,
-    boringssl::SSL_SIGN_ECDSA_SECP256R1_SHA256 as u16,
-    boringssl::SSL_SIGN_ECDSA_SECP384R1_SHA384 as u16,
-    boringssl::SSL_SIGN_ECDSA_SECP521R1_SHA512 as u16,
-    boringssl::SSL_SIGN_RSA_PSS_RSAE_SHA256 as u16,
-    boringssl::SSL_SIGN_RSA_PSS_RSAE_SHA384 as u16,
-    boringssl::SSL_SIGN_RSA_PSS_RSAE_SHA512 as u16,
+/// The order of the list follows the example in boring/ssl/extension.cc.
+/// See <https://github.com/google/boringssl/blob/master/ssl/extensions.cc#L404-L425>
+const DEFAULT_SIGNATURE_ALGORITHMS: [u16; 15] = [
+    // 256-bit signatures.
     boringssl::SSL_SIGN_ED25519 as u16,
+    boringssl::SSL_SIGN_ECDSA_SECP256R1_SHA256 as u16,
+    boringssl::SSL_SIGN_RSA_PSS_RSAE_SHA256 as u16,
+    boringssl::SSL_SIGN_RSA_PKCS1_SHA256 as u16,
+    // Quantum-resistant signatures.
     boringssl::SSL_SIGN_DILITHIUM2 as u16,
     boringssl::SSL_SIGN_DILITHIUM3 as u16,
-    boringssl::SSL_SIGN_DILITHIUM5 as u16,
     boringssl::SSL_SIGN_FALCON512 as u16,
     boringssl::SSL_SIGN_FALCON1024 as u16,
+    boringssl::SSL_SIGN_DILITHIUM5 as u16,
+    // 384-bit signatures.
+    boringssl::SSL_SIGN_ECDSA_SECP384R1_SHA384 as u16,
+    boringssl::SSL_SIGN_RSA_PSS_RSAE_SHA384 as u16,
+    boringssl::SSL_SIGN_RSA_PKCS1_SHA384 as u16,
+    // 512-bit signatures.
+    boringssl::SSL_SIGN_ECDSA_SECP521R1_SHA512 as u16,
+    boringssl::SSL_SIGN_RSA_PSS_RSAE_SHA512 as u16,
+    boringssl::SSL_SIGN_RSA_PKCS1_SHA512 as u16,
 ];
 
 /// Convert a BoringSSL error to a [`RecordError`].
@@ -150,49 +156,152 @@ impl OsslTrait for Ossl {
         }
         .ok_or(pb::SystemError::SYSTEMERROR_MEMORY)?;
 
+        Self::ssl_context_set_tls12_ciphersuites(
+            ctx.as_nonnull(),
+            crate::tunnel::tls::DEFAULT_TLS12_CIPHERSUITES.iter(),
+        )?;
+
+        {
+            if unsafe {
+                boringssl::SSL_CTX_set1_groups(ctx.as_nonnull().as_ptr(), ptr::null_mut(), 0)
+            } != 1
+            {
+                return Err(pb::KEMError::KEMERROR_INVALID.into());
+            }
+
+            if unsafe {
+                boringssl::SSL_CTX_set_signing_algorithm_prefs(
+                    ctx.as_nonnull().as_ptr(),
+                    DEFAULT_SIGNATURE_ALGORITHMS.as_ptr(),
+                    DEFAULT_SIGNATURE_ALGORITHMS.len(),
+                )
+            } != 1
+            {
+                return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
+            }
+
+            if unsafe {
+                boringssl::SSL_CTX_set_verify_algorithm_prefs(
+                    ctx.as_nonnull().as_ptr(),
+                    DEFAULT_SIGNATURE_ALGORITHMS.as_ptr(),
+                    DEFAULT_SIGNATURE_ALGORITHMS.len(),
+                )
+            } != 1
+            {
+                return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
+            }
+        }
+
         unsafe {
             boringssl::SSL_CTX_set_quiet_shutdown(ctx.as_nonnull().as_ptr(), 0);
             boringssl::SSL_CTX_set_session_cache_mode(
                 ctx.as_nonnull().as_ptr(),
                 boringssl::SSL_SESS_CACHE_OFF as i32,
             );
-            boringssl::SSL_CTX_set1_groups(ctx.as_nonnull().as_ptr(), ptr::null_mut(), 0);
-            boringssl::SSL_CTX_set_signing_algorithm_prefs(
-                ctx.as_nonnull().as_ptr(),
-                DEFAULT_SIGNATURE_ALGORITHMS.as_ptr(),
-                DEFAULT_SIGNATURE_ALGORITHMS.len(),
-            );
-            boringssl::SSL_CTX_set_verify_algorithm_prefs(
-                ctx.as_nonnull().as_ptr(),
-                DEFAULT_SIGNATURE_ALGORITHMS.as_ptr(),
-                DEFAULT_SIGNATURE_ALGORITHMS.len(),
-            );
         }
         if mode == Mode::Client {
             Self::ssl_context_set_verify_mode(ctx.as_nonnull(), VerifyMode::Peer);
             let ptr = unsafe { boringssl::X509_STORE_new() };
             if ptr.is_null() {
-                return Err(pb::SystemError::SYSTEMERROR_MEMORY)?;
+                return Err(pb::SystemError::SYSTEMERROR_MEMORY.into());
             }
             unsafe {
                 boringssl::SSL_CTX_set_cert_store(ctx.as_nonnull().as_ptr(), ptr);
                 boringssl::X509_STORE_set_trust(ptr, 1);
             }
         }
+        Ok(ctx)
+    }
 
-        if unsafe {
-            boringssl::SSL_CTX_set_min_proto_version(
-                ctx.as_nonnull().as_ptr(),
-                boringssl::TLS1_3_VERSION as u16,
-            )
-        } == 1
+    fn ssl_context_set_min_protocol_version(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        min_tls_version: TlsVersion,
+    ) -> crate::Result<()> {
+        let min_proto = match min_tls_version {
+            TlsVersion::Tls12 => boringssl::TLS1_2_VERSION,
+            TlsVersion::Tls13 => boringssl::TLS1_3_VERSION,
+        };
+
+        if unsafe { boringssl::SSL_CTX_set_min_proto_version(ssl_ctx.as_ptr(), min_proto as u16) }
+            == 1
         {
-            Ok(ctx)
+            Ok(())
         } else {
             Err(
                 pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
                     .into(),
             )
+        }
+    }
+
+    fn ssl_context_set_max_protocol_version(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        max_tls_version: TlsVersion,
+    ) -> crate::Result<()> {
+        let max_proto = match max_tls_version {
+            TlsVersion::Tls12 => boringssl::TLS1_2_VERSION,
+            TlsVersion::Tls13 => boringssl::TLS1_3_VERSION,
+        };
+
+        if unsafe { boringssl::SSL_CTX_set_max_proto_version(ssl_ctx.as_ptr(), max_proto as u16) }
+            == 1
+        {
+            Ok(())
+        } else {
+            Err(
+                pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
+                    .into(),
+            )
+        }
+    }
+
+    fn ssl_context_set_tls12_ciphersuites(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        ciphersuites: std::slice::Iter<'_, impl AsRef<str>>,
+    ) -> crate::Result<()> {
+        if ciphersuites.len() == 0 {
+            return Ok(());
+        }
+
+        let cipher = crate::support::build_ciphersuites_list(ciphersuites, "!+-@")?;
+
+        let cstr =
+            std::ffi::CString::new(cipher).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
+        if unsafe { boringssl::SSL_CTX_set_strict_cipher_list(ssl_ctx.as_ptr(), cstr.as_ptr()) }
+            == 1
+        {
+            Ok(())
+        } else {
+            Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE.into())
+        }
+    }
+
+    fn ssl_context_set_tls13_ciphersuites(
+        _ssl_ctx: NonNull<Self::NativeSslCtx>,
+        ciphersuites: std::slice::Iter<'_, impl AsRef<str>>,
+    ) -> crate::Result<()> {
+        if ciphersuites.len() == 0 {
+            return Ok(());
+        }
+
+        // BoringSSL does not let user to set TLS 1.3 ciphersuites.
+        // We simulate the check for allowed ciphersuites in TLS 1.3.
+        let allowed_ciphersuites = HashSet::from(crate::tunnel::tls::DEFAULT_TLS13_CIPHERSUITES);
+        let mut input_ciphersuites: HashSet<&str> = HashSet::new();
+        for cipher in ciphersuites {
+            if crate::support::contains_any_of(cipher.as_ref(), "!+-@") {
+                return Err(
+                    pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_CONTROL_CHARACTERS
+                        .into(),
+                );
+            }
+            input_ciphersuites.insert(cipher.as_ref());
+        }
+
+        if input_ciphersuites.difference(&allowed_ciphersuites).count() == 0 {
+            Ok(())
+        } else {
+            Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE.into())
         }
     }
 
@@ -247,31 +356,22 @@ impl OsslTrait for Ossl {
         }
     }
 
-    fn ssl_context_set_kems(
+    fn ssl_context_set_kes(
         ssl_ctx: NonNull<Self::NativeSslCtx>,
-        kems: std::slice::Iter<'_, String>,
+        kes: std::slice::Iter<'_, impl AsRef<str>>,
     ) -> crate::Result<()> {
-        let mut nids = Vec::<i32>::new();
-        for k in kems {
-            let nid = match std::ffi::CString::new(k.as_bytes()) {
-                Ok(cstr) => Ok(unsafe { boringssl::OBJ_txt2nid(cstr.as_c_str().as_ptr()) }),
-                Err(_) => Err(
-                    errors! {pb::SystemError::SYSTEMERROR_MEMORY => pb::KEMError::KEMERROR_INVALID},
-                ),
-            }?;
-            if nid == (boringssl::NID_undef as i32) {
-                return Err(pb::KEMError::KEMERROR_INVALID.into());
-            }
-            nids.push(nid);
-            if nids.len() > (i32::MAX as usize) {
-                return Err(pb::KEMError::KEMERROR_TOO_MANY.into());
-            }
+        if kes.len() > u32::MAX as usize {
+            return Err(pb::KEMError::KEMERROR_TOO_MANY.into());
         }
-        if !nids.is_empty()
-            || unsafe {
-                boringssl::SSL_CTX_set1_groups(ssl_ctx.as_ptr(), nids.as_ptr(), nids.len())
-            } == 1
-        {
+
+        if kes.len() == 0 {
+            return Ok(());
+        }
+
+        let ke_list = crate::support::join_strings_with_delimiter(kes, ':');
+        let cstr =
+            std::ffi::CString::new(ke_list).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
+        if unsafe { boringssl::SSL_CTX_set1_groups_list(ssl_ctx.as_ptr(), cstr.as_ptr()) } == 1 {
             Ok(())
         } else {
             Err(pb::KEMError::KEMERROR_INVALID.into())
@@ -1069,13 +1169,22 @@ pub(crate) mod additional_test {
     /// Test tunnel constructor for client.
     #[test]
     fn test_client() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_AES_256_GCM_SHA384"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1095,7 +1204,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -1120,13 +1229,22 @@ pub(crate) mod additional_test {
     /// Test tunnel constructor for server.
     #[test]
     fn test_server() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_AES_256_GCM_SHA384"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   empty_verifier<>
                   identity <
                     certificate <
@@ -1156,7 +1274,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -1182,13 +1300,22 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_CHACHA20_POLY1305_SHA256"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1208,18 +1335,27 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_CHACHA20_POLY1305_SHA256"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   empty_verifier<>
                   identity<
                     certificate <
@@ -1249,7 +1385,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1282,19 +1418,214 @@ pub(crate) mod additional_test {
         );
     }
 
+    /// Test TLS 1.2 tunnel between client and server.
+    #[test]
+    fn test_tls12_all() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            impl: IMPL_BORINGSSL_OQS
+            client <
+              tls <
+                common_options <
+                  empty_verifier<>
+                  tls_config <
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
+                    >
+                  >
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                resolve_runfile(tls::test::CERT_RSA_PEM_PATH)
+            )
+            .as_str(),
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            impl: IMPL_BORINGSSL_OQS
+            server <
+              tls <
+                common_options <
+                  empty_verifier<>
+                  tls_config <
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
+                    >
+                  >
+                  identity<
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                resolve_runfile(tls::test::CERT_RSA_PEM_PATH),
+                resolve_runfile(tls::test::RSA_SK_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let tunnel_configuration =
+            protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
+                r#"
+                verifier<empty_verifier<>>
+            "#,
+            )
+            .unwrap();
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), tunnel_configuration.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), tunnel_configuration)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests invalid ciphersuite in TLS 1.2.
+    #[test]
+    fn test_tls12_ciphersuites_control_chars_invalid() {
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+            impl: IMPL_BORINGSSL_OQS
+            client <
+              tls <
+                common_options <
+                  tls_config <
+                    tls12 <
+                      ciphersuite: "-TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        Context::try_from(&sw_ctx, &config).unwrap_err();
+    }
+
+    /// Tests invalid ciphersuite in TLS 1.3.
+    #[test]
+    fn test_tls13_ciphersuites_control_chars_invalid() {
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+            impl: IMPL_BORINGSSL_OQS
+            client <
+              tls <
+                common_options <
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "!TLS_AES_256_GCM_SHA384"
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        Context::try_from(&sw_ctx, &config).unwrap_err();
+    }
+
     /// Test tunnel between client and server with an expired certificate.
     #[test]
     fn test_expired() {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1314,18 +1645,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier<>
                   identity <
                     certificate <
@@ -1355,7 +1691,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1406,13 +1742,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1433,18 +1774,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -1474,7 +1820,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1519,13 +1865,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1545,18 +1896,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -1586,7 +1942,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1641,13 +1997,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1667,18 +2028,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_BORINGSSL_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -1708,7 +2074,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_BORINGSSL_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);

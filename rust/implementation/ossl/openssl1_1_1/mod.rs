@@ -13,7 +13,7 @@ use std::ptr::{self, NonNull};
 use openssl1_1_1 as openssl;
 use pb::RecordError as PbRecordError;
 
-use super::super::ossl::{self, VerifyMode};
+use super::super::ossl::{self, TlsVersion, VerifyMode};
 use super::Ossl as OsslTrait;
 use crate::support::Pimpl;
 use crate::tunnel::{tls, Mode, RecordError};
@@ -105,6 +105,22 @@ fn err_get_reason(errcode: c_ulong) -> u32 {
     (errcode & ERR_REASON_MASK) as u32
 }
 
+/// Translates ciphersuite from IANA standard name to OpenSSL name.
+fn get_openssl_name(iana_name: &str) -> crate::Result<&'static str> {
+    let cstr =
+        std::ffi::CString::new(iana_name).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
+    let openssl_name_ptr = unsafe { openssl::OPENSSL_cipher_name(cstr.as_ptr()) };
+    let openssl_name = unsafe { std::ffi::CStr::from_ptr(openssl_name_ptr) }
+        .to_str()
+        .map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
+
+    if openssl_name == "(NONE)" {
+        Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE.into())
+    } else {
+        Ok(openssl_name)
+    }
+}
+
 /// Implements [`super::Ossl`] for [`Ossl`].
 impl OsslTrait for Ossl {
     type NativeCertificate = openssl::x509_st;
@@ -126,6 +142,15 @@ impl OsslTrait for Ossl {
             )
         }
         .ok_or(pb::SystemError::SYSTEMERROR_MEMORY)?;
+
+        Self::ssl_context_set_tls12_ciphersuites(
+            ctx.as_nonnull(),
+            crate::tunnel::tls::DEFAULT_TLS12_CIPHERSUITES.iter(),
+        )?;
+        Self::ssl_context_set_tls13_ciphersuites(
+            ctx.as_nonnull(),
+            crate::tunnel::tls::DEFAULT_TLS13_CIPHERSUITES.iter(),
+        )?;
 
         unsafe {
             // When we no longer need a read buffer or a write buffer for a given SSL, then release the memory
@@ -151,7 +176,7 @@ impl OsslTrait for Ossl {
             );
 
             // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
-            // SSL_CTX_set1_groups(ctx, NULL, 0);
+            // SSL_CTX_set1_groups(ctx.as_nonull().as_ptr(), NULL, 0);
             openssl::SSL_CTX_ctrl(
                 ctx.as_nonnull().as_ptr(),
                 openssl::SSL_CTRL_SET_GROUPS as i32,
@@ -170,23 +195,105 @@ impl OsslTrait for Ossl {
                 openssl::X509_STORE_set_trust(ptr, 1);
             }
         }
+
+        Ok(ctx)
+    }
+
+    fn ssl_context_set_min_protocol_version(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        min_tls_version: TlsVersion,
+    ) -> crate::Result<()> {
+        let min_proto = match min_tls_version {
+            TlsVersion::Tls12 => openssl::TLS1_2_VERSION,
+            TlsVersion::Tls13 => openssl::TLS1_3_VERSION,
+        };
+
         // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
-        // SSL_CTX_set_min_proto_version(pimpl.as_mut_ptr(), openssl::TLS1_3_VERSION.into());
+        // SSL_CTX_set_min_proto_version(ssl_ctx.as_ptr(), min_proto.into());
         if unsafe {
             openssl::SSL_CTX_ctrl(
-                ctx.as_nonnull().as_ptr(),
+                ssl_ctx.as_ptr(),
                 openssl::SSL_CTRL_SET_MIN_PROTO_VERSION as i32,
-                openssl::TLS1_3_VERSION.into(),
+                min_proto.into(),
                 ptr::null_mut(),
             )
         } == 1
         {
-            Ok(ctx)
+            Ok(())
         } else {
             Err(
                 pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
                     .into(),
             )
+        }
+    }
+
+    fn ssl_context_set_max_protocol_version(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        max_tls_version: TlsVersion,
+    ) -> crate::Result<()> {
+        let max_proto = match max_tls_version {
+            TlsVersion::Tls12 => openssl::TLS1_2_VERSION,
+            TlsVersion::Tls13 => openssl::TLS1_3_VERSION,
+        };
+
+        // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+        // SSL_CTX_set_max_proto_version(ssl_ctx.as_ptr(), max_proto.into());
+        if unsafe {
+            openssl::SSL_CTX_ctrl(
+                ssl_ctx.as_ptr(),
+                openssl::SSL_CTRL_SET_MAX_PROTO_VERSION as i32,
+                max_proto.into(),
+                ptr::null_mut(),
+            )
+        } == 1
+        {
+            Ok(())
+        } else {
+            Err(
+                pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION
+                    .into(),
+            )
+        }
+    }
+
+    fn ssl_context_set_tls12_ciphersuites(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        ciphersuites: std::slice::Iter<'_, impl AsRef<str>>,
+    ) -> crate::Result<()> {
+        if ciphersuites.len() == 0 {
+            return Ok(());
+        }
+        let mut openssl_names: Vec<String> = Vec::new();
+        for std_name in ciphersuites {
+            let openssl_name = get_openssl_name(std_name.as_ref())?;
+            openssl_names.push(openssl_name.to_string())
+        }
+        let cipher = crate::support::build_ciphersuites_list(openssl_names.iter(), "!+@")?;
+        let cstr =
+            std::ffi::CString::new(cipher).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
+        if unsafe { openssl::SSL_CTX_set_cipher_list(ssl_ctx.as_ptr(), cstr.as_ptr()) } == 1 {
+            Ok(())
+        } else {
+            Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE.into())
+        }
+    }
+
+    fn ssl_context_set_tls13_ciphersuites(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        ciphersuites: std::slice::Iter<'_, impl AsRef<str>>,
+    ) -> crate::Result<()> {
+        if ciphersuites.len() == 0 {
+            return Ok(());
+        }
+
+        let cipher = crate::support::build_ciphersuites_list(ciphersuites, "!+-@")?;
+        let cstr =
+            std::ffi::CString::new(cipher).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
+        if unsafe { openssl::SSL_CTX_set_ciphersuites(ssl_ctx.as_ptr(), cstr.as_ptr()) } == 1 {
+            Ok(())
+        } else {
+            Err(pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE.into())
         }
     }
 
@@ -241,42 +348,35 @@ impl OsslTrait for Ossl {
         }
     }
 
-    fn ssl_context_set_kems(
+    fn ssl_context_set_kes(
         ssl_ctx: NonNull<Self::NativeSslCtx>,
-        kems: std::slice::Iter<'_, String>,
+        kes: std::slice::Iter<'_, impl AsRef<str>>,
     ) -> crate::Result<()> {
-        let mut nids = Vec::<i32>::new();
-        for k in kems {
-            let nid = match std::ffi::CString::new(k.as_bytes()) {
-                Ok(cstr) => Ok(unsafe { openssl::OBJ_txt2nid(cstr.as_c_str().as_ptr()) }),
-                Err(_) => Err(
-                    errors! {pb::SystemError::SYSTEMERROR_MEMORY => pb::KEMError::KEMERROR_INVALID},
-                ),
-            }?;
-            if nid == (openssl::NID_undef as i32) {
-                return Err(pb::KEMError::KEMERROR_INVALID.into());
-            }
-            nids.push(nid);
-            if nids.len() > (i32::MAX as usize) {
-                return Err(pb::KEMError::KEMERROR_TOO_MANY.into());
-            }
+        if kes.len() > u32::MAX as usize {
+            return Err(pb::KEMError::KEMERROR_TOO_MANY.into());
         }
-        if !nids.is_empty() {
-            // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
-            // SSL_CTX_set1_groups(ssl_ctx.as_mut_ptr(), nids.as_nonnull(), nids.len());
-            match unsafe {
-                openssl::SSL_CTX_ctrl(
-                    ssl_ctx.as_ptr(),
-                    openssl::SSL_CTRL_SET_GROUPS as i32,
-                    nids.len() as i64,
-                    nids.as_ptr() as *mut std::ffi::c_void,
-                )
-            } {
-                1 => Ok(()),
-                _ => Err(pb::KEMError::KEMERROR_INVALID.into()),
-            }
-        } else {
+
+        if kes.len() == 0 {
+            return Ok(());
+        }
+
+        let ke_list = crate::support::join_strings_with_delimiter(kes, ':');
+        let cstr =
+            std::ffi::CString::new(ke_list).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
+        // Bindgen can't parse function macros, so we use OpenSSL's internal API instead of the public API.
+        // SSL_CTX_set1_groups_list(ssl_ctx.as_ptr(), cstr.as_ptr());
+        if unsafe {
+            openssl::SSL_CTX_ctrl(
+                ssl_ctx.as_ptr(),
+                openssl::SSL_CTRL_SET_GROUPS_LIST as i32,
+                0.into(),
+                cstr.as_ptr() as *mut std::ffi::c_void,
+            )
+        } == 1
+        {
             Ok(())
+        } else {
+            Err(pb::KEMError::KEMERROR_INVALID.into())
         }
     }
 
@@ -1036,6 +1136,8 @@ pub(crate) mod additional_test {
     use crate::test::resolve_runfile;
     use crate::tunnel::{tls, Context};
 
+    use super::get_openssl_name;
+
     /// A simple I/O interface.
     struct IOBuffer {
         pub(self) read: Vec<u8>,
@@ -1137,13 +1239,22 @@ pub(crate) mod additional_test {
 
     #[test]
     fn test_client() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_AES_256_GCM_SHA384"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1163,7 +1274,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -1187,13 +1298,22 @@ pub(crate) mod additional_test {
     /// Test tunnel constructor for server.
     #[test]
     fn test_server() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_AES_256_GCM_SHA384"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -1223,7 +1343,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -1249,13 +1369,22 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_AES_256_GCM_SHA384"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1275,18 +1404,27 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "TLS_AES_256_GCM_SHA384"
+                    >
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -1316,7 +1454,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1350,19 +1488,213 @@ pub(crate) mod additional_test {
         );
     }
 
+    /// Tests TLS 1.2 tunnel between client and server.
+    #[test]
+    fn test_tls12_all() {
+        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
+            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
+
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
+            client <
+              tls <
+                common_options <
+                  tls_config <
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
+                    >
+                  >
+                  x509_verifier <
+                    trusted_cas <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                resolve_runfile(tls::test::CERT_RSA_PEM_PATH)
+            )
+            .as_str(),
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
+        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
+
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            format!(
+                r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
+            server <
+              tls <
+                common_options <
+                  empty_verifier <>
+                  tls_config <
+                    tls12 <
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                      ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
+                    >
+                  >
+                  identity<
+                    certificate <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                    private_key <
+                      static <
+                        data <
+                          filename: "{}"
+                        >
+                        format: ENCODING_FORMAT_PEM
+                      >
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+                resolve_runfile(tls::test::CERT_RSA_PEM_PATH),
+                resolve_runfile(tls::test::RSA_SK_PATH),
+            )
+            .as_str(),
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
+        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let tunnel_configuration =
+            protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
+                r#"
+                verifier<empty_verifier<>>
+            "#,
+            )
+            .unwrap();
+        let mut client = client_ctx
+            .new_tunnel(Box::new(client_io), tunnel_configuration.clone())
+            .unwrap();
+        let mut server = server_ctx
+            .new_tunnel(Box::new(server_io), tunnel_configuration)
+            .unwrap();
+
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_WANT_READ
+        );
+        assert_eq!(
+            server.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+        assert_eq!(
+            client.handshake().unwrap(),
+            pb::HandshakeState::HANDSHAKESTATE_DONE
+        );
+    }
+
+    /// Tests invalid ciphersuite in TLS 1.2.
+    #[test]
+    fn test_tls12_ciphersuites_control_chars_invalid() {
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
+            client <
+              tls <
+                common_options <
+                  tls_config <
+                    tls12 <
+                      ciphersuite: "-TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        Context::try_from(&sw_ctx, &config).unwrap_err();
+    }
+
+    /// Tests invalid ciphersuite in TLS 1.3.
+    #[test]
+    fn test_tls13_ciphersuites_control_chars_invalid() {
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+            r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
+            client <
+              tls <
+                common_options <
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                      ciphersuite: "!TLS_AES_256_GCM_SHA384"
+                    >
+                  >
+                >
+              >
+            >
+            "#,
+        )
+        .unwrap();
+
+        let sw_ctx = crate::Context;
+        Context::try_from(&sw_ctx, &config).unwrap_err();
+    }
+
     /// Test tunnel between client and server with an expired certificate.
     #[test]
     fn test_expired() {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1382,18 +1714,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -1423,7 +1760,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1481,13 +1818,18 @@ pub(crate) mod additional_test {
         let client_certificate = resolve_runfile("testdata/falcon1024.cert.pem");
         let client_private_key = resolve_runfile("testdata/falcon1024.key.pem");
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1524,18 +1866,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1572,7 +1919,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1618,13 +1965,18 @@ pub(crate) mod additional_test {
 
         let client_certificate = resolve_runfile("testdata/falcon1024.cert.pem");
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1643,18 +1995,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1691,7 +2048,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1734,13 +2091,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1761,18 +2123,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -1802,7 +2169,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -1843,13 +2210,18 @@ pub(crate) mod additional_test {
     /// Tests the constructor of a tunnel with a empty message for the tunnel verifier.
     #[test]
     fn test_tunnel_no_verifier() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1869,7 +2241,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -1884,13 +2256,18 @@ pub(crate) mod additional_test {
     /// Tests the constructor of a tunnel with a valid SAN verifier.
     #[test]
     fn test_tunnel_san_verifier_valid() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1910,7 +2287,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -1935,13 +2312,18 @@ pub(crate) mod additional_test {
     /// Tests the constructor of a tunnel with an empty SAN verifier.
     #[test]
     fn test_tunnel_empty_san_verifier() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -1961,7 +2343,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -1982,13 +2364,18 @@ pub(crate) mod additional_test {
     /// Tests the constructor of a tunnel with an invalid SAN verifier.
     #[test]
     fn test_tunnel_san_verifier_invalid() {
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2008,7 +2395,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
@@ -2040,13 +2427,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2066,18 +2458,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2107,7 +2504,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -2162,13 +2559,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2188,18 +2590,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2229,7 +2636,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -2286,13 +2693,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2312,18 +2724,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2353,7 +2770,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -2408,13 +2825,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2434,18 +2856,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2475,7 +2902,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -2532,13 +2959,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2558,18 +2990,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2599,7 +3036,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -2654,13 +3091,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2680,18 +3122,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2721,7 +3168,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -2778,13 +3225,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2804,18 +3256,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2845,7 +3302,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -2900,13 +3357,18 @@ pub(crate) mod additional_test {
         let ((cli_send, cli_recv), (serv_send, serv_recv)) =
             (std::sync::mpsc::channel(), std::sync::mpsc::channel());
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             client <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   x509_verifier <
                     trusted_cas <
                       static <
@@ -2926,18 +3388,23 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
-        let mut config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
+        let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
+            impl: IMPL_OPENSSL1_1_1_OQS
             server <
               tls <
                 common_options <
-                  kem: "kyber512"
+                  tls_config <
+                    tls13 <
+                      ke: "kyber512"
+                    >
+                  >
                   empty_verifier <>
                   identity <
                     certificate <
@@ -2967,7 +3434,7 @@ pub(crate) mod additional_test {
             .as_str(),
         )
         .unwrap();
-        config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
+
         let sw_ctx = crate::Context;
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
@@ -3013,5 +3480,89 @@ pub(crate) mod additional_test {
             client.handshake().unwrap(),
             pb::HandshakeState::HANDSHAKESTATE_DONE
         );
+    }
+    /// Tests valid translation from IANA names to OpenSSL names.
+    #[test]
+    fn test_get_openssl_name_valid() {
+        let iana_names = [
+            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
+            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
+            "TLS_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_PSK_WITH_AES_128_CBC_SHA",
+            "TLS_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_PSK_WITH_AES_256_CBC_SHA",
+        ];
+
+        let openssl_names = [
+            "ECDHE-ECDSA-AES128-GCM-SHA256",
+            "ECDHE-RSA-AES128-GCM-SHA256",
+            "ECDHE-ECDSA-AES256-GCM-SHA384",
+            "ECDHE-RSA-AES256-GCM-SHA384",
+            "ECDHE-ECDSA-CHACHA20-POLY1305",
+            "ECDHE-RSA-CHACHA20-POLY1305",
+            "ECDHE-PSK-CHACHA20-POLY1305",
+            "ECDHE-ECDSA-AES128-SHA",
+            "ECDHE-RSA-AES128-SHA",
+            "ECDHE-PSK-AES128-CBC-SHA",
+            "ECDHE-ECDSA-AES256-SHA",
+            "ECDHE-RSA-AES256-SHA",
+            "ECDHE-PSK-AES256-CBC-SHA",
+            "AES128-GCM-SHA256",
+            "AES256-GCM-SHA384",
+            "AES128-SHA",
+            "PSK-AES128-CBC-SHA",
+            "AES256-SHA",
+            "PSK-AES256-CBC-SHA",
+        ];
+
+        let openssl_names_from_iana_names: Vec<&str> = iana_names
+            .iter()
+            .filter_map(|n| get_openssl_name(n).ok())
+            .collect();
+
+        assert_eq!(openssl_names_from_iana_names, openssl_names);
+    }
+
+    /// Tests translation from invalid IANA names to OpenSSL names.
+    #[test]
+    fn test_get_openssl_name_invalid_name() {
+        let iana_names = ["AES256-SHA256"];
+
+        let openssl_names: [&str; 0] = [];
+
+        let openssl_names_from_iana_names: Vec<&str> = iana_names
+            .iter()
+            .filter_map(|n| get_openssl_name(n).ok())
+            .collect();
+
+        assert_eq!(openssl_names_from_iana_names, openssl_names);
+    }
+
+    /// Tests invalid translation from IANA names with control characters to OpenSSL names.
+    #[test]
+    fn test_get_openssl_name_invalid_control_chars() {
+        let iana_names = ["!AES256-SHA", "@AES256-SHA", "-AES256-SHA", "+AES256-SHA"];
+
+        let openssl_names: [&str; 0] = [];
+
+        let openssl_names_from_iana_names: Vec<&str> = iana_names
+            .iter()
+            .filter_map(|n| get_openssl_name(n).ok())
+            .collect();
+
+        assert_eq!(openssl_names_from_iana_names, openssl_names);
     }
 }
