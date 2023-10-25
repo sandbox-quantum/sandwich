@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import signal
-import socketserver
 import sys
 from functools import partial
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 
-from echo_tls_server.main import tcp_handler as server_tcp_handler
+from echo_tls_server.main import main as server_main
 from tls_client.main import main as client_main
 
 hello = b"hello\n"
@@ -20,22 +19,19 @@ TLS13_KEY_PATH = "testdata/dilithium5.key.pem"
 TLS12_CERT_PATH = "testdata/rsa.cert.pem"
 TLS12_KEY_PATH = "testdata/rsa.key.pem"
 
+SERVER_PORT = 54089
 
-def thread_server(port_w: Connection, cert: str, key: str) -> None:
-    server_handler = server_tcp_handler(cert, key)
-    server = socketserver.TCPServer(("127.0.0.1", 0), server_handler)
-    port_w.send_bytes(server.server_address[1].to_bytes(2, "big"))
-    server.serve_forever()
+
+def thread_server(cert: str, key: str) -> None:
+    server_main("127.0.0.1", SERVER_PORT, cert, key)
 
 
 def thread_client(
-    port_r: Connection,
     input_r: Connection,
     output_w: Connection,
     tls_version: str = "tls13",
 ) -> None:
-    port = int.from_bytes(port_r.recv_bytes(), "big")
-    client_main("127.0.0.1", port, tls_version, input_r, output_w)
+    client_main("127.0.0.1", SERVER_PORT, tls_version, input_r, output_w)
 
 
 def killme(sig, handle, client: Process, server: Process):
@@ -49,12 +45,11 @@ def killme(sig, handle, client: Process, server: Process):
 
 
 def test_server_client(thread_client, thread_server):
-    port_r, port_w = Pipe(duplex=False)
     input_r, input_w = Pipe(duplex=False)
     output_r, output_w = Pipe(duplex=False)
 
-    server = Process(target=thread_server, args=(port_w,))
-    client = Process(target=thread_client, args=(port_r, input_r, output_w))
+    server = Process(target=thread_server, args=())
+    client = Process(target=thread_client, args=(input_r, output_w))
 
     killme_wrapped = partial(killme, client=server, server=client)
 

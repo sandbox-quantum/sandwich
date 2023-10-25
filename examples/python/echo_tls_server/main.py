@@ -1,16 +1,17 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import socketserver
 
 # --8<-- [start:py_imports_proto]
 import pysandwich.proto.api.v1.compliance_pb2 as Compliance
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichTunnelProto
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
+import pysandwich.proto.api.v1.listener_configuration_pb2 as ListenerAPI
 import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.io_helpers as SandwichIOHelpers
 import pysandwich.tunnel as SandwichTunnel
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
+from pysandwich import listener as SandwichListener
 from pysandwich.sandwich import Sandwich
 
 # --8<-- [end:py_imports_proto]
@@ -61,53 +62,57 @@ def create_server_tun_conf() -> TunnelConfiguration:
     return tun_conf
 
 
+def create_tcp_listener(hostname: str, port: int) -> SandwichListener.Listener:
+    """Creates the configuration for a TCP listener.
+    Returns:
+        A TCP listener which is listening on hostname:port.
+    """
+    conf = ListenerAPI.ListenerConfiguration()
+    conf.tcp.addr.hostname = hostname
+    conf.tcp.addr.port = port
+    conf.tcp.blocking_mode = ListenerAPI.BLOCKINGMODE_BLOCKING
+
+    return SandwichListener.Listener(conf)
+
+
 # --8<-- [end:py_server_cfg]
+sw = Sandwich()
 
 
-class EchoHandler(socketserver.BaseRequestHandler):
-    ctx_conf: SandwichTunnel.Context
-
-    def handle(self):
-        swio = SandwichIOHelpers.io_socket_wrap(self.request)
-        server_ctx_conf = self.ctx_conf
-        # --8<-- [start:py_new_tunnel]
-        server_tun_conf = create_server_tun_conf()
-        server = SandwichTunnel.Tunnel(server_ctx_conf, swio, server_tun_conf)
-        # --8<-- [end:py_new_tunnel]
-
-        server.handshake()
-        state = server.state()
-        assert (
-            state == server.State.STATE_HANDSHAKE_DONE
-        ), f"Expected state HANDSHAKE_DONE, got {state}"
-
-        while True:
-            data = b""
-            while True:
-                c = server.read(1)
-                data += c
-                if c == b"\n":
-                    break
-            server.write(data)
-
-        server.close()
-
-
-def tcp_handler(cert: str, key: str):
+def server_to_client(server_ctx_conf, swio: SandwichIOHelpers.SwOwnedIOWrapper):
     # --8<-- [start:py_ctx]
-    sw = Sandwich()
+    server_tun_conf = create_server_tun_conf()
+    server = SandwichTunnel.Tunnel(server_ctx_conf, swio, server_tun_conf)
+
+    server.handshake()
+    state = server.state()
+    assert (
+        state == server.State.STATE_HANDSHAKE_DONE
+    ), f"Expected state HANDSHAKE_DONE, got {state}"
+
+    while True:
+        data = b""
+        while True:
+            c = server.read(1)
+            data += c
+            if c == b"\n":
+                break
+        server.write(data)
+
+    server.close()
+    # --8<-- [end:py_ctx]
+
+
+def main(hostname: str, port: int, cert: str, key: str):
     server_ctx_conf = SandwichTunnel.Context.from_config(
         sw, create_server_conf(cert, key)
     )
-    # --8<-- [end:py_ctx]
-    EchoHandler.ctx_conf = server_ctx_conf
-    return EchoHandler
+    listener = create_tcp_listener(hostname, port)
+    listener.listen()
 
-
-def main(host: str, port: int, cert: str, key: str):
-    handler = tcp_handler(cert, key)
-    server = socketserver.TCPServer((host, port), handler)
-    server.serve_forever()
+    while True:
+        server_io = listener.accept()
+        server_to_client(server_ctx_conf, server_io)
 
 
 if __name__ == "__main__":
