@@ -22,7 +22,7 @@ _PONG_MSG = b"PONG"
 _CERT_PATH = "testdata/falcon1024.cert.pem"
 _KEY_PATH = "testdata/falcon1024.key.pem"
 
-_DEFAULT_KEM = "kyber512"
+_DEFAULT_KE = "kyber512"
 
 
 def create_server_conf(sw: Sandwich) -> tunnel.Context:
@@ -34,7 +34,10 @@ def create_server_conf(sw: Sandwich) -> tunnel.Context:
     conf = SandwichAPI.Configuration()
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
-    conf.server.tls.common_options.kem.append(_DEFAULT_KEM)
+    # Sets TLS 1.3 Compliance and Key Establishment (KE)
+    tls_config = conf.server.tls.common_options.tls_config
+    tls_config.tls13.ke.append(_DEFAULT_KE)
+
     conf.server.tls.common_options.empty_verifier.CopyFrom(
         SandwichVerifiers.EmptyVerifier()
     )
@@ -62,7 +65,9 @@ def create_client_conf(sw: Sandwich) -> tunnel.Context:
     conf = SandwichAPI.Configuration()
     conf.impl = SandwichAPI.IMPL_OPENSSL1_1_1_OQS
 
-    conf.client.tls.common_options.kem.append(_DEFAULT_KEM)
+    # Sets TLS 1.3 Compliance and Key Establishment (KE)
+    tls_config = conf.client.tls.common_options.tls_config
+    tls_config.tls13.ke.append(_DEFAULT_KE)
 
     cert = conf.client.tls.common_options.x509_verifier.trusted_cas.add().static
     cert.data.filename = _CERT_PATH

@@ -49,6 +49,16 @@ pub(crate) enum VerifyMode {
     Mutual,
 }
 
+/// Supported TLS Protocol versions.
+#[derive(PartialEq, Eq)]
+pub(crate) enum TlsVersion {
+    /// TLS Protocol version 1.2.
+    Tls12,
+
+    /// TLS Protocol version 1.3.
+    Tls13,
+}
+
 /// Trait that supports various OpenSSL-like implementations.
 pub(crate) trait Ossl {
     /// The C type for a certificate.
@@ -75,6 +85,30 @@ pub(crate) trait Ossl {
     /// Creates a new SSL context.
     fn new_ssl_context(mode: Mode) -> crate::Result<Pimpl<'static, Self::NativeSslCtx>>;
 
+    /// Sets minimum TLS Protocol.
+    fn ssl_context_set_min_protocol_version(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        min_tls_version: TlsVersion,
+    ) -> crate::Result<()>;
+
+    /// Sets maximum TLS Protocol.
+    fn ssl_context_set_max_protocol_version(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        max_tls_version: TlsVersion,
+    ) -> crate::Result<()>;
+
+    /// Sets the given TLS 1.2 ciphersuites as the default ciphersuite in current SSL context.
+    fn ssl_context_set_tls12_ciphersuites(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        ciphersuites: std::slice::Iter<'_, impl AsRef<str>>,
+    ) -> crate::Result<()>;
+
+    /// Sets the given TLS 1.3 ciphersuites as the default ciphersuite in current SSL context.
+    fn ssl_context_set_tls13_ciphersuites(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+        ciphersuites: std::slice::Iter<'_, impl AsRef<str>>,
+    ) -> crate::Result<()>;
+
     /// Sets the verify mode to a SSL context.
     fn ssl_context_set_verify_mode(ssl_ctx: NonNull<Self::NativeSslCtx>, mode: VerifyMode);
 
@@ -93,10 +127,10 @@ pub(crate) trait Ossl {
     /// Sets the maximum depth for the certificate chain verification.
     fn ssl_context_set_verify_depth(ssl_ctx: NonNull<Self::NativeSslCtx>, depth: u32);
 
-    /// Sets the KEM to a SSL context.
-    fn ssl_context_set_kems(
+    /// Sets the Key Exchange (KE) to a SSL context.
+    fn ssl_context_set_kes(
         ssl_ctx: NonNull<Self::NativeSslCtx>,
-        kems: std::slice::Iter<'_, String>,
+        kes: std::slice::Iter<'_, impl AsRef<str>>,
     ) -> crate::Result<()>;
 
     /// Creates a BIO object from a buffer.
@@ -501,7 +535,30 @@ where
 
         OsslInterface::ssl_context_initialize_x509_verify_parameters(ssl_ctx.as_nonnull())?;
 
-        OsslInterface::ssl_context_set_kems(ssl_ctx.as_nonnull(), tls_options.kem.iter())
+        let tls12 = &tls_options.tls_config.tls12;
+        let tls13 = &tls_options.tls_config.tls13;
+
+        let (min_tls_version, max_tls_version) = match (!tls12.is_none(), !tls13.is_none()) {
+            (true, false) => (TlsVersion::Tls12, TlsVersion::Tls12),
+            (true, true) => (TlsVersion::Tls12, TlsVersion::Tls13),
+            _ => (TlsVersion::Tls13, TlsVersion::Tls13),
+        };
+        OsslInterface::ssl_context_set_min_protocol_version(ssl_ctx.as_nonnull(), min_tls_version)?;
+        OsslInterface::ssl_context_set_max_protocol_version(ssl_ctx.as_nonnull(), max_tls_version)?;
+
+        OsslInterface::ssl_context_set_tls12_ciphersuites(
+            ssl_ctx.as_nonnull(),
+            tls12.ciphersuite.iter(),
+        )
+        .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+
+        OsslInterface::ssl_context_set_tls13_ciphersuites(
+            ssl_ctx.as_nonnull(),
+            tls13.ciphersuite.iter(),
+        )
+        .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+
+        OsslInterface::ssl_context_set_kes(ssl_ctx.as_nonnull(), tls13.ke.iter())
             .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
         OsslInterface::ssl_context_set_alpn_protos(
@@ -990,6 +1047,7 @@ macro_rules! GenOsslUnitTests {
             /// SSL context related tests.
             mod ssl_ctx {
                 use super::*;
+                use crate::implementation::ossl::TlsVersion;
 
                 /// Tests instantiates a [`SSL_CTX`] for a client.
                 #[test]
@@ -1003,36 +1061,36 @@ macro_rules! GenOsslUnitTests {
                     Ossl::new_ssl_context(Mode::Server).unwrap();
                 }
 
-                /// Tests [`Ossl::ssl_context_set_kems`] with two valid KEMs.
+                /// Tests [`Ossl::ssl_context_set_kes`] with two valid KEs.
                 #[test]
-                fn test_ssl_ctx_set_kems_valid() {
+                fn test_ssl_ctx_set_kes_valid() {
                     let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
 
-                    let kems = vec!["kyber512".into(), "X25519".into()];
-                    Ossl::ssl_context_set_kems(ssl.as_nonnull(), kems.iter()).unwrap();
+                    let kes = ["kyber512", "X25519"];
+                    Ossl::ssl_context_set_kes(ssl.as_nonnull(),kes.iter()).unwrap();
 
                     let ssl = Ossl::new_ssl_context(Mode::Server).unwrap();
 
-                    Ossl::ssl_context_set_kems(ssl.as_nonnull(), kems.iter()).unwrap();
+                    Ossl::ssl_context_set_kes(ssl.as_nonnull(),kes.iter()).unwrap();
                 }
 
-                /// Tests [`Ossl::ssl_context_set_kems`] with one valid KEM and one invalid KEM.
+                /// Tests [`Ossl::ssl_context_set_kes`] with one valid KE and one invalid KE.
                 #[test]
-                fn test_ssl_ctx_set_kems_invalid() {
+                fn test_ssl_ctx_set_kes_invalid() {
                     let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
 
-                    let kems = vec!["kyber512".into(), "X1337".into()];
-                    let err = Ossl::ssl_context_set_kems(ssl.as_nonnull(), kems.iter()).unwrap_err();
+                    let kes = ["kyber512", "X1337"];
+                    let err = Ossl::ssl_context_set_kes(ssl.as_nonnull(),kes.iter()).unwrap_err();
                     assert!(err.is(&errors! {pb::KEMError::KEMERROR_INVALID}));
                 }
 
-                /// Tests [`Ossl::ssl_context_set_kems`] with no KEMs.
+                /// Tests [`Ossl::ssl_context_set_kes`] with no KEs.
                 #[test]
-                fn test_ssl_ctx_set_kems_no_kems() {
+                fn test_ssl_ctx_set_kes_no_kes() {
                     let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
 
-                    let kems = Vec::<String>::new();
-                    Ossl::ssl_context_set_kems(ssl.as_nonnull(), kems.iter()).unwrap();
+                    let kes = Vec::<String>::new();
+                    Ossl::ssl_context_set_kes(ssl.as_nonnull(), kes.iter()).unwrap();
                 }
 
                 /// Tests [`Ossl::ssl_context_set_certificate`] with a valid PEM certificate.
@@ -1207,6 +1265,78 @@ macro_rules! GenOsslUnitTests {
                     let err = Ossl::ssl_context_set_alpn_protos(ssl.as_nonnull(), protos.iter()).unwrap_err();
                     assert!(err.is(&errors! {pb::ALPNError::ALPNERROR_LENGTH_ERROR}));
                 }
+
+                /// Tests [`Ossl::ssl_context_set_min_protocol_version`] is valid.
+                #[test]
+                fn test_ssl_ctx_set_min_proto_valid() {
+                    let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
+
+                    Ossl::ssl_context_set_min_protocol_version(ssl.as_nonnull(), TlsVersion::Tls12).unwrap();
+                    Ossl::ssl_context_set_min_protocol_version(ssl.as_nonnull(), TlsVersion::Tls13).unwrap();
+
+                    let ssl = Ossl::new_ssl_context(Mode::Server).unwrap();
+
+                    Ossl::ssl_context_set_min_protocol_version(ssl.as_nonnull(), TlsVersion::Tls12).unwrap();
+                    Ossl::ssl_context_set_min_protocol_version(ssl.as_nonnull(), TlsVersion::Tls13).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_max_protocol_version`] is valid.
+                #[test]
+                fn test_ssl_ctx_set_max_proto_valid() {
+                    let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
+
+                    Ossl::ssl_context_set_max_protocol_version(ssl.as_nonnull(), TlsVersion::Tls12).unwrap();
+                    Ossl::ssl_context_set_max_protocol_version(ssl.as_nonnull(), TlsVersion::Tls13).unwrap();
+
+                    let ssl = Ossl::new_ssl_context(Mode::Server).unwrap();
+
+                    Ossl::ssl_context_set_max_protocol_version(ssl.as_nonnull(), TlsVersion::Tls12).unwrap();
+                    Ossl::ssl_context_set_max_protocol_version(ssl.as_nonnull(), TlsVersion::Tls13).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_tls12_ciphersuites`] with valid ciphersuites.
+                #[test]
+                fn test_ssl_ctx_set_tls12_ciphersuites_valid() {
+                    let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
+                    let tls12_ciphersuites = ["TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                                              "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+                                              "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"];
+
+                    Ossl::ssl_context_set_tls12_ciphersuites(ssl.as_nonnull(), tls12_ciphersuites.iter()).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_tls12_ciphersuites`] with invalid TLS 1.3 ciphersuites.
+                #[test]
+                fn test_ssl_ctx_set_tls12_ciphersuites_invalid() {
+                    let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
+                    let tls12_ciphersuites = ["TLS_AES_128_GCM_SHA256",
+                                              "TLS_CHACHA20_POLY1305_SHA256",
+                                              "TLS_AES_256_GCM_SHA384"];
+
+                    Ossl::ssl_context_set_tls12_ciphersuites(ssl.as_nonnull(), tls12_ciphersuites.iter()).unwrap_err();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_tls13_ciphersuites`] with valid ciphersuites.
+                #[test]
+                fn test_ssl_ctx_set_tls13_ciphersuites_valid() {
+                    let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
+                    let tls13_ciphersuites = ["TLS_AES_128_GCM_SHA256",
+                                              "TLS_CHACHA20_POLY1305_SHA256",
+                                              "TLS_AES_256_GCM_SHA384"];
+
+                    Ossl::ssl_context_set_tls13_ciphersuites(ssl.as_nonnull(), tls13_ciphersuites.iter()).unwrap();
+                }
+
+                /// Tests [`Ossl::ssl_context_set_tls13_ciphersuites`] with invalid ciphersuites.
+                #[test]
+                fn test_ssl_ctx_set_tls13_ciphersuites_invalid() {
+                    let ssl = Ossl::new_ssl_context(Mode::Client).unwrap();
+                    let tls13_ciphersuites = ["TLS_AES_256_GCM_SHA384",
+                                              "TLS_AES_128_GCM_SHA250"];
+
+                    Ossl::ssl_context_set_tls13_ciphersuites(ssl.as_nonnull(), tls13_ciphersuites.iter()).unwrap_err();
+                }
+
             }
 
             /// BIO related tests.

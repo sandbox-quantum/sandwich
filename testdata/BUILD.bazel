@@ -24,6 +24,19 @@ gen_private_key(
     format = "PEM",
 )
 
+gen_private_key(
+    name = "rsa_private_key_pem",
+    out = "rsa.key.pem",
+    algorithm = "RSA",
+    format = "PEM",
+)
+
+gen_certificate(
+    name = "rsa_cert_pem",
+    out = "rsa.cert.pem",
+    private_key = ":rsa_private_key_pem",
+)
+
 gen_certificate(
     name = "falcon1024_cert_pem",
     out = "falcon1024.cert.pem",
@@ -99,6 +112,8 @@ filegroup(
         ":pq_cert_pem",
         ":pq_private_key_der",
         ":pq_private_key_pem",
+        ":rsa_cert_pem",
+        ":rsa_private_key_pem",
     ],
     visibility = ["//visibility:public"],
 )

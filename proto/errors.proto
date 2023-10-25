@@ -76,8 +76,14 @@ enum TLSConfigurationError { // ERRORKIND_TLS_CONFIGURATION
   // Unsupported protocol version error.
   TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION = 3;
 
-  /// Inconsistency between a private key and the corresponding certificate.
+  // Inconsistency between a private key and the corresponding certificate.
   TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE = 4;
+
+  // Unsupported TLS ciphersuite error.
+  TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE = 6;
+
+  // Control characters are not allowed.
+  TLSCONFIGURATIONERROR_UNSUPPORTED_CONTROL_CHARACTERS = 7;
 
   // Invalid configuration.
   TLSCONFIGURATIONERROR_INVALID = 5;

@@ -78,7 +78,13 @@ class TLSConfigurationError(SandwichException):
             "msg": """Unsupported protocol version error.""",
         },
         SandwichErrorProto.TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE: {
-            "msg": """/ Inconsistency between a private key and the corresponding certificate.""",
+            "msg": """Inconsistency between a private key and the corresponding certificate.""",
+        },
+        SandwichErrorProto.TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE: {
+            "msg": """Unsupported TLS ciphersuite error.""",
+        },
+        SandwichErrorProto.TLSCONFIGURATIONERROR_UNSUPPORTED_CONTROL_CHARACTERS: {
+            "msg": """Control characters are not allowed.""",
         },
         SandwichErrorProto.TLSCONFIGURATIONERROR_INVALID: {
             "msg": """Invalid configuration.""",

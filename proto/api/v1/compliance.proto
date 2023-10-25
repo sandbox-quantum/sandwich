@@ -10,18 +10,18 @@ option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v
 // Whether to allow or forbid classical algorithms. We define "classical
 // algorithms" as something that is not quantum-safe, such as ECC or RSA.
 //
-// By default, classical algorithms are **not** allowed.
+// By default, classical algorithms are allowed.
 //
 // This enum is part of the [Compliance](Compliance.md) configuration.
 //
 // See also [QuantumSafeAlgoChoice](QuantumSafeAlgoChoice.md) and
 // [HybridAlgoChoice](HybridAlgoChoice.md).
 enum ClassicalAlgoChoice {
-  // Forbids classical algorithms.
-  CLASSICAL_ALGORITHMS_FORBID = 0;
-
   // Allows classical algorithms.
-  CLASSICAL_ALGORITHMS_ALLOW = 1;
+  CLASSICAL_ALGORITHMS_ALLOW = 0;
+
+  // Forbids classical algorithms.
+  CLASSICAL_ALGORITHMS_FORBID = 1;
 };
 
 // Whether to allow or forbid quantum-safe algorithms.

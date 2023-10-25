@@ -107,8 +107,13 @@ auto TestInvalidServerContextCreation(std::unique_ptr<Runfiles> &runfiles)
                                   saq::sandwich::proto::api::v1::
                                       Implementation::IMPL_OPENSSL1_1_1_OQS)};
 
-  config.mutable_server()->mutable_tls()->mutable_common_options()->add_kem(
-      "kyber1024");
+  config.mutable_server()
+        ->mutable_tls()
+        ->mutable_common_options()
+        ->mutable_tls_config()
+        ->mutable_tls13()
+        ->add_ke("kyber1024");
+
   config.mutable_server()
       ->mutable_tls()
       ->mutable_common_options()

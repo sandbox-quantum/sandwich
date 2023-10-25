@@ -25,8 +25,12 @@ var (
 	pongMsg                = [...]byte{'P', 'O', 'N', 'G'}
 	certPath        string = "testdata/localhost.cert.pem"
 	certExpiredPath string = "testdata/cert_expired.pem"
+	RsaCertPath     string = "testdata/rsa.cert.pem"
 	keyPath         string = "testdata/localhost.key.pem"
 	keyExpiredPath  string = "testdata/private_key_cert_expired.pem"
+	RsaKeyPath      string = "testdata/rsa.key.pem"
+	tls12           string = "tls12"
+	tls13           string = "tls13"
 )
 
 // bufIO implements sandwich.IO, using a TX buffer and a
@@ -69,14 +73,14 @@ func (buf *bufIO) Write(b []byte, tunnel_state pb.State) (int, *sandwich.IOError
 }
 
 // createServerConfiguration creates the configuration for the server.
-func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
-	certfile, err := bazel.Runfile(certPath)
+func createServerConfiguration(t *testing.T, cert *string, key *string) (*api.Configuration, error) {
+	certfile, err := bazel.Runfile(*cert)
 	if err != nil {
-		t.Errorf("Could not load certificate file %s: %v", certPath, err)
+		t.Errorf("Could not load certificate file %s: %v", cert, err)
 	}
-	keyfile, err := bazel.Runfile(keyPath)
+	keyfile, err := bazel.Runfile(*key)
 	if err != nil {
-		t.Errorf("Could not load private key file %s: %v", keyPath, err)
+		t.Errorf("Could not load private key file %s: %v", key, err)
 	}
 
 	return &api.Configuration{
@@ -86,8 +90,24 @@ func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 				Opts: &api.ServerOptions_Tls{
 					Tls: &api.TLSServerOptions{
 						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
+							TlsConfig: &api.TLSConfig{
+								Tls13: &api.TLSv13Config{
+									Ke: []string{
+										"kyber1024",
+									},
+								},
+								Tls12: &api.TLSv12Config{
+									Ciphersuite: []string{
+										"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+										"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+										"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+										"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+										"TLS_RSA_WITH_AES_256_GCM_SHA384",
+										"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+										"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+										"TLS_RSA_WITH_AES_128_GCM_SHA256",
+									},
+								},
 							},
 							PeerVerifier: &api.TLSOptions_EmptyVerifier{
 								EmptyVerifier: &api.EmptyVerifier{},
@@ -133,22 +153,43 @@ func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 }
 
 // createClientConfiguration creates the configuration for the client.
-func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
-	certfile, err := bazel.Runfile(certPath)
+func createClientConfiguration(t *testing.T, cert *string, tls_version *string) (*api.Configuration, error) {
+	certfile, err := bazel.Runfile(*cert)
 	if err != nil {
-		t.Errorf("Could not load certificate file %s: %v", certPath, err)
+		t.Errorf("Could not load certificate file %s: %v", cert, err)
 	}
 
-	return &api.Configuration{
+	tls13config := &api.TLSConfig{
+		Tls13: &api.TLSv13Config{
+			Ke: []string{
+				"kyber1024",
+			},
+		},
+	}
+
+	tls12config := &api.TLSConfig{
+		Tls12: &api.TLSv12Config{
+			Ciphersuite: []string{
+				"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+				"TLS_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+				"TLS_RSA_WITH_AES_128_GCM_SHA256",
+			},
+		},
+	}
+
+	config := &api.Configuration{
 		Impl: api.Implementation_IMPL_OPENSSL1_1_1_OQS,
 		Opts: &api.Configuration_Client{
 			Client: &api.ClientOptions{
 				Opts: &api.ClientOptions_Tls{
 					Tls: &api.TLSClientOptions{
 						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
-							},
+							TlsConfig: &api.TLSConfig{},
 							PeerVerifier: &api.TLSOptions_X509Verifier{
 								X509Verifier: &api.X509Verifier{
 									TrustedCas: []*api.Certificate{
@@ -178,12 +219,25 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 				},
 			},
 		},
-	}, nil
+	}
+	var tls_config *api.TLSConfig
+	switch *tls_version {
+	case "tls12":
+		tls_config = tls12config
+	case "tls13":
+		tls_config = tls13config
+	default:
+		t.Errorf("TLS version is not supported")
+	}
+
+	config.GetClient().GetTls().CommonOptions.TlsConfig = tls_config
+
+	return config, nil
 }
 
 // createServerContext creates the server context.
-func createServerContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
-	config, err := createServerConfiguration(t)
+func createServerContext(t *testing.T, cert *string, key *string, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+	config, err := createServerConfiguration(t, cert, key)
 	if err != nil {
 		t.Errorf("Failed to create the server configuration: %v", err)
 		panic("failed")
@@ -199,8 +253,8 @@ func createServerContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelC
 }
 
 // createClientContext creates the client context.
-func createClientContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
-	config, err := createClientConfiguration(t)
+func createClientContext(t *testing.T, cert *string, tls_version *string, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+	config, err := createClientConfiguration(t, cert, tls_version)
 	if err != nil {
 		t.Errorf("Failed to create the client configuration: %v", err)
 		panic("failed")
@@ -251,14 +305,14 @@ func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwi
 	return tun, nil
 }
 
-func TestTunnels(t *testing.T) {
+func testTunnels(t *testing.T, cert *string, key *string, tls_version *string) {
 	sw := sandwich.NewSandwich()
-	serverContext, err := createServerContext(t, sw)
+	serverContext, err := createServerContext(t, cert, key, sw)
 	if err != nil {
 		t.Errorf("Failed to create Server context: %v", err)
 	}
 
-	clientContext, err := createClientContext(t, sw)
+	clientContext, err := createClientContext(t, cert, tls_version, sw)
 	if err != nil {
 		t.Errorf("Failed to create Client context: %v", err)
 	}
@@ -300,10 +354,11 @@ func TestTunnels(t *testing.T) {
 	}
 
 	err = clientTunnel.Handshake()
+	err = serverTunnel.Handshake()
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
-	err = serverTunnel.Handshake()
+	err = clientTunnel.Handshake()
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -351,14 +406,22 @@ func TestTunnels(t *testing.T) {
 	serverTunnel.Close()
 }
 
+func TestTls13Tunnels(t *testing.T) {
+	testTunnels(t, &certPath, &keyPath, &tls13)
+}
+
+func TestTls12Tunnels(t *testing.T) {
+	testTunnels(t, &RsaCertPath, &RsaKeyPath, &tls12)
+}
+
 func TestTunnelLargeReadWriteGC(t *testing.T) {
 	sw := sandwich.NewSandwich()
-	serverContext, err := createServerContext(t, sw)
+	serverContext, err := createServerContext(t, &certPath, &keyPath, sw)
 	if err != nil {
 		t.Errorf("Failed to create Server context: %v", err)
 	}
 
-	clientContext, err := createClientContext(t, sw)
+	clientContext, err := createClientContext(t, &certPath, &tls13, sw)
 	if err != nil {
 		t.Errorf("Failed to create Client context: %v", err)
 	}
@@ -462,8 +525,12 @@ func createServerExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 				Opts: &api.ServerOptions_Tls{
 					Tls: &api.TLSServerOptions{
 						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
+							TlsConfig: &api.TLSConfig{
+								Tls13: &api.TLSv13Config{
+									Ke: []string{
+										"kyber1024",
+									},
+								},
 							},
 							PeerVerifier: &api.TLSOptions_EmptyVerifier{
 								EmptyVerifier: &api.EmptyVerifier{},
@@ -516,8 +583,12 @@ func createClientExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 				Opts: &api.ClientOptions_Tls{
 					Tls: &api.TLSClientOptions{
 						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
+							TlsConfig: &api.TLSConfig{
+								Tls13: &api.TLSv13Config{
+									Ke: []string{
+										"kyber1024",
+									},
+								},
 							},
 							PeerVerifier: &api.TLSOptions_X509Verifier{
 								X509Verifier: &api.X509Verifier{

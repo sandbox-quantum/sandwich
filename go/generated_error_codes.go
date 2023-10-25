@@ -185,7 +185,9 @@ var errTLSConfigurationErrorMap = map[pb.TLSConfigurationError]string{
   pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID_CASE: `The configuration case (client/server) isn&#39;t valid.`,
   pb.TLSConfigurationError_TLSCONFIGURATIONERROR_EMPTY: `The configuration is empty.`,
   pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION: `Unsupported protocol version error.`,
-  pb.TLSConfigurationError_TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE: `/ Inconsistency between a private key and the corresponding certificate.`,
+  pb.TLSConfigurationError_TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE: `Inconsistency between a private key and the corresponding certificate.`,
+  pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE: `Unsupported TLS ciphersuite error.`,
+  pb.TLSConfigurationError_TLSCONFIGURATIONERROR_UNSUPPORTED_CONTROL_CHARACTERS: `Control characters are not allowed.`,
   pb.TLSConfigurationError_TLSCONFIGURATIONERROR_INVALID: `Invalid configuration.`,
 }
 

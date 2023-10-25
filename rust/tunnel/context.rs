@@ -163,36 +163,6 @@ pub(crate) mod test {
         use super::*;
         use crate::tunnel::tls;
 
-        /// Creates a [`pb_api::Certificate`].
-        #[allow(dead_code)]
-        pub(crate) fn create_cert(
-            path: &'_ str,
-            fmt: Option<pb_api::encoding_format::ASN1EncodingFormat>,
-        ) -> pb_api::Certificate {
-            let mut cert = pb_api::Certificate::new();
-            let src = cert.mut_static();
-            if let Some(f) = fmt {
-                src.format = f.into();
-            }
-            let ds = src.data.mut_or_insert_default();
-            ds.set_filename(path.to_string());
-            cert
-        }
-
-        /// Creates a [`sandwich_api_proto::Configuration`] for TLS 1.3.
-        #[allow(dead_code)]
-        pub(crate) fn create_configuration(mode: Mode, skip_impl: bool) -> pb_api::Configuration {
-            let mut conf = pb_api::Configuration::new();
-            match mode {
-                crate::tunnel::Mode::Client => conf.mut_client().mut_tls(),
-                crate::tunnel::Mode::Server => conf.mut_client().mut_tls(),
-            };
-            if !skip_impl {
-                conf.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-            }
-            conf
-        }
-
         /// Tests a [`sandwich_api_proto::Configuration`] for OpenSSL.
         #[test]
         fn test_configuration() {
@@ -202,7 +172,11 @@ pub(crate) mod test {
                 client <
                   tls <
                     common_options <
-                      kem: "kyber512"
+                      tls_config <
+                        tls13 <
+                          ke: "kyber512"
+                        >
+                      >
                       x509_verifier <
                         trusted_cas <
                           static <
@@ -240,7 +214,11 @@ pub(crate) mod test {
                 client <
                   tls <
                     common_options <
-                      kem: "kyber512"
+                      tls_config <
+                        tls13 <
+                          ke: "kyber512"
+                        >
+                      >
                       x509_verifier <
                         trusted_cas <
                           static <
@@ -279,7 +257,11 @@ pub(crate) mod test {
                 client <
                   tls <
                     common_options <
-                      kem: "kyber512"
+                      tls_config <
+                        tls13 <
+                          ke: "kyber512"
+                        >
+                      >
                       x509_verifier <
                         trusted_cas <
                           static <
@@ -322,7 +304,11 @@ pub(crate) mod test {
                 server <
                   tls <
                     common_options <
-                      kem: "kyber512"
+                      tls_config <
+                        tls13 <
+                          ke: "kyber512"
+                        >
+                      >
                       x509_verifier <
                         trusted_cas <
                           static <

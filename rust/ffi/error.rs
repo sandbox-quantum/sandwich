@@ -261,7 +261,7 @@ mod test {
         let err_str = sandwich_error_stack_str_new(p_err);
         // Convert the C String to a rust String
         let safe_err_str = cstr_to_safe_string(err_str);
-        let expect_str = "Error Stack:\nerr:[Errors regarding TLS configurations.: / Inconsistency between a private key and the corresponding certificate.],code:[2,4],msg:[This is the root error message]]\nerr:[Errors regarding TLS configurations.: Invalid configuration.],code:[2,5],msg:[This is the middle error message]]\nerr:[Tunnel error.: Unknown error.],code:[12,2],msg:[This is the final error message]]\n";
+        let expect_str = "Error Stack:\nerr:[Errors regarding TLS configurations.: Inconsistency between a private key and the corresponding certificate.],code:[2,4],msg:[This is the root error message]]\nerr:[Errors regarding TLS configurations.: Invalid configuration.],code:[2,5],msg:[This is the middle error message]]\nerr:[Tunnel error.: Unknown error.],code:[12,2],msg:[This is the final error message]]\n";
         // Free the Error string (owned by the C code)
         unsafe {
             sandwich_error_stack_str_free(err_str);
@@ -311,7 +311,7 @@ mod test {
         let err_str = sandwich_error_stack_str_new(p_err);
         // Convert the C String to a rust String
         let safe_err_str = cstr_to_safe_string(err_str);
-        let expect_str = "Error Stack:\nerr:[Errors regarding TLS configurations.: / Inconsistency between a private key and the corresponding certificate.],code:[2,4],msg:[This is the root error message]]\nerr:[Errors regarding protobuf.: / An invalid value was given.],code:[99911,917881],msg:[This is the middle error message]]\nerr:[Tunnel error.: Unknown error.],code:[12,2],msg:[This is the final error message]]\n";
+        let expect_str = "Error Stack:\nerr:[Errors regarding TLS configurations.: Inconsistency between a private key and the corresponding certificate.],code:[2,4],msg:[This is the root error message]]\nerr:[Errors regarding protobuf.: / An invalid value was given.],code:[99911,917881],msg:[This is the middle error message]]\nerr:[Tunnel error.: Unknown error.],code:[12,2],msg:[This is the final error message]]\n";
         // Free the Error string (owned by the C code)
         unsafe {
             sandwich_error_stack_str_free(err_str);

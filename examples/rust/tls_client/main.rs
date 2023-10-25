@@ -19,6 +19,10 @@ struct Cli {
     /// Port of the server.
     #[arg(short = 'p', long, value_parser = clap::value_parser!(u16).range(1..))]
     port: u16,
+
+    /// TLS version of the client.
+    #[arg(short = 't', long)]
+    tls_version: String,
 }
 
 fn main() {
@@ -29,7 +33,7 @@ fn main() {
     let args = Cli::parse();
     let tcp_io = tls_client::create_tcpio_from_tcpstream(&args.hostname, args.port);
 
-    let client_conf = tls_client::create_client_configuration()
+    let client_conf = tls_client::create_client_configuration(&args.tls_version)
         .expect("failed to create the Sandwich configuration");
 
     let sw = sandwich::Context;

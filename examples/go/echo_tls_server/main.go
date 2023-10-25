@@ -21,18 +21,34 @@ import (
 func createServerConfiguration(certfile *string, keyfile *string) *swapi.Configuration {
 	return &swapi.Configuration{
 		Impl: swapi.Implementation_IMPL_OPENSSL1_1_1_OQS,
-		Compliance: &swapi.Compliance{
-			ClassicalChoice: swapi.ClassicalAlgoChoice_CLASSICAL_ALGORITHMS_ALLOW,
-		},
 		Opts: &swapi.Configuration_Server{
 			Server: &swapi.ServerOptions{
 				Opts: &swapi.ServerOptions_Tls{
 					Tls: &swapi.TLSServerOptions{
 						CommonOptions: &swapi.TLSOptions{
-							Kem: []string{
-								"kyber768",
-								"p256_kyber512",
-								"prime256v1",
+							TlsConfig: &swapi.TLSConfig{
+								Tls13: &swapi.TLSv13Config{
+									Compliance: &swapi.Compliance{
+										ClassicalChoice: swapi.ClassicalAlgoChoice_CLASSICAL_ALGORITHMS_ALLOW,
+									},
+									Ke: []string{
+										"kyber768",
+										"p256_kyber512",
+										"prime256v1",
+									},
+								},
+								Tls12: &swapi.TLSv12Config{
+									Ciphersuite: []string{
+										"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+										"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+										"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+										"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+										"TLS_RSA_WITH_AES_256_GCM_SHA384",
+										"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+										"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+										"TLS_RSA_WITH_AES_128_GCM_SHA256",
+									},
+								},
 							},
 							PeerVerifier: &swapi.TLSOptions_EmptyVerifier{
 								EmptyVerifier: &swapi.EmptyVerifier{},

@@ -17,6 +17,9 @@ mkdocs_tree(
 go_binary(
     name = "echo_tls_server",
     srcs = ["main.go"],
+    data = [
+        "//testdata",
+    ],
     deps = [
         "//go:sandwich",
         "//proto:sandwich_go_proto",

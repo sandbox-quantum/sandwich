@@ -63,6 +63,7 @@ proto_library(
     srcs = ["tls.proto"],
     deps = [
         ":certificate_proto",
+        ":compliance_proto",
         ":private_key_proto",
         ":verifiers_proto",
     ],
@@ -91,7 +92,6 @@ proto_library(
         "//pysandwich:__subpackages__",
     ],
     deps = [
-        ":compliance_proto",
         ":listener_configuration_proto",
         ":tls_proto",
         ":tunnel_proto",
@@ -141,6 +141,9 @@ md_proto_library(
         "TLSOptions",
         "TLSClientOptions",
         "TLSServerOptions",
+        "TLSConfig",
+        "TLSv12Config",
+        "TLSv13Config",
 
         # tunnel.proto
         "TunnelConfiguration",
@@ -240,6 +243,7 @@ py_proto_library(
     visibility = ["//:__subpackages__"],
     deps = [
         ":certificate_python_proto",
+        ":compliance_python_proto",
         ":private_key_python_proto",
         ":verifiers_python_proto",
     ],
@@ -263,7 +267,6 @@ py_proto_library(
         "//pysandwich:__subpackages__",
     ],
     deps = [
-        ":compliance_python_proto",
         ":tls_python_proto",
         ":tunnel_python_proto",
     ],

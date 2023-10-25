@@ -21,8 +21,23 @@ def create_server_conf(cert_path: str, key_path: str) -> SandwichTunnelProto:
     conf = SandwichTunnelProto.Configuration()
     conf.impl = SandwichTunnelProto.IMPL_OPENSSL1_1_1_OQS
 
-    conf.compliance.classical_choice = Compliance.CLASSICAL_ALGORITHMS_ALLOW
-    conf.server.tls.common_options.kem.append("prime256v1")
+    # Sets TLS 1.3 Compliance, Key Establishment (KE) and Ciphersuites.
+    tls_config = conf.server.tls.common_options.tls_config
+    tls_config.tls13.ke.append("X25519")
+    tls_config.tls13.compliance.classical_choice = Compliance.CLASSICAL_ALGORITHMS_ALLOW
+
+    # Sets TLS 1.2 Ciphersuite.
+    ciphers = [
+        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+        "TLS_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_RSA_WITH_AES_128_GCM_SHA256",
+    ]
+    tls_config.tls12.ciphersuite.extend(ciphers)
 
     conf.server.tls.common_options.empty_verifier.CopyFrom(
         SandwichVerifiers.EmptyVerifier()
@@ -50,6 +65,8 @@ def create_server_tun_conf() -> TunnelConfiguration:
 
 
 class EchoHandler(socketserver.BaseRequestHandler):
+    ctx_conf: SandwichTunnel.Context
+
     def handle(self):
         swio = SandwichIOHelpers.io_socket_wrap(self.request)
         server_ctx_conf = self.ctx_conf
@@ -76,7 +93,7 @@ class EchoHandler(socketserver.BaseRequestHandler):
         server.close()
 
 
-def tcp_handler(key, cert):
+def tcp_handler(cert: str, key: str):
     # --8<-- [start:py_ctx]
     sw = Sandwich()
     server_ctx_conf = SandwichTunnel.Context.from_config(
@@ -87,8 +104,8 @@ def tcp_handler(key, cert):
     return EchoHandler
 
 
-def main(host, port, key, cert):
-    handler = tcp_handler(key, cert)
+def main(host: str, port: int, cert: str, key: str):
+    handler = tcp_handler(cert, key)
     server = socketserver.TCPServer((host, port), handler)
     server.serve_forever()
 
@@ -111,4 +128,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    main(args.host, args.port, args.key, args.cert)
+    main(args.host, args.port, args.cert, args.key)

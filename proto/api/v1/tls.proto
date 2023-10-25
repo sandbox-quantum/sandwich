@@ -8,6 +8,7 @@ package saq.sandwich.proto.api.v1;
 option go_package = "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1";
 
 import "proto/api/v1/certificate.proto";
+import "proto/api/v1/compliance.proto";
 import "proto/api/v1/private_key.proto";
 import "proto/api/v1/verifiers.proto";
 
@@ -28,15 +29,108 @@ message X509Identity {
   //
   // See also [PrivateKey](PrivateKey.md).
   PrivateKey private_key = 2;
+
+  // Next id: 3
+}
+
+// A configuration to constrain ciphersuite for TLS version 1.2.
+message TLSv12Config {
+  // Sets TLS 1.2 ciphersuite.
+  //
+  // Ciphersuites must follow IANA names.
+  //
+  // If ciphersuite is **not** set, the default ciphersuites listed here are used in preference order:
+  // | Default 256 bits security ciphersuites        |
+  // |-----------------------------------------------|
+  // | TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384       |
+  // | TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 |
+  // | TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384         |
+  // | TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256   |
+  // | TLS_RSA_WITH_AES_256_GCM_SHA384               |
+  //
+  // | Default 128 bits security ciphersuites        |
+  // |-----------------------------------------------|
+  // | TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256       |
+  // | TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256         |
+  // | TLS_RSA_WITH_AES_128_GCM_SHA256               |
+  repeated string ciphersuite = 3;
+
+  // Next id: 4
+}
+
+// A configuration to constrain [Compliance](Compliance.md), KEX algorithms and
+// ciphersuite for TLS version 1.3.
+message TLSv13Config {
+  // Constraints applied on the choice of algorithms in the configuration.
+  //
+  // See [Compliance](Compliance.md).
+  Compliance compliance = 1;
+
+  // The key establishment algorithm (KE) to enforce.
+  //
+  // If the remote peer does not support at least one KE algorithm specified
+  // in this list, the handshake will fail.
+  // The order of algorithm in KE is in preference order.
+  repeated string ke = 2;
+
+  // Sets TLS 1.3 ciphersuite.
+  //
+  // Ciphersuite name must follow IANA name.
+  //
+  // Does not apply to BoringSSL.
+  // See
+  // https://commondatastorage.googleapis.com/chromium-boringssl-docs/ssl.h.html#Cipher-suite-configuration
+  //
+  // See [RFC 8447 Appendix
+  // B.4](https://datatracker.ietf.org/doc/html/rfc8446#appendix-B.4) for the
+  // list of supported cipher suites in TLS 1.3.
+  //
+  // If ciphersuite is **not** set, the default ciphersuites listed here are used in preference order:
+  // | Default 256 bits security ciphersuites |
+  // |----------------------------------------|
+  // | TLS_CHACHA20_POLY1305_SHA256           |
+  // | TLS_AES_256_GCM_SHA384                 |
+  //
+  // | Default 128 bits security ciphersuites |
+  // |----------------------------------------|
+  // | TLS_AES_128_GCM_SHA256                 |
+  repeated string ciphersuite = 3;
+
+  // Next id: 4
+}
+
+// A configuration to constrain TLS version.
+// The minimum and maximum TLS protocol version will be set as follow based on
+// tls12 and tls13 messages.
+// 0: not defined, 1: defined
+// | tls12   | tls13   |    | Min Proto | Max Proto |
+// |---------|---------|    |-----------|-----------|
+// | 0       | 0       | -> | 1.3       | 1.3       |
+// | 0       | 1       | -> | 1.3       | 1.3       |
+// | 1       | 0       | -> | 1.2       | 1.2       |
+// | 1       | 1       | -> | 1.2       | 1.3       |
+message TLSConfig {
+
+  // TLS 1.2 configuration.
+  //
+  // See [TLSv12Config](TLSv12Config.md)
+  TLSv12Config tls12 = 12;
+
+  // TLS 1.3 configuration.
+  //
+  // See [TLSv13Config](TLSv13Config.md).
+  TLSv13Config tls13 = 13;
+
+  // Next id: 14
 }
 
 // TLS options, for both client and server modes.
 message TLSOptions {
-  // The kex or kem to enforce.
+
+  // Sets TLS configuration to use.
   //
-  // If the remote peer does not support at least one KEX algorithm specified
-  // in this list, an error will be returned.
-  repeated string kem = 1;
+  // See [TLSConfig](TLSConfig.md).
+  TLSConfig tls_config = 7;
 
   // The verifier configuration to verify the remote peer.
   oneof peer_verifier {
@@ -67,7 +161,7 @@ message TLSOptions {
   // This list of strings specifies the different protocols to be negotiated.
   repeated string alpn_protocols = 6;
 
-  // Next id: 7
+  // Next id: 8
 }
 
 // TLS options, specific to the client mode.

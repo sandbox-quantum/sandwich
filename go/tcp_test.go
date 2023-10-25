@@ -8,13 +8,14 @@ import (
 	"github.com/sandbox-quantum/sandwich/go"
 	"crypto/rand"
 	"fmt"
-	"github.com/bazelbuild/rules_go/go/tools/bazel"
 	"math/big"
 	"net"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 )
@@ -88,8 +89,12 @@ func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 				Opts: &api.ServerOptions_Tls{
 					Tls: &api.TLSServerOptions{
 						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
+							TlsConfig: &api.TLSConfig{
+								Tls13: &api.TLSv13Config{
+									Ke: []string{
+										"kyber1024",
+									},
+								},
 							},
 							PeerVerifier: &api.TLSOptions_EmptyVerifier{
 								EmptyVerifier: &api.EmptyVerifier{},
@@ -142,8 +147,12 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 				Opts: &api.ClientOptions_Tls{
 					Tls: &api.TLSClientOptions{
 						CommonOptions: &api.TLSOptions{
-							Kem: []string{
-								"kyber1024",
+							TlsConfig: &api.TLSConfig{
+								Tls13: &api.TLSv13Config{
+									Ke: []string{
+										"kyber1024",
+									},
+								},
 							},
 							PeerVerifier: &api.TLSOptions_X509Verifier{
 								X509Verifier: &api.X509Verifier{
