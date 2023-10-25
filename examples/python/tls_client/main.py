@@ -82,7 +82,12 @@ def run_client(
     client_ctx_conf: SandwichTunnel.Context,
 ):
     """Connect to server with a Context"""
-    client_io = socket.create_connection((host, port))
+    while True:
+        try:
+            client_io = socket.create_connection((host, port))
+            break
+        except ConnectionRefusedError:
+            pass
     swio = SandwichIOHelpers.io_socket_wrap(client_io)
     client_tun_conf = create_client_tun_conf(host)
 
