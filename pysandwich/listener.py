@@ -28,25 +28,26 @@ class Listener:
         self._configuration = configuration
         self._serialized_conf = self._configuration.SerializeToString()
         self._listener = ctypes.c_void_p(None)
-        err = sandwich.sandwich().c_call(
+        self._sandwich_clib = sandwich.sandwich()
+        err = self._sandwich_clib.c_call(
             "sandwich_listener_new",
             self._serialized_conf,
             len(self._serialized_conf),
             ctypes.byref(self._listener),
         )
         if err is not None:
-            excp = sandwich.sandwich()._error_code_to_exception(err)
-            sandwich.sandwich().c_call("sandwich_error_free", err)
+            excp = sandwich._error_code_to_exception(err)
+            self._sandwich_clib.c_call("sandwich_error_free", err)
             raise excp
 
     def listen(self):
-        err = sandwich.sandwich().c_call("sandwich_listener_listen", self._listener)
+        err = self._sandwich_clib.c_call("sandwich_listener_listen", self._listener)
         if err != SandwichIOProto.IOERROR_OK:
             raise IOException(err.value)
 
     def accept(self) -> SwOwnedIOWrapper:
         owned_ptr = ctypes.POINTER(OwnedIO)()
-        err = sandwich.sandwich().c_call(
+        err = self._sandwich_clib.c_call(
             "sandwich_listener_accept",
             self._listener,
             ctypes.byref(owned_ptr),
@@ -56,7 +57,7 @@ class Listener:
         return SwOwnedIOWrapper(owned_ptr.contents)
 
     def close(self):
-        sandwich.sandwich().c_call("sandwich_listener_close", self._listener)
+        self._sandwich_clib.c_call("sandwich_listener_close", self._listener)
 
     def __del__(self):
-        sandwich.sandwich().c_call("sandwich_listener_free", self._listener)
+        self._sandwich_clib.c_call("sandwich_listener_free", self._listener)
