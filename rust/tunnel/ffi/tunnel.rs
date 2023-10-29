@@ -48,7 +48,7 @@ pub extern "C" fn sandwich_tunnel_new(
 
     let slice = unsafe {
         std::slice::from_raw_parts(
-            configuration_serialized.src as *const u8,
+            configuration_serialized.src.cast(),
             configuration_serialized.n,
         )
     };
@@ -117,7 +117,7 @@ pub extern "C" fn sandwich_tunnel_read(
 ) -> i32 {
     use protobuf::Enum;
     let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
-    let res = b.read(unsafe { std::slice::from_raw_parts_mut(dst as *mut u8, n) });
+    let res = b.read(unsafe { std::slice::from_raw_parts_mut(dst.cast(), n) });
     Box::into_raw(b);
     match res {
         Ok(rn) => unsafe {
@@ -139,7 +139,7 @@ pub extern "C" fn sandwich_tunnel_write(
 ) -> i32 {
     use protobuf::Enum;
     let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
-    let res = b.write(unsafe { std::slice::from_raw_parts(src as *const u8, n) });
+    let res = b.write(unsafe { std::slice::from_raw_parts(src.cast(), n) });
     Box::into_raw(b);
     match res {
         Ok(wn) => unsafe {

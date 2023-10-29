@@ -21,8 +21,8 @@ pub struct Error {
 /// Instantiates an [`Error`] from a Rust error.
 impl From<crate::Error> for *mut Error {
     fn from(e: crate::Error) -> *mut Error {
-        let mut root: *mut Error = null_mut();
-        let mut cur: *mut Error = null_mut();
+        let mut root = null_mut::<Error>();
+        let mut cur = null_mut::<Error>();
         for ec in e.iter().rev() {
             let (kind, code) = <_ as Into<(i32, i32)>>::into(ec);
             let msg = ec
@@ -101,7 +101,7 @@ pub extern "C" fn sandwich_error_stack_str_new(mut ptr: *mut Error) -> *const st
 #[no_mangle]
 pub unsafe extern "C" fn sandwich_error_stack_str_free(ptr: *const std::ffi::c_char) {
     if !ptr.is_null() {
-        let _ = CString::from_raw(ptr as *mut _);
+        let _ = CString::from_raw(ptr.cast_mut());
     }
 }
 
@@ -197,7 +197,7 @@ mod test {
         assert_eq!(safe_err_str, expect_str);
         // cleanup
         unsafe {
-            let _ = CString::from_raw(err.msg as *mut _);
+            let _ = CString::from_raw(err.msg.cast());
         }
     }
 
@@ -269,9 +269,9 @@ mod test {
         assert_eq!(safe_err_str, expect_str);
         // cleanup
         unsafe {
-            let _ = CString::from_raw(err1.msg as *mut _);
-            let _ = CString::from_raw(err2.msg as *mut _);
-            let _ = CString::from_raw(err3.msg as *mut _);
+            let _ = CString::from_raw(err1.msg.cast());
+            let _ = CString::from_raw(err2.msg.cast());
+            let _ = CString::from_raw(err3.msg.cast());
         }
     }
 
@@ -319,9 +319,9 @@ mod test {
         assert_eq!(safe_err_str, expect_str);
         // cleanup
         unsafe {
-            let _ = CString::from_raw(err1.msg as *mut _);
-            let _ = CString::from_raw(err2.msg as *mut _);
-            let _ = CString::from_raw(err3.msg as *mut _);
+            let _ = CString::from_raw(err1.msg.cast());
+            let _ = CString::from_raw(err2.msg.cast());
+            let _ = CString::from_raw(err3.msg.cast());
         }
     }
 }

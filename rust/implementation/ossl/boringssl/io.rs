@@ -30,7 +30,7 @@ fn get_bio_ssl(bio: *mut boringssl::bio_st) -> Result<*mut boringssl::SSL, i64> 
             bio,
             boringssl::BIO_C_GET_SSL as i32,
             0,
-            (&mut ssl as *mut *mut boringssl::SSL) as *mut std::ffi::c_void,
+            (&mut ssl as *mut *mut boringssl::SSL).cast(),
         )
     };
     match e {
@@ -73,7 +73,7 @@ fn set_bio_close(bio: *mut boringssl::bio_st) {
 
 /// Returns the tunnel from a BIO.
 fn get_tunnel_from_bio<'a>(bio: *mut boringssl::bio_st) -> &'a mut ossl::OsslTunnel<'a, Ossl> {
-    let tun = unsafe { &mut *(boringssl::BIO_get_data(bio) as *mut ossl::OsslTunnel<Ossl>) };
+    let tun: &mut ossl::OsslTunnel<Ossl> = unsafe { &mut *(boringssl::BIO_get_data(bio).cast()) };
     debug_assert!(tun.bio.as_ptr() == bio);
     tun
 }
