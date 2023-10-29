@@ -141,7 +141,6 @@ md_proto_library(
         "TLSOptions",
         "TLSClientOptions",
         "TLSServerOptions",
-        "TLSConfig",
         "TLSv12Config",
         "TLSv13Config",
 

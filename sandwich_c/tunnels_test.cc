@@ -101,11 +101,10 @@ auto CreateClientContext(const struct SandwichContext *sw,
                                       Implementation::IMPL_OPENSSL1_1_1_OQS)};
 
   config.mutable_client()
-        ->mutable_tls()
-        ->mutable_common_options()
-        ->mutable_tls_config()
-        ->mutable_tls13()
-        ->add_ke("kyber1024");
+      ->mutable_tls()
+      ->mutable_common_options()
+      ->mutable_tls13()
+      ->add_ke("kyber1024");
 
   auto *cert = config.mutable_client()
                    ->mutable_tls()
@@ -149,11 +148,10 @@ auto CreateServerContext(const struct SandwichContext *sw,
                                       Implementation::IMPL_OPENSSL1_1_1_OQS)};
 
   config.mutable_server()
-        ->mutable_tls()
-        ->mutable_common_options()
-        ->mutable_tls_config()
-        ->mutable_tls13()
-        ->add_ke("kyber1024");
+      ->mutable_tls()
+      ->mutable_common_options()
+      ->mutable_tls13()
+      ->add_ke("kyber1024");
 
   config.mutable_server()
       ->mutable_tls()

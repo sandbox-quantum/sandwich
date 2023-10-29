@@ -66,15 +66,12 @@ pub fn create_client_configuration(tls_version: &str) -> Result<sw_api::Configur
         client <
             tls <
                 common_options <
-                    tls_config <
-                        {}
-                    >
+                    {tls_config}
                     empty_verifier <>
                 >
             >
         >
-    "#,
-            tls_config,
+    "#
         )
         .as_str(),
     )

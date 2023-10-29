@@ -82,10 +82,8 @@ mod test {
             client <
                 tls <
                     common_options <
-                        tls_config <
-                            tls13 <
-                                ke: "kyber1024"
-                            >
+                        tls13 <
+                            ke: "kyber1024"
                         >
                         x509_verifier <
                             trusted_cas <
@@ -137,10 +135,8 @@ mod test {
             client <
                 tls <
                     common_options <
-                        tls_config <
-                            tls13 <
-                                ke: "kyber1023"
-                            >
+                        tls13 <
+                            ke: "kyber1023"
                         >
                         x509_verifier <
                             trusted_cas <
