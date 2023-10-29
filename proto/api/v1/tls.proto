@@ -39,8 +39,8 @@ message TLSv12Config {
   //
   // Ciphersuites must follow IANA names.
   //
-  // If ciphersuite is **not** set, the default ciphersuites listed here are used in preference order:
-  // | Default 256 bits security ciphersuites        |
+  // If ciphersuite is **not** set, the default ciphersuites listed here are
+  // used in preference order: | Default 256 bits security ciphersuites        |
   // |-----------------------------------------------|
   // | TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384       |
   // | TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 |
@@ -53,9 +53,9 @@ message TLSv12Config {
   // | TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256       |
   // | TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256         |
   // | TLS_RSA_WITH_AES_128_GCM_SHA256               |
-  repeated string ciphersuite = 3;
+  repeated string ciphersuite = 1;
 
-  // Next id: 4
+  // Next id: 2
 }
 
 // A configuration to constrain [Compliance](Compliance.md), KEX algorithms and
@@ -85,8 +85,8 @@ message TLSv13Config {
   // B.4](https://datatracker.ietf.org/doc/html/rfc8446#appendix-B.4) for the
   // list of supported cipher suites in TLS 1.3.
   //
-  // If ciphersuite is **not** set, the default ciphersuites listed here are used in preference order:
-  // | Default 256 bits security ciphersuites |
+  // If ciphersuite is **not** set, the default ciphersuites listed here are
+  // used in preference order: | Default 256 bits security ciphersuites |
   // |----------------------------------------|
   // | TLS_CHACHA20_POLY1305_SHA256           |
   // | TLS_AES_256_GCM_SHA384                 |
@@ -99,38 +99,19 @@ message TLSv13Config {
   // Next id: 4
 }
 
-// A configuration to constrain TLS version.
-// The minimum and maximum TLS protocol version will be set as follow based on
-// tls12 and tls13 messages.
-// 0: not defined, 1: defined
-// | tls12   | tls13   |    | Min Proto | Max Proto |
-// |---------|---------|    |-----------|-----------|
-// | 0       | 0       | -> | 1.3       | 1.3       |
-// | 0       | 1       | -> | 1.3       | 1.3       |
-// | 1       | 0       | -> | 1.2       | 1.2       |
-// | 1       | 1       | -> | 1.2       | 1.3       |
-message TLSConfig {
-
+// TLS options, for both client and server modes.
+message TLSOptions {
   // TLS 1.2 configuration.
   //
-  // See [TLSv12Config](TLSv12Config.md)
-  TLSv12Config tls12 = 12;
+  // TLS 1.2 will be disabled if this field is not set.
+  // See [`TLSv12Config`](TLSv12Config.md).
+  TLSv12Config tls12 = 7;
 
   // TLS 1.3 configuration.
   //
-  // See [TLSv13Config](TLSv13Config.md).
-  TLSv13Config tls13 = 13;
-
-  // Next id: 14
-}
-
-// TLS options, for both client and server modes.
-message TLSOptions {
-
-  // Sets TLS configuration to use.
-  //
-  // See [TLSConfig](TLSConfig.md).
-  TLSConfig tls_config = 7;
+  // TLS 1.3 will be disabled if this field is not set.
+  // See [`TLSv13Config`](TLSv13Config.md).
+  TLSv13Config tls13 = 8;
 
   // The verifier configuration to verify the remote peer.
   oneof peer_verifier {
@@ -161,7 +142,7 @@ message TLSOptions {
   // This list of strings specifies the different protocols to be negotiated.
   repeated string alpn_protocols = 6;
 
-  // Next id: 8
+  // Next id: 9
 }
 
 // TLS options, specific to the client mode.

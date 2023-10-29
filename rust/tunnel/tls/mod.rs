@@ -3,11 +3,8 @@
 
 //! TLS module.
 
-use pb::TLSConfigurationError;
 use pb::TunnelError;
 use pb_api::configuration::configuration as pb_configuration;
-use pb_api::tls::TLSConfig;
-use protobuf::MessageField;
 
 pub(crate) use security::assert_compliance;
 
@@ -36,16 +33,31 @@ pub(crate) const DEFAULT_TLS13_CIPHERSUITES: [&str; 3] = [
     "TLS_AES_128_GCM_SHA256",
 ];
 
-/// Retrieves TLSConfig message from the Configuration.
-fn get_tlsconfigs(cfg: &pb_api::Configuration) -> crate::Result<&MessageField<TLSConfig>> {
-    cfg.opts
-        .as_ref()
-        .ok_or_else(|| TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into())
-        .and_then(|oneof| match oneof {
-            pb_configuration::Opts::Client(c) => Ok(&c.tls().common_options.tls_config),
-            pb_configuration::Opts::Server(s) => Ok(&s.tls().common_options.tls_config),
-            _ => Err(TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID_CASE.into()),
-        })
+/// Retrieves the configuration for TLS 1.3, if exists.
+fn get_tls13_config(cfg: &pb_api::Configuration) -> Option<&pb_api::TLSv13Config> {
+    let opts = cfg.opts.as_ref()?;
+    match opts {
+        pb_configuration::Opts::Client(c) => {
+            let opts = c.opts.as_ref()?;
+            match opts {
+                pb_api::configuration::client_options::Opts::Tls(tls) => {
+                    tls.common_options.as_ref()
+                }
+                _ => unreachable!(),
+            }
+        }
+        pb_configuration::Opts::Server(c) => {
+            let opts = c.opts.as_ref()?;
+            match opts {
+                pb_api::configuration::server_options::Opts::Tls(tls) => {
+                    tls.common_options.as_ref()
+                }
+                _ => unreachable!(),
+            }
+        }
+        _ => unreachable!(),
+    }
+    .and_then(|common_options| common_options.tls13.as_ref())
 }
 
 /// A set of security requirements that can be updated with new requirements

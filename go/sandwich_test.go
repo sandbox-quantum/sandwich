@@ -90,23 +90,21 @@ func createServerConfiguration(t *testing.T, cert *string, key *string) (*api.Co
 				Opts: &api.ServerOptions_Tls{
 					Tls: &api.TLSServerOptions{
 						CommonOptions: &api.TLSOptions{
-							TlsConfig: &api.TLSConfig{
-								Tls13: &api.TLSv13Config{
-									Ke: []string{
-										"kyber1024",
-									},
+							Tls13: &api.TLSv13Config{
+								Ke: []string{
+									"kyber1024",
 								},
-								Tls12: &api.TLSv12Config{
-									Ciphersuite: []string{
-										"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-										"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-										"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-										"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-										"TLS_RSA_WITH_AES_256_GCM_SHA384",
-										"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-										"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-										"TLS_RSA_WITH_AES_128_GCM_SHA256",
-									},
+							},
+							Tls12: &api.TLSv12Config{
+								Ciphersuite: []string{
+									"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+									"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+									"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+									"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+									"TLS_RSA_WITH_AES_256_GCM_SHA384",
+									"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+									"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+									"TLS_RSA_WITH_AES_128_GCM_SHA256",
 								},
 							},
 							PeerVerifier: &api.TLSOptions_EmptyVerifier{
@@ -159,26 +157,22 @@ func createClientConfiguration(t *testing.T, cert *string, tls_version *string) 
 		t.Errorf("Could not load certificate file %s: %v", cert, err)
 	}
 
-	tls13config := &api.TLSConfig{
-		Tls13: &api.TLSv13Config{
-			Ke: []string{
-				"kyber1024",
-			},
+	tls13config := &api.TLSv13Config{
+		Ke: []string{
+			"kyber1024",
 		},
 	}
 
-	tls12config := &api.TLSConfig{
-		Tls12: &api.TLSv12Config{
-			Ciphersuite: []string{
-				"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-				"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-				"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-				"TLS_RSA_WITH_AES_256_GCM_SHA384",
-				"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-				"TLS_RSA_WITH_AES_128_GCM_SHA256",
-			},
+	tls12config := &api.TLSv12Config{
+		Ciphersuite: []string{
+			"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+			"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+			"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+			"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+			"TLS_RSA_WITH_AES_256_GCM_SHA384",
+			"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+			"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+			"TLS_RSA_WITH_AES_128_GCM_SHA256",
 		},
 	}
 
@@ -189,7 +183,6 @@ func createClientConfiguration(t *testing.T, cert *string, tls_version *string) 
 				Opts: &api.ClientOptions_Tls{
 					Tls: &api.TLSClientOptions{
 						CommonOptions: &api.TLSOptions{
-							TlsConfig: &api.TLSConfig{},
 							PeerVerifier: &api.TLSOptions_X509Verifier{
 								X509Verifier: &api.X509Verifier{
 									TrustedCas: []*api.Certificate{
@@ -220,17 +213,14 @@ func createClientConfiguration(t *testing.T, cert *string, tls_version *string) 
 			},
 		},
 	}
-	var tls_config *api.TLSConfig
 	switch *tls_version {
 	case "tls12":
-		tls_config = tls12config
+		config.GetClient().GetTls().CommonOptions.Tls12 = tls12config
 	case "tls13":
-		tls_config = tls13config
+		config.GetClient().GetTls().CommonOptions.Tls13 = tls13config
 	default:
 		t.Errorf("TLS version is not supported")
 	}
-
-	config.GetClient().GetTls().CommonOptions.TlsConfig = tls_config
 
 	return config, nil
 }
@@ -525,11 +515,9 @@ func createServerExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 				Opts: &api.ServerOptions_Tls{
 					Tls: &api.TLSServerOptions{
 						CommonOptions: &api.TLSOptions{
-							TlsConfig: &api.TLSConfig{
-								Tls13: &api.TLSv13Config{
-									Ke: []string{
-										"kyber1024",
-									},
+							Tls13: &api.TLSv13Config{
+								Ke: []string{
+									"kyber1024",
 								},
 							},
 							PeerVerifier: &api.TLSOptions_EmptyVerifier{
@@ -583,11 +571,9 @@ func createClientExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 				Opts: &api.ClientOptions_Tls{
 					Tls: &api.TLSClientOptions{
 						CommonOptions: &api.TLSOptions{
-							TlsConfig: &api.TLSConfig{
-								Tls13: &api.TLSv13Config{
-									Ke: []string{
-										"kyber1024",
-									},
+							Tls13: &api.TLSv13Config{
+								Ke: []string{
+									"kyber1024",
 								},
 							},
 							PeerVerifier: &api.TLSOptions_X509Verifier{

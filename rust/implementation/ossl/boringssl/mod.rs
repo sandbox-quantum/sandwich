@@ -1176,14 +1176,12 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                      ciphersuite: "TLS_AES_256_GCM_SHA384"
-                    >
-                    tls12 <
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-                    >
+                  tls13 <
+                    ke: "kyber512"
+                    ciphersuite: "TLS_AES_256_GCM_SHA384"
+                  >
+                  tls12 <
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
                   >
                   x509_verifier <
                     trusted_cas <
@@ -1236,14 +1234,12 @@ pub(crate) mod additional_test {
             server <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                      ciphersuite: "TLS_AES_256_GCM_SHA384"
-                    >
-                    tls12 <
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-                    >
+                  tls13 <
+                    ke: "kyber512"
+                    ciphersuite: "TLS_AES_256_GCM_SHA384"
+                  >
+                  tls12 <
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
                   >
                   empty_verifier<>
                   identity <
@@ -1307,14 +1303,12 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                      ciphersuite: "TLS_CHACHA20_POLY1305_SHA256"
-                    >
-                    tls12 <
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-                    >
+                  tls13 <
+                    ke: "kyber512"
+                    ciphersuite: "TLS_CHACHA20_POLY1305_SHA256"
+                  >
+                  tls12 <
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
                   >
                   x509_verifier <
                     trusted_cas <
@@ -1347,14 +1341,12 @@ pub(crate) mod additional_test {
             server <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                      ciphersuite: "TLS_CHACHA20_POLY1305_SHA256"
-                    >
-                    tls12 <
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-                    >
+                  tls13 <
+                    ke: "kyber512"
+                    ciphersuite: "TLS_CHACHA20_POLY1305_SHA256"
+                  >
+                  tls12 <
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
                   >
                   empty_verifier<>
                   identity<
@@ -1432,17 +1424,15 @@ pub(crate) mod additional_test {
               tls <
                 common_options <
                   empty_verifier<>
-                  tls_config <
-                    tls12 <
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
-                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-                      ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
-                      ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
-                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-                      ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
-                    >
+                  tls12 <
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                    ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                    ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
                   >
                   x509_verifier <
                     trusted_cas <
@@ -1476,17 +1466,15 @@ pub(crate) mod additional_test {
               tls <
                 common_options <
                   empty_verifier<>
-                  tls_config <
-                    tls12 <
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
-                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-                      ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
-                      ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
-                      ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
-                      ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-                      ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
-                    >
+                  tls12 <
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+                    ciphersuite: "TLS_RSA_WITH_AES_256_GCM_SHA384"
+                    ciphersuite: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+                    ciphersuite: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                    ciphersuite: "TLS_RSA_WITH_AES_128_GCM_SHA256"
                   >
                   identity<
                     certificate <
@@ -1566,10 +1554,8 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls12 <
-                      ciphersuite: "-TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-                    >
+                  tls12 <
+                    ciphersuite: "-TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
                   >
                 >
               >
@@ -1591,11 +1577,9 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                      ciphersuite: "!TLS_AES_256_GCM_SHA384"
-                    >
+                  tls13 <
+                    ke: "kyber512"
+                    ciphersuite: "!TLS_AES_256_GCM_SHA384"
                   >
                 >
               >
@@ -1621,10 +1605,8 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   x509_verifier <
                     trusted_cas <
@@ -1657,10 +1639,8 @@ pub(crate) mod additional_test {
             server <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   empty_verifier<>
                   identity <
@@ -1749,10 +1729,8 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   x509_verifier <
                     trusted_cas <
@@ -1786,10 +1764,8 @@ pub(crate) mod additional_test {
             server <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   empty_verifier <>
                   identity <
@@ -1872,10 +1848,8 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   x509_verifier <
                     trusted_cas <
@@ -1908,10 +1882,8 @@ pub(crate) mod additional_test {
             server <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   empty_verifier <>
                   identity <
@@ -2004,10 +1976,8 @@ pub(crate) mod additional_test {
             client <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   x509_verifier <
                     trusted_cas <
@@ -2040,10 +2010,8 @@ pub(crate) mod additional_test {
             server <
               tls <
                 common_options <
-                  tls_config <
-                    tls13 <
-                      ke: "kyber512"
-                    >
+                  tls13 <
+                    ke: "kyber512"
                   >
                   empty_verifier <>
                   identity <

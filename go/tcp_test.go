@@ -89,11 +89,9 @@ func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 				Opts: &api.ServerOptions_Tls{
 					Tls: &api.TLSServerOptions{
 						CommonOptions: &api.TLSOptions{
-							TlsConfig: &api.TLSConfig{
-								Tls13: &api.TLSv13Config{
-									Ke: []string{
-										"kyber1024",
-									},
+							Tls13: &api.TLSv13Config{
+								Ke: []string{
+									"kyber1024",
 								},
 							},
 							PeerVerifier: &api.TLSOptions_EmptyVerifier{
@@ -147,11 +145,9 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 				Opts: &api.ClientOptions_Tls{
 					Tls: &api.TLSClientOptions{
 						CommonOptions: &api.TLSOptions{
-							TlsConfig: &api.TLSConfig{
-								Tls13: &api.TLSv13Config{
-									Ke: []string{
-										"kyber1024",
-									},
+							Tls13: &api.TLSv13Config{
+								Ke: []string{
+									"kyber1024",
 								},
 							},
 							PeerVerifier: &api.TLSOptions_X509Verifier{

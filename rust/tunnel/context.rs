@@ -172,10 +172,8 @@ pub(crate) mod test {
                 client <
                   tls <
                     common_options <
-                      tls_config <
-                        tls13 <
-                          ke: "kyber512"
-                        >
+                      tls13 <
+                        ke: "kyber512"
                       >
                       x509_verifier <
                         trusted_cas <
@@ -214,10 +212,8 @@ pub(crate) mod test {
                 client <
                   tls <
                     common_options <
-                      tls_config <
-                        tls13 <
-                          ke: "kyber512"
-                        >
+                      tls13 <
+                        ke: "kyber512"
                       >
                       x509_verifier <
                         trusted_cas <
@@ -257,10 +253,8 @@ pub(crate) mod test {
                 client <
                   tls <
                     common_options <
-                      tls_config <
-                        tls13 <
-                          ke: "kyber512"
-                        >
+                      tls13 <
+                        ke: "kyber512"
                       >
                       x509_verifier <
                         trusted_cas <
@@ -304,10 +298,8 @@ pub(crate) mod test {
                 server <
                   tls <
                     common_options <
-                      tls_config <
-                        tls13 <
-                          ke: "kyber512"
-                        >
+                      tls13 <
+                        ke: "kyber512"
                       >
                       x509_verifier <
                         trusted_cas <

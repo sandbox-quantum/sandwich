@@ -3,7 +3,6 @@
 
 //! Defines [`BitStrength`], [`KESettings`] enums and [`assert_compliance`] method.
 
-use crate::tunnel::tls::get_tlsconfigs;
 use crate::tunnel::tls::security::BitStrength::{Bits128, Bits192, Bits256};
 use crate::tunnel::tls::security::KESettings::{Classical, Hybrid, QuantumSafe};
 
@@ -199,12 +198,10 @@ fn assert_tls13_compliance(tls13_config: &TLSv13Config) -> crate::Result<()> {
 
 /// Checks that the policy is satisfied by the configuration.
 pub(crate) fn assert_compliance(cfg: &pb_api::Configuration) -> crate::Result<()> {
-    let tls_configs = get_tlsconfigs(cfg)?;
-    let tls13_config = &tls_configs.tls13;
-
-    assert_tls13_compliance(tls13_config)?;
-
-    Ok(())
+    let Some(tls13) = super::get_tls13_config(cfg) else {
+        return Ok(());
+    };
+    assert_tls13_compliance(tls13)
 }
 
 #[cfg(test)]
@@ -220,11 +217,9 @@ mod test {
           client <
             tls <
               common_options <
-                tls_config <
-                  tls13 <
-                    ke: "kyber512"
-                    ke: "p256_kyber512"
-                  >
+                tls13 <
+                  ke: "kyber512"
+                  ke: "p256_kyber512"
                 >
               >
             >
@@ -243,12 +238,10 @@ mod test {
           client <
             tls <
               common_options <
-                tls_config <
-                  tls13 <
-                    ke: "prime256v1"
-                    ke: "X25519"
-                    ke: "X448"
-                  >
+                tls13 <
+                  ke: "prime256v1"
+                  ke: "X25519"
+                  ke: "X448"
                 >
               >
             >
@@ -266,12 +259,10 @@ mod test {
           client <
             tls <
               common_options <
-                tls_config <
-                  tls13 <
-                    ke: "p256_kyber512"
-                    compliance <
-                      hybrid_choice: HYBRID_ALGORITHMS_FORBID
-                    >
+                tls13 <
+                  ke: "p256_kyber512"
+                  compliance <
+                    hybrid_choice: HYBRID_ALGORITHMS_FORBID
                   >
                 >
               >
@@ -290,14 +281,12 @@ mod test {
           client <
             tls <
               common_options <
-                tls_config <
                   tls13 <
                       ke: "p256_kyber512"
                       compliance <
-                      bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
+                          bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
                       >
                   >
-                >
               >
             >
           >
@@ -314,12 +303,10 @@ mod test {
           client <
             tls <
               common_options <
-                tls_config <
-                  tls13 <
-                    ke: "hqc192"
-                    compliance <
-                      bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
-                    >
+                tls13 <
+                  ke: "hqc192"
+                  compliance <
+                    bit_strength_choice: BIT_STRENGTH_AT_LEAST_256
                   >
                 >
               >
@@ -338,27 +325,25 @@ mod test {
           client <
             tls <
               common_options <
-                tls_config <
-                  tls13 <
-                    ke: "brainpoolP256r1"
-                    ke: "brainpoolP384r1"
-                    ke: "brainpoolP512r1"
-                    ke: "sect283k1"
-                    ke: "sect283r1"
-                    ke: "sect409k1"
-                    ke: "sect409r1"
-                    ke: "sect571k1"
-                    ke: "sect571r1"
-                    ke: "X25519"
-                    ke: "prime256v1"
-                    ke: "X448"
-                    ke: "secp256k1"
-                    ke: "secp384r1"
-                    ke: "secp521r1"
-                    compliance <
-                      bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
-                      classical_choice: CLASSICAL_ALGORITHMS_ALLOW
-                    >
+                tls13 <
+                  ke: "brainpoolP256r1"
+                  ke: "brainpoolP384r1"
+                  ke: "brainpoolP512r1"
+                  ke: "sect283k1"
+                  ke: "sect283r1"
+                  ke: "sect409k1"
+                  ke: "sect409r1"
+                  ke: "sect571k1"
+                  ke: "sect571r1"
+                  ke: "X25519"
+                  ke: "prime256v1"
+                  ke: "X448"
+                  ke: "secp256k1"
+                  ke: "secp384r1"
+                  ke: "secp521r1"
+                  compliance <
+                    bit_strength_choice: BIT_STRENGTH_AT_LEAST_128
+                    classical_choice: CLASSICAL_ALGORITHMS_ALLOW
                   >
                 >
               >

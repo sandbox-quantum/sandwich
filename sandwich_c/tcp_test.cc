@@ -101,11 +101,10 @@ auto CreateClientContext(std::unique_ptr<Runfiles> &runfiles)
                                       Implementation::IMPL_OPENSSL1_1_1_OQS)};
 
   config.mutable_client()
-        ->mutable_tls()
-        ->mutable_common_options()
-        ->mutable_tls_config()
-        ->mutable_tls13()
-        ->add_ke("kyber1024");
+      ->mutable_tls()
+      ->mutable_common_options()
+      ->mutable_tls13()
+      ->add_ke("kyber1024");
 
   auto *cert = config.mutable_client()
                    ->mutable_tls()
@@ -153,7 +152,6 @@ auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
   config.mutable_server()
       ->mutable_tls()
       ->mutable_common_options()
-      ->mutable_tls_config()
       ->mutable_tls13()
       ->add_ke("kyber1024");
 
@@ -205,7 +203,8 @@ auto CreateServerContext(std::unique_ptr<Runfiles> &runfiles)
 }
 
 /// \brief Deleter for SandwichListener
-using SandwichListenerDeleter = std::function<void(struct ::SandwichListener *)>;
+using SandwichListenerDeleter =
+    std::function<void(struct ::SandwichListener *)>;
 
 /// \brief Create a TCP Listener using sandwich API.
 ///
@@ -217,18 +216,23 @@ auto CreateTCPListener(std::string ipaddr, uint16_t port, bool is_blocking)
   config.mutable_tcp()->mutable_addr()->set_hostname(ipaddr);
   config.mutable_tcp()->mutable_addr()->set_port((uint32_t)port);
   if (is_blocking) {
-  	config.mutable_tcp()->set_blocking_mode(saq::sandwich::proto::api::v1::BlockingMode::BLOCKINGMODE_BLOCKING);
+    config.mutable_tcp()->set_blocking_mode(
+        saq::sandwich::proto::api::v1::BlockingMode::
+            BLOCKINGMODE_BLOCKING);
   } else {
-  	config.mutable_tcp()->set_blocking_mode(saq::sandwich::proto::api::v1::BlockingMode::BLOCKINGMODE_NONBLOCKING);
+    config.mutable_tcp()->set_blocking_mode(
+        saq::sandwich::proto::api::v1::BlockingMode::
+            BLOCKINGMODE_NONBLOCKING);
   }
   std::string encoded_configuration{};
   sandwich_assert(config.SerializeToString(&encoded_configuration) == true);
   struct ::SandwichListener *listener = nullptr;
-  const auto err = ::sandwich_listener_new(encoded_configuration.data(),
-                                           encoded_configuration.size(), &listener);
+  const auto err = ::sandwich_listener_new(
+      encoded_configuration.data(), encoded_configuration.size(), &listener);
   sandwich_assert(err == nullptr);
   sandwich_assert(listener != nullptr);
-  return {listener, [](struct ::SandwichListener *l) { ::sandwich_listener_free(l); }};
+  return {listener,
+          [](struct ::SandwichListener *l) { ::sandwich_listener_free(l); }};
 }
 
 /// \brief Deleter for Sandwich Tunnel.
@@ -393,7 +397,6 @@ void ClientReadPong(struct ::SandwichTunnel *client) {
   std::cout << "OK for " << __builtin_FUNCTION() << '\n';
 }
 
-
 /// \brief 8. Server closes the tunnel.
 ///
 /// At this stage, the server sent a TLS alert `SHUTDOWN`. The tunnel is now
@@ -415,7 +418,8 @@ void ServerClosesTunnel(struct ::SandwichTunnel *server) {
 bool SERVER_READY = false;
 
 void client_thread(std::string server_hostname, uint16_t server_port) {
-  while(!SERVER_READY);
+  while (!SERVER_READY)
+    ;
   struct ::SandwichCIOOwned *client_io;
   std::string error;
   std::unique_ptr<Runfiles> runfiles(
@@ -427,7 +431,6 @@ void client_thread(std::string server_hostname, uint16_t server_port) {
   // Create tunnels.
   auto client_tunnel = CreateTunnel(&*client, *(client_io->io),
                                     SandwichTunnelConfigurationVerifierEmpty);
-
 
   // Client initiates the handshake.
   ClientInitiateHandshake(&*client_tunnel);
@@ -451,8 +454,10 @@ void server_thread(std::string server_hostname, uint16_t server_port) {
       Runfiles::CreateForTest(BAZEL_CURRENT_REPOSITORY, &error));
   sandwich_assert(runfiles != nullptr);
   auto server = CreateServerContext(runfiles);
-  auto server_listener = CreateTCPListener(server_hostname.c_str(), server_port, true);
-  sandwich_assert(sandwich_listener_listen(&*server_listener) == SANDWICH_IOERROR_OK);
+  auto server_listener =
+      CreateTCPListener(server_hostname.c_str(), server_port, true);
+  sandwich_assert(sandwich_listener_listen(&*server_listener) ==
+                  SANDWICH_IOERROR_OK);
 
   SERVER_READY = true;
   enum SandwichIOError err;
@@ -460,7 +465,7 @@ void server_thread(std::string server_hostname, uint16_t server_port) {
   err = sandwich_listener_accept(&*server_listener, &listener_io);
   sandwich_assert(err == SANDWICH_IOERROR_OK);
   auto server_tunnel = CreateTunnel(&*server, *(listener_io->io),
-                                      SandwichTunnelConfigurationVerifierEmpty);
+                                    SandwichTunnelConfigurationVerifierEmpty);
 
   // Server answers.
   ServerAnswerHandshake(&*server_tunnel);
@@ -480,7 +485,6 @@ void server_thread(std::string server_hostname, uint16_t server_port) {
 
 int main(int argc, char **argv) {
 
-
   const std::string server_hostname = "127.0.0.1";
   std::random_device rd;
   std::mt19937 rng(rd());
@@ -489,7 +493,7 @@ int main(int argc, char **argv) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(client_thread, server_hostname, server_port));
   threads.push_back(std::thread(server_thread, server_hostname, server_port));
-  for (auto &thread: threads) {
+  for (auto &thread : threads) {
     thread.join();
   }
 

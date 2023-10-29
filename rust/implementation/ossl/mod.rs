@@ -535,10 +535,10 @@ where
 
         OsslInterface::ssl_context_initialize_x509_verify_parameters(ssl_ctx.as_nonnull())?;
 
-        let tls12 = &tls_options.tls_config.tls12;
-        let tls13 = &tls_options.tls_config.tls13;
+        let tls12 = tls_options.tls12.as_ref();
+        let tls13 = tls_options.tls13.as_ref();
 
-        let (min_tls_version, max_tls_version) = match (!tls12.is_none(), !tls13.is_none()) {
+        let (min_tls_version, max_tls_version) = match (tls12.is_some(), tls13.is_some()) {
             (true, false) => (TlsVersion::Tls12, TlsVersion::Tls12),
             (true, true) => (TlsVersion::Tls12, TlsVersion::Tls13),
             _ => (TlsVersion::Tls13, TlsVersion::Tls13),
@@ -546,20 +546,23 @@ where
         OsslInterface::ssl_context_set_min_protocol_version(ssl_ctx.as_nonnull(), min_tls_version)?;
         OsslInterface::ssl_context_set_max_protocol_version(ssl_ctx.as_nonnull(), max_tls_version)?;
 
-        OsslInterface::ssl_context_set_tls12_ciphersuites(
-            ssl_ctx.as_nonnull(),
-            tls12.ciphersuite.iter(),
-        )
-        .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
-
-        OsslInterface::ssl_context_set_tls13_ciphersuites(
-            ssl_ctx.as_nonnull(),
-            tls13.ciphersuite.iter(),
-        )
-        .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
-
-        OsslInterface::ssl_context_set_kes(ssl_ctx.as_nonnull(), tls13.ke.iter())
+        if let Some(tls12) = tls12 {
+            OsslInterface::ssl_context_set_tls12_ciphersuites(
+                ssl_ctx.as_nonnull(),
+                tls12.ciphersuite.iter(),
+            )
             .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+        }
+
+        if let Some(tls13) = tls13 {
+            OsslInterface::ssl_context_set_tls13_ciphersuites(
+                ssl_ctx.as_nonnull(),
+                tls13.ciphersuite.iter(),
+            )
+            .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+            OsslInterface::ssl_context_set_kes(ssl_ctx.as_nonnull(), tls13.ke.iter())
+                .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+        }
 
         OsslInterface::ssl_context_set_alpn_protos(
             ssl_ctx.as_nonnull(),
