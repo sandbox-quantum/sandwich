@@ -6,9 +6,9 @@ filegroup(
     srcs = [
         "context.rs",
         "error.rs",
-        "io.rs",
-        "io_helpers.rs",
-        "listener.rs",
+        "io/helpers.rs",
+        "io/listener.rs",
+        "io/mod.rs",
         "mod.rs",
         "support.rs",
     ],

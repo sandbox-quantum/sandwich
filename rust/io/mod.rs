@@ -14,7 +14,8 @@
 //!
 //! I/O interfaces are used to abstract the I/O plane.
 
-use pb::IOError;
+/// Support for errors.
+pub mod error;
 
 /// A set of functions that implement common I/O objects.
 pub mod helpers;
@@ -22,121 +23,6 @@ pub mod helpers;
 /// The listener trait provides an object that can accept
 /// new connections and create I/O objects.
 pub mod listener;
-
-/// An I/O error.
-/// To see the list of I/O errors, see [`IOError`].
-pub struct Error(IOError);
-
-/// Implements [`std::fmt::Display`] for [`Error`].
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "ioerror: {}",
-            match self.0 {
-                IOError::IOERROR_OK => "no error",
-                IOError::IOERROR_IN_PROGRESS => "in progress",
-                IOError::IOERROR_WOULD_BLOCK => "would block",
-                IOError::IOERROR_REFUSED => "refused",
-                IOError::IOERROR_CLOSED => "closed",
-                IOError::IOERROR_INVALID => "invalid I/O plane",
-                IOError::IOERROR_SYSTEM_ERROR => "system error",
-                IOError::IOERROR_ADDRESS_IN_USE => "address already in use",
-                IOError::IOERROR_UNKNOWN => "unknown error",
-            }
-        )
-    }
-}
-
-/// Implements [`std::fmt::Debug`] for [`Error`].
-impl std::fmt::Debug for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "ioerror: {}",
-            match self.0 {
-                IOError::IOERROR_OK => "no error",
-                IOError::IOERROR_IN_PROGRESS => "in progress",
-                IOError::IOERROR_WOULD_BLOCK => "would block",
-                IOError::IOERROR_REFUSED => "refused",
-                IOError::IOERROR_CLOSED => "closed",
-                IOError::IOERROR_INVALID => "invalid I/O plane",
-                IOError::IOERROR_SYSTEM_ERROR => "system error",
-                IOError::IOERROR_ADDRESS_IN_USE => "address already in use",
-                IOError::IOERROR_UNKNOWN => "unknown error",
-            }
-        )
-    }
-}
-
-/// Instantiates an [`Error`] with an enum value from the
-/// [`sandwich_proto::IOError`] enum.
-impl From<IOError> for Error {
-    fn from(e: IOError) -> Self {
-        Self(e)
-    }
-}
-
-/// Consumes an [`Error`] back into the [`sandwich_proto::IOError`]
-/// enum value.
-impl From<Error> for IOError {
-    fn from(e: Error) -> Self {
-        e.0
-    }
-}
-
-/// Instantiates an [`Error`] with an enum value from the
-/// [`std::io::Error`] enum.
-impl From<std::io::Error> for Error {
-    fn from(e: std::io::Error) -> Self {
-        use std::io::ErrorKind;
-        match e.kind() {
-            ErrorKind::WouldBlock | ErrorKind::WriteZero | ErrorKind::Interrupted => {
-                IOError::IOERROR_WOULD_BLOCK.into()
-            }
-            ErrorKind::NotConnected => IOError::IOERROR_IN_PROGRESS.into(),
-            ErrorKind::ConnectionRefused
-            | ErrorKind::ConnectionReset
-            | ErrorKind::ConnectionAborted
-            | ErrorKind::TimedOut => IOError::IOERROR_REFUSED.into(),
-            ErrorKind::BrokenPipe => IOError::IOERROR_CLOSED.into(),
-            ErrorKind::NotFound
-            | ErrorKind::PermissionDenied
-            | ErrorKind::AlreadyExists
-            | ErrorKind::InvalidInput
-            | ErrorKind::InvalidData => IOError::IOERROR_INVALID.into(),
-            ErrorKind::Unsupported | ErrorKind::OutOfMemory => IOError::IOERROR_SYSTEM_ERROR.into(),
-            ErrorKind::AddrInUse | ErrorKind::AddrNotAvailable => {
-                IOError::IOERROR_ADDRESS_IN_USE.into()
-            }
-            _ => IOError::IOERROR_UNKNOWN.into(),
-        }
-    }
-}
-
-/// Consumes an [`Error`] back into the the [`std::io::Error`]
-/// enum value.
-/// *Note this is a lossy translation.*
-impl From<Error> for std::io::Error {
-    fn from(e: Error) -> Self {
-        use std::io::ErrorKind;
-        match e.into() {
-            IOError::IOERROR_OK => unreachable!(),
-            IOError::IOERROR_IN_PROGRESS => ErrorKind::NotConnected.into(),
-            IOError::IOERROR_WOULD_BLOCK => ErrorKind::WouldBlock.into(),
-            IOError::IOERROR_REFUSED => ErrorKind::ConnectionRefused.into(),
-            IOError::IOERROR_CLOSED => ErrorKind::BrokenPipe.into(),
-            IOError::IOERROR_INVALID => ErrorKind::InvalidInput.into(),
-            IOError::IOERROR_ADDRESS_IN_USE => ErrorKind::AddrInUse.into(),
-            IOError::IOERROR_SYSTEM_ERROR => {
-                std::io::Error::new(ErrorKind::Other, "An unknown system error has occurred")
-            }
-            IOError::IOERROR_UNKNOWN => {
-                std::io::Error::new(ErrorKind::Other, "An unknown error has occurred")
-            }
-        }
-    }
-}
 
 /// An I/O interface.
 ///

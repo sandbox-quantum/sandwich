@@ -6,9 +6,10 @@
 //! This module defines the I/O implementation for OpenSSL, based on a
 //! custom BIO_METHOD.
 
-use super::Ossl;
-
 use crate::implementation::ossl;
+use crate::io::error::IntoIOError;
+
+use super::Ossl;
 
 /// Clears the BIO retry flag.
 fn clear_bio_retry_flags(bio: *mut boringssl::bio_st) {
@@ -102,7 +103,7 @@ unsafe extern "C" fn bio_write(
             tun.state,
         )
         .map(|n| n as i32)
-        .unwrap_or_else(|e| match crate::io::Error::from(e).into() {
+        .unwrap_or_else(|e| match e.into_io_error() {
             pb::IOError::IOERROR_IN_PROGRESS | pb::IOError::IOERROR_WOULD_BLOCK => {
                 set_bio_retry_write(bio);
                 -1
@@ -139,7 +140,7 @@ unsafe extern "C" fn bio_read(
             tun.state,
         )
         .map(|n| n as i32)
-        .unwrap_or_else(|e| match crate::io::Error::from(e).into() {
+        .unwrap_or_else(|e| match e.into_io_error() {
             pb::IOError::IOERROR_IN_PROGRESS | pb::IOError::IOERROR_WOULD_BLOCK => {
                 set_bio_retry_read(bio);
                 -1
