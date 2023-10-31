@@ -28,11 +28,11 @@
 //! - [`error::sandwich_error_stack_str_free`]: releases the memory occupied by
 //!    an error stack string.
 
-pub(crate) mod context;
-
 pub(crate) use error::Error;
-pub(crate) mod io;
-pub(crate) mod listener;
 
+pub(crate) mod context;
 pub(crate) mod error;
+pub(crate) mod io;
 pub(crate) mod io_helpers;
+pub(crate) mod listener;
+pub(crate) mod support;
