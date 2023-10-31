@@ -5,8 +5,10 @@
 
 use std::ffi::{c_int, c_void};
 
+use protobuf::Enum;
+
 use crate::ffi::io::Settings;
-use crate::ffi::Error;
+use crate::ffi::{support, Error};
 use crate::tunnel::{Context, Tunnel};
 
 /// A serialized [`pb_api::TunnelConfiguration`] for FFI.
@@ -91,7 +93,6 @@ pub extern "C" fn sandwich_tunnel_free(tun: *mut c_void) {
 /// Performs the handshake.
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_handshake(tun: *mut c_void, state: *mut c_int) -> *mut Error {
-    use protobuf::Enum;
     let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let r = b.handshake();
     Box::into_raw(b);
@@ -101,7 +102,7 @@ pub extern "C" fn sandwich_tunnel_handshake(tun: *mut c_void, state: *mut c_int)
             e.into()
         }
         Ok(v) => {
-            unsafe { *state = v.value().value() };
+            unsafe { *state = support::to_c_int(v.value().value()) };
             std::ptr::null_mut()
         }
     }
@@ -114,19 +115,20 @@ pub extern "C" fn sandwich_tunnel_read(
     dst: *mut c_void,
     n: usize,
     r: *mut usize,
-) -> i32 {
-    use protobuf::Enum;
+) -> c_int {
     let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let res = b.read(unsafe { std::slice::from_raw_parts_mut(dst.cast(), n) });
     Box::into_raw(b);
-    match res {
+    let ret = match res {
         Ok(rn) => unsafe {
             *r = rn;
             pb::RecordError::RECORDERROR_OK
         },
         Err(e) => e.value(),
     }
-    .value()
+    .value();
+
+    support::to_c_int(ret)
 }
 
 /// Performs a write operation.
@@ -136,19 +138,20 @@ pub extern "C" fn sandwich_tunnel_write(
     src: *const c_void,
     n: usize,
     w: *mut usize,
-) -> i32 {
-    use protobuf::Enum;
+) -> c_int {
     let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let res = b.write(unsafe { std::slice::from_raw_parts(src.cast(), n) });
     Box::into_raw(b);
-    match res {
+    let ret = match res {
         Ok(wn) => unsafe {
             *w = wn;
             pb::RecordError::RECORDERROR_OK
         },
         Err(e) => e.value(),
     }
-    .value()
+    .value();
+
+    support::to_c_int(ret)
 }
 
 /// Performs a close operation.
@@ -161,12 +164,11 @@ pub extern "C" fn sandwich_tunnel_close(tun: *mut c_void) {
 
 /// Returns the state of the tunnel.
 #[no_mangle]
-pub extern "C" fn sandwich_tunnel_state(tun: *mut c_void) -> i32 {
-    use protobuf::Enum;
+pub extern "C" fn sandwich_tunnel_state(tun: *mut c_void) -> c_int {
     let b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
     let r = b.state();
     Box::into_raw(b);
-    r.value().value()
+    support::to_c_int(r.value().value())
 }
 
 /// Releases the underlying I/O.

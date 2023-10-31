@@ -3,7 +3,7 @@
 
 //! Sandwich error module for FFI.
 
-use std::ffi::{CStr, CString};
+use std::ffi::{c_char, c_int, CStr, CString};
 use std::ptr::null_mut;
 
 use crate::ErrorCode;
@@ -13,9 +13,9 @@ use crate::ErrorCode;
 #[repr(C)]
 pub struct Error {
     details: *mut Error,
-    msg: *mut std::os::raw::c_char,
-    kind: i32,
-    code: i32,
+    msg: *mut c_char,
+    kind: c_int,
+    code: c_int,
 }
 
 /// Instantiates an [`Error`] from a Rust error.
@@ -33,8 +33,8 @@ impl From<crate::Error> for *mut Error {
             let e_c = Box::<Error>::new(Error {
                 details: null_mut(),
                 msg,
-                kind,
-                code,
+                kind: kind as c_int,
+                code: code as c_int,
             });
             if root.is_null() {
                 root = Box::into_raw(e_c);
@@ -62,7 +62,7 @@ pub extern "C" fn sandwich_error_free(mut ptr: *mut Error) {
     }
 }
 
-/// Returns a [`std::ffi::c_char`] from a [`sandwich::Error`] reference (AKA a SandwichError in C code).
+/// Returns a [`c_char`] from a [`sandwich::Error`] reference (AKA a SandwichError in C code).
 /// The string will be in the format:
 ///     "Error Stack:
 ///      err:\[{str}\],code:\[{int},{int}\],msg:\[{str}\]"
@@ -72,7 +72,7 @@ pub extern "C" fn sandwich_error_free(mut ptr: *mut Error) {
 ///      There will be an error description line for every error linked in the Error collection.
 /// Note: It is the caller's responsibility to free the returned string (using the corollary sandwich_error_stack_str_free function).
 #[no_mangle]
-pub extern "C" fn sandwich_error_stack_str_new(mut ptr: *mut Error) -> *const std::ffi::c_char {
+pub extern "C" fn sandwich_error_stack_str_new(mut ptr: *mut Error) -> *const c_char {
     let mut err_msg_stack_str = String::from("Error Stack:\n");
     while !ptr.is_null() {
         let (err_kind, err_code) = unsafe { ((*ptr).kind, (*ptr).code) };
@@ -99,14 +99,14 @@ pub extern "C" fn sandwich_error_stack_str_new(mut ptr: *mut Error) -> *const st
 
 /// Frees a [`CString`] generated from [`sandwich_error_stack_str_new`].
 #[no_mangle]
-pub unsafe extern "C" fn sandwich_error_stack_str_free(ptr: *const std::ffi::c_char) {
+pub unsafe extern "C" fn sandwich_error_stack_str_free(ptr: *const c_char) {
     if !ptr.is_null() {
         let _ = CString::from_raw(ptr.cast_mut());
     }
 }
 
-/// Converts an [`std::ffi::c_char`] into a [`String`] that can be safely used.
-fn cstr_to_safe_string(str_ptr: *const std::ffi::c_char) -> String {
+/// Converts an [`c_char`] into a [`String`] that can be safely used.
+fn cstr_to_safe_string(str_ptr: *const c_char) -> String {
     let cstr = unsafe { CStr::from_ptr(str_ptr) };
     String::from_utf8_lossy(cstr.to_bytes()).to_string()
 }

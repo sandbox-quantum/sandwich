@@ -10,6 +10,7 @@ filegroup(
         "io_helpers.rs",
         "listener.rs",
         "mod.rs",
+        "support.rs",
     ],
     visibility = ["//rust:__subpackages__"],
 )
