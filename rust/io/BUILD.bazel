@@ -4,6 +4,7 @@
 filegroup(
     name = "io",
     srcs = [
+        "error.rs",
         "mod.rs",
     ],
     visibility = ["//rust:__subpackages__"],
