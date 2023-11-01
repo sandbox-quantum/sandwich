@@ -1,0 +1,35 @@
+load("//common/build/openssl3:rules.bzl", "openssl3_build")
+
+openssl3_build(
+    name = "openssl",
+    srcs = "@com_github_openssl.openssl//:all_srcs",
+    configure_args = [
+        "no-async",
+        "no-autoerrinit",
+        "no-cmp",
+        "no-cms",
+        "no-comp",
+        "no-ct",
+        "no-deprecated",
+        "no-dgram",
+        "no-dynamic-engine",
+        "no-filenames",
+        "no-legacy",
+        "no-module",
+        "no-shared",
+        "no-sock",
+        "no-ssl-trace",
+        "no-threads",
+        "no-ssl",
+        "no-dtls",
+        "no-md4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "test",
+    timeout = "short",
+    srcs = ["test.c"],
+    deps = [":openssl"],
+)

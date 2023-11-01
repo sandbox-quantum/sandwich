@@ -11,7 +11,6 @@ use std::net::TcpStream;
 use std::os::fd::AsRawFd;
 use std::sync::mpsc::{Receiver, Sender};
 
-use sandwich::io::helpers::SystemSocketIo;
 use sandwich::pb::HandshakeState;
 use sandwich::pb_api as sw_api;
 
@@ -21,7 +20,6 @@ use sandwich::tunnel::{Context, RecordResult};
 pub struct TcpIo {
     pub socket: TcpStream,
     pub fd: i32,
-    pub swio: SystemSocketIo,
 }
 
 /// Creates the Sandwich configuration.
@@ -97,12 +95,9 @@ pub fn create_tcpio_from_tcpstream(host: &str, port: u16) -> TcpIo {
         .expect("unable to set nonblocking");
     let tcp_socket_fd = tcp_socket.as_raw_fd();
 
-    let tcp_swio = sandwich::io::helpers::SystemSocketIo::new(tcp_socket_fd).unwrap();
-
     TcpIo {
         socket: tcp_socket,
         fd: tcp_socket_fd,
-        swio: tcp_swio,
     }
 }
 
@@ -119,7 +114,10 @@ pub fn connect_to_server(
         create_tunnel_configuration().expect("failed to create the tunnel configuration object");
 
     let mut tunnel = client_ctx
-        .new_tunnel(Box::new(tcp_io.swio), tunnel_verifier)
+        .new_tunnel(
+            Box::new(tcp_io.socket.try_clone().expect("failed to clone socket")),
+            tunnel_verifier,
+        )
         .expect("cannot create the tunnel");
     loop {
         match tunnel.handshake() {
@@ -223,7 +221,10 @@ pub fn connect_to_server_mpsc(
         create_tunnel_configuration().expect("failed to create the tunnel configuration object");
 
     let mut tunnel = client_ctx
-        .new_tunnel(Box::new(tcp_io.swio), tunnel_verifier)
+        .new_tunnel(
+            Box::new(tcp_io.socket.try_clone().expect("failed to clone socket")),
+            tunnel_verifier,
+        )
         .expect("cannot create the tunnel");
 
     loop {

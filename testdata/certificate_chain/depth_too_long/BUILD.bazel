@@ -1,0 +1,138 @@
+load("//common/rules/openssl3:rules.bzl", "gen_csr", "gen_private_key", "sign_csr", "x509_verify_test")
+
+gen_private_key(
+    name = "ca_key",
+    out = "ca.key",
+    algorithm = "ed25519",
+)
+
+gen_csr(
+    name = "ca_csr",
+    out = "ca.csr",
+    extensions = [
+        "basicConstraints=critical,CA:true,pathlen:1",
+        "keyUsage=keyCertSign",
+    ],
+    private_key = ":ca_key",
+    subject = "/CN=cert-chain-depth-too-long-CA",
+)
+
+sign_csr(
+    name = "ca_pem",
+    out = "ca.pem",
+    ca_certificate = None,
+    ca_private_key = ":ca_key",
+    csr = ":ca_csr",
+    days = 365,
+)
+
+gen_private_key(
+    name = "intermediate0_key",
+    out = "intermediate0.key",
+    algorithm = "ed25519",
+)
+
+gen_csr(
+    name = "intermediate0_csr",
+    out = "intermediate0.csr",
+    extensions = [
+        "basicConstraints=critical,CA:true",
+        "keyUsage=keyCertSign",
+    ],
+    private_key = ":intermediate0_key",
+    subject = "/CN=cert-chain-depth-too-long-intermediate0",
+)
+
+sign_csr(
+    name = "intermediate0_pem",
+    out = "intermediate0.pem",
+    ca_certificate = ":ca_pem",
+    ca_private_key = ":ca_key",
+    csr = ":intermediate0_csr",
+    days = 365,
+)
+
+gen_private_key(
+    name = "intermediate1_key",
+    out = "intermediate1.key",
+    algorithm = "ed25519",
+)
+
+gen_csr(
+    name = "intermediate1_csr",
+    out = "intermediate1.csr",
+    extensions = [
+        "basicConstraints=critical,CA:true",
+        "keyUsage=keyCertSign",
+    ],
+    private_key = ":intermediate1_key",
+    subject = "/CN=cert-chain-depth-too-long-intermediate1",
+)
+
+sign_csr(
+    name = "intermediate1_pem",
+    out = "intermediate1.pem",
+    ca_certificate = ":intermediate0_pem",
+    ca_private_key = ":intermediate0_key",
+    csr = ":intermediate1_csr",
+    days = 365,
+)
+
+gen_private_key(
+    name = "leaf_key",
+    out = "leaf.key",
+    algorithm = "ed25519",
+)
+
+gen_csr(
+    name = "leaf_csr",
+    out = "leaf.csr",
+    extensions = [
+        "basicConstraints=critical,CA:false",
+        "extendedKeyUsage=critical,serverAuth",
+    ],
+    private_key = ":leaf_key",
+    subject = "/CN=cert-chain-depth-too-long-leaf",
+    subject_alt_names = [
+        "DNS:example.com",
+        "DNS:*.example.com",
+        "email:user@example.com",
+    ],
+)
+
+sign_csr(
+    name = "leaf_pem",
+    out = "leaf.pem",
+    ca_certificate = ":intermediate1_pem",
+    ca_private_key = ":intermediate1_key",
+    csr = ":leaf_csr",
+    days = 365,
+)
+
+x509_verify_test(
+    name = "verify_test",
+    timeout = "short",
+    ca_certificate = ":ca_pem",
+    expect_error = True,
+    expect_error_string = "depth lookup: path length constraint exceeded",
+    intermediate_certificates = [
+        "intermediate0_pem",
+        "intermediate1_pem",
+    ],
+    leaf_certificate = ":leaf_pem",
+)
+
+filegroup(
+    name = "depth_too_long",
+    srcs = [
+        ":ca_key",
+        ":ca_pem",
+        ":intermediate0_key",
+        ":intermediate0_pem",
+        ":intermediate1_key",
+        ":intermediate1_pem",
+        ":leaf_key",
+        ":leaf_pem",
+    ],
+    visibility = ["//:__subpackages__"],
+)

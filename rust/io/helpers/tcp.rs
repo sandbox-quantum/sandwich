@@ -1,59 +1,7 @@
 // Copyright (c) SandboxAQ. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-use std::io::{Read, Write};
-use std::net::{TcpListener as RustTcpListener, TcpStream, ToSocketAddrs};
-
-/// A [`TcpStream`] sandwich wrapper.
-pub struct TcpIo(TcpStream);
-
-/// Implements [`TcpIo`]
-impl TcpIo {
-    /// Instantiates a [`TcpIo`] by opening a TCP connection to a remote host.
-    pub fn connect(
-        hostname: impl ToSocketAddrs,
-        is_blocking: bool,
-    ) -> Result<TcpIo, std::io::Error> {
-        for tcp in hostname
-            .to_socket_addrs()?
-            .filter_map(|sock_addr| TcpStream::connect(sock_addr).ok())
-        {
-            if tcp.set_nonblocking(!is_blocking).is_err() {
-                continue;
-            } else {
-                return Ok(TcpIo(tcp));
-            }
-        }
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "An unknown error ocurred",
-        ))
-    }
-
-    /// Flushes the TCP socket.
-    #[allow(dead_code)]
-    pub(crate) fn flush(&mut self) -> Result<(), std::io::Error> {
-        self.0.flush()
-    }
-}
-
-/// Instantiates a [`TcpIo`] from a [`TcpStream`].
-impl From<TcpStream> for TcpIo {
-    fn from(stream: TcpStream) -> Self {
-        Self(stream)
-    }
-}
-
-/// Implements [`crate::IO`] for [`TcpIo`].
-impl crate::IO for TcpIo {
-    fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
-        self.0.read(buf)
-    }
-
-    fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
-        self.0.write(buf)
-    }
-}
+use std::net::{TcpListener as RustTcpListener, ToSocketAddrs};
 
 /// A [`std::net::TcpListener`] sandwich wrapper.
 pub(crate) struct TcpListener {
@@ -100,11 +48,9 @@ impl crate::io::listener::Listener for TcpListener {
     }
 
     fn accept(&mut self) -> Result<Box<dyn crate::IO>, std::io::Error> {
-        self.listener.accept().and_then(|(stream, _)| {
-            stream.set_nonblocking(!self.is_blocking).map(|_| {
-                Box::new(crate::io::helpers::tcp::TcpIo::from(stream)) as Box<dyn crate::IO>
-            })
-        })
+        let stream = self.listener.accept()?.0;
+        stream.set_nonblocking(!self.is_blocking)?;
+        Ok(Box::new(stream))
     }
 
     fn close(&mut self) -> Result<(), std::io::Error> {
@@ -117,8 +63,14 @@ impl crate::io::listener::Listener for TcpListener {
 
 #[cfg(test)]
 pub(crate) mod test {
-    use super::*;
+    use std::net::TcpStream;
+
+    use pb::State::STATE_CONNECTION_IN_PROGRESS;
+
     use crate::IO;
+
+    use super::*;
+
     fn create_server(hostname: &str, port: &u16, is_blocking: bool) -> RustTcpListener {
         let addr = hostname.to_owned() + ":" + &port.to_string();
         let sock_addr: std::net::SocketAddr = match addr.to_socket_addrs() {
@@ -134,8 +86,12 @@ pub(crate) mod test {
         }
     }
 
-    fn create_client(addr: &str, port: u16, is_blocking: bool) -> TcpIo {
-        TcpIo::connect((addr, port), is_blocking).expect("Failed to create client")
+    fn create_client(addr: &str, port: u16, is_blocking: bool) -> TcpStream {
+        let stream = TcpStream::connect((addr, port)).expect("failed to connect");
+        stream
+            .set_nonblocking(!is_blocking)
+            .expect("failed to set non blocking");
+        stream
     }
 
     fn blocking_listener_thread(listener: RustTcpListener) {
@@ -150,13 +106,13 @@ pub(crate) mod test {
     fn handle_client_blocking(mut stream: TcpStream) {
         let mut recv = [0u8; 5];
         let send = [2u8; 3];
-        match stream.read(&mut recv) {
+        match stream.read(&mut recv, STATE_CONNECTION_IN_PROGRESS) {
             Ok(5) => {}
             Ok(v) => panic!("Read the wrong amount of bytes. Expected 5, got {v}"),
             Err(e) => panic!("Failed to read: {}", e),
         }
         assert_eq!(recv, [0u8, 1u8, 2u8, 3u8, 4u8]);
-        match stream.write(&send) {
+        match stream.write(&send, STATE_CONNECTION_IN_PROGRESS) {
             Ok(3) => {}
             Ok(v) => panic!("Wrote wrong amount of bytes. Expected 3, got {v}"),
             Err(e) => panic!("Failed to write: {}", e),
@@ -164,10 +120,9 @@ pub(crate) mod test {
         _ = stream.shutdown(std::net::Shutdown::Both);
     }
 
-    fn client_blocking_communicate(mut io: TcpIo) {
+    fn client_blocking_communicate(mut io: TcpStream) {
         let send = [0u8, 1u8, 2u8, 3u8, 4u8];
         let mut recv = [0u8; 3];
-        use sandwich_proto::State::STATE_CONNECTION_IN_PROGRESS;
         match io.write(&send, STATE_CONNECTION_IN_PROGRESS) {
             Ok(5) => {}
             Ok(v) => panic!("Wrote wrong amount of bytes. Expected 5, got {v}"),

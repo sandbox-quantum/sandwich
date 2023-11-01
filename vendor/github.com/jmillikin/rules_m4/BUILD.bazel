@@ -1,0 +1,6 @@
+load(":rules.bzl", "get_bin")
+
+get_bin(
+    name = "m4",
+    visibility = ["//visibility:public"],
+)

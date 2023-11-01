@@ -1,0 +1,74 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+load("//common/rules/cmake:rules.bzl", "cmake_processor_flags")
+load("//common/rules/openssl:rules.bzl", "gen_private_key")
+load("//common/rules/openssl3:rules.bzl", "cc_openssl_provider_library")
+
+cmake(
+    name = "oqs-provider",
+    generate_args = [
+        "-GNinja",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DBUILD_SHARED_LIBS=OFF",
+        "-DOQS_PROVIDER_BUILD_STATIC=ON",
+        "-DOPENSSL_CRYPTO_LIBRARY=$$EXT_BUILD_DEPS/lib/libcrypto.a",
+        "-DOPENSSL_SSL_LIBRARY=$$EXT_BUILD_DEPS/lib/libssl.a",
+        "-DOPENSSL_INCLUDE_DIR=$$EXT_BUILD_DEPS/include/",
+        """-DCMAKE_C_FLAGS="-isystem $$EXT_BUILD_DEPS/liboqs/include" """,
+    ] + cmake_processor_flags(),
+    lib_source = "@open-quantum-safe.oqs-provider//:all_srcs",
+    out_static_libs = ["oqsprovider.a"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/open-quantum-safe/liboqs",
+        "//vendor/github.com/openssl/openssl",
+    ],
+)
+
+cmake(
+    name = "oqs-provider-module",
+    generate_args = [
+        "-GNinja",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DOPENSSL_CRYPTO_LIBRARY=$$EXT_BUILD_DEPS/lib/libcrypto.a",
+        "-DOPENSSL_SSL_LIBRARY=$$EXT_BUILD_DEPS/lib/libssl.a",
+        "-DOPENSSL_INCLUDE_DIR=$$EXT_BUILD_DEPS/include/",
+        """-DCMAKE_C_FLAGS="-isystem $$EXT_BUILD_DEPS/liboqs/include" """,
+    ] + cmake_processor_flags(),
+    lib_source = "@open-quantum-safe.oqs-provider//:all_srcs",
+    out_shared_libs = select({
+        "@platforms//os:macos": ["oqsprovider.dylib"],
+        "@platforms//os:ios": ["oqsprovider.dylib"],
+        "//conditions:default": ["oqsprovider.so"],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/open-quantum-safe/liboqs",
+        "//vendor/github.com/openssl/openssl",
+    ],
+)
+
+cc_openssl_provider_library(
+    name = "openssl_oqs_provider",
+    lib = ":oqs-provider-module",
+    visibility = ["//visibility:public"],
+)
+
+gen_private_key(
+    name = "private_key_test",
+    out = "dilithium5.key.pem",
+    algorithm = "dilithium5",
+    format = "PEM",
+)
+
+cc_test(
+    name = "test",
+    timeout = "short",
+    srcs = ["test.c"],
+    data = [":private_key_test"],
+    deps = [
+        ":oqs-provider",
+        "//vendor/github.com/open-quantum-safe/liboqs",
+        "//vendor/github.com/openssl/openssl",
+    ],
+)
