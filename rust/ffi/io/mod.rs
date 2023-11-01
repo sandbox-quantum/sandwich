@@ -32,10 +32,10 @@ pub type WriteFn = extern "C" fn(
     err: *mut c_int,
 ) -> usize;
 
-/// Settings for a generic I/O interface, using pointers.
+/// IO for a generic I/O interface, using pointers.
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct Settings {
+pub struct IO {
     /// A user supplied read function.
     readfn: ReadFn,
     /// A user supploed write function.
@@ -45,11 +45,11 @@ pub struct Settings {
     uarg: *mut c_void,
 }
 
-/// Settings is Sendable.
-unsafe impl Send for Settings {}
+/// IO is Sendable.
+unsafe impl Send for IO {}
 
-/// Implements [`crate::IO`] for [`Settings`].
-impl crate::IO for Settings {
+/// Implements [`crate::IO`] for [`IO`].
+impl crate::IO for IO {
     fn read(&mut self, buf: &mut [u8], tunnel_state: pb::State) -> Result<usize> {
         use protobuf::Enum;
 

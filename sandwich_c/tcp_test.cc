@@ -248,7 +248,7 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 ///
 /// \return The tunnel.
 [[nodiscard]] auto CreateTunnel(
-    struct ::SandwichTunnelContext *ctx, const struct ::SandwichCIOSettings &io,
+    struct ::SandwichTunnelContext *ctx, const struct ::SandwichIO &io,
     const struct ::SandwichTunnelConfigurationSerialized &configuration)
     -> std::unique_ptr<struct ::SandwichTunnel, SandwichTunnelDeleter> {
   struct ::SandwichTunnel *tun{nullptr};
@@ -420,7 +420,7 @@ bool SERVER_READY = false;
 void client_thread(std::string server_hostname, uint16_t server_port) {
   while (!SERVER_READY)
     ;
-  struct ::SandwichCIOOwned *client_io;
+  struct ::SandwichIOOwned *client_io;
   std::string error;
   std::unique_ptr<Runfiles> runfiles(
       Runfiles::CreateForTest(BAZEL_CURRENT_REPOSITORY, &error));
@@ -461,7 +461,7 @@ void server_thread(std::string server_hostname, uint16_t server_port) {
 
   SERVER_READY = true;
   enum SandwichIOError err;
-  struct SandwichCIOOwned *listener_io;
+  struct SandwichIOOwned *listener_io;
   err = sandwich_listener_accept(&*server_listener, &listener_io);
   sandwich_assert(err == SANDWICH_IOERROR_OK);
   auto server_tunnel = CreateTunnel(&*server, *(listener_io->io),

@@ -7,7 +7,7 @@ use std::ffi::{c_int, c_void};
 
 use protobuf::Enum;
 
-use crate::ffi::io::Settings;
+use crate::ffi::io::IO;
 use crate::ffi::{support, Error};
 use crate::tunnel::{Context, Tunnel};
 
@@ -42,7 +42,7 @@ pub static SandwichTunnelConfigurationVerifierEmpty: SandwichTunnelConfiguration
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_new(
     ctx: *mut c_void,
-    cio: *const Settings,
+    cio: *const IO,
     configuration_serialized: SandwichTunnelConfigurationSerialized,
     tun: *mut *mut c_void,
 ) -> *mut Error {

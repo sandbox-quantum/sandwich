@@ -23,21 +23,21 @@ import (
 #include "sandwich_c/sandwich.h"
 
 
-extern SandwichCIOReadFunction sandwichGoIORead;
-extern SandwichCIOWriteFunction sandwichGoIOWrite;
+extern SandwichIOReadFunction sandwichGoIORead;
+extern SandwichIOWriteFunction sandwichGoIOWrite;
 
 typedef void* mutBuf;
 typedef const void* constBuf;
 
-static struct SandwichCIOSettings* allocSandwichCIOSettings(void) {
-  return (struct SandwichCIOSettings*)calloc(1, sizeof(struct SandwichCIOSettings));
+static struct SandwichIO* allocSandwichIO(void) {
+  return (struct SandwichIO*)calloc(1, sizeof(struct SandwichIO));
 }
 
-static size_t client_bridge_read(SandwichCIOReadFunctionPtr read, void *uarg, void *buf, size_t count, enum SandwichTunnelState tunnel_state, enum SandwichIOError *err) {
+static size_t client_bridge_read(SandwichIOReadFunctionPtr read, void *uarg, void *buf, size_t count, enum SandwichTunnelState tunnel_state, enum SandwichIOError *err) {
 	return read(uarg, buf, count, tunnel_state, err);
 }
 
-static size_t client_bridge_write(SandwichCIOWriteFunctionPtr write, void *uarg, void *buf, size_t count, enum SandwichTunnelState tunnel_state, enum SandwichIOError *err) {
+static size_t client_bridge_write(SandwichIOWriteFunctionPtr write, void *uarg, void *buf, size_t count, enum SandwichTunnelState tunnel_state, enum SandwichIOError *err) {
 	return write(uarg, buf, count, tunnel_state, err);
 }
 
@@ -54,8 +54,8 @@ type IO interface {
 }
 
 // createSettings creates a C-compatible structure from an IO interface.
-func createSettings(goio *goIOWrapper) *C.struct_SandwichCIOSettings {
-	set := C.allocSandwichCIOSettings()
+func createSettings(goio *goIOWrapper) *C.struct_SandwichIO {
+	set := C.allocSandwichIO()
 	set.read = &C.sandwichGoIORead
 	set.write = &C.sandwichGoIOWrite
 	set.uarg = unsafe.Pointer(goio.io)
@@ -88,28 +88,28 @@ func sandwichGoIOWrite(ioint unsafe.Pointer, buf C.constBuf, size C.size_t, tunn
 	return C.size_t(n)
 }
 
-// goIOWrapper wraps `struct SandwichCIOSettings` and `IO` together.
+// goIOWrapper wraps `struct SandwichIO` and `IO` together.
 type goIOWrapper struct {
-	settings *C.struct_SandwichCIOSettings
+	settings *C.struct_SandwichIO
 	io       *IO
 }
 
-// newgoIOWrapper creates a new SandwichCIOSettings from an IO interface.
+// newgoIOWrapper creates a new SandwichIO from an IO interface.
 func newgoIOWrapper(goio *goIOWrapper, io IO) {
 	goio.io = &io
 	goio.settings = createSettings(goio)
 	runtime.SetFinalizer(goio, (*goIOWrapper).free)
 }
 
-// free releases the memory taken by `struct SandwichCIOSettings`.
+// free releases the memory taken by `struct SandwichIO`.
 func (goio *goIOWrapper) free() {
 	C.free(unsafe.Pointer(goio.settings))
 	goio.settings = nil
 }
 
-// swOwnedIOWrapper wraps `struct SandwichCIOOwned`.
+// swOwnedIOWrapper wraps `struct SandwichIOOwned`.
 type swOwnedIOWrapper struct {
-	handle *C.struct_SandwichCIOOwned
+	handle *C.struct_SandwichIOOwned
 }
 
 // Reads implements the sandwich.IO interface for bufIO.
@@ -242,7 +242,7 @@ func (clistener *Listener) free() {
 
 // Creates a Sandwich owned TCP based IO Object.
 func IOTCPClient(hostname string, port uint16, is_blocking bool) (*swOwnedIOWrapper, *IOError) {
-	var io *C.struct_SandwichCIOOwned
+	var io *C.struct_SandwichIOOwned
 	err := C.sandwich_io_client_tcp_new(C.CString(hostname), C.ushort(port), C.bool(is_blocking), &io)
 	pb_err := pb.IOError(err)
 	if pb_err != pb.IOError_IOERROR_OK {

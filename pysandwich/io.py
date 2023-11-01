@@ -4,7 +4,7 @@
 """Sandwich I/O API.
 
 This API provides an I/O interface in Python, to use with Sandwich.
-It wraps a `struct SandwichCIOSettings`.
+It wraps a `struct SandwichIO`.
 
 An I/O interface is an object requiring the following methods:
     * read(n: int) -> bytes
@@ -115,7 +115,7 @@ class IOUnknownException(IOException):
 
 
 class IO(abc.ABC):
-    """Abstraction of a `struct SandwichCIO` handle.
+    """Abstraction of a `struct SandwichIO` handle.
 
     The C handle is built by the tunnel, using the methods from this class.
     """
@@ -123,9 +123,9 @@ class IO(abc.ABC):
     Error = SandwichIOProto.IOError
 
     class Settings(ctypes.Structure):
-        """The `struct SandwichCIOSettings`."""
+        """The `struct SandwichIO`."""
 
-        # typedef size_t(SandwichCIOReadFunction)(void *uarg, void *buf, size_t count,
+        # typedef size_t(SandwichIOReadFunction)(void *uarg, void *buf, size_t count,
         # enum SandwichTunnelState tunnel_state,
         # enum SandwichIOError *err);
         _READ_FN_TYPE = ctypes.CFUNCTYPE(
@@ -137,7 +137,7 @@ class IO(abc.ABC):
             ctypes.POINTER(ctypes.c_int),  # *err
         )
 
-        # typedef size_t(SandwichCIOWriteFunction)(void *uarg, const void *buf,
+        # typedef size_t(SandwichIOWriteFunction)(void *uarg, const void *buf,
         # size_t count,
         # enum SandwichTunnelState tunnel_state,
         # enum SandwichIOError *err);
@@ -199,7 +199,7 @@ class IO(abc.ABC):
 
 
 class OwnedIO(ctypes.Structure):
-    """The `struct SandwichCIOSettings`."""
+    """The `struct SandwichIO`."""
 
     _IO_TYPE = ctypes.POINTER(IO.Settings)
 

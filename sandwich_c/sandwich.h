@@ -83,10 +83,10 @@ extern struct SandwichTunnelConfigurationSerialized
 /// \param[out] err Error, if any.
 ///
 /// \return The amount of bytes successfully read, or 0.
-typedef size_t(SandwichCIOReadFunction)(void *uarg, void *buf, size_t count,
-                                        enum SandwichTunnelState tunnel_state,
-                                        enum SandwichIOError *err);
-typedef SandwichCIOReadFunction *SandwichCIOReadFunctionPtr;
+typedef size_t(SandwichIOReadFunction)(void *uarg, void *buf, size_t count,
+                                       enum SandwichTunnelState tunnel_state,
+                                       enum SandwichIOError *err);
+typedef SandwichIOReadFunction *SandwichIOReadFunctionPtr;
 
 /// \brief Write function for the I/O interface.
 ///
@@ -97,39 +97,39 @@ typedef SandwichCIOReadFunction *SandwichCIOReadFunctionPtr;
 /// \param[out] err Error, if any.
 ///
 /// \return The amount of bytes successfully written, or 0.
-typedef size_t(SandwichCIOWriteFunction)(void *uarg, const void *buf,
-                                         size_t count,
-                                         enum SandwichTunnelState tunnel_state,
-                                         enum SandwichIOError *err);
-typedef SandwichCIOWriteFunction *SandwichCIOWriteFunctionPtr;
+typedef size_t(SandwichIOWriteFunction)(void *uarg, const void *buf,
+                                        size_t count,
+                                        enum SandwichTunnelState tunnel_state,
+                                        enum SandwichIOError *err);
+typedef SandwichIOWriteFunction *SandwichIOWriteFunctionPtr;
 
 /// \brief Settings for a generic I/O interface.
 ///
-/// This object is used to build a `saq::sandwich::io::CIO`.
-struct SandwichCIOSettings {
+/// This object is used to build a `saq::sandwich::io::IO`.
+struct SandwichIO {
   /// \brief The read function.
-  SandwichCIOReadFunctionPtr read;
+  SandwichIOReadFunctionPtr read;
 
   /// \brief The write function.
-  SandwichCIOWriteFunctionPtr write;
+  SandwichIOWriteFunctionPtr write;
 
   /// \brief Opaque argument to forward to read, and write.
   void *uarg;
 };
 
-typedef void(SandwichOwnedIoFreeFunction)(struct SandwichCIOSettings *cio);
+typedef void(SandwichOwnedIoFreeFunction)(struct SandwichIO *cio);
 typedef SandwichOwnedIoFreeFunction *SandwichOwnedIoFreeFunctionPtr;
 
 /// \brief An IO owned by the Sandwich Library.
 ///
-/// ::SandwichCIOOwned objects owns the underlying `io->uarg` object pointer,
+/// ::SandwichIOOwned objects owns the underlying `io->uarg` object pointer,
 /// and provides a `freeptr` function that is responsible for destroying that
-/// object. ::SandwichCIOOwned must be freed by calling the
+/// object. ::SandwichIOOwned must be freed by calling the
 /// ::sandwich_io_owned_free function. This is what is returned from
 /// sandwich_io_*_new functions.
-struct SandwichCIOOwned {
+struct SandwichIOOwned {
   // \brief the io which is owned by Sandwich.
-  struct SandwichCIOSettings *io;
+  struct SandwichIO *io;
 
   // \brief the function used to free the owned io.
   SandwichOwnedIoFreeFunctionPtr freeptr;
@@ -189,12 +189,12 @@ sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
 
 /// \brief Create a tunnel.
 ///
-/// A tunnel is created from an I/O interface. `SandwichCIOSettings` are
+/// A tunnel is created from an I/O interface. `SandwichIO` are
 /// used to create an I/O interface that forwards calls to the `read`, and
-/// `write` of `SandwichCIOSettings`.
+/// `write` of `SandwichIO`.
 ///
 /// Since the implementation of `sandwich_tunnel_new` makes a copy of
-/// `SandwichCIOSettings`, the caller does not need to keep `cio` in memory.
+/// `SandwichIO`, the caller does not need to keep `cio` in memory.
 /// In other words, Sandwich does not take the ownership of `cio`.
 ///
 /// \param[in] ctx Sandwich context used for setting up the tunnel.
@@ -207,7 +207,7 @@ sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
 /// \return NULL if no error occured, else a chain of errors.
 SANDWICH_API struct SandwichError *
 sandwich_tunnel_new(struct SandwichTunnelContext *ctx,
-                    const struct SandwichCIOSettings *cio,
+                    const struct SandwichIO *cio,
                     struct SandwichTunnelConfigurationSerialized configuration,
                     struct SandwichTunnel **tun);
 
@@ -282,7 +282,7 @@ SANDWICH_API void sandwich_tunnel_free(struct SandwichTunnel *tun);
 ///         error that occurred.
 SANDWICH_API enum SandwichIOError
 sandwich_io_client_tcp_new(const char *hostname, const uint16_t port,
-                           bool async, struct SandwichCIOOwned **ownedIO);
+                           bool async, struct SandwichIOOwned **ownedIO);
 
 /// \brief Creates an IO object that wraps a UNIX socket
 ///
@@ -293,11 +293,11 @@ sandwich_io_client_tcp_new(const char *hostname, const uint16_t port,
 /// \return IOERROR_OK if the operation was a success, otherwise returns the
 ///         error that occurred.
 SANDWICH_API enum SandwichIOError
-sandwich_io_socket_wrap_new(int fd, struct SandwichCIOOwned **ownedIO);
+sandwich_io_socket_wrap_new(int fd, struct SandwichIOOwned **ownedIO);
 
-/// \brief Frees a SandwichCIOOwned object created by one of the
+/// \brief Frees a SandwichIOOwned object created by one of the
 ///        sandwich_io_*_new() functions.
-SANDWICH_API void sandwich_io_owned_free(struct SandwichCIOOwned *ownedIO);
+SANDWICH_API void sandwich_io_owned_free(struct SandwichIOOwned *ownedIO);
 
 /// \brief Creates a a new Listener object.
 ///
@@ -322,13 +322,15 @@ sandwich_listener_listen(struct SandwichListener *listener);
 /// \brief Prompts the Listener to start accepting connections.
 ///
 /// \param[in] listener the listener which should start accepting connections.
-/// \param[out] ownedIO the newly created OwnedIO struct containing the IO object to use with
+/// \param[out] ownedIO the newly created OwnedIO struct containing the IO
+/// object to use with
 ///	    a tunnel. Null if an error occurs.
 ///
 /// \return IOERROR_OK if the operation was a success, otherwise returns
 /// 	    the error that occurred.
 SANDWICH_API enum SandwichIOError
-sandwich_listener_accept(struct SandwichListener *listener, struct SandwichCIOOwned **ownedIO);
+sandwich_listener_accept(struct SandwichListener *listener,
+                         struct SandwichIOOwned **ownedIO);
 
 /// \brief Closes the listener to new connections.
 ///
