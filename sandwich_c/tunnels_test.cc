@@ -200,7 +200,7 @@ auto CreateServerContext(const struct SandwichContext *sw,
 
 /// \brief Read from a socket.
 ///
-/// This method is a SandwichCIOReadFunction.
+/// This method is a SandwichIOReadFunction.
 auto SandwichReadFromSocket(
     void *uarg, void *buf, const size_t count,
     [[maybe_unused]] const enum ::SandwichTunnelState state,
@@ -255,7 +255,7 @@ auto SandwichReadFromSocket(
 
 /// \brief Write to a socket.
 ///
-/// This method is a SandwichCIOWriteFunction.
+/// This method is a SandwichIOWriteFunction.
 auto SandwichWriteToSocket(
     void *uarg, const void *buf, const size_t count,
     [[maybe_unused]] const enum ::SandwichTunnelState state,
@@ -301,14 +301,14 @@ auto SandwichWriteToSocket(
 
 /// \brief Close a socket.
 ///
-/// This method is a SandwichCIOCloseFunction.
+/// This method is a SandwichIOCloseFunction.
 void CloseSocket(void *uarg) {
   const auto fd = static_cast<int>(reinterpret_cast<uintptr_t>(uarg));
   ::close(fd);
 }
 
 /// \brief Global CIO settings structure for sockets.
-constexpr struct ::SandwichCIOSettings SandwichSocketCIOSettings = {
+constexpr struct ::SandwichIO SandwichSocketCIOSettings = {
     .read = SandwichReadFromSocket,
     .write = SandwichWriteToSocket,
     .uarg = nullptr};
@@ -327,7 +327,7 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 ///
 /// \return The tunnel.
 [[nodiscard]] auto CreateTunnel(
-    struct ::SandwichTunnelContext *ctx, const struct ::SandwichCIOSettings &io,
+    struct ::SandwichTunnelContext *ctx, const struct ::SandwichIO &io,
     const struct ::SandwichTunnelConfigurationSerialized &configuration)
     -> std::unique_ptr<struct ::SandwichTunnel, SandwichTunnelDeleter> {
   struct ::SandwichTunnel *tun{nullptr};
@@ -533,10 +533,10 @@ int main(int argc, char **argv) {
 
   // Create I/O interfaces for client and server.
 
-  struct ::SandwichCIOSettings client_io = SandwichSocketCIOSettings;
+  struct ::SandwichIO client_io = SandwichSocketCIOSettings;
   client_io.uarg = reinterpret_cast<void *>(fds[0]);
 
-  struct ::SandwichCIOSettings server_io = SandwichSocketCIOSettings;
+  struct ::SandwichIO server_io = SandwichSocketCIOSettings;
   server_io.uarg = reinterpret_cast<void *>(fds[1]);
 
   // Create tunnels.

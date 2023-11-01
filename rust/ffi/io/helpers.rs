@@ -15,7 +15,7 @@ use pb::IOError;
 use crate::ffi::support;
 use crate::io::error::IntoIOError;
 
-use super::Settings;
+use super::IO;
 
 /// A read function.
 pub type ReadFn = extern "C" fn(
@@ -35,10 +35,10 @@ pub type WriteFn = extern "C" fn(
     err: *mut c_int,
 ) -> usize;
 
-/// Settings for a helper I/O interface, using pointers.
+/// IO for a helper I/O interface, using pointers.
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub(crate) struct HelperIOSettings {
+pub(crate) struct HelperIO {
     /// The function that trampolines to the helper's read function.
     readfn: ReadFn,
     /// The function that trampolines to the helper's write function.
@@ -116,19 +116,19 @@ pub extern "C" fn sandwich_io_owned_free(owned_io: *mut OwnedIo) {
 }
 
 /// Frees an owned IO.
-pub(crate) extern "C" fn sandwich_helper_owned_io_free(cio: *mut Settings) {
-    let boxed_cio: Box<HelperIOSettings> = unsafe { Box::from_raw(cio.cast()) };
+pub(crate) extern "C" fn sandwich_helper_owned_io_free(cio: *mut IO) {
+    let boxed_cio: Box<HelperIO> = unsafe { Box::from_raw(cio.cast()) };
     let _: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(boxed_cio.uarg.cast()) };
 }
 
 /// A free function.
-pub type FreeFn = extern "C" fn(uarg: *mut Settings);
+pub type FreeFn = extern "C" fn(uarg: *mut IO);
 
 /// An IO owned by a structure.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct OwnedIo {
-    pub(crate) io: *mut Settings,
+    pub(crate) io: *mut IO,
     pub(crate) freeptr: Option<FreeFn>,
 }
 
@@ -162,7 +162,7 @@ pub extern "C" fn sandwich_io_socket_wrap_new(socket: RawFd, owned_io: *mut *mut
 fn setup_helper_io(io: Box<dyn crate::IO>, owned_io: *mut *mut OwnedIo) -> c_int {
     let boxed_io = Box::new(io);
     let io_ptr = Box::into_raw(boxed_io);
-    let boxed_cio = Box::new(HelperIOSettings {
+    let boxed_cio = Box::new(HelperIO {
         readfn: sandwich_helper_io_read,
         writefn: sandwich_helper_io_write,
         uarg: io_ptr.cast(),

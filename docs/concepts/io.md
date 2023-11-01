@@ -20,7 +20,7 @@ specific error codes for such a purpose.
 ## C API
 
 The I/O interface is described in the C API through the
-[SandwichCIOSettings](../cAPI/structSandwichCIOSettings.md) structure.
+[SandwichIO](../cAPI/structSandwichIO.md) structure.
 
 Here is an example of an I/O structure that would forward the data to a socket in C++:
 

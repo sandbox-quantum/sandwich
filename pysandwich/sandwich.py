@@ -169,7 +169,7 @@ class _SandwichCLib:
             "sandwich_tunnel_context_free": __fs(args=[ctypes.c_void_p], ret=None),
             # struct SandwichError *sandwich_tunnel_new(
             #       struct SandwichTunnelContext *ctx,
-            #       struct SandwichCIO *cio,
+            #       struct SandwichIO *cio,
             #       struct SandwichTunnelConfigurationSerialized configuration,
             #       struct SandwichTunnel **tun);
             "sandwich_tunnel_new": __fs(
@@ -223,9 +223,9 @@ class _SandwichCLib:
             "sandwich_tunnel_state": __fs(args=[ctypes.c_void_p], ret=ctypes.c_int32),
             # void sandwich_tunnel_free(struct SandwichTunnel *tun);
             "sandwich_tunnel_free": __fs(args=[ctypes.c_void_p], ret=None),
-            # enum SandwichCIOError sandwich_io_client_tcp_new(
+            # enum SandwichIOError sandwich_io_client_tcp_new(
             #       const char *hostname, const uint16_t port, bool async,
-            #       struct SandwichCIOOwned **ownedIO);
+            #       struct SandwichIOOwned **ownedIO);
             "sandwich_io_client_tcp_new": __fs(
                 args=[
                     ctypes.c_char_p,
@@ -235,8 +235,8 @@ class _SandwichCLib:
                 ],
                 ret=ctypes.c_int32,
             ),
-            # enum SandwichCIOError sandwich_io_socket_wrap_new(
-            #       int fd, struct SandwichCIOOwned **ownedIO);
+            # enum SandwichIOError sandwich_io_socket_wrap_new(
+            #       int fd, struct SandwichIOOwned **ownedIO);
             "sandwich_io_socket_wrap_new": __fs(
                 args=[
                     ctypes.c_int,
@@ -244,7 +244,7 @@ class _SandwichCLib:
                 ],
                 ret=ctypes.c_int32,
             ),
-            # void sandwich_io_owned_free(struct SandwichCIOOwned *ownedIO)
+            # void sandwich_io_owned_free(struct SandwichIOOwned *ownedIO)
             "sandwich_io_owned_free": __fs(args=[ctypes.c_void_p], ret=None),
             # struct SandwichError *sandwich_listener_new(const void *src,
             #       size_t n, struct SandwichListener **out);
