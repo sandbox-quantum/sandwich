@@ -1,0 +1,6 @@
+load(":rules.bzl", "get_bin")
+
+get_bin(
+    name = "bison",
+    visibility = ["//visibility:public"],
+)

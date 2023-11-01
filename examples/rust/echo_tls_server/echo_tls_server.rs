@@ -81,10 +81,8 @@ fn tunnel_echo_handler(
     server_ctx: &Context,
     tunnel_verifier: &sw_api::TunnelConfiguration,
 ) {
-    let tcp_swio = sandwich::io::helpers::TcpIo::from(connection);
-
     let mut tunnel = server_ctx
-        .new_tunnel(Box::new(tcp_swio), tunnel_verifier.clone())
+        .new_tunnel(Box::new(connection), tunnel_verifier.clone())
         .expect("cannot create the tunnel");
 
     match tunnel.handshake() {

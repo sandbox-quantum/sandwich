@@ -1,0 +1,132 @@
+load(":rules.bzl", "gen_certificate", "gen_csr", "gen_openssl_providers_configuration", "gen_private_key", "sign_csr", "x509_verify_test")
+load("//common/rules/openssl3/private:gen_openssl_modules_directory.bzl", "gen_openssl_modules_directory")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+
+gen_openssl_providers_configuration(
+    name = "conf",
+    providers = [
+        "//vendor/github.com/open-quantum-safe/oqs-provider:openssl_oqs_provider",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gen_openssl_modules_directory(
+    name = "modules",
+    configuration = ":conf",
+    visibility = ["//visibility:public"],
+)
+
+gen_private_key(
+    name = "private_key_test",
+    out = "dilithium5.key",
+    algorithm = "dilithium5",
+    format = "DER",
+)
+
+gen_certificate(
+    name = "certificate_test",
+    out = "dilithium5.cert.pem",
+    private_key = ":private_key_test",
+    private_key_format = "DER",
+    subject_alt_names = [
+        "DNS:example.com",
+        "DNS:*.example.com",
+    ],
+)
+
+gen_private_key(
+    name = "ca_key",
+    out = "ca.key",
+    algorithm = "dilithium5",
+)
+
+gen_csr(
+    name = "ca_csr",
+    out = "ca.csr",
+    extensions = [
+        "basicConstraints=critical,CA:TRUE,pathlen:1",
+        "keyUsage=keyCertSign",
+    ],
+    private_key = ":ca_key",
+    subject = "/CN=test-root-CA",
+    subject_alt_names = [
+        "DNS:example.com",
+        "DNS:*.example.com",
+        "email:user@example.com",
+    ],
+)
+
+sign_csr(
+    name = "ca_pem",
+    out = "ca.pem",
+    ca_certificate = None,
+    ca_private_key = ":ca_key",
+    csr = ":ca_csr",
+    days = 365,
+    reject = [
+        "clientAuth",
+        "serverAuth",
+    ],
+)
+
+x509_verify_test(
+    name = "ca_verify_test",
+    timeout = "short",
+    ca_certificate = ":ca_pem",
+    check_ca_self_signatures = True,
+    email = "user@example.com",
+    hostnames = ["example.com"],
+    leaf_certificate = ":ca_pem",
+    partial_chain = False,
+    verify_depth = 1,
+)
+
+x509_verify_test(
+    name = "ca_verify_error_test",
+    timeout = "short",
+    ca_certificate = ":ca_pem",
+    expect_error = True,
+    expect_error_string = "depth lookup: self-signed certificate",
+    leaf_certificate = ":certificate_test",
+)
+
+bzl_library(
+    name = "openssl3-rules",
+    srcs = [
+        ":rules.bzl",
+    ],
+    deps = [
+        "//common/rules/openssl3/private",
+    ],
+)
+
+stardoc(
+    name = "openssl3-providers-docs",
+    out = "openssl3-providers.md",
+    input = "providers.bzl",
+    deps = [":openssl3-rules"],
+)
+
+stardoc(
+    name = "openssl3-rules-docs",
+    out = "openssl3-rules.md",
+    input = "rules.bzl",
+    deps = [":openssl3-rules"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":ca_csr",
+        ":ca_key",
+        ":certificate_test",
+        ":conf",
+        ":modules",
+        ":openssl3-providers-docs",
+        ":openssl3-rules",
+        ":openssl3-rules-docs",
+        ":private_key_test",
+    ],
+)

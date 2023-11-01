@@ -4,7 +4,9 @@
 //! Helper functions that create commonly used IO objects.
 
 use std::ffi::{c_int, c_void, CStr};
-use std::os::fd::RawFd;
+use std::fs::File;
+use std::net::TcpStream;
+use std::os::fd::{FromRawFd, RawFd};
 
 use protobuf::Enum;
 
@@ -12,7 +14,6 @@ use pb::IOError;
 
 use crate::ffi::support;
 use crate::io::error::IntoIOError;
-use crate::io::helpers::{SystemSocketIo, TcpIo};
 
 use super::Settings;
 
@@ -139,27 +140,23 @@ pub extern "C" fn sandwich_io_client_tcp_new(
     is_blocking: bool,
     owned_io: *mut *mut OwnedIo,
 ) -> c_int {
-    let hn = unsafe {
-        CStr::from_ptr(hostname.cast())
-            .to_str()
-            .unwrap()
-            .to_string()
+    let Ok(hn) = unsafe { CStr::from_ptr(hostname.cast()) }.to_str() else {
+        return support::to_c_int(pb::IOError::IOERROR_SYSTEM_ERROR.value());
     };
-    let io: Box<dyn crate::IO> = match TcpIo::connect((hn, port), is_blocking) {
-        Ok(io) => Box::new(io),
+    let socket = match TcpStream::connect((hn, port)) {
+        Ok(socket) => socket,
         Err(e) => return support::to_c_int(e.into_io_error().value()),
     };
-    setup_helper_io(io, owned_io)
+    if let Err(e) = socket.set_nonblocking(!is_blocking) {
+        return support::to_c_int(e.into_io_error().value());
+    };
+    setup_helper_io(Box::new(socket), owned_io)
 }
 
 /// Creates a new system socket IO object.
 #[no_mangle]
 pub extern "C" fn sandwich_io_socket_wrap_new(socket: RawFd, owned_io: *mut *mut OwnedIo) -> c_int {
-    let io: Box<dyn crate::IO> = match SystemSocketIo::new(socket) {
-        Ok(io) => Box::new(io),
-        Err(e) => return support::to_c_int(e.into_io_error().value()),
-    };
-    setup_helper_io(io, owned_io)
+    setup_helper_io(Box::new(unsafe { File::from_raw_fd(socket) }), owned_io)
 }
 
 fn setup_helper_io(io: Box<dyn crate::IO>, owned_io: *mut *mut OwnedIo) -> c_int {
