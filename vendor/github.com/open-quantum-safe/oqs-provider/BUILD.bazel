@@ -1,7 +1,6 @@
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
 load("//common/rules/cmake:rules.bzl", "cmake_processor_flags")
-load("//common/rules/openssl:rules.bzl", "gen_private_key")
-load("//common/rules/openssl3:rules.bzl", "cc_openssl_provider_library")
+load("//common/rules/openssl3:rules.bzl", "cc_openssl_provider_library", "gen_private_key")
 
 cmake(
     name = "oqs-provider",
