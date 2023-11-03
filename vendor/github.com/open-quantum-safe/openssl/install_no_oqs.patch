@@ -38,22 +38,22 @@ index e52ff981a..e9ba873c6 100644
 -	done
 +	@$(ECHO) "No OQS library directory found to install."
 +else
-+  ifneq (,$(wildcard $(OQSLIBDIR)/liboqs.a))
-+    $(ECHO) "install $(OQSLIBDIR)/liboqs.a $(DESTDIR)$(libdir)"; \
-+    install $(OQSLIBDIR)/liboqs.a $(DESTDIR)$(libdir)
-+  endif
-+  ifneq (,$(wildcard $(OQSLIBDIR)/liboqs.so.0*))
-+    @set -e; for i in $(OQSLIBDIR)/liboqs.so.0.*; do \
-+      fn=`basename $$i`; \
-+      sn=`basename $(OQSLIBDIR)/liboqs.so.?`; \
-+      $(ECHO) "install $(OQSLIBDIR)/$$fn $(DESTDIR)$(libdir)"; \
-+      $(ECHO) "cd $(DESTDIR)$(libdir) && ln -sf $$fn liboqs.so && ln -sf $$fn $$sn && cd -"; \
-+      install $(OQSLIBDIR)/$$fn $(DESTDIR)$(libdir); \
-+      cd $(DESTDIR)$(libdir) && ln -sf $$fn liboqs.so && ln -sf $$fn $$sn && cd -; \
-+    done
-+  endif
++	ifneq (,$(wildcard $(OQSLIBDIR)/liboqs.a))
++		$(ECHO) "install $(OQSLIBDIR)/liboqs.a $(DESTDIR)$(libdir)"; \
++		install $(OQSLIBDIR)/liboqs.a $(DESTDIR)$(libdir)
++	endif
++	ifneq (,$(wildcard $(OQSLIBDIR)/liboqs.so.0*))
++		@set -e; for i in $(OQSLIBDIR)/liboqs.so.0.*; do \
++			fn=`basename $$i`; \
++			sn=`basename $(OQSLIBDIR)/liboqs.so.?`; \
++			$(ECHO) "install $(OQSLIBDIR)/$$fn $(DESTDIR)$(libdir)"; \
++			$(ECHO) "cd $(DESTDIR)$(libdir) && ln -sf $$fn liboqs.so && ln -sf $$fn $$sn && cd -"; \
++			install $(OQSLIBDIR)/$$fn $(DESTDIR)$(libdir); \
++			cd $(DESTDIR)$(libdir) && ln -sf $$fn liboqs.so && ln -sf $$fn $$sn && cd -; \
++		done
++	endif
  endif
- 
+
 -
  install_programs: install_runtime_libs build_programs
  	@[ -n "$(INSTALLTOP)" ] || (echo INSTALLTOP should not be empty; exit 1)
