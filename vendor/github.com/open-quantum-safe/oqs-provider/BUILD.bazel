@@ -15,6 +15,11 @@ cmake(
         """-DCMAKE_C_FLAGS="-isystem $$EXT_BUILD_DEPS/liboqs/include" """,
     ] + cmake_processor_flags(),
     lib_source = "@open-quantum-safe.oqs-provider//:all_srcs",
+    linkopts = select({
+        # oqsprovider uses libdl on Linux system
+        "@platforms//os:linux": ["-ldl"],
+        "//conditions:default": [],
+    }),
     out_static_libs = ["oqsprovider.a"],
     visibility = ["//visibility:public"],
     deps = [
@@ -35,6 +40,11 @@ cmake(
         """-DCMAKE_C_FLAGS="-isystem $$EXT_BUILD_DEPS/liboqs/include" """,
     ] + cmake_processor_flags(),
     lib_source = "@open-quantum-safe.oqs-provider//:all_srcs",
+    linkopts = select({
+        # oqsprovider uses libdl on Linux system
+        "@platforms//os:linux": ["-ldl"],
+        "//conditions:default": [],
+    }),
     out_shared_libs = select({
         "@platforms//os:macos": ["oqsprovider.dylib"],
         "@platforms//os:ios": ["oqsprovider.dylib"],
