@@ -9,7 +9,7 @@ mkdocs_tree(
         "tunnels_test.cc",
         ":sandwich_hdrs_all_files",
     ],
-    path = "sandwich_c/",
+    path = "sandwich_c",
     visibility = ["//docs:__subpackages__"],
 )
 

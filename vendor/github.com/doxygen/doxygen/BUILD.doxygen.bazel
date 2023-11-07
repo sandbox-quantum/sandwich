@@ -1,0 +1,33 @@
+# -*- mode: bazel; -*-
+
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+filegroup(
+    name = "all_srcs",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["testing/**/*"],
+    ),
+)
+
+cmake(
+    name = "doxygen",
+    build_data = [
+        "@//vendor/github.com/jmillikin/rules_bison:bison",
+        "@//vendor/github.com/jmillikin/rules_m4:m4",
+        "@//vendor/github.com/jmillikin/rules_flex:flex",
+    ],
+    env = {
+        "BISON_PKGDATADIR": "$$EXT_BUILD_ROOT$$/external/bison_v3.3.2/data",
+        "M4": "$(execpath @//vendor/github.com/jmillikin/rules_m4:m4)",
+    },
+    generate_args = [
+        "-GNinja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBISON_EXECUTABLE=$(execpath @//vendor/github.com/jmillikin/rules_bison:bison)",
+        "-DFLEX_EXECUTABLE=$(execpath @//vendor/github.com/jmillikin/rules_flex:flex)",
+    ],
+    lib_source = ":all_srcs",
+    out_binaries = ["doxygen"],
+    visibility = ["//visibility:public"],
+)

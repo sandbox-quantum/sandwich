@@ -1,5 +1,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//common/build/flex:repositories.bzl", "flex_repositories")
+load("//vendor/github.com/doxygen/doxygen:BUILD.bzl", "doxygen_fetch_archive")
 load("//vendor/github.com/open-quantum-safe/liboqs:BUILD.bzl", "liboqs_fetch_archive")
 load("//vendor/github.com/open-quantum-safe/openssl:BUILD.bzl", "open_quantum_safe_openssl_no_liboqs_fetch_archive")
 load("//vendor/github.com/open-quantum-safe/boringssl:BUILD.bzl", "open_quantum_safe_boringssl_fetch_archive")
@@ -89,6 +91,8 @@ def sandwich_repositories():
         url = "https://github.com/aspect-build/bazel-lib/releases/download/v{version}/bazel-lib-v{version}.tar.gz".format(version = ASPECT_BAZEL_LIB_VERSION),
     )
 
+    flex_repositories()
+    doxygen_fetch_archive()
     liboqs_fetch_archive()
     open_quantum_safe_openssl_no_liboqs_fetch_archive()
     open_quantum_safe_boringssl_fetch_archive()

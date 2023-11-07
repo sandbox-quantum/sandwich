@@ -1,5 +1,5 @@
 site_name: "An example"
-
+docs_dir: example_docs
 theme:
   name: material
   feature:

@@ -14,95 +14,119 @@
 
 load("//common/rules/mkdocs:providers.bzl", "MkDocsProjectInfo", "MkDocsTreeInfo")
 
-def _compile_project(ctx, project):
-    """Build the MkDocs project. `project` must be a MkDocsProjectInfo."""
+def _mkdocs_project_impl(ctx):
+    out = ctx.actions.declare_directory(ctx.label.name)
+    manifest = ctx.actions.declare_file("manifest.json")
+    ctx.actions.write(
+        output = manifest,
+        content = json.encode_indent(
+            {
+                "package": ctx.label.package,
+                "name": ctx.label.name,
+                "srcs": [
+                    {
+                        "package": tree.label.package,
+                        "name": tree.label.name,
+                        "path": tree[MkDocsTreeInfo].path,
+                        "files": [file.path for file in tree[MkDocsTreeInfo].files.to_list()],
+                    }
+                    for tree in ctx.attr.srcs
+                ],
+                "deps": [
+                    {
+                        "package": tree.label.package,
+                        "name": tree.label.name,
+                        "path": tree[MkDocsTreeInfo].path,
+                        "files": [file.path for file in tree[MkDocsTreeInfo].files.to_list()],
+                    }
+                    for tree in ctx.attr.deps
+                ],
+            },
+        ),
+    )
 
-    output_directory_name = "{}_html".format(ctx.label.name)
-
-    out = ctx.actions.declare_directory(output_directory_name)
-    inputs = depset([project.yaml_configuration], transitive = [project.files])
-    args = ctx.actions.args()
-    args.add(ctx.executable._mkdocs_binary.path)
-    args.add(output_directory_name)
-    args.add(project.yaml_configuration)
+    inputs = depset(
+        direct = [ctx.file.config, manifest],
+        transitive = [tree[MkDocsTreeInfo].files for tree in ctx.attr.srcs] + [tree[MkDocsTreeInfo].files for tree in ctx.attr.deps],
+    )
 
     ctx.actions.run_shell(
         inputs = inputs,
         outputs = [out],
-        command = 'export WK="$PWD" && cd "{project_path}" && "$WK/$1" build --site-dir "$2" --config-file "$WK/$3" --clean'.format(project_path = project.yaml_configuration.dirname),
-        arguments = [args],
-        mnemonic = "RunMkDocs",
-        use_default_shell_env = True,
-        tools = [ctx.executable._mkdocs_binary],
+        command = """
+        set -euo pipefail
+        mkdir -p {OUTPUT_DIR}
+        ROOT="$PWD"
+        export PATH="$(dirname $ROOT/{DOXYGEN}):$PATH"
+        {LAYOUT} {MANIFEST}
+        cd {PACKAGE}
+        "$ROOT/{MKDOCS}" build \
+            --strict \
+            --site-dir "$ROOT/{OUTPUT_DIR}" \
+            --config-file "$ROOT/{CONFIG_FILE}"
+        """.format(
+            CONFIG_FILE = ctx.file.config.path,
+            DOXYGEN = ctx.executable._doxygen.path,
+            LAYOUT = ctx.executable._layout_binary.path,
+            MANIFEST = manifest.path,
+            MKDOCS = ctx.executable._mkdocs_binary.path,
+            OUTPUT_DIR = out.path,
+            PACKAGE = "{}".format(ctx.label.package),
+        ),
+        mnemonic = "MkDocsBuild",
+        tools = [
+            ctx.executable._layout_binary,
+            ctx.executable._mkdocs_binary,
+            ctx.executable._doxygen,
+        ],
     )
-
-    return depset([out])
-
-def _compute_out_filepath(tree, file):
-    if tree.path == None or len(tree.path) == 0:
-        return file.basename
-    return "{}/{}".format(tree.path, file.basename)
-
-def _project_impl(ctx):
-    """Implementation of the `mkdocs_project` rule."""
-
-    outs = []
-    for tree in ctx.attr.trees:
-        tree = tree[MkDocsTreeInfo]
-        for f in tree.files.to_list():
-            outpath = _compute_out_filepath(tree, f)
-            outpath = "docs/{}".format(outpath)
-
-            out = None
-            if f.is_directory:
-                out = ctx.actions.declare_directory(outpath)
-            else:
-                out = ctx.actions.declare_file(outpath)
-            ctx.actions.symlink(
-                output = out,
-                target_file = f,
-            )
-            outs.append(out)
-
-    yaml_configuration = ctx.actions.declare_file("mkdocs.yml")
-    ctx.actions.symlink(
-        output = yaml_configuration,
-        target_file = ctx.file.config,
-    )
-
-    project = MkDocsProjectInfo(
-        yaml_configuration = yaml_configuration,
-        files = depset(outs),
-    )
-
-    compiled_doc = _compile_project(ctx, project)
 
     return [
         DefaultInfo(
-            files = compiled_doc,
+            files = depset([out]),
         ),
-        project,
+        MkDocsProjectInfo(
+            yaml_configuration = ctx.file.config,
+            files = depset([out]),
+        ),
     ]
 
 """Declares a documentation project of type MkDocs."""
 mkdocs_project = rule(
-    implementation = _project_impl,
+    implementation = _mkdocs_project_impl,
     attrs = {
-        "trees": attr.label_list(
-            doc = "Trees that belong to this project",
+        "srcs": attr.label_list(
+            doc = "Trees that are referenced directly by this project",
             allow_empty = False,
             allow_files = False,
             providers = [MkDocsTreeInfo],
             mandatory = True,
+        ),
+        "deps": attr.label_list(
+            doc = "Trees that are included by this project",
+            allow_empty = True,
+            allow_files = False,
+            providers = [MkDocsTreeInfo],
+            mandatory = False,
         ),
         "config": attr.label(
             doc = "MkDocs configuration file",
             allow_single_file = True,
             mandatory = False,
         ),
+        "_layout_binary": attr.label(
+            default = Label("//common/rules/mkdocs/private:layout"),
+            cfg = "exec",
+            executable = True,
+        ),
         "_mkdocs_binary": attr.label(
             doc = "MkDocs executable to use",
             default = Label("//common/rules/mkdocs:mkdocs"),
+            cfg = "exec",
+            executable = True,
+        ),
+        "_doxygen": attr.label(
+            default = "//vendor/github.com/doxygen/doxygen",
             cfg = "exec",
             executable = True,
         ),

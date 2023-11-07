@@ -1,4 +1,5 @@
 load(":rules.bzl", "mkdocs_project", "mkdocs_tree")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 py_binary(
     name = "mkdocs",
@@ -6,8 +7,11 @@ py_binary(
     main = "@pypi_mkdocs//:site-packages/mkdocs/__main__.py",
     visibility = ["//visibility:public"],
     deps = [
+        "@pypi_mdx_truly_sane_lists//:pkg",
         "@pypi_mkdocs//:pkg",
+        "@pypi_mkdocs_glightbox//:pkg",
         "@pypi_mkdocs_material//:pkg",
+        "@pypi_mkdocs_monorepo_plugin//:pkg",
         "@pypi_mkdocstrings//:pkg",
         "@pypi_mkdocstrings_python//:pkg",
         "@pypi_mkdoxy//:pkg",
@@ -16,15 +20,20 @@ py_binary(
 
 mkdocs_tree(
     name = "example_tree",
-    srcs = [
-        "example.md",
-        "example2.md",
-    ],
-    path = "examples",
+    srcs = glob([
+        "example_docs/**/*",
+    ]),
 )
 
 mkdocs_project(
     name = "example_doc",
+    srcs = [":example_tree"],
     config = "config_example.yml",
-    trees = [":example_tree"],
+)
+
+build_test(
+    name = "mkdocs_project",
+    targets = [
+        ":example_doc",
+    ],
 )

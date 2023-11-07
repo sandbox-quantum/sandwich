@@ -5,7 +5,10 @@ load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
 
 mkdocs_tree(
     name = "mkdocs",
-    srcs = glob(["*"]),
+    srcs = glob(
+        ["*"],
+        exclude = ["BUILD.bazel"],
+    ),
     path = "examples",
     visibility = ["//:__subpackages__"],
 )

@@ -8,6 +8,6 @@ mkdocs_tree(
     srcs = [
         "index.md",
     ],
-    path = "protobuf/",
+    path = "protobuf",
     visibility = ["//docs:__subpackages__"],
 )

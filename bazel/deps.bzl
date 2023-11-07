@@ -2,6 +2,7 @@ load("//common/build/rust/bindgen:repositories.bzl", "rust_bindgen_repositories"
 load("//common/build/rust/bindgen:rules.bzl", "rust_bindgen_register_toolchains")
 load("//common/build/rust/proto:toolchains.bzl", "common_build_rust_proto_register_toolchains")
 load("//common/build/rust:deps.bzl", "rust_deps")
+load("//common/build/flex:deps.bzl", "flex_dependencies")
 load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
@@ -15,6 +16,8 @@ load("@rules_rust//proto/protobuf:repositories.bzl", "rust_proto_protobuf_depend
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
 def sandwich_deps():
+    flex_dependencies()
+
     rules_foreign_cc_dependencies()
 
     aspect_bazel_lib_dependencies()
