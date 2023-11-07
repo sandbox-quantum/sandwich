@@ -8,6 +8,6 @@ mkdocs_tree(
     srcs = [
         "bazel/WORKSPACE.bazel",
     ],
-    path = "examples/bazel/",
+    path = "examples/bazel",
     visibility = ["//docs:__subpackages__"],
 )

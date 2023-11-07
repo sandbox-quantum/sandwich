@@ -17,14 +17,13 @@ load("//common/rules/mkdocs:providers.bzl", "MkDocsTreeInfo")
 def _tree_impl(ctx):
     """Implementation of the `mkdocs_tree` rule."""
 
-    transitives = []
-    for target in ctx.attr.srcs:
-        transitives.append(target.files)
-
     return [
         MkDocsTreeInfo(
-            files = depset(transitive = transitives),
-            path = ctx.attr.path,
+            files = depset(
+                direct = ctx.files.srcs,
+                transitive = [dep[MkDocsTreeInfo].files for dep in ctx.attr.deps],
+            ),
+            path = ctx.attr.path if ctx.attr.path else ctx.label.package,
         ),
     ]
 
@@ -38,6 +37,7 @@ mkdocs_tree = rule(
             allow_files = True,
             mandatory = True,
         ),
+        "deps": attr.label_list(),
         "path": attr.string(
             doc = "Path in the final documentation structure",
             mandatory = False,

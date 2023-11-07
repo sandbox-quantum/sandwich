@@ -10,7 +10,10 @@ _MD_FILES = [
 
 mkdocs_tree(
     name = "mkdocs",
-    srcs = glob(["*"]),
+    srcs = glob(
+        ["*"],
+        exclude = ["BUILD.bazel"],
+    ),
     path = "concepts",
     visibility = ["//:__subpackages__"],
 )
