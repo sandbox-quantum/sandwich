@@ -291,7 +291,7 @@ class _SandwichCLib:
         }
     )
 
-    def __init__(self, dllpath: typing.Optional[pathlib.Path] = None):
+    def __init__(self, dllpath: typing.Optional[pathlib.Path | str] = None):
         """Inits a Sandwich handle, optionally with a path to `libsandwich.so`.
 
         Args:
@@ -303,20 +303,14 @@ class _SandwichCLib:
             FileNotFoundError: The Sandwich shared library could not be found.
         """
 
-        if _SandwichCLib.lib is None:
-            if dllpath is None:
-                dllpath = _find_sandwich_dll()
-
-            if dllpath is None:
-                dllpath = "libsandwich_full.so"
-
+        def __load_library(dllpath: pathlib.Path | str | None = None) -> ctypes.CDLL:
+            dllpath = dllpath or _find_sandwich_dll() or "libsandwich_full.so"
             if isinstance(dllpath, pathlib.Path):
-                dllpath = dllpath.resolve()
+                dllpath = dllpath.resolve().__str__()
+            return ctypes.cdll.LoadLibrary(dllpath)
 
-            _SandwichCLib.lib = ctypes.cdll.LoadLibrary(dllpath)
-
-        if _SandwichCLib.syms is None:
-            _SandwichCLib.syms = {}
+        _SandwichCLib.lib = _SandwichCLib.lib or __load_library(dllpath)
+        _SandwichCLib.syms = _SandwichCLib.syms or {}
 
     @staticmethod
     def c_call(name: str, *args: typing.Any) -> typing.Any:
