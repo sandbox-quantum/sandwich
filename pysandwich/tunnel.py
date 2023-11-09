@@ -203,7 +203,7 @@ class Tunnel:
         """
         return sandwich.sandwich().c_call("sandwich_tunnel_state", self._handle)
 
-    def error(self) -> sandwich.Error:
+    def error(self) -> errors.SandwichException:
         """Returns the last saved error.
 
         Returns:

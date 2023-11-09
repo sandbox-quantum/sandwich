@@ -62,9 +62,6 @@ def _find_sandwich_dll() -> typing.Optional[pathlib.Path]:
     return pathlib.Path(ret)
 
 
-Error = errors.SandwichException
-
-
 class _ErrorC(ctypes.Structure):
     """SandwichError structure."""
 
@@ -76,14 +73,16 @@ class _ErrorC(ctypes.Structure):
     ]
 
 
-def _error_code_to_exception(ptr: ctypes.c_void_p):
+def _error_code_to_exception(ptr: ctypes.c_void_p) -> errors.SandwichException | None:
     """Gather exceptions cause"""
     ec = ctypes.cast(ptr, ctypes.POINTER(_ErrorC))
 
     head_excp = None
     current_excp = None
     while ec:
-        excp = Error.new(ec.contents.code, ec.contents.kind, ec.contents.msg)
+        excp = errors.SandwichException.new(
+            ec.contents.code, ec.contents.kind, ec.contents.msg
+        )
         if head_excp is None:
             head_excp = excp
             current_excp = excp
@@ -259,34 +258,34 @@ class _SandwichCLib:
             # enum SandwichIOError sandwich_listener_listen(
             #       struct SandwichListener *listener);
             "sandwich_listener_listen": __fs(
-                [
+                args=[
                     ctypes.c_void_p,
                 ],
-                ctypes.c_uint,
+                ret=ctypes.c_uint,
             ),
             # enum SandwichIOErrorsandwich_listener_accept(
             #       struct SandwichListener *listener,
             #       struct SandwichOwnedIO **owned_io);
             "sandwich_listener_accept": __fs(
-                [
+                args=[
                     ctypes.c_void_p,
                     ctypes.POINTER(ctypes.POINTER(OwnedIO)),
                 ],
-                ctypes.c_uint,
+                ret=ctypes.c_uint,
             ),
             # void sanwich_listener_close(struct SandwichListener *listener)
             "sandwich_listener_close": __fs(
-                [
+                args=[
                     ctypes.c_void_p,
                 ],
-                None,
+                ret=None,
             ),
             # void sanwich_listener_free(struct SandwichListener *listener)
             "sandwich_listener_free": __fs(
-                [
+                args=[
                     ctypes.c_void_p,
                 ],
-                None,
+                ret=None,
             ),
         }
     )
