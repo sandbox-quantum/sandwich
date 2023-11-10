@@ -59,6 +59,7 @@ Sandwich:
 $ tar tf /path/to/sandwich/bazel-bin/sandwich_bin.tar.gz
 include/
 include/sandwich_c/sandwich.h
+include/sandwich_c/tunnel.h
 [...]
 lib/
 lib/libsandwich_full.a

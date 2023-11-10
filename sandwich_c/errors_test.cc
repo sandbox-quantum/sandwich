@@ -23,6 +23,7 @@ extern "C" {
 #include <unistd.h>
 
 #include "sandwich_c/sandwich.h"
+#include "sandwich_c/tunnel.h"
 
 #ifndef SOCK_NONBLOCK
 #include <fcntl.h>

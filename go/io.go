@@ -21,6 +21,8 @@ import (
 #include <stdlib.h>
 #include <limits.h>
 #include "sandwich_c/sandwich.h"
+#include "sandwich_c/io.h"
+#include "sandwich_c/listener.h"
 
 
 extern SandwichIOReadFunction sandwichGoIORead;
