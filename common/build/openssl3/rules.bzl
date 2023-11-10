@@ -144,14 +144,10 @@ export -f _realpath
             lines.append("""export {var}="$(_realpath "{path}")" """.format(var = var, path = st.value))
         else:
             lines.append("""export {var}="{value}" """.format(var = var, value = st.value))
-    epilogue = """
-export NCORES=$(nproc 2>/dev/null) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
-    """
 
-    content = "{prologue}\n{exports}\n{epilogue}\n".format(
+    content = "{prologue}\n{exports}\n".format(
         prologue = prologue,
         exports = "\n".join(lines),
-        epilogue = epilogue,
     )
 
     configuration = ctx.actions.declare_file("config_env")
@@ -236,8 +232,8 @@ cd tmp
   --openssldir="${INSTALL_DIR}" \
   no-tests ${OPENSSL_CONFIGURE_ARGS} \
   ${OPENSSL_CFLAGS}
-"${MAKE}" -j"${NCORES}"
-"${MAKE}" -j"${NCORES}" install_sw
+"${MAKE}"
+"${MAKE}" install_sw
 cd ..
 cp "${SRCS}/apps/openssl.cnf" "${INSTALL_DIR}/bin/"
 if [ -d "${INSTALL_DIR}/lib64" ]; then
