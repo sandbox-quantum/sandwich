@@ -71,6 +71,11 @@ func (io *serverIO) Write(b []byte, tunnel_state pb.State) (int, *sandwich.IOErr
 	return bytes_written, nil
 }
 
+// Flush implements the sandwich.IO interface for bufIO.
+func (io *serverIO) Flush() *sandwich.IOError {
+	return nil
+}
+
 // createServerConfiguration creates the configuration for the server.
 func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
 	certfile, err := bazel.Runfile(certPath)

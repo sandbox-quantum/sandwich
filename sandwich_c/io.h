@@ -46,6 +46,14 @@ typedef size_t(SandwichIOWriteFunction)(void *uarg, const void *buf,
                                         enum SandwichIOError *err);
 typedef SandwichIOWriteFunction *SandwichIOWriteFunctionPtr;
 
+/// \brief Flush function for the I/O interface.
+///
+/// \param[in,out] uarg User opaque argument.
+///
+/// \return IOERROR_OK if success, else an IO error.
+typedef enum SandwichIOError(SandwichIOFlushFunction)(void *uarg);
+typedef SandwichIOFlushFunction *SandwichIOFlushFunctionPtr;
+
 /// \brief A generic I/O interface.
 struct SandwichIO {
   /// \brief The read function.
@@ -54,7 +62,12 @@ struct SandwichIO {
   /// \brief The write function.
   SandwichIOWriteFunctionPtr write;
 
-  /// \brief Opaque argument to forward to read and write.
+  /// \brief The flush function.
+  ///
+  /// `NULL` is a valid value for flush.
+  SandwichIOFlushFunctionPtr flush;
+
+  /// \brief Opaque argument to forward to read, write and flush.
   void *uarg;
 };
 

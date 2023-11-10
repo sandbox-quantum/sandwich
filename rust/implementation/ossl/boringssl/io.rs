@@ -166,7 +166,10 @@ unsafe extern "C" fn bio_ctrl(
             1
         }
         boringssl::BIO_CTRL_GET_CLOSE => boringssl::BIO_get_shutdown(bio) as i64,
-        boringssl::BIO_CTRL_FLUSH => 1,
+        boringssl::BIO_CTRL_FLUSH => {
+            let tun = get_tunnel_from_bio(bio);
+            (tun.io).flush().map(|_| 1).unwrap_or(0)
+        }
         _ => 0,
     }
 }

@@ -18,37 +18,6 @@ use crate::io::error::IntoIOError;
 use super::IO;
 
 /// A read function.
-pub type ReadFn = extern "C" fn(
-    uarg: *mut c_void,
-    buf: *mut c_void,
-    count: usize,
-    tunnel_state: c_int,
-    err: *mut c_int,
-) -> usize;
-
-/// A write function.
-pub type WriteFn = extern "C" fn(
-    uarg: *mut c_void,
-    buf: *const c_void,
-    count: usize,
-    tunnel_state: c_int,
-    err: *mut c_int,
-) -> usize;
-
-/// IO for a helper I/O interface, using pointers.
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub(crate) struct HelperIO {
-    /// The function that trampolines to the helper's read function.
-    readfn: ReadFn,
-    /// The function that trampolines to the helper's write function.
-    writefn: WriteFn,
-    /// A helper specific argument which will be passed to the trampoline
-    /// read and written functions when called.
-    uarg: *mut c_void,
-}
-
-/// A read function.
 pub(crate) extern "C" fn sandwich_helper_io_read(
     uarg: *mut c_void,
     buf: *mut c_void,
@@ -75,6 +44,7 @@ pub(crate) extern "C" fn sandwich_helper_io_read(
         }
     }
 }
+
 /// A write function.
 pub(crate) extern "C" fn sandwich_helper_io_write(
     uarg: *mut c_void,
@@ -103,6 +73,17 @@ pub(crate) extern "C" fn sandwich_helper_io_write(
     }
 }
 
+/// A read function.
+pub(crate) extern "C" fn sandwich_helper_io_flush(uarg: *mut c_void) -> c_int {
+    let mut io: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(uarg.cast()) };
+    let r = io.flush();
+    Box::into_raw(io);
+    match r {
+        Ok(_) => support::to_c_int(IOError::IOERROR_OK.value()),
+        Err(e) => support::to_c_int(e.into_io_error().value()),
+    }
+}
+
 /// Frees io created with sandwich_client_io_*_new() family of functions
 /// Using this function with user created IO objects will cause undefined
 /// behaviour.
@@ -117,7 +98,7 @@ pub extern "C" fn sandwich_io_owned_free(owned_io: *mut OwnedIo) {
 
 /// Frees an owned IO.
 pub(crate) extern "C" fn sandwich_helper_owned_io_free(cio: *mut IO) {
-    let boxed_cio: Box<HelperIO> = unsafe { Box::from_raw(cio.cast()) };
+    let boxed_cio: Box<IO> = unsafe { Box::from_raw(cio.cast()) };
     let _: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(boxed_cio.uarg.cast()) };
 }
 
@@ -162,9 +143,10 @@ pub extern "C" fn sandwich_io_socket_wrap_new(socket: RawFd, owned_io: *mut *mut
 fn setup_helper_io(io: Box<dyn crate::IO>, owned_io: *mut *mut OwnedIo) -> c_int {
     let boxed_io = Box::new(io);
     let io_ptr = Box::into_raw(boxed_io);
-    let boxed_cio = Box::new(HelperIO {
+    let boxed_cio = Box::new(IO {
         readfn: sandwich_helper_io_read,
         writefn: sandwich_helper_io_write,
+        flushfn: Some(sandwich_helper_io_flush),
         uarg: io_ptr.cast(),
     });
     if !owned_io.is_null() {

@@ -19,4 +19,8 @@ where
     fn write(&mut self, buffer: &[u8], _state: pb::State) -> Result<usize> {
         <Self as Write>::write(self, buffer)
     }
+
+    fn flush(&mut self) -> Result<()> {
+        <Self as Write>::flush(self)
+    }
 }
