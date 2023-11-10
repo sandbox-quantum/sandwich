@@ -27,6 +27,7 @@ import (
 
 extern SandwichIOReadFunction sandwichGoIORead;
 extern SandwichIOWriteFunction sandwichGoIOWrite;
+extern SandwichIOFlushFunction sandwichGoIOFlush;
 
 typedef void* mutBuf;
 typedef const void* constBuf;
@@ -43,6 +44,14 @@ static size_t client_bridge_write(SandwichIOWriteFunctionPtr write, void *uarg, 
 	return write(uarg, buf, count, tunnel_state, err);
 }
 
+static enum SandwichIOError client_bridge_flush(SandwichIOFlushFunctionPtr flush, void *uarg) {
+  enum SandwichIOError err = SANDWICH_IOERROR_OK;
+  if (flush != NULL) {
+    err = flush(uarg);
+  }
+  return err;
+}
+
 */
 import "C"
 
@@ -53,6 +62,9 @@ type IO interface {
 
 	// Write writes data from the connection.
 	Write(b []byte, tunnel_state pb.State) (n int, err *IOError)
+
+	// Flush flushes data from the connection.
+	Flush() *IOError
 }
 
 // createSettings creates a C-compatible structure from an IO interface.
@@ -60,6 +72,7 @@ func createSettings(goio *goIOWrapper) *C.struct_SandwichIO {
 	set := C.allocSandwichIO()
 	set.read = &C.sandwichGoIORead
 	set.write = &C.sandwichGoIOWrite
+	set.flush = &C.sandwichGoIOFlush
 	set.uarg = unsafe.Pointer(goio.io)
 	return set
 }
@@ -88,6 +101,19 @@ func sandwichGoIOWrite(ioint unsafe.Pointer, buf C.constBuf, size C.size_t, tunn
 		*err = C.enum_SandwichIOError(pb.IOError_IOERROR_OK)
 	}
 	return C.size_t(n)
+}
+
+//export sandwichGoIOFlush
+func sandwichGoIOFlush(ioint unsafe.Pointer) C.enum_SandwichIOError {
+	io := *(*IO)(ioint)
+
+	ioerr := io.Flush()
+
+	if ioerr != nil {
+		return C.enum_SandwichIOError(((Error)(ioerr)).Code())
+	} else {
+		return C.enum_SandwichIOError(0)
+	}
 }
 
 // goIOWrapper wraps `struct SandwichIO` and `IO` together.
@@ -144,6 +170,17 @@ func (rawIO *swOwnedIOWrapper) Write(b []byte, tunnel_state pb.State) (int, *IOE
 	return int(bytes_written), nil
 }
 
+// Write implements the sandwich.IO interface for bufIO.
+func (rawIO *swOwnedIOWrapper) Flush() *IOError {
+	settings := rawIO.handle.io
+	err := C.client_bridge_flush(settings.flush, unsafe.Pointer(settings.uarg))
+	pb_err := pb.IOError(err)
+	if pb_err != pb.IOError_IOERROR_OK {
+		return NewIOErrorFromEnum(pb_err)
+	}
+	return nil
+}
+
 // Frees a swOwnedIOWrapper.
 func (rawIO *swOwnedIOWrapper) free() {
 	C.sandwich_io_owned_free(rawIO.handle)
@@ -171,6 +208,10 @@ func (c *IORWWrapper) Write(b []byte, tunnel_state pb.State) (int, *IOError) {
 		return 0, NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
 	}
 	return n, nil
+}
+
+func (c *IORWWrapper) Flush() *IOError {
+	return nil
 }
 
 func IOWrapRW(conn io.ReadWriter) IORWWrapper {

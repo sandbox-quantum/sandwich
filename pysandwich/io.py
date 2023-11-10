@@ -150,6 +150,12 @@ class IO(abc.ABC):
             ctypes.POINTER(ctypes.c_int),  # *err
         )
 
+        # typedef enum SandwichIOError(SandwichIOFlushFunction)(void *uarg);
+        _FLUSH_FN_TYPE = ctypes.CFUNCTYPE(
+            ctypes.c_int,  # Return type
+            ctypes.c_void_p,  # *uarg
+        )
+
         _fields_ = [
             (
                 "readfn",
@@ -158,6 +164,10 @@ class IO(abc.ABC):
             (
                 "writefn",
                 _WRITE_FN_TYPE,
+            ),
+            (
+                "flushfn",
+                _FLUSH_FN_TYPE,
             ),
             (
                 "uarg",
@@ -196,6 +206,14 @@ class IO(abc.ABC):
             Amount of successfully written bytes.
         """
         raise NotImplementedError
+
+    def flush(self) -> int:  # noqa: B027
+        """Flush function.
+
+        Raises:
+            IOException: an error occured during writing
+        """
+        pass
 
 
 class OwnedIO(ctypes.Structure):

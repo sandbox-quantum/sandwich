@@ -6,6 +6,8 @@
 use std::ffi::{c_int, c_void};
 use std::io::Result;
 
+use protobuf::Enum;
+
 use pb::IOError;
 
 use crate::ffi::support;
@@ -32,16 +34,24 @@ pub type WriteFn = extern "C" fn(
     err: *mut c_int,
 ) -> usize;
 
+/// A flush function.
+pub type FlushFn = extern "C" fn(uarg: *mut c_void) -> c_int;
+
 /// IO for a generic I/O interface, using pointers.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct IO {
     /// A user supplied read function.
     readfn: ReadFn,
-    /// A user supploed write function.
+
+    /// A user supplied write function.
     writefn: WriteFn,
+
+    /// A user supplied flush function.
+    flushfn: Option<FlushFn>,
+
     /// A user argument which will be passed to the given
-    /// read and written functions when called.
+    /// read, write and flush functions when called.
     uarg: *mut c_void,
 }
 
@@ -51,8 +61,6 @@ unsafe impl Send for IO {}
 /// Implements [`crate::IO`] for [`IO`].
 impl crate::IO for IO {
     fn read(&mut self, buf: &mut [u8], tunnel_state: pb::State) -> Result<usize> {
-        use protobuf::Enum;
-
         let mut err = support::to_c_int(IOError::IOERROR_UNKNOWN.value());
         let n = (self.readfn)(
             self.uarg,
@@ -70,8 +78,6 @@ impl crate::IO for IO {
     }
 
     fn write(&mut self, buf: &[u8], tunnel_state: pb::State) -> Result<usize> {
-        use protobuf::Enum;
-
         let mut err = support::to_c_int(IOError::IOERROR_UNKNOWN.value());
         let n = (self.writefn)(
             self.uarg,
@@ -83,6 +89,19 @@ impl crate::IO for IO {
         let err = IOError::from_i32(support::to_i32(err)).unwrap_or(IOError::IOERROR_UNKNOWN);
         if err == IOError::IOERROR_OK {
             Ok(n)
+        } else {
+            Err(error::error_kind_from_io_error(err).into())
+        }
+    }
+
+    fn flush(&mut self) -> Result<()> {
+        let Some(flush) = self.flushfn else {
+            return Ok(());
+        };
+        let err = IOError::from_i32(support::to_i32((flush)(self.uarg)))
+            .unwrap_or(IOError::IOERROR_UNKNOWN);
+        if err == IOError::IOERROR_OK {
+            Ok(())
         } else {
             Err(error::error_kind_from_io_error(err).into())
         }

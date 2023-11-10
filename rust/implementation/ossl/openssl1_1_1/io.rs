@@ -169,7 +169,10 @@ unsafe extern "C" fn bio_ctrl(
             1
         }
         openssl::BIO_CTRL_GET_CLOSE => openssl::BIO_get_shutdown(bio) as i64,
-        openssl::BIO_CTRL_FLUSH => 1,
+        openssl::BIO_CTRL_FLUSH => {
+            let tun = get_tunnel_from_bio(bio);
+            (tun.io).flush().map(|_| 1).unwrap_or(0)
+        }
         _ => 0,
     }
 }

@@ -182,6 +182,9 @@ class Tunnel:
                 buf, count, tunnel_state, err
             )
         )
+        self._settings.flushfn = SandwichIO.IO.Settings._FLUSH_FN_TYPE(
+            lambda uarg: self._io_flush()
+        )
 
         err = sandwich.sandwich().c_call(
             "sandwich_tunnel_new",
@@ -398,6 +401,22 @@ class Tunnel:
             return 0
         err[0] = SandwichIO.IOException.ERROR_OK
         return w
+
+    def _io_flush(self) -> int:
+        """Trampoline routine for flushing, between C and Python.
+
+        Raises:
+            SandwichIO.IOException
+
+        Returns:
+            An IO error.
+        """
+        err = 0
+        try:
+            self._io.flush()
+        except SandwichIO.IOException as e:
+            err = e.code()
+        return err
 
     def __del__(self):
         """Destructs the tunnel.

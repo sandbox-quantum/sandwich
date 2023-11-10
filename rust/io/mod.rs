@@ -124,6 +124,11 @@ pub trait IO: Send {
 
     /// Writes some bytes to the I/O plane.
     fn write(&mut self, buf: &[u8], state: pb::State) -> Result<usize, std::io::Error>;
+
+    /// Flushes bytes from the I/O interface.
+    fn flush(&mut self) -> Result<(), std::io::Error> {
+        Ok(())
+    }
 }
 
 /// Implements [`std::fmt::Debug`] for [`IO`].
