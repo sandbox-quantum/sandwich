@@ -71,7 +71,6 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
   done
 fi
 
-export NCORES=$(nproc 2>/dev/null) || export NCORES=$(sysctl -n hw.logicalcpu) || export NCORES=1
 mkdir -p "${OPENSSL_BUILD_DIR}"
 (
   cd "${OPENSSL_BUILD_DIR}"
@@ -124,13 +123,13 @@ mkdir -p "${LIBOQS_BUILD_DIR}"
   "${MAKE}" build_generated || "${MAKE}" build_generated
 )
 (
-  "$CMAKE" --build "${LIBOQS_BUILD_DIR}" "-j${NCORES}"
+  "$CMAKE" --build "${LIBOQS_BUILD_DIR}"
   "$CMAKE" --install "${LIBOQS_BUILD_DIR}"
 )
 (
   cd "${OPENSSL_BUILD_DIR}"
   mkdir -p oqs/lib oqs/lib64
-  "${MAKE}" "-j${NCORES}" -o test || "${MAKE}" "-j${NCORES}" -o test
+  "${MAKE}" -o test || "${MAKE}" -o test
   "${MAKE}" install_sw
 )
 cp "${OPENSSL_SRC_DIR}/apps/openssl.cnf" "${INSTALL_DIR}/bin/"
