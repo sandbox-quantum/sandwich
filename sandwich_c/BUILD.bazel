@@ -14,19 +14,17 @@ mkdocs_tree(
 )
 
 filegroup(
-    name = "sandwich_hdrs_file",
-    srcs = ["sandwich.h"],
-    visibility = [
-        "//:__subpackages__",
-    ],
-)
-
-filegroup(
     name = "sandwich_hdrs_all_files",
     srcs = [
+        "error.h",
         "error_codes.h",
+        "export.h",
+        "io.h",
         "ioerrors.h",
+        "lib.h",
+        "listener.h",
         "sandwich.h",
+        "tunnel.h",
         "tunnel_types.h",
     ],
     visibility = [
@@ -36,12 +34,7 @@ filegroup(
 
 cc_library(
     name = "sandwich_hdrs",
-    hdrs = [
-        "error_codes.h",
-        "ioerrors.h",
-        "sandwich.h",
-        "tunnel_types.h",
-    ],
+    hdrs = [":sandwich_hdrs_all_files"],
     visibility = [
         "//:__subpackages__",
     ],
@@ -49,7 +42,7 @@ cc_library(
 
 cc_library(
     name = "sandwich",
-    hdrs = ["sandwich.h"],
+    hdrs = [":sandwich_hdrs_all_files"],
     linkopts = [] + select({
         "@platforms//os:ios": [
             "-framework",
@@ -70,7 +63,7 @@ cc_library(
 
 cc_import(
     name = "sandwich_shared_import",
-    hdrs = ["sandwich.h"],
+    hdrs = [":sandwich_hdrs_all_files"],
     shared_library = "//rust:sandwich_full_ffi_shared",
     visibility = [
         "//visibility:public",

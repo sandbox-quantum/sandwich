@@ -23,7 +23,9 @@ extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "sandwich_c/listener.h"
 #include "sandwich_c/sandwich.h"
+#include "sandwich_c/tunnel.h"
 
 #include <arpa/inet.h>
 #include <fcntl.h>
