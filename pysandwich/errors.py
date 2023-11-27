@@ -77,7 +77,7 @@ class HandshakeInProgressException(HandshakeException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(
-            code=SandwichTunnelProto.HANDSHAKESTATE_IN_PROGRESS, *kargs, **kwargs
+            *kargs, code=SandwichTunnelProto.HANDSHAKESTATE_IN_PROGRESS, **kwargs
         )
 
 
@@ -86,7 +86,7 @@ class HandshakeWantReadException(HandshakeException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(
-            code=SandwichTunnelProto.HANDSHAKESTATE_WANT_READ, *kargs, **kwargs
+            *kargs, code=SandwichTunnelProto.HANDSHAKESTATE_WANT_READ, **kwargs
         )
 
 
@@ -95,7 +95,7 @@ class HandshakeWantWriteException(HandshakeException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(
-            code=SandwichTunnelProto.HANDSHAKESTATE_WANT_WRITE, *kargs, **kwargs
+            *kargs, code=SandwichTunnelProto.HANDSHAKESTATE_WANT_WRITE, **kwargs
         )
 
 
@@ -104,7 +104,7 @@ class HandshakeErrorStateException(HandshakeException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(
-            code=SandwichTunnelProto.HANDSHAKESTATE_ERROR, *kargs, **kwargs
+            *kargs, code=SandwichTunnelProto.HANDSHAKESTATE_ERROR, **kwargs
         )
 
 
@@ -157,7 +157,7 @@ class RecordPlaneWantReadException(RecordPlaneException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(
-            code=SandwichTunnelProto.RECORDERROR_WANT_READ, *kargs, **kwargs
+            *kargs, code=SandwichTunnelProto.RECORDERROR_WANT_READ, **kwargs
         )
 
 
@@ -166,7 +166,7 @@ class RecordPlaneWantWriteException(RecordPlaneException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(
-            code=SandwichTunnelProto.RECORDERROR_WANT_WRITE, *kargs, **kwargs
+            *kargs, code=SandwichTunnelProto.RECORDERROR_WANT_WRITE, **kwargs
         )
 
 
@@ -175,7 +175,7 @@ class RecordPlaneBeingShutdownException(RecordPlaneException):
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(
-            code=SandwichTunnelProto.RECORDERROR_BEING_SHUTDOWN, *kargs, **kwargs
+            *kargs, code=SandwichTunnelProto.RECORDERROR_BEING_SHUTDOWN, **kwargs
         )
 
 
@@ -183,11 +183,11 @@ class RecordPlaneClosedException(RecordPlaneException):
     """Record plane is closed."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichTunnelProto.RECORDERROR_CLOSED, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichTunnelProto.RECORDERROR_CLOSED, **kwargs)
 
 
 class RecordPlaneUnknownErrorException(RecordPlaneException):
     """An unknown error occurred."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichTunnelProto.RECORDERROR_UNKNOWN, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichTunnelProto.RECORDERROR_UNKNOWN, **kwargs)

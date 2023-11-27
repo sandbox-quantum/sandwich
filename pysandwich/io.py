@@ -76,42 +76,42 @@ class IOInProgressException(IOException):
     """In progress exception."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_IN_PROGRESS, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichIOProto.IOERROR_IN_PROGRESS, **kwargs)
 
 
 class IOWouldBlockException(IOException):
     """Would block exception."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_WOULD_BLOCK, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichIOProto.IOERROR_WOULD_BLOCK, **kwargs)
 
 
 class IORefusedException(IOException):
     """Connection refused exception."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_REFUSED, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichIOProto.IOERROR_REFUSED, **kwargs)
 
 
 class IOClosedException(IOException):
     """Closed pipe exception."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_CLOSED, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichIOProto.IOERROR_CLOSED, **kwargs)
 
 
 class IOInvalidException(IOException):
     """Invalid I/O interface exception."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_INVALID, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichIOProto.IOERROR_INVALID, **kwargs)
 
 
 class IOUnknownException(IOException):
     """Unknown I/O exception."""
 
     def __init__(self, *kargs, **kwargs):
-        super().__init__(code=SandwichIOProto.IOERROR_UNKNOWN, *kargs, **kwargs)
+        super().__init__(*kargs, code=SandwichIOProto.IOERROR_UNKNOWN, **kwargs)
 
 
 class IO(abc.ABC):
