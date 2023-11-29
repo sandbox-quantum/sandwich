@@ -68,9 +68,9 @@ def sandwich_repositories():
     maybe(
         http_archive,
         name = "rules_rust",
-        sha256 = "6357de5982dd32526e02278221bb8d6aa45717ba9bbacf43686b130aa2c72e1e",
+        sha256 = "1e7114ea2af800c6987ca38daeee13e3ae6e934875b4f7ca24b798857f95431e",
         urls = [
-            "https://github.com/bazelbuild/rules_rust/releases/download/0.30.0/rules_rust-v0.30.0.tar.gz",
+            "https://github.com/bazelbuild/rules_rust/releases/download/0.32.0/rules_rust-v0.32.0.tar.gz",
         ],
     )
 
