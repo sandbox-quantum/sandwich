@@ -1,9 +1,9 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
-# Release date: Sep 20 2023
-_VERSION = "3.1.4"
-_SHA256SUM = "840af5366ab9b522bde525826be3ef0fb0af81c6a9ebd84caa600fea1731eee3"
+# Release date: Nov 23 2023
+_VERSION = "3.2.0"
+_SHA256SUM = "14c826f07c7e433706fb5c69fa9e25dab95684844b4c962a2cf1bf183eb4690e"
 
 def com_github_openssl_openssl_fetch_archive():
     maybe(
