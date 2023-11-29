@@ -17,7 +17,10 @@ cmake(
     lib_source = "@open-quantum-safe.oqs-provider//:all_srcs",
     linkopts = select({
         # oqsprovider uses libdl on Linux system
-        "@platforms//os:linux": ["-ldl"],
+        "@platforms//os:linux": [
+            "-ldl",
+            "-lpthread",
+        ],
         "//conditions:default": [],
     }),
     out_static_libs = ["oqsprovider.a"],
@@ -42,7 +45,10 @@ cmake(
     lib_source = "@open-quantum-safe.oqs-provider//:all_srcs",
     linkopts = select({
         # oqsprovider uses libdl on Linux system
-        "@platforms//os:linux": ["-ldl"],
+        "@platforms//os:linux": [
+            "-ldl",
+            "-lpthread",
+        ],
         "//conditions:default": [],
     }),
     out_shared_libs = select({
