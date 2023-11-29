@@ -14,6 +14,7 @@ _SANDWICH_SRCS = [
     "//rust/error",
     "//rust/ffi",
     "//rust/implementation",
+    "//rust/implementation/openssl3",
     "//rust/implementation/ossl",
     "//rust/implementation/ossl/boringssl",
     "//rust/implementation/ossl/openssl1_1_1",
@@ -253,6 +254,106 @@ rust_shared_library(
 ### END BoringSSL related rules    ###
 ######################################
 
+##########################################
+### BEGIN OpenSSL 3 related rules      ###
+###                                    ###
+### The following rules enable the     ###
+### support of OpenSSL in Sandwich.    ###
+##########################################
+
+_OPENSSL3_LINK_PREFIX = "__private_ossl3_"
+
+# OpenSSL 3, prefixed with Bartleby.
+bartleby(
+    name = "openssl3_bartleby",
+    srcs = [
+        "//vendor/github.com/open-quantum-safe/liboqs",
+        "//vendor/github.com/open-quantum-safe/oqs-provider",
+        "//vendor/github.com/openssl/openssl",
+    ],
+    prefix = _OPENSSL3_LINK_PREFIX,
+)
+
+# C library to guide Rust-bindgen for generating OpenSSL 3 bindings.
+cc_library(
+    name = "openssl3_bindgen_library",
+    hdrs = [
+        "//rust/implementation/openssl3:bindgen",
+    ],
+    deps = [
+        ":openssl3_bartleby",
+    ],
+)
+
+# OpenSSL 3 bindings.
+rust_bindgen_library(
+    name = "openssl3_bindgen",
+    bindgen_flags = bindgen_add_prefix_link_name(_OPENSSL3_LINK_PREFIX),
+    cc_lib = ":openssl3_bindgen_library",
+    clang_flags = select({
+        "@platforms//os:ios": [
+            "-target",
+            "arm64-ios",
+        ],
+        "//conditions:default": [],
+    }),
+    crate_name = "openssl3",
+    header = "//rust/implementation/openssl3:bindgen",
+    rustc_flags = [
+        "-A",
+        "non-camel-case-types",
+        "-A",
+        "non-upper-case-globals",
+        "-A",
+        "non_snake_case",
+        "-A",
+        "improper_ctypes",
+    ],
+)
+
+sandwich_variant(
+    name = "openssl3",
+    srcs = _SANDWICH_SRCS,
+    crate_features = ["openssl3"],
+    generate_ffi = True,
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [":openssl3_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_static_library(
+    name = "sandwich_openssl3_ffi_static",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl3",
+        "tunnel",
+    ],
+    crate_name = "sandwich_openssl3",
+    visibility = ["//visibility:public"],
+    deps = [":openssl3_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_openssl3_ffi_shared",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "ffi",
+        "openssl3",
+        "tunnel",
+    ],
+    crate_name = "sandwich_openssl3",
+    visibility = ["//visibility:public"],
+    deps = [":openssl3_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
+)
+
+######################################
+### END OpenSSL 3 related rules.   ###
+######################################
+
 ######################################
 ### BEGIN Sandwich "full" variant  ###
 ###                                ###
@@ -264,6 +365,7 @@ rust_shared_library(
 _SANDWICH_FULL_VARIANT_DEPS = [
     ":boringssl_bindgen",
     ":openssl1_1_1_bindgen",
+    ":openssl3_bindgen",
 ] + _SANDWICH_PROTOBUF_DEPS
 
 sandwich_variant(
@@ -272,6 +374,8 @@ sandwich_variant(
     crate_features = [
         "boringssl",
         "openssl1_1_1",
+        "openssl3",
+        "tunnel",
     ],
     generate_doc = True,
     generate_ffi = True,
@@ -290,6 +394,7 @@ rust_static_library(
         "boringssl",
         "ffi",
         "openssl1_1_1",
+        "openssl3",
         "tunnel",
     ],
     crate_name = "sandwich_full",
@@ -304,6 +409,7 @@ rust_shared_library(
         "boringssl",
         "ffi",
         "openssl1_1_1",
+        "openssl3",
         "tunnel",
     ],
     crate_name = "sandwich_full",

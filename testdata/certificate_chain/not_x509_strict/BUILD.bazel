@@ -114,6 +114,18 @@ sign_csr(
     days = 365,
 )
 
+genrule(
+    name = "fullchain_pem",
+    srcs = [
+        ":leaf_pem",
+        ":intermediate0_pem",
+        ":intermediate1_pem",
+        ":ca_pem",
+    ],
+    outs = ["fullchain.pem"],
+    cmd = """cat "$(execpath :leaf_pem)" "$(execpath :intermediate0_pem)" "$(execpath :intermediate1_pem)" "$(execpath :ca_pem)" > "$(execpath fullchain.pem)" """,
+)
+
 x509_verify_test(
     name = "verify_test",
     timeout = "short",
@@ -132,6 +144,7 @@ filegroup(
     srcs = [
         ":ca_key",
         ":ca_pem",
+        ":fullchain_pem",
         ":intermediate0_key",
         ":intermediate0_pem",
         ":intermediate1_key",

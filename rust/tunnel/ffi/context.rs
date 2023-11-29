@@ -109,7 +109,7 @@ mod test {
         drop(config);
 
         let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
-        let sw = crate::Context;
+        let sw = crate::Context::new();
         sandwich_tunnel_context_new(
             &sw as *const _,
             SandwichTunnelContextConfigurationSerialized {
@@ -161,7 +161,7 @@ mod test {
         let encoded = config.write_to_bytes().unwrap();
 
         let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
-        let sw = crate::Context;
+        let sw = crate::Context::new();
         let err = sandwich_tunnel_context_new(
             &sw as *const _,
             SandwichTunnelContextConfigurationSerialized {
@@ -179,7 +179,7 @@ mod test {
     #[test]
     fn test_context_ctor_nullptr() {
         let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
-        let sw = crate::Context;
+        let sw = crate::Context::new();
         let err = sandwich_tunnel_context_new(
             &sw as *const _,
             SandwichTunnelContextConfigurationSerialized {
@@ -200,7 +200,7 @@ mod test {
         let data = [0u8; 42];
 
         let mut ptr: *mut tunnel::Context = std::ptr::null_mut();
-        let sw = crate::Context;
+        let sw = crate::Context::new();
         let err = sandwich_tunnel_context_new(
             &sw as *const _,
             SandwichTunnelContextConfigurationSerialized {

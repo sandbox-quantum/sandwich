@@ -93,12 +93,25 @@ gen_certificate(
     ],
 )
 
+gen_private_key(
+    name = "ed25519_key_pem",
+    out = "ed25519.key.pem",
+    algorithm = "ed25519",
+)
+
+gen_certificate(
+    name = "ed25519_cert_pem",
+    out = "ed25519.cert.pem",
+    private_key = ":ed25519_key_pem",
+)
+
 filegroup(
     name = "testdata",
     srcs = [
         "cert_expired.pem",
         "cert_unknown_sig_alg.der",
         "etc_ssl_cert.pem",
+        "etc_ssl_cert_invalid.pem",
         "localhost.cert.pem",
         "localhost.key.pem",
         "private_key_cert_expired.pem",
@@ -106,6 +119,8 @@ filegroup(
         ":cert_with_email",
         ":cert_with_email_and_dns_wildcard",
         ":cert_with_ip",
+        ":ed25519_cert_pem",
+        ":ed25519_key_pem",
         ":falcon1024_cert_pem",
         ":falcon1024_private_key_pem",
         ":pq_cert_der",
@@ -114,6 +129,9 @@ filegroup(
         ":pq_private_key_pem",
         ":rsa_cert_pem",
         ":rsa_private_key_pem",
+        "//testdata/certificate_chain/chain_example_com",
+        "//testdata/certificate_chain/depth_too_long",
+        "//testdata/certificate_chain/not_x509_strict",
     ],
     visibility = ["//visibility:public"],
 )

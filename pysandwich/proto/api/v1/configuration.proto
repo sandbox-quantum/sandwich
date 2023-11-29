@@ -27,6 +27,13 @@ enum Implementation {
   //
   // See [liboqs](https://github.com/open-quantum-safe/liboqs).
   IMPL_BORINGSSL_OQS = 2;
+
+  // OpenSSL 3 with oqs-provider.
+  //
+  // See [oqs-provider](https://github.com/open-quantum-safe/oqs-provider).
+  IMPL_OPENSSL3_OQS_PROVIDER = 3;
+
+  // Next id: 4
 }
 
 // Client options.

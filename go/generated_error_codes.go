@@ -385,6 +385,7 @@ type SystemError struct {
 var errSystemErrorMap = map[pb.SystemError]string{
   pb.SystemError_SYSTEMERROR_MEMORY: `Memory error (e.g. allocation failed).`,
   pb.SystemError_SYSTEMERROR_INTEGER_OVERFLOW: `Integer overflow.`,
+  pb.SystemError_SYSTEMERROR_BACKEND: `Backend error.`,
 }
 
 func newSystemError(code pb.SystemError, msg string) *SystemError {
@@ -451,6 +452,10 @@ var errHandshakeErrorMap = map[pb.HandshakeError]string{
   pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_REVOKED: `Certificate was revoked.`,
   pb.HandshakeError_HANDSHAKEERROR_INVALID_CERTIFICATE: `Invalid Certificate.`,
   pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED: `Signature verification error.`,
+  pb.HandshakeError_HANDSHAKEERROR_DEPTH_EXCEEDED: `Certificate chain too long or pathlen exceeded.`,
+  pb.HandshakeError_HANDSHAKEERROR_UNSUPPORTED_PROTOCOL: `Unsupported protocol.`,
+  pb.HandshakeError_HANDSHAKEERROR_NO_SHARED_CIPHER: `No shared cipher.`,
+  pb.HandshakeError_HANDSHAKEERROR_NO_SUITABLE_KEY_SHARE: `No suitable key share.`,
   pb.HandshakeError_HANDSHAKEERROR_UNKNOWN_ERROR: `Unknown handshake error.`,
 }
 

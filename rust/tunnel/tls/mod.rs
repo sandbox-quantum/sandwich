@@ -9,8 +9,48 @@ use pb_api::configuration::configuration as pb_configuration;
 pub(crate) use security::assert_compliance;
 
 mod security;
+pub(crate) mod support;
+
+/// Default maximum depth for the certificate chain verification.
+pub(crate) const DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH: u32 = 100;
+
+/// Verify mode.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum VerifyMode {
+    /// Do not verify anything.
+    ///
+    ///  - Server mode TLS: the server will not send a client certificate
+    ///    request.
+    ///  - Server mode mTLS: undefined behavior.
+    ///  - Client mode TLS/mTLS: The client will discard the verification result.
+    None,
+
+    /// Verify peer.
+    ///
+    ///  - Server mode: undefined behavior.
+    ///  - Client mode: the handshake will immediately fail if the verification
+    ///    of the certificate chain is unsuccessful.
+    Peer,
+
+    /// Mutual TLS.
+    ///
+    ///  - Server mode: enable mTLS
+    ///  - Client mode: undefined behavior.
+    Mutual,
+}
+
+/// Supported TLS Protocol versions.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum TlsVersion {
+    /// TLS Protocol version 1.2.
+    Tls12,
+
+    /// TLS Protocol version 1.3.
+    Tls13,
+}
 
 /// Default supported TLS 1.2 ciphersuites.
+#[allow(dead_code)]
 pub(crate) const DEFAULT_TLS12_CIPHERSUITES: [&str; 8] = [
     // 256-bit secure encryption.
     "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
@@ -25,6 +65,7 @@ pub(crate) const DEFAULT_TLS12_CIPHERSUITES: [&str; 8] = [
 ];
 
 /// Default supported TLS 1.3 ciphersuites.
+#[allow(dead_code)]
 pub(crate) const DEFAULT_TLS13_CIPHERSUITES: [&str; 3] = [
     // 256-bit secure encryption.
     "TLS_CHACHA20_POLY1305_SHA256",
@@ -120,6 +161,25 @@ impl TunnelSecurityRequirements {
     {
         if self.allow_expired_certificate
             && OsslInterface::x509_error_code_is_certificate_expired(error)
+        {
+            return true;
+        }
+
+        false
+    }
+
+    /// Assesses an error returned by a X.509 trusted store.
+    /// The error usually comes from the call to
+    /// <https://www.openssl.org/docs/man3.1/man3/X509_STORE_CTX_get_error.html>.
+    /// This function is used for the following implementations:
+    ///   - OpenSSL 3.x
+    ///
+    /// Because this function is an assessor, a `false` returned value means
+    /// that there is a security issue here.
+    #[cfg(feature = "openssl3")]
+    pub(crate) fn openssl3_assess_x509_store_error(&self, error: std::ffi::c_int) -> bool {
+        if self.allow_expired_certificate
+            && error == (openssl3::X509_V_ERR_CERT_HAS_EXPIRED as std::ffi::c_int)
         {
             return true;
         }

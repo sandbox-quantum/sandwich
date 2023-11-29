@@ -10,13 +10,11 @@ use std::borrow::{Borrow, BorrowMut};
 use std::pin::Pin;
 use std::ptr::NonNull;
 
-use pb::{CertificateError, DataSourceError, PrivateKeyError, RecordError, TLSConfigurationError};
+use pb::{CertificateError, PrivateKeyError, RecordError, TLSConfigurationError};
 
-use crate::support::{DataSource, Pimpl};
+use crate::support::Pimpl;
 use crate::tunnel::{tls, Mode};
-
-/// Default maximum depth for the certificate chain verification.
-const DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH: u32 = 100;
+use tls::{TlsVersion, VerifyMode};
 
 /// User-data index of the tunnel security requirements in the SSL handle.
 /// For more information, see <https://www.openssl.org/docs/man1.1.1/man3/SSL_get_ex_data.html>.
@@ -24,40 +22,6 @@ const VERIFY_TUNNEL_SECURITY_REQUIREMENTS_INDEX: i32 = 0;
 
 /// User-data index storing the last verify error.
 const VERIFY_TUNNEL_LAST_VERIFY_ERROR_INDEX: i32 = 1;
-
-/// Verify mode.
-pub(crate) enum VerifyMode {
-    /// Do not verify anything.
-    ///
-    ///  - Server mode TLS: the server will not send a client certificate
-    ///    request.
-    ///  - Server mode mTLS: undefined behavior.
-    ///  - Client mode TLS/mTLS: The client will discard the verification result.
-    None,
-
-    /// Verify peer.
-    ///
-    ///  - Server mode: undefined behavior.
-    ///  - Client mode: the handshake will immediately fail if the verification
-    ///    of the certificate chain is unsuccessful.
-    Peer,
-
-    /// Mutual TLS.
-    ///
-    ///  - Server mode: enable mTLS
-    ///  - Client mode: undefined behavior.
-    Mutual,
-}
-
-/// Supported TLS Protocol versions.
-#[derive(PartialEq, Eq)]
-pub(crate) enum TlsVersion {
-    /// TLS Protocol version 1.2.
-    Tls12,
-
-    /// TLS Protocol version 1.3.
-    Tls13,
-}
 
 /// Trait that supports various OpenSSL-like implementations.
 pub(crate) trait Ossl {
@@ -376,78 +340,6 @@ where
     }
 }
 
-/// Returns the execution mode (Client or Server) and the tls options (`TLSOptions`).
-fn configuration_get_mode_and_tls_options(
-    configuration: &pb_api::Configuration,
-) -> crate::Result<(Mode, &pb_api::TLSOptions)> {
-    configuration
-        .opts
-        .as_ref()
-        .and_then(|opts| match opts {
-            pb_api::configuration::configuration::Opts::Client(opt) => opt
-                .opts
-                .as_ref()
-                .and_then(|proto| match proto {
-                    pb_api::configuration::client_options::Opts::Tls(tls) => Some(tls),
-                    _ => None,
-                })
-                .and_then(|opts| opts.common_options.as_ref())
-                .map(|tls| (Mode::Client, tls)),
-            pb_api::configuration::configuration::Opts::Server(opt) => opt
-                .opts
-                .as_ref()
-                .and_then(|proto| match proto {
-                    pb_api::configuration::server_options::Opts::Tls(tls) => Some(tls),
-                    _ => None,
-                })
-                .and_then(|opts| opts.common_options.as_ref())
-                .map(|tls| (Mode::Server, tls)),
-            _ => unreachable!(),
-        })
-        .ok_or(TLSConfigurationError::TLSCONFIGURATIONERROR_EMPTY.into())
-}
-
-/// Returns the X.509 verifier if exists.
-/// If no X.509 verifier is found, and `EmptyVerifier` isn't specified, then
-/// it's an error.
-fn tls_options_get_x509_verifier(
-    tls_options: &pb_api::TLSOptions,
-) -> crate::Result<Option<&pb_api::X509Verifier>> {
-    tls_options
-        .peer_verifier
-        .as_ref()
-        .ok_or(
-            (
-                TLSConfigurationError::TLSCONFIGURATIONERROR_EMPTY,
-                "no verifier specified",
-            )
-                .into(),
-        )
-        .and_then(|v| match v {
-            pb_api::tlsoptions::Peer_verifier::X509Verifier(x509) => Ok(Some(x509)),
-            pb_api::tlsoptions::Peer_verifier::EmptyVerifier(_) => Ok(None),
-            _ => unreachable!(),
-        })
-}
-
-/// Verifies that a X.509 verifier isn't empty.
-fn x509_verifier_verify_emptiness(
-    x509_verifier: Option<&pb_api::X509Verifier>,
-) -> crate::Result<Option<&pb_api::X509Verifier>> {
-    let Some(x509) = x509_verifier else {
-        return Ok(x509_verifier);
-    };
-    if !x509.trusted_cas.is_empty() {
-        Ok(x509_verifier)
-    } else {
-        Err((
-            TLSConfigurationError::TLSCONFIGURATIONERROR_EMPTY,
-            "X.509 verifier empty",
-        )
-            .into())
-    }
-}
-
 /// Sets the X.509 identity to use.
 /// If the client sets an X.509 identity, then it will expect a client
 /// certificate request from the server, in order to establish a mutual
@@ -463,7 +355,7 @@ where
         .certificate
         .as_ref()
         .ok_or(CertificateError::CERTIFICATEERROR_MALFORMED.into())
-        .and_then(read_certificate)
+        .and_then(tls::support::configuration_read_certificate)
         .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
     let bio = OsslInterface::bio_from_buffer(&data_source)
@@ -483,7 +375,7 @@ where
         .private_key
         .as_ref()
         .ok_or(PrivateKeyError::PRIVATEKEYERROR_MALFORMED.into())
-        .and_then(read_private_key)
+        .and_then(tls::support::configuration_read_private_key)
         .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
     OsslInterface::bio_from_buffer(&data_source)
@@ -505,7 +397,7 @@ where
     OsslInterface: Ossl,
 {
     for cert in x509_verifier.trusted_cas.iter() {
-        let (format, data_source) = read_certificate(cert)?;
+        let (format, data_source) = tls::support::configuration_read_certificate(cert)?;
         let bio = OsslInterface::bio_from_buffer(&data_source)?;
 
         while !OsslInterface::bio_eof(bio.as_nonnull()) {
@@ -528,21 +420,19 @@ where
     type Error = crate::Error;
 
     fn try_from(configuration: &pb_api::Configuration) -> crate::Result<Self> {
-        let (mode, tls_options) = configuration_get_mode_and_tls_options(configuration)?;
+        let (mode, tls_options) = tls::support::configuration_get_mode_and_options(configuration)?;
 
         let ssl_ctx = OsslInterface::new_ssl_context(mode)
             .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
         OsslInterface::ssl_context_initialize_x509_verify_parameters(ssl_ctx.as_nonnull())?;
 
+        let (min_tls_version, max_tls_version) =
+            tls::support::tls_options_get_min_max_tls_version(tls_options);
+
         let tls12 = tls_options.tls12.as_ref();
         let tls13 = tls_options.tls13.as_ref();
 
-        let (min_tls_version, max_tls_version) = match (tls12.is_some(), tls13.is_some()) {
-            (true, false) => (TlsVersion::Tls12, TlsVersion::Tls12),
-            (true, true) => (TlsVersion::Tls12, TlsVersion::Tls13),
-            _ => (TlsVersion::Tls13, TlsVersion::Tls13),
-        };
         OsslInterface::ssl_context_set_min_protocol_version(ssl_ctx.as_nonnull(), min_tls_version)?;
         OsslInterface::ssl_context_set_max_protocol_version(ssl_ctx.as_nonnull(), max_tls_version)?;
 
@@ -570,8 +460,8 @@ where
         )
         .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
 
-        let x509_verifier =
-            tls_options_get_x509_verifier(tls_options).and_then(x509_verifier_verify_emptiness)?;
+        let x509_verifier = tls::support::tls_options_get_x509_verifier(tls_options)
+            .and_then(tls::support::x509_verifier_verify_emptiness)?;
 
         OsslInterface::ssl_context_set_verify_depth(
             ssl_ctx.as_nonnull(),
@@ -583,7 +473,7 @@ where
                         Some(v.max_verify_depth)
                     }
                 })
-                .unwrap_or(DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH),
+                .unwrap_or(tls::DEFAULT_MAXIMUM_VERIFY_CERT_CHAIN_DEPTH),
         );
 
         if let Some(identity) = tls_options.identity.as_ref() {
@@ -639,57 +529,6 @@ where
     fn borrow_mut(&mut self) -> &mut Pimpl<'a, OsslInterface::NativeSslCtx> {
         &mut self.ssl_ctx
     }
-}
-
-/// Reads the content of a certificate as described in a protobuf message.
-fn read_certificate(
-    cert: &pb_api::Certificate,
-) -> crate::Result<(pb_api::ASN1EncodingFormat, DataSource<'_>)> {
-    use pb_api::certificate::certificate;
-    cert.source
-        .as_ref()
-        .ok_or_else(|| DataSourceError::DATASOURCEERROR_EMPTY.into())
-        .and_then(|oneof| match oneof {
-            certificate::Source::Static(ref asn1ds) => asn1ds
-                .data
-                .as_ref()
-                .ok_or_else(|| DataSourceError::DATASOURCEERROR_EMPTY.into())
-                .and_then(DataSource::try_from)
-                .and_then(|ds| {
-                    asn1ds
-                        .format
-                        .enum_value()
-                        .map_err(|_| pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into())
-                        .map(|f| (f, ds))
-                }),
-            _ => Err(DataSourceError::DATASOURCEERROR_EMPTY.into()),
-        })
-}
-
-/// Reads the content of a private key as described in a protobuf message.
-fn read_private_key(
-    private_key: &pb_api::PrivateKey,
-) -> crate::Result<(pb_api::ASN1EncodingFormat, DataSource<'_>)> {
-    use pb_api::private_key::private_key;
-    private_key
-        .source
-        .as_ref()
-        .ok_or_else(|| DataSourceError::DATASOURCEERROR_EMPTY.into())
-        .and_then(|oneof| match oneof {
-            private_key::Source::Static(ref asn1ds) => asn1ds
-                .data
-                .as_ref()
-                .ok_or_else(|| DataSourceError::DATASOURCEERROR_EMPTY.into())
-                .and_then(DataSource::try_from)
-                .and_then(|ds| {
-                    asn1ds
-                        .format
-                        .enum_value()
-                        .map_err(|_| pb::ASN1Error::ASN1ERROR_INVALID_FORMAT.into())
-                        .map(|f| (f, ds))
-                }),
-            _ => Err(DataSourceError::DATASOURCEERROR_EMPTY.into()),
-        })
 }
 
 /// Implements [`OsslContext`].

@@ -38,7 +38,7 @@ fn create_context(sw: &sandwich::Context) -> tunnel::Context {
 }
 
 fn main() {
-    let sw = sandwich::Context;
+    let sw = sandwich::Context::new();
     let _context = create_context(&sw);
     // See `/examples/rust` for a more complete example.
 }
