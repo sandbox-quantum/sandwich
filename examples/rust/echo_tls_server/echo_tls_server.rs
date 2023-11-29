@@ -121,7 +121,7 @@ pub fn echo_tls_server(cert: PathBuf, key: PathBuf, host: String, port: u16) {
     let server_conf =
         create_server_configuration(cert, key).expect("failed to create the server configuration");
 
-    let sw = sandwich::Context;
+    let sw = sandwich::Context::new();
     let server_ctx =
         Context::try_from(&sw, &server_conf).expect("failed to create a server context");
 
@@ -149,7 +149,7 @@ pub fn echo_tls_server_mpsc(cert: PathBuf, key: PathBuf, host: String, port_w: S
     let server_conf =
         create_server_configuration(cert, key).expect("failed to create the server configuration");
 
-    let sw = sandwich::Context;
+    let sw = sandwich::Context::new();
     let server_ctx =
         Context::try_from(&sw, &server_conf).expect("failed to create a server context");
 

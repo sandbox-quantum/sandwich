@@ -127,6 +127,7 @@ KEMERROR_TOO_MANY => "Too many KEMs.",
       values: [
         SYSTEMERROR_MEMORY => "Memory error (e.g. allocation failed).",
 SYSTEMERROR_INTEGER_OVERFLOW => "Integer overflow.",
+SYSTEMERROR_BACKEND => "Backend error.",
 
       ],
   },
@@ -159,6 +160,10 @@ HANDSHAKEERROR_CERTIFICATE_EXPIRED => "Certificate has expired.",
 HANDSHAKEERROR_CERTIFICATE_REVOKED => "Certificate was revoked.",
 HANDSHAKEERROR_INVALID_CERTIFICATE => "Invalid Certificate.",
 HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED => "Signature verification error.",
+HANDSHAKEERROR_DEPTH_EXCEEDED => "Certificate chain too long or pathlen exceeded.",
+HANDSHAKEERROR_UNSUPPORTED_PROTOCOL => "Unsupported protocol.",
+HANDSHAKEERROR_NO_SHARED_CIPHER => "No shared cipher.",
+HANDSHAKEERROR_NO_SUITABLE_KEY_SHARE => "No suitable key share.",
 HANDSHAKEERROR_UNKNOWN_ERROR => "Unknown handshake error.",
 
       ],

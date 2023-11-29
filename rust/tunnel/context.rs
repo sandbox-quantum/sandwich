@@ -14,6 +14,7 @@
 
 use pb::ConfigurationError;
 
+#[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
 use crate::implementation::ossl;
 
 use super::Tunnel;
@@ -24,7 +25,7 @@ use crate::tunnel::tls;
 ///
 /// A [`Context`] is either a context for client-side applications or
 /// server-side applications.
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub(crate) enum Mode {
     /// Client mode.
     Client,
@@ -50,6 +51,10 @@ pub enum Context<'a> {
     /// BoringSSL context.
     #[cfg(feature = "boringssl")]
     BoringSSL(ossl::boringssl::Context<'a>),
+
+    /// OpenSSL 3 context.
+    #[cfg(feature = "openssl3")]
+    OpenSSL3(crate::ossl3::tunnel::Context<'a>),
 }
 
 impl std::fmt::Debug for Context<'_> {
@@ -59,6 +64,8 @@ impl std::fmt::Debug for Context<'_> {
             Self::OpenSSL1_1_1(c) => write!(f, "Context(OpenSSL1_1_1({c:?}))"),
             #[cfg(feature = "boringssl")]
             Self::BoringSSL(c) => write!(f, "Context(BoringSSL({c:?}))"),
+            #[cfg(feature = "openssl3")]
+            Self::OpenSSL3(c) => write!(f, "Context(OpenSSL3({c:?}))"),
         }
     }
 }
@@ -72,7 +79,7 @@ impl<'a> Context<'a> {
     /// ```
     /// use sandwich_api_proto as pb_api;
     ///
-    /// Instantiates a top-level context.
+    /// // Instantiates a top-level context.
     /// let sw = sandwich::Context;
     ///
     /// // Creates a protobuf configuration
@@ -97,8 +104,9 @@ impl<'a> Context<'a> {
     /// };
     ///
     /// ```
+    #[allow(unused_variables)]
     pub fn try_from(
-        _context: &'a crate::Context,
+        context: &'a crate::Context,
         configuration: &pb_api::Configuration,
     ) -> crate::Result<Self> {
         tls::assert_compliance(configuration)?;
@@ -117,6 +125,12 @@ impl<'a> Context<'a> {
             pb_api::Implementation::IMPL_BORINGSSL_OQS => {
                 ossl::boringssl::Context::try_from(configuration)
                     .map(Self::BoringSSL)
+                    .map_err(|e| e >> ConfigurationError::CONFIGURATIONERROR_INVALID)
+            }
+            #[cfg(feature = "openssl3")]
+            pb_api::Implementation::IMPL_OPENSSL3_OQS_PROVIDER => {
+                crate::ossl3::tunnel::Context::try_from(context, configuration)
+                    .map(Self::OpenSSL3)
                     .map_err(|e| e >> ConfigurationError::CONFIGURATIONERROR_INVALID)
             }
             _ => Err(
@@ -146,6 +160,8 @@ impl<'a> Context<'a> {
             Self::BoringSSL(c) => Ok(Tunnel::BoringSSL(ossl::boringssl::Tunnel(
                 c.0.new_tunnel(io, configuration)?,
             ))),
+            #[cfg(feature = "openssl3")]
+            Self::OpenSSL3(c) => Ok(Tunnel::OpenSSL3(c.new_tunnel(io, configuration)?)),
         }
     }
 }
@@ -197,7 +213,7 @@ pub(crate) mod test {
             )
             .unwrap();
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-            let sw_ctx = crate::Context;
+            let sw_ctx = crate::Context::new();
             let ctx = Context::try_from(&sw_ctx, &config);
             ctx.unwrap();
         }
@@ -234,7 +250,7 @@ pub(crate) mod test {
                 .as_str(),
             )
             .unwrap();
-            let sw_ctx = crate::Context;
+            let sw_ctx = crate::Context::new();
             let ctx = Context::try_from(&sw_ctx, &config);
             assert!(ctx.is_err());
             assert!(
@@ -276,7 +292,7 @@ pub(crate) mod test {
             )
             .unwrap();
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-            let sw_ctx = crate::Context;
+            let sw_ctx = crate::Context::new();
             let ctx = Context::try_from(&sw_ctx, &config);
             assert!(ctx.is_err());
             assert!(ctx.unwrap_err().is(&errors! {
@@ -340,7 +356,7 @@ pub(crate) mod test {
             )
             .unwrap();
             config.impl_ = pb_api::Implementation::IMPL_OPENSSL1_1_1_OQS.into();
-            let sw_ctx = crate::Context;
+            let sw_ctx = crate::Context::new();
             let ctx = Context::try_from(&sw_ctx, &config);
             assert!(ctx.is_err());
             assert!(ctx.unwrap_err().is(&errors! {

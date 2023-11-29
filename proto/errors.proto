@@ -170,6 +170,11 @@ enum SystemError { // ERRORKIND_SYSTEM
 
   // Integer overflow.
   SYSTEMERROR_INTEGER_OVERFLOW = 1;
+
+  // Backend error.
+  SYSTEMERROR_BACKEND = 2;
+
+  // Next id: 3
 };
 
 // Socket errors.
@@ -222,8 +227,22 @@ enum HandshakeError { // ERRORKIND_HANDSHAKE
   // Signature verification error.
   HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED = 5;
 
+  // Certificate chain too long or pathlen exceeded.
+  HANDSHAKEERROR_DEPTH_EXCEEDED = 7;
+
+  // Unsupported protocol.
+  HANDSHAKEERROR_UNSUPPORTED_PROTOCOL = 8;
+
+  // No shared cipher.
+  HANDSHAKEERROR_NO_SHARED_CIPHER = 9;
+
+  // No suitable key share.
+  HANDSHAKEERROR_NO_SUITABLE_KEY_SHARE = 10;
+
   // Unknown handshake error.
   HANDSHAKEERROR_UNKNOWN_ERROR = 6;
+
+  // Next id: 11
 };
 
 // Tunnel error.

@@ -19,7 +19,6 @@ openssl3_build(
         "no-shared",
         "no-sock",
         "no-ssl-trace",
-        "no-threads",
         "no-ssl",
         "no-dtls",
         "no-md4",

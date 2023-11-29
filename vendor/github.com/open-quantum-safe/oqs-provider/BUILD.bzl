@@ -15,6 +15,7 @@ def open_quantum_safe_oqs_provider_fetch_archive():
         patches = [
             "@sandwich//vendor/github.com/open-quantum-safe/oqs-provider:include_missing_header.patch",
             "@sandwich//vendor/github.com/open-quantum-safe/oqs-provider:install_in_standard_output.patch",
+            "@sandwich//vendor/github.com/open-quantum-safe/oqs-provider:fix_race_condition_obj_oid_exists.patch",
         ],
         strip_prefix = "oqs-provider-{commit}".format(commit = _COMMIT),
         build_file_content = """filegroup(name = "all_srcs", srcs = glob(["**"]), visibility = ["//visibility:public"])""",

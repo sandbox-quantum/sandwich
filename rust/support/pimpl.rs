@@ -48,7 +48,7 @@ impl<'a, T> Pimpl<'a, T> {
     /// // `libc::free` will be called with the pointer when `ptr` gets dropped.
     /// let ptr = unsafe { Pimpl::new(ptr, |p| libc::free(p)) };
     /// ```
-    pub fn new(ptr: *mut T, del: Deleter<T>) -> Option<Self> {
+    pub unsafe fn new(ptr: *mut T, del: Deleter<T>) -> Option<Self> {
         let Some(p) = NonNull::new(ptr) else {
             return None;
         };
@@ -57,6 +57,17 @@ impl<'a, T> Pimpl<'a, T> {
             del: Some(del),
             phantom: PhantomData,
         })
+    }
+
+    /// Instantiates a [`Pimpl`] from a raw pointer and a deleter.
+    /// This method does the same job as [`Pimpl::new`], but the pointer's
+    /// nullity will not be checked.
+    pub unsafe fn new_unchecked(ptr: *mut T, del: Deleter<T>) -> Self {
+        Self {
+            p: NonNull::new_unchecked(ptr),
+            del: Some(del),
+            phantom: PhantomData,
+        }
     }
 
     /// Returns a copy of the [`NonNull`] pointer.

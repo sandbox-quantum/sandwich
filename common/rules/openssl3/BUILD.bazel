@@ -2,7 +2,6 @@ load(":rules.bzl", "gen_certificate", "gen_csr", "gen_openssl_providers_configur
 load("//common/rules/openssl3/private:gen_openssl_modules_directory.bzl", "gen_openssl_modules_directory")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
 
 gen_openssl_providers_configuration(
     name = "conf",
@@ -102,20 +101,6 @@ bzl_library(
     ],
 )
 
-stardoc(
-    name = "openssl3-providers-docs",
-    out = "openssl3-providers.md",
-    input = "providers.bzl",
-    deps = [":openssl3-rules"],
-)
-
-stardoc(
-    name = "openssl3-rules-docs",
-    out = "openssl3-rules.md",
-    input = "rules.bzl",
-    deps = [":openssl3-rules"],
-)
-
 build_test(
     name = "build_test",
     targets = [
@@ -124,9 +109,7 @@ build_test(
         ":certificate_test",
         ":conf",
         ":modules",
-        ":openssl3-providers-docs",
         ":openssl3-rules",
-        ":openssl3-rules-docs",
         ":private_key_test",
     ],
 )

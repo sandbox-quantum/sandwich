@@ -6,3 +6,6 @@
 #[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
 #[macro_use]
 pub(crate) mod ossl;
+
+#[cfg(feature = "openssl3")]
+pub(crate) mod openssl3;

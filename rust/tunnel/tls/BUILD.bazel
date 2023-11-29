@@ -6,6 +6,7 @@ filegroup(
     srcs = [
         "mod.rs",
         "security.rs",
+        "support.rs",
     ],
     visibility = ["//rust:__subpackages__"],
 )

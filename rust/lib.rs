@@ -71,7 +71,7 @@
 //!     >
 //! >
 //! "#).expect("invalid protobuf message");
-//! let sw = sandwich::Context;
+//! let sw = sandwich::Context::new();
 //! let context = Context::try_from(&sw, &configuration).expect("invalid configuration");
 //!
 //! let io = new_tcp_connection(); // This returns a `Box<dyn sandwich::IO>`.
@@ -129,10 +129,13 @@ pub mod io;
 mod support;
 
 #[cfg(all(
-    any(feature = "openssl1_1_1", feature = "boringssl"),
+    any(feature = "openssl1_1_1", feature = "boringssl", feature = "openssl3"),
     feature = "tunnel"
 ))]
 pub mod tunnel;
+
+#[cfg(feature = "openssl3")]
+use implementation::openssl3 as ossl3;
 
 #[cfg(feature = "ffi")]
 pub(crate) mod ffi;
@@ -140,7 +143,41 @@ pub(crate) mod ffi;
 /// Top-level context.
 ///
 /// This context is used to create tunnel contexts.
-pub struct Context;
+pub struct Context {
+    /// OpenSSL 3 top-level context library.
+    #[cfg(feature = "openssl3")]
+    #[allow(dead_code)]
+    ossl3_lib_ctx: ossl3::LibCtx<'static>,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Context {
+    /// Instantiates a new [`Context`].
+    pub fn new() -> Self {
+        Self {
+            #[cfg(feature = "openssl3")]
+            ossl3_lib_ctx: ossl3::LibCtx::try_new().expect("failed to initialize OpenSSL 3"),
+        }
+    }
+
+    /// Returns the current top-level library context for Openssl 3.
+    #[cfg(feature = "openssl3")]
+    pub(crate) fn get_openssl3_lib_ctx(&self) -> &ossl3::LibCtx<'static> {
+        &self.ossl3_lib_ctx
+    }
+}
+
+#[cfg(feature = "openssl3")]
+impl std::borrow::Borrow<ossl3::LibCtx<'static>> for Context {
+    fn borrow(&self) -> &ossl3::LibCtx<'static> {
+        &self.ossl3_lib_ctx
+    }
+}
 
 /// A [`Result`](std::result::Result) using [`Error`].
 pub type Result<T> = std::result::Result<T, Error>;

@@ -201,6 +201,9 @@ class SystemError(SandwichException):
         SandwichErrorProto.SYSTEMERROR_INTEGER_OVERFLOW: {
             "msg": """Integer overflow.""",
         },
+        SandwichErrorProto.SYSTEMERROR_BACKEND: {
+            "msg": """Backend error.""",
+        },
     }
 
 
@@ -259,6 +262,18 @@ class HandshakeError(SandwichException):
         },
         SandwichErrorProto.HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED: {
             "msg": """Signature verification error.""",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_DEPTH_EXCEEDED: {
+            "msg": """Certificate chain too long or pathlen exceeded.""",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_UNSUPPORTED_PROTOCOL: {
+            "msg": """Unsupported protocol.""",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_NO_SHARED_CIPHER: {
+            "msg": """No shared cipher.""",
+        },
+        SandwichErrorProto.HANDSHAKEERROR_NO_SUITABLE_KEY_SHARE: {
+            "msg": """No suitable key share.""",
         },
         SandwichErrorProto.HANDSHAKEERROR_UNKNOWN_ERROR: {
             "msg": """Unknown handshake error.""",

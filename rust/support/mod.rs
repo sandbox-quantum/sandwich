@@ -30,24 +30,3 @@ pub(crate) fn join_strings_with_delimiter(
     output.pop();
     output
 }
-
-/// Builds ciphersuite string with delimiter from list of ciphersuites.
-/// Return Error if contain any of the characters from the `invalid_chars`.
-pub(crate) fn build_ciphersuites_list(
-    ciphers: std::slice::Iter<'_, impl AsRef<str>>,
-    invalid_chars: &str,
-) -> Result<String, crate::Error> {
-    let mut output = String::new();
-    for c in ciphers {
-        if contains_any_of(c.as_ref(), invalid_chars) {
-            return Err(
-                pb::TLSConfigurationError::TLSCONFIGURATIONERROR_UNSUPPORTED_CONTROL_CHARACTERS
-                    .into(),
-            );
-        }
-        output.push_str(c.as_ref());
-        output.push(':');
-    }
-    output.pop();
-    Ok(output)
-}

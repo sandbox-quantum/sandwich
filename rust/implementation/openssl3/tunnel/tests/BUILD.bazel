@@ -1,0 +1,22 @@
+load("@rules_rust//rust:defs.bzl", "rust_test_suite")
+
+rust_test_suite(
+    name = "tests",
+    timeout = "short",
+    srcs = glob(
+        ["*.rs"],
+        exclude = ["support.rs"],
+    ),
+    crate_features = ["bazel"],
+    data = [
+        "support.rs",
+        "//testdata",
+    ],
+    deps = [
+        "//proto:sandwich_rust_proto",
+        "//proto/api/v1:api_rust_proto",
+        "//rust:sandwich_openssl3",
+        "@crate_index//:protobuf",
+        "@rules_rust//tools/runfiles",
+    ],
+)

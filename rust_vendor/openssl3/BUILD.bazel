@@ -1,0 +1,42 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy")
+load("@rules_rust//rust:defs.bzl", "rustfmt_test")
+
+rust_binary(
+    name = "openssl3",
+    srcs = ["build.rs"],
+    crate_name = "openssl3_build_script",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//rust_vendor/bazelisk-rs/src:bazelisk",
+        "//rust_vendor/build-support",
+        "@crate_index//:env_logger",
+        "@crate_index//:log",
+        "@crate_index//:protobuf",
+    ],
+)
+
+rust_clippy(
+    name = "clippy",
+    deps = [
+        ":openssl3",
+    ],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":clippy",
+    ],
+)
+
+rustfmt_test(
+    name = "rustfmt_test",
+    timeout = "short",
+    targets = [
+        ":openssl3",
+    ],
+)

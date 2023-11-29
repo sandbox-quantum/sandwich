@@ -11,6 +11,7 @@
 pub(crate) use context::Mode;
 pub use context::{Context, TunnelResult};
 
+#[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
 use crate::implementation::ossl;
 
 mod context;
@@ -133,6 +134,11 @@ impl std::fmt::Display for HandshakeError {
                 pb::HandshakeError::HANDSHAKEERROR_INVALID_CERTIFICATE => "invalid certificate",
                 pb::HandshakeError::HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED =>
                     "certificate signature verification failed",
+                pb::HandshakeError::HANDSHAKEERROR_DEPTH_EXCEEDED =>
+                    "certificate chain too long or pathlen exceeded",
+                pb::HandshakeError::HANDSHAKEERROR_UNSUPPORTED_PROTOCOL => "unsupported protocol",
+                pb::HandshakeError::HANDSHAKEERROR_NO_SHARED_CIPHER => "no shared cipher",
+                pb::HandshakeError::HANDSHAKEERROR_NO_SUITABLE_KEY_SHARE => "no suitable key share",
                 pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR => "unknown handshake error",
             }
         )
@@ -176,6 +182,10 @@ pub enum Tunnel<'a> {
     /// An BoringSSL tunnel.
     #[cfg(feature = "boringssl")]
     BoringSSL(ossl::boringssl::Tunnel<'a>),
+
+    /// An OpenSSL 3 tunnel.
+    #[cfg(feature = "openssl3")]
+    OpenSSL3(std::pin::Pin<Box<crate::ossl3::tunnel::Tunnel<'a>>>),
 }
 
 macro_rules! dispatch {
@@ -186,6 +196,9 @@ macro_rules! dispatch {
 
             #[cfg(feature = "boringssl")]
             Self::BoringSSL(t) => t.0.$func($($arg)*),
+
+            #[cfg(feature = "openssl3")]
+            Self::OpenSSL3(t) => t.$func($($arg)*),
         }
     };
     ($self:ident, $func:ident) => {
@@ -195,6 +208,9 @@ macro_rules! dispatch {
 
             #[cfg(feature = "boringssl")]
             Self::BoringSSL(t) => t.0.$func(),
+
+            #[cfg(feature = "openssl3")]
+            Self::OpenSSL3(t) => t.$func(),
         }
     };
 }
@@ -236,6 +252,8 @@ impl std::fmt::Debug for Tunnel<'_> {
             Self::OpenSSL1_1_1(t) => write!(f, "Tunnel(OpenSSL1_1_1({t:?}))"),
             #[cfg(feature = "boringssl")]
             Self::BoringSSL(t) => write!(f, "Tunnel(BoringSSL({t:?}))"),
+            #[cfg(feature = "openssl3")]
+            Self::OpenSSL3(t) => write!(f, "Tunnel(OpenSSL3({t:?}))"),
         }
     }
 }
@@ -266,5 +284,5 @@ mod test {
     }
 }
 
-#[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
+#[cfg(any(feature = "openssl1_1_1", feature = "boringssl", feature = "openssl3"))]
 pub(crate) mod tls;

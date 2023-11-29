@@ -17,6 +17,7 @@ members = [
     "rust_vendor/boringssl",
     "rust_vendor/build-support",
     "rust_vendor/openssl1_1_1",
+    "rust_vendor/openssl3",
     "rust_vendor/sandwich-api-proto",
     "rust_vendor/sandwich-proto",
     "rust_vendor/testdata",
@@ -28,17 +29,59 @@ path = "rust/lib.rs"
 
 [features]
 boringssl = []
-default = ["openssl1_1_1", "boringssl", "tunnel"]
+default = ["openssl1_1_1", "openssl3", "boringssl", "tunnel"]
 ffi = []
 openssl1_1_1 = []
+openssl3 = []
 tunnel = []
 
 [dependencies]
 boringssl = { path = "rust_vendor/boringssl" }
 openssl1_1_1 = { path = "rust_vendor/openssl1_1_1" }
+openssl3 = { path = "rust_vendor/openssl3" }
 protobuf = "=3.3.0"
 sandwich-api-proto = { path = "rust_vendor/sandwich-api-proto" }
 sandwich-proto = { path = "rust_vendor/sandwich-proto" }
 
 [dev-dependencies]
 testdata = { path = "rust_vendor/testdata" }
+
+[[test]]
+name = "depth-exceeded"
+path = "rust/implementation/openssl3/tunnel/tests/depth_exceeded.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
+name = "expired-certificate"
+path = "rust/implementation/openssl3/tunnel/tests/expired_certificate.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
+name = "mtls"
+path = "rust/implementation/openssl3/tunnel/tests/mtls.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
+name = "subject-alt-names-dns"
+path = "rust/implementation/openssl3/tunnel/tests/subject_alt_names_dns.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
+name = "subject-alt-names-email"
+path = "rust/implementation/openssl3/tunnel/tests/subject_alt_names_email.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
+name = "subject-alt-names-ip-address"
+path = "rust/implementation/openssl3/tunnel/tests/subject_alt_names_ip_address.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
+name = "tls-classical"
+path = "rust/implementation/openssl3/tunnel/tests/tls_classical.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
+name = "tls-quantum-resistant"
+path = "rust/implementation/openssl3/tunnel/tests/tls_quantum_resistant.rs"
+required-features = ["openssl3", "tunnel"]

@@ -36,7 +36,7 @@ fn main() {
     let client_conf = tls_client::create_client_configuration(&args.tls_version)
         .expect("failed to create the Sandwich configuration");
 
-    let sw = sandwich::Context;
+    let sw = sandwich::Context::new();
     let client_ctx = sandwich::tunnel::Context::try_from(&sw, &client_conf)
         .expect("failed to create a Sandwich context");
 

@@ -4,7 +4,7 @@
 /// Instantiates a top-level Sandwich context.
 #[no_mangle]
 pub extern "C" fn sandwich_lib_context_new() -> *mut crate::Context {
-    Box::into_raw(Box::new(crate::Context))
+    Box::into_raw(Box::new(crate::Context::new()))
 }
 
 /// Frees a top-level Sandwich context.

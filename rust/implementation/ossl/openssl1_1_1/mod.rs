@@ -13,10 +13,11 @@ use std::ptr::{self, NonNull};
 use openssl1_1_1 as openssl;
 use pb::RecordError as PbRecordError;
 
-use super::super::ossl::{self, TlsVersion, VerifyMode};
+use super::super::ossl;
 use super::Ossl as OsslTrait;
 use crate::support::Pimpl;
 use crate::tunnel::{tls, Mode, RecordError};
+use tls::{TlsVersion, VerifyMode};
 
 mod io;
 
@@ -269,7 +270,7 @@ impl OsslTrait for Ossl {
             let openssl_name = get_openssl_name(std_name.as_ref())?;
             openssl_names.push(openssl_name.to_string())
         }
-        let cipher = crate::support::build_ciphersuites_list(openssl_names.iter(), "!+@")?;
+        let cipher = tls::support::build_ciphersuites_list(openssl_names.iter(), "!+@")?;
         let cstr =
             std::ffi::CString::new(cipher).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
         if unsafe { openssl::SSL_CTX_set_cipher_list(ssl_ctx.as_ptr(), cstr.as_ptr()) } == 1 {
@@ -287,7 +288,7 @@ impl OsslTrait for Ossl {
             return Ok(());
         }
 
-        let cipher = crate::support::build_ciphersuites_list(ciphersuites, "!+-@")?;
+        let cipher = tls::support::build_ciphersuites_list(ciphersuites, "!+-@")?;
         let cstr =
             std::ffi::CString::new(cipher).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
         if unsafe { openssl::SSL_CTX_set_ciphersuites(ssl_ctx.as_ptr(), cstr.as_ptr()) } == 1 {
@@ -1273,7 +1274,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
@@ -1340,7 +1341,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
@@ -1399,7 +1400,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -1447,7 +1448,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -1523,7 +1524,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -1574,7 +1575,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -1633,7 +1634,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         Context::try_from(&sw_ctx, &config).unwrap_err();
     }
 
@@ -1657,7 +1658,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         Context::try_from(&sw_ctx, &config).unwrap_err();
     }
 
@@ -1697,7 +1698,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -1741,7 +1742,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -1845,7 +1846,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -1896,7 +1897,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -1970,7 +1971,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -2021,7 +2022,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -2094,7 +2095,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -2138,7 +2139,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -2208,7 +2209,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
@@ -2252,7 +2253,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
@@ -2306,7 +2307,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
@@ -2356,7 +2357,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let io = IOBuffer::new();
 
@@ -2417,7 +2418,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -2461,7 +2462,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -2545,7 +2546,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -2589,7 +2590,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -2675,7 +2676,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -2719,7 +2720,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -2803,7 +2804,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -2847,7 +2848,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -2933,7 +2934,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -2977,7 +2978,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -3061,7 +3062,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -3105,7 +3106,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -3191,7 +3192,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -3235,7 +3236,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
@@ -3319,7 +3320,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
@@ -3363,7 +3364,7 @@ pub(crate) mod additional_test {
         )
         .unwrap();
 
-        let sw_ctx = crate::Context;
+        let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
         let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
 
