@@ -173,13 +173,32 @@ impl SslContext {
 
         unsafe {
             openssl3::SSL_CTX_set_cert_store(self.0.as_ptr(), x509_store.as_ptr());
-            openssl3::X509_STORE_set_trust(
-                x509_store.as_ptr(),
-                openssl3::X509_VP_FLAG_DEFAULT as i32,
-            );
         }
 
         Ok(())
+    }
+
+    /// Sets the trust parameter on the verification parameters object, depending
+    /// on the execution mode.
+    fn set_trust(&self, mode: Mode) -> Result<()> {
+        if unsafe {
+            openssl3::SSL_CTX_set_trust(
+                self.0.as_ptr(),
+                match mode {
+                    Mode::Client => openssl3::X509_TRUST_SSL_CLIENT,
+                    Mode::Server => openssl3::X509_TRUST_SSL_SERVER,
+                } as c_int,
+            )
+        } == 1
+        {
+            Ok(())
+        } else {
+            Err((
+                pb::SystemError::SYSTEMERROR_BACKEND,
+                format!("failed to set the trust parameter: {}", support::errstr()),
+            )
+                .into())
+        }
     }
 
     /// Sets the `SSL_MODE_RELEASE_BUFFERS` option.
@@ -656,6 +675,7 @@ impl<'a> Context<'a> {
         let ssl_ctx_wrapped = SslContext(ssl_ctx.as_nonnull());
 
         ssl_ctx_wrapped.set_default_parameters()?;
+        ssl_ctx_wrapped.set_trust(mode)?;
         ssl_ctx_wrapped.set_min_and_max_tls_version(tls_options)?;
         ssl_ctx_wrapped.configure_tls12(tls_options.tls12.as_ref())?;
         ssl_ctx_wrapped.configure_tls13(tls_options.tls13.as_ref())?;

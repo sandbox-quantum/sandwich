@@ -193,8 +193,24 @@ impl OsslTrait for Ossl {
             }
             unsafe {
                 openssl::SSL_CTX_set_cert_store(ctx.as_nonnull().as_ptr(), ptr);
-                openssl::X509_STORE_set_trust(ptr, 1);
             }
+        }
+
+        if unsafe {
+            openssl::SSL_CTX_set_trust(
+                ctx.as_nonnull().as_ptr(),
+                match mode {
+                    Mode::Client => openssl::X509_TRUST_SSL_CLIENT,
+                    Mode::Server => openssl::X509_TRUST_SSL_SERVER,
+                } as std::ffi::c_int,
+            )
+        } != 1
+        {
+            return Err((
+                pb::SystemError::SYSTEMERROR_BACKEND,
+                "failed to set the trust parameter",
+            )
+                .into());
         }
 
         Ok(ctx)
