@@ -208,9 +208,26 @@ impl OsslTrait for Ossl {
             }
             unsafe {
                 boringssl::SSL_CTX_set_cert_store(ctx.as_nonnull().as_ptr(), ptr);
-                boringssl::X509_STORE_set_trust(ptr, 1);
             }
         }
+
+        if unsafe {
+            boringssl::SSL_CTX_set_trust(
+                ctx.as_nonnull().as_ptr(),
+                match mode {
+                    Mode::Client => boringssl::X509_TRUST_SSL_CLIENT,
+                    Mode::Server => boringssl::X509_TRUST_SSL_SERVER,
+                } as std::ffi::c_int,
+            )
+        } != 1
+        {
+            return Err((
+                pb::SystemError::SYSTEMERROR_BACKEND,
+                "failed to set the trust parameter",
+            )
+                .into());
+        }
+
         Ok(ctx)
     }
 
