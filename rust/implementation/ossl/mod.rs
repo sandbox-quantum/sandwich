@@ -73,6 +73,11 @@ pub(crate) trait Ossl {
         ciphersuites: std::slice::Iter<'_, impl AsRef<str>>,
     ) -> crate::Result<()>;
 
+    /// Loads OpenSSL system-default trust anchors into ssl_ctx's store.
+    fn fill_certificate_trust_store_with_default_cas(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+    ) -> crate::Result<()>;
+
     /// Sets the verify mode to a SSL context.
     fn ssl_context_set_verify_mode(ssl_ctx: NonNull<Self::NativeSslCtx>, mode: VerifyMode);
 
@@ -480,9 +485,13 @@ where
             ssl_context_set_identity::<OsslInterface>(ssl_ctx.as_nonnull(), identity)?;
         }
 
-        if let Some(v) = x509_verifier {
-            ssl_fill_trust_store::<OsslInterface>(ssl_ctx.as_nonnull(), v)
+        if let Some(x509) = x509_verifier {
+            ssl_fill_trust_store::<OsslInterface>(ssl_ctx.as_nonnull(), x509)
                 .map_err(|e| e >> TLSConfigurationError::TLSCONFIGURATIONERROR_INVALID)?;
+
+            if x509.load_cas_from_default_verify_path {
+                OsslInterface::fill_certificate_trust_store_with_default_cas(ssl_ctx.as_nonnull())?;
+            }
         }
 
         if x509_verifier.is_none() {

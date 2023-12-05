@@ -83,16 +83,17 @@ pub(crate) fn x509_verifier_verify_emptiness(
     x509_verifier: Option<&X509Verifier>,
 ) -> Result<Option<&X509Verifier>> {
     let Some(x509) = x509_verifier else {
-        return Ok(x509_verifier);
+        return Ok(None);
     };
-    if !x509.trusted_cas.is_empty() {
-        Ok(x509_verifier)
-    } else {
+
+    if x509.trusted_cas.is_empty() && !x509.load_cas_from_default_verify_path {
         Err((
             pb::TLSConfigurationError::TLSCONFIGURATIONERROR_EMPTY,
             "X.509 verifier empty",
         )
             .into())
+    } else {
+        Ok(x509_verifier)
     }
 }
 
@@ -224,6 +225,7 @@ pub(crate) mod test {
         certificates: impl IntoIterator<Item = (S, pb_api::ASN1EncodingFormat)>,
         allow_expired_certificate: bool,
         max_verify_depth: impl Into<u32>,
+        load_cas_from_default_verify_path: bool,
     ) -> pb_api::X509Verifier
     where
         S: AsRef<str>,
@@ -233,6 +235,7 @@ pub(crate) mod test {
                 {certificates}
                 allow_expired_certificate: {allow_expired_certificate}
                 max_verify_depth: {max_verify_depth}
+                load_cas_from_default_verify_path : {load_cas_from_default_verify_path}
             "#,
             certificates = certificates
                 .into_iter()

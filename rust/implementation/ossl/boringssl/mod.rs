@@ -323,6 +323,16 @@ impl OsslTrait for Ossl {
         }
     }
 
+    fn fill_certificate_trust_store_with_default_cas(
+        ssl_ctx: NonNull<Self::NativeSslCtx>,
+    ) -> crate::Result<()> {
+        if unsafe { boringssl::SSL_CTX_set_default_verify_paths(ssl_ctx.as_ptr()) } == 1 {
+            Ok(())
+        } else {
+            Err(pb::CertificateError::CERTIFICATEERROR_UNKNOWN.into())
+        }
+    }
+
     fn ssl_context_set_verify_mode(ssl_ctx: NonNull<Self::NativeSslCtx>, mode: VerifyMode) {
         let flag = match mode {
             VerifyMode::None => boringssl::SSL_VERIFY_NONE,
