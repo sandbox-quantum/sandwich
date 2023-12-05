@@ -598,6 +598,29 @@ impl SslContext {
         Ok(())
     }
 
+    /// Loads the OpenSSL system-default trust anchors into context store.
+    fn fill_certificate_trust_store_with_default_cas(
+        &self,
+        x509_verifier: Option<&pb_api::X509Verifier>,
+    ) -> Result<()> {
+        let Some(x509) = x509_verifier else {
+            return Ok(());
+        };
+
+        if x509.load_cas_from_default_verify_path
+            && unsafe { openssl3::SSL_CTX_set_default_verify_paths(self.0.as_ptr()) } != 1
+        {
+            return Err((
+                    pb::CertificateError::CERTIFICATEERROR_UNKNOWN,
+                    format!(
+                        "CAfile and CApath are NULL or the processing at one of the locations specified failed: {}",
+                        support::errstr()
+                    ),
+                    )
+                    .into());
+        }
+        Ok(())
+    }
     /// Sets the verification mode.
     ///
     /// If a `X509Verifier` structure is present in the protobuf configuration,
@@ -691,6 +714,7 @@ impl<'a> Context<'a> {
 
         ssl_ctx_wrapped.set_identity(lib_ctx, tls_options.identity.as_ref())?;
         ssl_ctx_wrapped.fill_certificate_trust_store(lib_ctx, x509_verifier)?;
+        ssl_ctx_wrapped.fill_certificate_trust_store_with_default_cas(x509_verifier)?;
 
         let verify_mode = get_verify_mode_from_mode_and_x509_verifier(mode, x509_verifier);
         ssl_ctx_wrapped.set_verify_mode(verify_mode);
@@ -1064,12 +1088,32 @@ mod test {
             )],
             false,
             4u32,
+            false,
         );
 
         let result =
             ssl_ctx_wrapped.fill_certificate_trust_store(ctx.borrow(), Some(&x509_verifier));
 
         result.expect("`SslContext::fill_certificate_trust_store` failed");
+    }
+
+    /// Tests [`SslContext::fill_certificate_trust_store_with_default_cas`].
+    #[test]
+    fn test_ssl_context_fill_certificate_trust_store_with_default_cas() {
+        let ctx = crate::Context::default();
+        let ssl_ctx = new_ssl_context(&ctx, Mode::Client).unwrap();
+        let ssl_ctx_wrapped = SslContext(ssl_ctx.as_nonnull());
+        let x509_verifier = tls::support::test::create_x509_verifier(
+            [("", pb_api::ASN1EncodingFormat::ENCODING_FORMAT_PEM)],
+            false,
+            0u32,
+            true,
+        );
+
+        let result =
+            ssl_ctx_wrapped.fill_certificate_trust_store_with_default_cas(Some(&x509_verifier));
+
+        result.expect("`SslContext::fill_certificate_trust_store_with_default_ca` failed");
     }
 
     /// Tests [`SslContext::fill_certificate_trust_store`] with no X509Verifier.
@@ -1098,6 +1142,7 @@ mod test {
             )],
             false,
             4u32,
+            false,
         );
 
         let result =
@@ -1118,6 +1163,7 @@ mod test {
             )],
             false,
             4u32,
+            false,
         );
 
         let result =
@@ -1156,6 +1202,7 @@ mod test {
             )],
             false,
             4u32,
+            false,
         );
 
         let result =
@@ -1200,6 +1247,7 @@ mod test {
                                     >
                                 >
                                 max_verify_depth: 42
+                                load_cas_from_default_verify_path: false
                             >
                             identity <
                                 certificate <

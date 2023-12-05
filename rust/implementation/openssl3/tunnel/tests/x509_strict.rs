@@ -26,6 +26,7 @@ use support::resolve_runfile as runfile;
 ///             trusted_cas: ca of chain_example_com.
 ///             allow_expired_certificate: false
 ///             max_verify_depth: default
+///             load_cas_from_default_verify_path: false
 ///         X509Identity: not present
 ///         alpn_protocols: none.
 ///         TunnelVerifier: empty.

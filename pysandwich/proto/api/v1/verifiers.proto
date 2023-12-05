@@ -53,6 +53,11 @@ message X509Verifier {
   //
   // Default: 100.
   uint32 max_verify_depth = 5;
+
+  // Loads OpenSSL system-default trust anchors CA certificates.
+  bool load_cas_from_default_verify_path = 6;
+
+  // Next id: 7
 }
 
 // A Subject Alternative Names entry.
