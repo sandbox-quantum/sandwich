@@ -11,7 +11,7 @@ use crate::support::Pimpl;
 use crate::tunnel::tls::{self, VerifierSanitizer};
 use crate::Result;
 
-use crate::ossl3::error::{Error, ErrorLibrary};
+use crate::ossl3::error::{Error, ErrorLibrary, SslError};
 use crate::ossl3::support;
 
 use support::{NativeBio, NativeSsl};
@@ -53,8 +53,12 @@ impl Ssl {
     }
 
     /// Returns the last recorded error.
-    fn get_last_recorded_error(&self, ret: impl Into<c_int>) -> c_int {
-        unsafe { openssl3::SSL_get_error(self.0.as_ref(), ret.into()) }
+    fn get_last_recorded_error(
+        &self,
+        ret: impl Into<c_int>,
+    ) -> std::result::Result<SslError, c_int> {
+        let err = unsafe { openssl3::SSL_get_error(self.0.as_ref(), ret.into()) };
+        SslError::try_from(err).map_err(|_| err)
     }
 
     /// Returns the tunnel security requirements from a SSL object.
@@ -157,31 +161,46 @@ impl Ssl {
                 Some(pb::State::STATE_HANDSHAKE_DONE),
             );
         }
-        let error = self.get_last_recorded_error(handshake_error) as u32;
+        let ssl_error = match self.get_last_recorded_error(handshake_error) {
+            Ok(ssl_error) => ssl_error,
+            Err(error_code) => {
+                return (
+                    Err((
+                        pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
+                        format!(
+                            "unexpected `SSL_ERROR_SSL` (code {error_code}) from OpenSSL: {}",
+                            support::errstr()
+                        ),
+                    )
+                        .into()),
+                    None,
+                );
+            }
+        };
 
-        match error {
-            openssl3::SSL_ERROR_WANT_READ => (
+        match ssl_error {
+            SslError::WantRead => (
                 Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_READ),
                 Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
             ),
-            openssl3::SSL_ERROR_WANT_WRITE => (
+            SslError::WantWrite => (
                 Ok(pb::HandshakeState::HANDSHAKESTATE_WANT_WRITE),
                 Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
             ),
-            openssl3::SSL_ERROR_ZERO_RETURN => (
+            SslError::ZeroReturn => (
                 Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
                 Some(pb::State::STATE_HANDSHAKE_IN_PROGRESS),
             ),
-            openssl3::SSL_ERROR_WANT_ACCEPT | openssl3::SSL_ERROR_WANT_CONNECT => (
+            SslError::WantAccept | SslError::WantConnect => (
                 Ok(pb::HandshakeState::HANDSHAKESTATE_IN_PROGRESS),
                 Some(pb::State::STATE_NOT_CONNECTED),
             ),
-            openssl3::SSL_ERROR_SSL => self.handle_ssl_error_ssl(),
+            SslError::Ssl => self.handle_ssl_error_ssl(),
             _ => (
                 Err((
                     pb::HandshakeError::HANDSHAKEERROR_UNKNOWN_ERROR,
                     format!(
-                        "unexpected `SSL_ERROR_SSL` (code {error}) from OpenSSL: {}",
+                        "unexpected SSL error from OpenSSL: {ssl_error:?} ({})",
                         support::errstr()
                     ),
                 )
@@ -225,12 +244,13 @@ impl Ssl {
     /// The record stage is the stage when `SSL_read` and `SSL_write`
     /// are called.
     fn get_error_from_record_stage(&self, err: c_int) -> pb::RecordError {
-        let os_error = std::io::Error::last_os_error();
-        let ssl_error = self.get_last_recorded_error(err);
-        if (ssl_error == (openssl3::SSL_ERROR_SYSCALL as i32)) && (err == 0) {
+        let Ok(ssl_error) = self.get_last_recorded_error(err) else {
+            return pb::RecordError::RECORDERROR_UNKNOWN;
+        };
+        if (ssl_error == SslError::Syscall) && (err == 0) {
             return pb::RecordError::RECORDERROR_CLOSED;
         }
-        support::error_to_record_error(err, os_error)
+        ssl_error.into()
     }
 
     /// Closes the tunnel.

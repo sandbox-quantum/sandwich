@@ -130,3 +130,47 @@ impl Error {
         self.reason as u32
     }
 }
+
+gen_enum_from_openssl!(
+    SslError,
+    "SSL error",
+    (None, SSL_ERROR_NONE),
+    (Ssl, SSL_ERROR_SSL),
+    (WantRead, SSL_ERROR_WANT_READ),
+    (WantWrite, SSL_ERROR_WANT_WRITE),
+    (WantX509Lookup, SSL_ERROR_WANT_X509_LOOKUP),
+    (Syscall, SSL_ERROR_SYSCALL),
+    (ZeroReturn, SSL_ERROR_ZERO_RETURN),
+    (WantConnect, SSL_ERROR_WANT_CONNECT),
+    (WantAccept, SSL_ERROR_WANT_ACCEPT),
+    (WantAsync, SSL_ERROR_WANT_ASYNC),
+    (WantAsyncJob, SSL_ERROR_WANT_ASYNC_JOB),
+    (WantClientHelloCb, SSL_ERROR_WANT_CLIENT_HELLO_CB),
+    (WantRetryVerify, SSL_ERROR_WANT_RETRY_VERIFY),
+);
+
+impl From<SslError> for pb::RecordError {
+    fn from(ssl_error: SslError) -> Self {
+        match ssl_error {
+            SslError::WantRead => Self::RECORDERROR_WANT_READ,
+            SslError::WantWrite => Self::RECORDERROR_WANT_WRITE,
+            SslError::ZeroReturn => Self::RECORDERROR_CLOSED,
+            SslError::Syscall => match std::io::Error::last_os_error().raw_os_error() {
+                // EPIPE
+                Some(32) => Self::RECORDERROR_CLOSED,
+                _ => Self::RECORDERROR_UNKNOWN,
+            },
+            SslError::Ssl => {
+                let error = Error::from(support::peek_last_error());
+                if error.library() == ErrorLibrary::Ssl
+                    && error.reason() == openssl3::SSL_R_PROTOCOL_IS_SHUTDOWN
+                {
+                    Self::RECORDERROR_CLOSED
+                } else {
+                    Self::RECORDERROR_UNKNOWN
+                }
+            }
+            _ => Self::RECORDERROR_UNKNOWN,
+        }
+    }
+}

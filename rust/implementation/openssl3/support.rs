@@ -38,21 +38,6 @@ pub(crate) fn err_get_reason(err: c_ulong) -> c_int {
     (err & (openssl3::ERR_REASON_MASK as c_ulong)) as c_int
 }
 
-/// Converts an OpenSSL error to a [`RecordError`].
-pub(crate) fn error_to_record_error(e: c_int, errno: std::io::Error) -> pb::RecordError {
-    match e as u32 {
-        openssl3::SSL_ERROR_WANT_READ => pb::RecordError::RECORDERROR_WANT_READ,
-        openssl3::SSL_ERROR_WANT_WRITE => pb::RecordError::RECORDERROR_WANT_WRITE,
-        openssl3::SSL_ERROR_ZERO_RETURN => pb::RecordError::RECORDERROR_CLOSED,
-        openssl3::SSL_ERROR_SYSCALL => match errno.raw_os_error() {
-            // EPIPE
-            Some(32) => pb::RecordError::RECORDERROR_CLOSED,
-            Some(_) | None => pb::RecordError::RECORDERROR_UNKNOWN,
-        },
-        _ => pb::RecordError::RECORDERROR_UNKNOWN,
-    }
-}
-
 /// Returns a string containing the error strings for all errors that
 /// OpenSSL 3 has recorded.
 /// This function clears the error queue.
