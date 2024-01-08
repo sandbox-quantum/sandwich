@@ -5,13 +5,85 @@ rust_test_suite(
     timeout = "short",
     srcs = glob(
         ["*.rs"],
-        exclude = ["support.rs"],
+        exclude = [
+            "support.rs",
+            "tls_hybrid.rs",
+            "tls_classical.rs",
+        ],
     ),
     crate_features = ["bazel"],
     data = [
         "support.rs",
         "//testdata",
     ],
+    deps = [
+        "//proto:sandwich_rust_proto",
+        "//proto/api/v1:api_rust_proto",
+        "//rust:sandwich_openssl3",
+        "@crate_index//:protobuf",
+        "@rules_rust//tools/runfiles",
+    ],
+)
+
+rust_test_suite(
+    name = "test_classical",
+    timeout = "short",
+    srcs = ["tls_classical.rs"],
+    crate_features = ["bazel"],
+    data = [
+        "support.rs",
+        "//testdata",
+    ],
+    # Path to system-default CA certificates, only needed for testing inside Bazel.
+    env = select({
+        "@platforms//os:ios": {
+            "SSL_CERT_DIR": "/private/etc/ssl/certs",
+            "SSL_CERT_FILE": "/private/etc/ssl/cert.pem",
+        },
+        "@platforms//os:macos": {
+            "SSL_CERT_DIR": "/private/etc/ssl/certs",
+            "SSL_CERT_FILE": "/private/etc/ssl/cert.pem",
+        },
+        "@platforms//os:linux": {
+            "SSL_CERT_DIR": "/etc/ssl/certs",
+            "SSL_CERT_FILE": "/etc/ssl/cert.pem",
+        },
+    }),
+    tags = ["requires-network"],
+    deps = [
+        "//proto:sandwich_rust_proto",
+        "//proto/api/v1:api_rust_proto",
+        "//rust:sandwich_openssl3",
+        "@crate_index//:protobuf",
+        "@rules_rust//tools/runfiles",
+    ],
+)
+
+rust_test_suite(
+    name = "test_hybrid",
+    timeout = "short",
+    srcs = ["tls_hybrid.rs"],
+    crate_features = ["bazel"],
+    data = [
+        "support.rs",
+        "//testdata",
+    ],
+    # Path to system-default CA certificates, only needed for testing inside Bazel.
+    env = select({
+        "@platforms//os:ios": {
+            "SSL_CERT_DIR": "/private/etc/ssl/certs",
+            "SSL_CERT_FILE": "/private/etc/ssl/cert.pem",
+        },
+        "@platforms//os:macos": {
+            "SSL_CERT_DIR": "/private/etc/ssl/certs",
+            "SSL_CERT_FILE": "/private/etc/ssl/cert.pem",
+        },
+        "@platforms//os:linux": {
+            "SSL_CERT_DIR": "/etc/ssl/certs",
+            "SSL_CERT_FILE": "/etc/ssl/cert.pem",
+        },
+    }),
+    tags = ["requires-network"],
     deps = [
         "//proto:sandwich_rust_proto",
         "//proto/api/v1:api_rust_proto",
