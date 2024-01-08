@@ -37,6 +37,19 @@ gen_certificate(
     private_key = ":rsa_private_key_pem",
 )
 
+gen_private_key(
+    name = "p384_dilithium3_private_key_pem",
+    out = "p384_dilithium3.key.pem",
+    algorithm = "p384_dilithium3",
+    format = "PEM",
+)
+
+gen_certificate(
+    name = "p384_dilithium3_cert_pem",
+    out = "p384_dilithium3.cert.pem",
+    private_key = ":p384_dilithium3_private_key_pem",
+)
+
 gen_certificate(
     name = "falcon1024_cert_pem",
     out = "falcon1024.cert.pem",
@@ -123,6 +136,8 @@ filegroup(
         ":ed25519_key_pem",
         ":falcon1024_cert_pem",
         ":falcon1024_private_key_pem",
+        ":p384_dilithium3_cert_pem",
+        ":p384_dilithium3_private_key_pem",
         ":pq_cert_der",
         ":pq_cert_pem",
         ":pq_private_key_der",

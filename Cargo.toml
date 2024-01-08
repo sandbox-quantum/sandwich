@@ -82,6 +82,11 @@ path = "rust/implementation/openssl3/tunnel/tests/tls_classical.rs"
 required-features = ["openssl3", "tunnel"]
 
 [[test]]
+name = "tls-hybrid"
+path = "rust/implementation/openssl3/tunnel/tests/tls_hybrid.rs"
+required-features = ["openssl3", "tunnel"]
+
+[[test]]
 name = "tls-quantum-resistant"
 path = "rust/implementation/openssl3/tunnel/tests/tls_quantum_resistant.rs"
 required-features = ["openssl3", "tunnel"]
