@@ -58,7 +58,7 @@ Contributors need to sign and send a Contributor License Agreement:
 * individuals need to sign [the Individual Contributor License Agreement](docs/cla/individual.pdf), and send it by email alongside their Github handle at `sandwich [at] sandboxaq.com`
 * corporate contributors need to sign [the Corporate Contributor License Agreement](docs/cla/corporate.pdf), and send it by email alongside their Github handle at `sandwich [at] sandboxaq.com`
 
-## Disclamer
+## Disclaimer
 
 The software and documentation are provided "as is" and SandboxAQ hereby disclaims all warranties, whether express, implied, statutory, or otherwise.
 SandboxAQ specifically disclaims, without limitation, all implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement, and all warranties arising from course of dealing, usage, or trade practice.
