@@ -151,6 +151,12 @@ impl Ssl {
         }
     }
 
+    /// Checks if the tunnel is in a shutdown state.
+    fn is_shutdown(&self) -> bool {
+        let shutdown_state = unsafe { openssl3::SSL_get_shutdown(self.0.as_ptr()) } as u32;
+        (shutdown_state & (openssl3::SSL_SENT_SHUTDOWN | openssl3::SSL_RECEIVED_SHUTDOWN)) != 0
+    }
+
     /// Performs the handshake.
     fn do_handshake(&self) -> (Result<pb::HandshakeState>, Option<pb::State>) {
         let handshake_error = unsafe { openssl3::SSL_do_handshake(self.0.as_ptr()) };
@@ -524,6 +530,14 @@ impl<'a> Tunnel<'a> {
         Ok(())
     }
 
+    /// Updates the state of the tunnel.
+    /// This method must be called after any read or write operation.
+    fn update_state(&mut self) {
+        if Ssl(self.ssl.as_nonnull()).is_shutdown() {
+            self.state = pb::State::STATE_DISCONNECTED;
+        }
+    }
+
     pub(crate) fn state(&self) -> crate::tunnel::State {
         self.state.into()
     }
@@ -548,16 +562,37 @@ impl<'a> Tunnel<'a> {
         handshake_state.map(crate::tunnel::HandshakeState::from)
     }
 
-    pub(crate) fn read(&self, buf: &mut [u8]) -> crate::tunnel::RecordResult<usize> {
-        Ssl(self.ssl.as_nonnull()).read(buf)
+    pub(crate) fn read(&mut self, buf: &mut [u8]) -> crate::tunnel::RecordResult<usize> {
+        let result = Ssl(self.ssl.as_nonnull()).read(buf);
+        self.update_state();
+        if self.state == pb::State::STATE_DISCONNECTED {
+            Err(pb::RecordError::RECORDERROR_CLOSED.into())
+        } else {
+            result
+        }
     }
 
-    pub(crate) fn write(&self, buf: &[u8]) -> crate::tunnel::RecordResult<usize> {
-        Ssl(self.ssl.as_nonnull()).write(buf)
+    pub(crate) fn write(&mut self, buf: &[u8]) -> crate::tunnel::RecordResult<usize> {
+        let result = Ssl(self.ssl.as_nonnull()).write(buf);
+        self.update_state();
+        if self.state == pb::State::STATE_DISCONNECTED {
+            Err(pb::RecordError::RECORDERROR_CLOSED.into())
+        } else {
+            result
+        }
     }
 
-    pub(crate) fn close(&self) -> crate::tunnel::RecordResult<()> {
-        Ssl(self.ssl.as_nonnull()).close()
+    pub(crate) fn close(&mut self) -> crate::tunnel::RecordResult<()> {
+        if self.state == pb::State::STATE_DISCONNECTED {
+            return Ok(());
+        }
+        let result = Ssl(self.ssl.as_nonnull()).close();
+        self.update_state();
+        if self.state == pb::State::STATE_DISCONNECTED {
+            Ok(())
+        } else {
+            result
+        }
     }
 }
 

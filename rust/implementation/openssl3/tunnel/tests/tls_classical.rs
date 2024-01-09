@@ -271,7 +271,6 @@ fn test_external_load_cas_from_default_verify_path() {
     );
 }
 
-
 /// Tests Classical KE to a website without using system-default CA but a local trusted CA. It must fail.
 #[test]
 fn test_external_load_cas_from_trusted_cas_must_fail() {
@@ -323,5 +322,7 @@ fn test_external_load_cas_from_trusted_cas_must_fail() {
         .new_tunnel(Box::new(client_io), client_tunnel_configuration)
         .unwrap();
 
-    client_tunnel.handshake().expect_err("The handshake must failed.");
+    client_tunnel
+        .handshake()
+        .expect_err("The handshake must failed.");
 }

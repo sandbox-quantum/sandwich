@@ -97,9 +97,10 @@ auto CreateClientContext(const struct SandwichContext *sw,
                          std::unique_ptr<Runfiles> &runfiles)
     -> std::unique_ptr<struct ::SandwichTunnelContext,
                        SandwichTunnelContextDeleter> {
-  auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_CLIENT,
-                                  saq::sandwich::proto::api::v1::
-                                      Implementation::IMPL_OPENSSL1_1_1_OQS)};
+  auto config{
+      NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_CLIENT,
+                          saq::sandwich::proto::api::v1::Implementation::
+                              IMPL_OPENSSL3_OQS_PROVIDER)};
 
   config.mutable_client()
       ->mutable_tls()
@@ -144,9 +145,10 @@ auto CreateServerContext(const struct SandwichContext *sw,
                          std::unique_ptr<Runfiles> &runfiles)
     -> std::unique_ptr<struct ::SandwichTunnelContext,
                        SandwichTunnelContextDeleter> {
-  auto config{NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_SERVER,
-                                  saq::sandwich::proto::api::v1::
-                                      Implementation::IMPL_OPENSSL1_1_1_OQS)};
+  auto config{
+      NewTLSConfiguration(saq::sandwich::proto::Mode::MODE_SERVER,
+                          saq::sandwich::proto::api::v1::Implementation::
+                              IMPL_OPENSSL3_OQS_PROVIDER)};
 
   config.mutable_server()
       ->mutable_tls()
