@@ -219,10 +219,10 @@ impl SslContext {
 
     /// Sets the default parameters for a SSL context.
     fn set_default_parameters(&self) -> Result<()> {
-        const ENABLED: i32 = 1;
+        const DISABLED: c_int = 0;
 
         unsafe {
-            openssl3::SSL_CTX_set_quiet_shutdown(self.0.as_ptr(), ENABLED);
+            openssl3::SSL_CTX_set_quiet_shutdown(self.0.as_ptr(), DISABLED);
         }
 
         self.disable_session_cache_mode();

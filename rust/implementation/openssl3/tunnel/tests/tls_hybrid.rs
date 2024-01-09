@@ -324,5 +324,7 @@ fn test_external_load_cas_from_trusted_cas_must_fail() {
         .new_tunnel(Box::new(client_io), client_tunnel_configuration)
         .unwrap();
 
-    client_tunnel.handshake().expect_err("The handshake must failed.");
+    client_tunnel
+        .handshake()
+        .expect_err("The handshake must failed.");
 }
