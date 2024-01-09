@@ -9,9 +9,11 @@ cmake(
         "-DOQS_DIST_BUILD=ON",
         "-DOQS_USE_OPENSSL=OFF",
     ] + cmake_processor_flags() + select({
-        # liboqs uses `SecRandomCopyBytes` for the iPhones,
-        # There is an CMake variable for that: `IOS`, but it isn't documented.
-        "@platforms//os:ios": ["-DIOS=ON"],
+        "@platforms//os:ios": [
+            "--toolchain",
+            ".CMake/apple.cmake",
+            "-DPLATFORM=OS64",
+        ],
         "//conditions:default": [],
     }),
     lib_source = "@open-quantum-safe.liboqs//:all_srcs",
@@ -38,13 +40,11 @@ cmake(
         "-DOQS_ENABLE_SIG_falcon_512_avx2=OFF",
     ] + cmake_processor_flags() + select({
         # liboqs uses `SecRandomCopyBytes` for the iPhones,
-        # There is an CMake variable for that: `IOS`, but it isn't documented.
-        "@platforms//os:ios": ["-DIOS=ON"],
+        "@platforms//os:ios": ["-DPLATFORM=OS64"],
         "//conditions:default": [],
     }),
     lib_source = "@open-quantum-safe.liboqs//:all_srcs",
     linkopts = select({
-        # liboqs uses `SecRandomCopyBytes` for the iPhones,
         # but forgot to link against `Security` Framework.
         "@platforms//os:ios": [
             "-Wl,-framework,Security",

@@ -1,0 +1,11 @@
+diff --git a/src/common/CMakeLists.txt b/src/common/CMakeLists.txt
+--- a/src/common/CMakeLists.txt
++++ b/src/common/CMakeLists.txt
+@@ -90,6 +90,7 @@ else()
+     endif()
+ endif()
+ if(CMAKE_USE_PTHREADS_INIT)
++    find_package(Threads REQUIRED)
+     target_link_libraries(common PRIVATE Threads::Threads)
+ endif()
+ 

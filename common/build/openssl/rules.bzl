@@ -57,7 +57,9 @@ export LIBOQS_SRC_DIR="$(_realpath "${LIBOQS_SRC_DIR}")"
 export LIBOQS_BUILD_DIR="$(_realpath "./liboqs_build")"
 export INSTALL_DIR="$(_realpath "${INSTALL_DIR}")"
 
+export IS_DARWIN=false
 if [[ "$(uname -s)" == "Darwin" ]]; then
+  export IS_DARWIN=true
   # Needed for macOS. See https://github.com/bazelbuild/bazel/blob/master/tools/objc/xcrunwrapper.sh
   WRAPPER_DEVDIR="${DEVELOPER_DIR:-}"
   if [[ -z "${WRAPPER_DEVDIR}" ]] ; then
@@ -82,18 +84,23 @@ mkdir -p "${OPENSSL_BUILD_DIR}"
 )
 mkdir -p "${LIBOQS_BUILD_DIR}"
 (
-  echo "set(CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})" > cross.cmake
+  echo "set(CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})" >> cross.cmake
   echo "set(CMAKE_SYSTEM_NAME ${CMAKE_SYSTEM_NAME})" >> cross.cmake
+  if [[ "${IOS}" != "1" ]]; then
+    export LIBOQS_CONFIGURE_ARGS="${LIBOQS_CONFIGURE_ARGS} -DCMAKE_C_COMPILER=${CC} -DCMAKE_ASM_COMPILER=${CC} -DCMAKE_AR=${AR}"
+  else
+    cat "${LIBOQS_SRC_DIR}/.CMake/apple.cmake" >> cross.cmake
+    unset CC
+    unset CXX
+  fi
+
   export CMAKE_TOOLCHAIN_FILE="${PWD}/cross.cmake"
   "$CMAKE"  -S "${LIBOQS_SRC_DIR}" \
             -B "${LIBOQS_BUILD_DIR}" \
             -G Ninja \
             -Wno-dev \
             --toolchain "${PWD}/cross.cmake" \
-            "-DCMAKE_C_COMPILER=${CC}" \
-            "-DCMAKE_AR=${AR}" \
             "-DCMAKE_ASM_FLAGS=${ASFLAGS}" \
-            "-DCMAKE_ASM_COMPILER=${CC}" \
             "-DCMAKE_MAKE_PROGRAM=${NINJA}" \
             "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}" \
             "-DOPENSSL_ROOT_DIR=${OPENSSL_BUILD_DIR}" \
@@ -101,9 +108,11 @@ mkdir -p "${LIBOQS_BUILD_DIR}"
             "-DCMAKE_HAVE_POSIX_MEMALIGN=ON" \
             "-DCMAKE_C_FLAGS_INIT=${CFLAGS}" \
             "-DCMAKE_EXE_LINKER_FLAGS_INIT=${LDFLAGS}" \
+            "-DCMAKE_STATIC_LINKER_FLAGS_INIT=${ARFLAGS}" \
             "-DCMAKE_SHARED_LINKER_FLAGS_INIT=${LDFLAGS}" \
             "-DCMAKE_C_FLAGS=-isystem ${OPENSSL_SRC_DIR}/include" \
-            "-DCMAKE_C_ARCHIVE_CREATE=<CMAKE_AR> ${ARFLAGS} <TARGET> <OBJECTS>" \
+            "-DCMAKE_C_ARCHIVE_CREATE=${AR} ${ARFLAGS} <TARGET> <OBJECTS>" \
+            "-DCMAKE_C_CREATE_STATIC_LIBRARY=${AR} ${ARFLAGS} <TARGET> <OBJECTS>" \
             ${LIBOQS_CONFIGURE_ARGS}
 )
 (
@@ -372,6 +381,11 @@ def _generate_environ(ctx, openssl_target, liboqs_target, install_dir):
         # liboqs uses `SecRandomCopyBytes` for the iPhones, but forget to link against `Security` Framework
         env["LDFLAGS"] += " -framework Security"
         env["OPENSSL_CFLAGS"] += " -framework Security"
+
+        cc_toolchain = find_cpp_toolchain(ctx) or fail("Failed to find the cpp toolchain")
+        if cc_toolchain.cpu.startswith("ios_"):
+            liboqs_args.append("-DPLATFORM=OS64")
+            env["IOS"] = "1"
 
     env["LIBOQS_CONFIGURE_ARGS"] = " ".join(liboqs_args)
 
