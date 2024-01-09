@@ -26,43 +26,30 @@ pub trait Listener {
 /// Instantiates a [`Listener`] from a protobuf configuration message.
 #[allow(dead_code)]
 pub fn try_from(configuration: &pb_api::ListenerConfiguration) -> crate::Result<Box<dyn Listener>> {
-    if let Some(mode) = configuration.mode.as_ref() {
-        match mode {
-            pb_api::listener_configuration::listener_configuration::Mode::Tcp(m) => {
-                let addr = match m.addr.as_ref() {
-                    Some(a) => a,
-                    None => {
-                        return Err(
-                            pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER.into()
-                        )
-                    }
-                };
-                let is_blocking = if let Ok(blocking_mode) = m.blocking_mode.enum_value() {
-                    match blocking_mode {
-                        pb_api::listener_configuration::BlockingMode::BLOCKINGMODE_BLOCKING => true,
-                        pb_api::listener_configuration::BlockingMode::BLOCKINGMODE_NONBLOCKING => {
-                            false
-                        }
-                        pb_api::listener_configuration::BlockingMode::BLOCKINGMODE_UNSPECIFIED => {
-                            return Err(
-                                pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER.into(),
-                            );
-                        }
-                    }
-                } else {
-                    return Err(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER.into());
-                };
-                if let Ok(io) = crate::io::helpers::tcp::TcpListener::new(
-                    addr.hostname.as_str().to_owned() + ":" + &addr.port.to_string(),
-                    is_blocking,
-                ) {
-                    Ok(Box::new(io))
-                } else {
-                    Err(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER.into())
-                }
-            }
-            _ => Err(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER.into()),
-        }
+    let mode = configuration
+        .mode
+        .as_ref()
+        .ok_or(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER)?;
+
+    if let pb_api::listener_configuration::listener_configuration::Mode::Tcp(m) = mode {
+        let addr = m
+            .addr
+            .as_ref()
+            .ok_or(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER)?;
+
+        let is_blocking = match m.blocking_mode.enum_value() {
+            Ok(pb_api::listener_configuration::BlockingMode::BLOCKINGMODE_BLOCKING) => true,
+            Ok(pb_api::listener_configuration::BlockingMode::BLOCKINGMODE_NONBLOCKING) => false,
+            _ => return Err(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER.into()),
+        };
+
+        let host = addr.hostname.as_str();
+        let port =
+            u16::try_from(addr.port).map_err(|_| pb::SystemError::SYSTEMERROR_INTEGER_OVERFLOW)?;
+        let tcp = crate::io::helpers::tcp::TcpListener::new((host, port), is_blocking)
+            .map_err(|_| pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER)?;
+
+        Ok(Box::new(tcp))
     } else {
         Err(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER.into())
     }
