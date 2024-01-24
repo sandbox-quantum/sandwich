@@ -6,6 +6,8 @@ load("@rules_python//python:versions.bzl", "gen_python_config_settings")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("//common/tools/protemplate:rules.bzl", "template_proto_library")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
+load("@pypi//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
 
 copy_file(
     name = "sandwich_c_lib",
@@ -59,6 +61,7 @@ py_library(
     name = "python",
     srcs = [
         "sandwich.py",
+        "tracing.py",
         "tunnel.py",
     ],
     data = [
@@ -73,32 +76,25 @@ py_library(
         "//pysandwich/proto/api/v1:api_python_proto",
         "//pysandwich/proto/api/v1:listener_configuration_python_proto",
         "@bazel_tools//tools/python/runfiles",
+        requirement("opentelemetry-api"),
+        requirement("opentelemetry-sdk"),
+        requirement("opentelemetry-proto"),
     ],
 )
 
 py_test(
-    name = "tunnel_test",
+    name = "tests",
     timeout = "short",
-    srcs = ["tunnel_test.py"],
+    srcs = ["tests.py"],
     data = [
         ":sandwich_c_lib",
         "//testdata",
     ],
     deps = [
         ":python",
-    ],
-)
-
-py_test(
-    name = "tcp_test",
-    timeout = "short",
-    srcs = ["tcp_test.py"],
-    data = [
-        ":sandwich_c_lib",
-        "//testdata",
-    ],
-    deps = [
-        ":python",
+        "@pypi_pytest//:pkg",
+        requirement("opentelemetry-api"),
+        requirement("opentelemetry-sdk"),
     ],
 )
 

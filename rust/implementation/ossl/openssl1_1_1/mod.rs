@@ -6,7 +6,7 @@
 
 extern crate openssl1_1_1;
 
-use std::ffi::c_ulong;
+use std::ffi::{c_int, c_ulong, c_void};
 use std::pin::Pin;
 use std::ptr::{self, NonNull};
 
@@ -202,7 +202,7 @@ impl OsslTrait for Ossl {
                 match mode {
                     Mode::Client => openssl::X509_TRUST_SSL_CLIENT,
                     Mode::Server => openssl::X509_TRUST_SSL_SERVER,
-                } as std::ffi::c_int,
+                } as c_int,
             )
         } != 1
         {
@@ -397,7 +397,7 @@ impl OsslTrait for Ossl {
                 ssl_ctx.as_ptr(),
                 openssl::SSL_CTRL_SET_GROUPS_LIST as i32,
                 0.into(),
-                cstr.as_ptr() as *mut std::ffi::c_void,
+                cstr.as_ptr() as *mut c_void,
             )
         } == 1
         {
@@ -430,7 +430,7 @@ impl OsslTrait for Ossl {
         unsafe {
             openssl::BIO_ctrl(
                 bio.as_ptr(),
-                openssl::BIO_CTRL_EOF as std::ffi::c_int,
+                openssl::BIO_CTRL_EOF as c_int,
                 0,
                 ptr::null_mut(),
             ) == 1
@@ -470,7 +470,7 @@ impl OsslTrait for Ossl {
         if unsafe {
             openssl::SSL_CTX_ctrl(
                 ssl_ctx.as_ptr(),
-                openssl::SSL_CTRL_EXTRA_CHAIN_CERT as std::ffi::c_int,
+                openssl::SSL_CTRL_EXTRA_CHAIN_CERT as c_int,
                 0,
                 cert.as_nonnull().as_ptr().cast(),
             )
@@ -610,7 +610,7 @@ impl OsslTrait for Ossl {
         .ok_or_else(|| pb::SystemError::SYSTEMERROR_MEMORY.into())
     }
 
-    fn bio_set_data(bio: NonNull<Self::NativeBio>, data: *mut std::ffi::c_void) {
+    fn bio_set_data(bio: NonNull<Self::NativeBio>, data: *mut c_void) {
         unsafe {
             openssl::BIO_set_data(bio.as_ptr(), data);
         }
@@ -649,7 +649,7 @@ impl OsslTrait for Ossl {
         ssl: NonNull<Self::NativeSsl>,
         hostname: impl Into<String>,
     ) -> crate::Result<()> {
-        use std::ffi::{c_int, c_void, CString};
+        use std::ffi::CString;
         let cstr =
             CString::new(hostname.into()).map_err(|_| pb::SystemError::SYSTEMERROR_MEMORY)?;
         if unsafe {
@@ -1109,6 +1109,41 @@ impl OsslTrait for Ossl {
             )
                 .into())
         }
+    }
+
+    #[cfg(feature = "tracer")]
+    fn ssl_set_msg_callback(
+        ssl: NonNull<Self::NativeSsl>,
+        cb: Option<
+            unsafe extern "C" fn(
+                write_p: c_int,
+                version: c_int,
+                content_type: c_int,
+                buf: *const c_void,
+                len: usize,
+                ssl: *mut Self::NativeSsl,
+                arg: *mut c_void,
+            ),
+        >,
+    ) {
+        unsafe { openssl::SSL_set_msg_callback(ssl.as_ptr(), cb) };
+    }
+
+    #[cfg(feature = "tracer")]
+    fn ssl_set_message_callback_arg(
+        ssl: NonNull<Self::NativeSsl>,
+        tracer: *mut crate::support::tracing::SandwichTracer,
+    ) {
+        // This is supposed to be a call to "set_msg_callback_arg", but since this is a macro it's not
+        // supported by rust-bindgen, so we manually resolve it.
+        unsafe {
+            openssl::SSL_ctrl(
+                ssl.as_ptr(),
+                openssl::SSL_CTRL_SET_MSG_CALLBACK_ARG as c_int,
+                0,
+                tracer.cast(),
+            )
+        };
     }
 }
 

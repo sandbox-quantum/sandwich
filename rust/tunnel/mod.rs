@@ -11,6 +11,9 @@
 pub(crate) use context::Mode;
 pub use context::{Context, TunnelResult};
 
+#[cfg(feature = "tracer")]
+use crate::support::tracing::SandwichTracer;
+
 #[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
 use crate::implementation::ossl;
 
@@ -242,6 +245,12 @@ impl Tunnel<'_> {
     /// Closes the tunnel.
     pub fn close(&mut self) -> RecordResult<()> {
         dispatch!(self, close)
+    }
+
+    /// Adds tracer to tunnel.
+    #[cfg(feature = "tracer")]
+    pub fn add_tracer(&mut self, tracer: SandwichTracer) {
+        dispatch!(self, add_tracer, tracer)
     }
 }
 

@@ -19,6 +19,8 @@ Author: sb
 """
 import ctypes
 
+from opentelemetry.sdk.trace.export import SpanExporter
+
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 import pysandwich.errors as errors
@@ -26,6 +28,7 @@ import pysandwich.io as SandwichIO
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
 from pysandwich import sandwich
 from pysandwich.sandwich import Sandwich
+from pysandwich.tracing import SandwichTracer
 
 
 class Context:
@@ -163,6 +166,7 @@ class Tunnel:
         self._ctx = ctx
         self._handle = ctypes.c_void_p(None)
         self._io = io
+        self.tracer = None
 
         conf_bytes = configuration.SerializeToString()
         conf = sandwich.TunnelConfigurationSerialized()
@@ -318,6 +322,20 @@ class Tunnel:
         """Closes the tunnel."""
 
         sandwich.sandwich().c_call("sandwich_tunnel_close", self._handle)
+        self._flush_tracer()
+
+    def set_tracer(self, exporter: SpanExporter):
+        self.tracer = SandwichTracer(exporter)
+        sandwich.sandwich().c_call(
+            "sandwich_tunnel_add_tracer",
+            self._handle,
+            self.tracer.context_string.encode(),
+            self.tracer.write_buf_fd,
+        )
+
+    def _flush_tracer(self):
+        if self.tracer is not None:
+            self.tracer.export_span_buffer()
 
     @property
     def _C(self):
@@ -423,6 +441,5 @@ class Tunnel:
 
         This destructor is responsible for freeing the memory.
         """
-
         sandwich.sandwich().c_call("sandwich_tunnel_free", self._handle)
         self._handle = ctypes.c_void_p(None)

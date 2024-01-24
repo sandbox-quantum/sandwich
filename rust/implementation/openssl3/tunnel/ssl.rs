@@ -582,6 +582,11 @@ impl<'a> Tunnel<'a> {
         }
     }
 
+    #[cfg(feature = "tracer")]
+    pub(crate) fn add_tracer(&mut self, _tracer: crate::support::tracing::SandwichTracer) {
+        unimplemented!("tracing is not supported with OpenSSL 3");
+    }
+
     pub(crate) fn close(&mut self) -> crate::tunnel::RecordResult<()> {
         if self.state == pb::State::STATE_DISCONNECTED {
             return Ok(());

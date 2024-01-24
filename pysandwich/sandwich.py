@@ -222,6 +222,18 @@ class _SandwichCLib:
             "sandwich_tunnel_state": __fs(args=[ctypes.c_void_p], ret=ctypes.c_int32),
             # void sandwich_tunnel_free(struct SandwichTunnel *tun);
             "sandwich_tunnel_free": __fs(args=[ctypes.c_void_p], ret=None),
+            # void sandwich_tunnel_add_tracer(
+            #       struct SandwichTunnel *tun,
+            #       const char *context_cstr,
+            #       int fd);
+            "sandwich_tunnel_add_tracer": __fs(
+                args=[
+                    ctypes.c_void_p,
+                    ctypes.c_char_p,
+                    ctypes.c_int,
+                ],
+                ret=None,
+            ),
             # enum SandwichIOError sandwich_io_client_tcp_new(
             #       const char *hostname, const uint16_t port, bool async,
             #       struct SandwichIOOwned **ownedIO);

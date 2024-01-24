@@ -21,6 +21,7 @@ members = [
     "rust_vendor/sandwich-api-proto",
     "rust_vendor/sandwich-proto",
     "rust_vendor/testdata",
+    "rust_vendor/tracing_proto",
 ]
 
 [lib]
@@ -42,6 +43,7 @@ openssl3 = { path = "rust_vendor/openssl3" }
 protobuf = "=3.3.0"
 sandwich-api-proto = { path = "rust_vendor/sandwich-api-proto" }
 sandwich-proto = { path = "rust_vendor/sandwich-proto" }
+tracing-proto = { path = "rust_vendor/tracing_proto"}
 
 [dev-dependencies]
 testdata = { path = "rust_vendor/testdata" }

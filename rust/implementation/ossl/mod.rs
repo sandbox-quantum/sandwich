@@ -7,11 +7,21 @@
 //! such as BoringSSL, LibreSSL and OpenSSL.
 
 use std::borrow::{Borrow, BorrowMut};
+use std::ffi::c_void;
 use std::pin::Pin;
 use std::ptr::NonNull;
 
+#[cfg(feature = "tracer")]
+use opentelemetry::KeyValue;
+#[cfg(feature = "tracer")]
+use opentelemetry_api::trace::Span;
+
 use pb::{CertificateError, PrivateKeyError, RecordError, TLSConfigurationError};
 
+#[cfg(feature = "tracer")]
+use crate::support::tracing;
+#[cfg(feature = "tracer")]
+use crate::support::tracing::SandwichTracer;
 use crate::support::Pimpl;
 use crate::tunnel::{tls, Mode};
 use tls::{TlsVersion, VerifyMode};
@@ -172,7 +182,7 @@ pub(crate) trait Ossl {
     fn new_ssl_bio() -> crate::Result<Pimpl<'static, Self::NativeBio>>;
 
     /// Sets the data to be forwarded to a bio handle.
-    fn bio_set_data(bio: NonNull<Self::NativeBio>, data: *mut std::ffi::c_void);
+    fn bio_set_data(bio: NonNull<Self::NativeBio>, data: *mut c_void);
 
     /// Attaches a BIO to a SSL handle.
     fn ssl_set_bio(
@@ -299,6 +309,100 @@ pub(crate) trait Ossl {
         verify_params: NonNull<Self::NativeX509VerifyParams>,
         ip_addr: &str,
     ) -> crate::Result<()>;
+
+    /// Callback function to handle parsing tunnel messages for creating tracing events.
+    /// This gets passed to 'SSL_set_msg_callback'.
+    #[cfg(feature = "tracer")]
+    unsafe extern "C" fn message_callback(
+        write_p: std::ffi::c_int,
+        _version: std::ffi::c_int,
+        content_type: std::ffi::c_int,
+        buf: *const c_void,
+        len: usize,
+        _ssl: *mut Self::NativeSsl,
+        arg: *mut c_void,
+    ) {
+        let tracer: &mut SandwichTracer = unsafe { &mut *arg.cast() };
+
+        let msg: &[u8] = unsafe { std::slice::from_raw_parts(buf.cast(), len) };
+        let mut content_type_str = tracing::ssl_content(content_type);
+
+        if content_type_str == Some("Inner Content Type") {
+            content_type_str = tracing::ssl_content(msg[0].into());
+        } else if content_type_str == Some("SSL/TLS Header") {
+            return;
+        }
+
+        let Some(current_span) = tracer.current_span.as_mut() else {
+            return;
+        };
+
+        match content_type_str {
+            Some("Handshake") => {
+                let handshake_msg_type = tracing::ssl_handshake(msg[0].into()).unwrap();
+                current_span.add_event(
+                    "Message",
+                    vec![
+                        KeyValue::new("Handshake", handshake_msg_type),
+                        KeyValue::new("Sent", write_p != 0),
+                    ],
+                );
+                // For handshakes, we want to set a span attribute with the client random
+                // so that we can correlate spans from the server and client.
+                if handshake_msg_type == "ClientHello" || handshake_msg_type == "ServerHello" {
+                    let random = tracing::extract_hello_random_str(msg);
+                    current_span
+                        .set_attribute(KeyValue::new::<&str, String>(handshake_msg_type, random))
+                }
+            }
+            Some("ChangeCipherSpec") => current_span.add_event(
+                "Message",
+                vec![
+                    KeyValue::new("ChangeCipherSpec", ""),
+                    KeyValue::new("Sent", write_p != 0),
+                ],
+            ),
+            Some("Alert") => {
+                if len != 2 {
+                    // Malformed alert message.
+                    return;
+                }
+                current_span.add_event(
+                    "Message",
+                    vec![
+                        KeyValue::new::<&str, &str>(
+                            "Alert",
+                            tracing::ssl_alert_desc(msg[1].into()).unwrap(),
+                        ),
+                        KeyValue::new("Sent", write_p != 0),
+                    ],
+                )
+            }
+            _ => (),
+        };
+    }
+
+    /// Provides a pointer to the SandwichTracer object to OpenSSL/BoringSSL
+    /// so that we can access the object in the message_callback function.
+    #[cfg(feature = "tracer")]
+    fn ssl_set_message_callback_arg(ssl: NonNull<Self::NativeSsl>, tracer: *mut SandwichTracer);
+
+    /// Sets the message callback in the respective libraries.
+    #[cfg(feature = "tracer")]
+    fn ssl_set_msg_callback(
+        ssl: NonNull<Self::NativeSsl>,
+        cb: Option<
+            unsafe extern "C" fn(
+                write_p: std::ffi::c_int,
+                version: std::ffi::c_int,
+                content_type: std::ffi::c_int,
+                buf: *const c_void,
+                len: usize,
+                ssl: *mut Self::NativeSsl,
+                arg: *mut c_void,
+            ),
+        >,
+    );
 }
 
 /// A generic context that uses an OpenSSL-like backend.
@@ -565,6 +669,10 @@ where
 
     /// The state of the tunnel.
     pub(crate) state: pb::State,
+
+    /// The tracing object, responsible for spans and events.
+    #[cfg(feature = "tracer")]
+    pub(crate) tracer: Option<SandwichTracer>,
 }
 
 /// Implements [`std::fmt::Debug`] for [`OsslTunnel`].
@@ -695,6 +803,18 @@ where
             NonNull::new_unchecked(bio.into_raw())
         };
 
+        #[cfg(feature = "tracer")]
+        let mut tun = Box::new(Self {
+            mode: builder.ctx.mode,
+            ssl,
+            bio,
+            io: builder.io,
+            security_requirements: builder.ctx.security_requirements.clone(),
+            state: pb::State::STATE_NOT_CONNECTED,
+            tracer: None,
+        });
+
+        #[cfg(not(feature = "tracer"))]
         let mut tun = Box::new(Self {
             mode: builder.ctx.mode,
             ssl,
@@ -709,6 +829,7 @@ where
             tun.ssl.as_nonnull(),
             &mut tun.security_requirements as *mut _,
         );
+
         Ok(Box::into_pin(tun))
     }
 
@@ -776,7 +897,33 @@ where
     }
 
     pub(crate) fn close(&mut self) -> crate::tunnel::RecordResult<()> {
+        #[cfg(feature = "tracer")]
+        {
+            let result = OsslInterface::ssl_close(self.ssl.as_nonnull());
+
+            if let Some(tracer) = self.tracer.as_mut() {
+                tracer.end_current_span();
+            }
+
+            result
+        }
+
+        #[cfg(not(feature = "tracer"))]
         OsslInterface::ssl_close(self.ssl.as_nonnull())
+    }
+
+    #[cfg(feature = "tracer")]
+    pub(crate) fn add_tracer(&mut self, mut tracer: SandwichTracer) {
+        let _span = tracer.create_span("TunnelSpan");
+        self.tracer = Some(tracer);
+        OsslInterface::ssl_set_message_callback_arg(
+            self.ssl.as_nonnull(),
+            self.tracer.as_mut().unwrap() as *mut _,
+        );
+        OsslInterface::ssl_set_msg_callback(
+            self.ssl.as_nonnull(),
+            Some(OsslInterface::message_callback),
+        );
     }
 
     /// Check the state of SSL, regarding the shutdown phase, and update

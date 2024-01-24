@@ -8,7 +8,7 @@
 extern crate boringssl;
 
 use std::collections::HashSet;
-use std::ffi::c_ulong;
+use std::ffi::{c_ulong, c_void};
 use std::pin::Pin;
 use std::ptr::{self, NonNull};
 
@@ -595,7 +595,7 @@ impl OsslTrait for Ossl {
         .ok_or_else(|| pb::SystemError::SYSTEMERROR_MEMORY.into())
     }
 
-    fn bio_set_data(bio: NonNull<Self::NativeBio>, data: *mut std::ffi::c_void) {
+    fn bio_set_data(bio: NonNull<Self::NativeBio>, data: *mut c_void) {
         unsafe {
             boringssl::BIO_set_data(bio.as_ptr(), data);
         }
@@ -1058,6 +1058,32 @@ impl OsslTrait for Ossl {
             )
                 .into())
         }
+    }
+
+    #[cfg(feature = "tracer")]
+    fn ssl_set_msg_callback(
+        ssl: NonNull<Self::NativeSsl>,
+        cb: Option<
+            unsafe extern "C" fn(
+                write_p: std::ffi::c_int,
+                version: std::ffi::c_int,
+                content_type: std::ffi::c_int,
+                buf: *const c_void,
+                len: usize,
+                ssl: *mut Self::NativeSsl,
+                arg: *mut c_void,
+            ),
+        >,
+    ) {
+        unsafe { boringssl::SSL_set_msg_callback(ssl.as_ptr(), cb) };
+    }
+
+    #[cfg(feature = "tracer")]
+    fn ssl_set_message_callback_arg(
+        ssl: NonNull<Self::NativeSsl>,
+        tracer: *mut crate::support::tracing::SandwichTracer,
+    ) {
+        unsafe { boringssl::SSL_set_msg_callback_arg(ssl.as_ptr(), tracer.cast()) };
     }
 }
 

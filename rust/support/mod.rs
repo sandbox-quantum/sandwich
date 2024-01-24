@@ -8,6 +8,8 @@
 
 mod data_source;
 mod pimpl;
+#[cfg(feature = "tracer")]
+pub mod tracing;
 
 pub(crate) use data_source::DataSource;
 pub(crate) use pimpl::Pimpl;

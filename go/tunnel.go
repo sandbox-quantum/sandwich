@@ -14,12 +14,15 @@ package sandwich
 import "C"
 
 import (
+	"context"
+
 	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 	"runtime"
 	"unsafe"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -71,6 +74,8 @@ type Tunnel struct {
 
 	// goIO is the I/O interface.
 	goIO *goIOWrapper
+
+	tracer *SandwichTracer
 }
 
 // NewTunnel creates a Sandwich tunnel from a context, an io and a configuration.
@@ -153,8 +158,25 @@ func (tun *Tunnel) Write(b []byte) (int, error) {
 
 // Close closes the tunnel.
 func (tun *Tunnel) Close() error {
+	tun._flush_tracer()
 	C.sandwich_tunnel_close(tun.handle)
 	return nil
+}
+
+// Close closes the tunnel.
+func (tun *Tunnel) Set_tracer(ctx context.Context, tracer trace.Tracer) {
+	sandwich_tracer := NewSandwichTracer(ctx, tracer)
+	tun.tracer = &sandwich_tracer
+	C.sandwich_tunnel_add_tracer(tun.handle, C.CString(sandwich_tracer.context_string), C.int(sandwich_tracer.write_buf_fd))
+	return
+}
+
+// Close closes the tunnel.
+func (tun *Tunnel) _flush_tracer() {
+	if tun.tracer != nil {
+		tun.tracer.export_span_buffer()
+	}
+	return
 }
 
 // IO returns the IO interface used by a tunnel.
