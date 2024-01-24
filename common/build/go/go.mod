@@ -1,4 +1,4 @@
-module github.com/sandbox-quantum/sandwich/go
+module sandwich
 
 go 1.18
 

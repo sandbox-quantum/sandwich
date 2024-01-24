@@ -12,3 +12,4 @@
 #include "sandwich_c/lib.h"
 #include "sandwich_c/listener.h"
 #include "sandwich_c/tunnel.h"
+#include "sandwich_c/tracer.h"

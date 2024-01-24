@@ -1,0 +1,22 @@
+[package]
+name = "tracing-proto"
+version = "0.1.0"
+edition = "2021"
+authors = ["SandboxAQ <sandwich@sandboxaq.com>"]
+description = "Protobuf definitions of tracing type used in Sandwich"
+repository = "https://github.com/sandbox-quantum/sandwich"
+license = "AGPL-3.0-only"
+build = "build.rs"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+protobuf = "=3.3.0"
+
+
+[build-dependencies]
+bazelisk = { path = "../bazelisk-rs" }
+build-support = { path = "../build-support" }
+env_logger = "0.10.0"
+log = "0.4.19"

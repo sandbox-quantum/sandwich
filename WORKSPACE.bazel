@@ -20,6 +20,10 @@ load("//bazel:rust_deps.bzl", "sandwich_rust_deps")
 
 sandwich_rust_deps()
 
+load("//bazel:go_deps.bzl", "sandwich_go_deps")
+
+sandwich_go_deps()
+
 load("@com_sandboxquantum_bartleby//bartleby:deps.bzl", "bartleby_deps")
 
 bartleby_deps()

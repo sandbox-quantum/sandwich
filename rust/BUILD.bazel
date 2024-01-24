@@ -28,17 +28,23 @@ _SANDWICH_SRCS = [
     "lib.rs",
 ]
 
+# Rust dependencies for unit tests.
+_SANDWICH_RUNFILES_DEPS = [
+    "@rules_rust//tools/runfiles",
+]
+
+_TRACING_DEPS = [
+    "@crate_index//:opentelemetry",
+    "@crate_index//:opentelemetry_api",
+    "@crate_index//:futures-util",
+]
+
 # Protobuf dependencies for Sandwich.
 _SANDWICH_PROTOBUF_DEPS = [
     "//proto:sandwich_rust_proto",
     "//proto/api/v1:api_rust_proto",
     "@crate_index//:protobuf",
-]
-
-# Rust dependencies for unit tests.
-_SANDWICH_RUNFILES_DEPS = [
-    "@rules_rust//tools/runfiles",
-]
+] + _TRACING_DEPS
 
 sandwich_variant(
     name = "naked",
@@ -133,6 +139,7 @@ rust_static_library(
         "tunnel",
     ],
     crate_name = "sandwich_openssl1_1_1",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = [":openssl1_1_1_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
 )
@@ -146,6 +153,7 @@ rust_shared_library(
         "tunnel",
     ],
     crate_name = "sandwich_openssl1_1_1",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = [":openssl1_1_1_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
 )
@@ -233,6 +241,7 @@ rust_static_library(
         "tunnel",
     ],
     crate_name = "sandwich_boringssl",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = [":boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
 )
@@ -246,6 +255,7 @@ rust_shared_library(
         "tunnel",
     ],
     crate_name = "sandwich_boringssl",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = [":boringssl_bindgen"] + _SANDWICH_PROTOBUF_DEPS,
 )
@@ -376,9 +386,11 @@ sandwich_variant(
         "openssl1_1_1",
         "openssl3",
         "tunnel",
+        "tracer",
     ],
     generate_doc = True,
     generate_ffi = True,
+    proc_macro_deps = ["@crate_index//:async-trait"],
     rustc_flags = [
         "-W",
         "missing_docs",
@@ -396,8 +408,10 @@ rust_static_library(
         "openssl1_1_1",
         "openssl3",
         "tunnel",
+        "tracer",
     ],
     crate_name = "sandwich_full",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = _SANDWICH_FULL_VARIANT_DEPS,
 )
@@ -411,8 +425,10 @@ rust_shared_library(
         "openssl1_1_1",
         "openssl3",
         "tunnel",
+        "tracer",
     ],
     crate_name = "sandwich_full",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = _SANDWICH_FULL_VARIANT_DEPS,
 )

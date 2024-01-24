@@ -17,6 +17,9 @@ def rust_deps():
             )],
         },
         packages = {
+            "async-trait": crate.spec(
+                version = "0.1.72",
+            ),
             "bytes": crate.spec(
                 version = "1.4.0",
             ),
@@ -27,12 +30,27 @@ def rust_deps():
             "env_logger": crate.spec(
                 version = "0.10.0",
             ),
+            "futures-util": crate.spec(
+                version = "0.3.17",
+            ),
             "hex-literal": crate.spec(
                 version = "0.4.1",
             ),
             "log": crate.spec(
                 version = "0.4.17",
                 features = ["release_max_level_info"],
+            ),
+            "opentelemetry": crate.spec(
+                version = "0.19.0",
+            ),
+            "opentelemetry-proto": crate.spec(
+                version = "0.3.0",
+            ),
+            "opentelemetry_api": crate.spec(
+                version = "0.19.0",
+            ),
+            "prost": crate.spec(
+                version = "0.12.0",
             ),
             "protobuf": crate.spec(
                 version = "3.3.0",

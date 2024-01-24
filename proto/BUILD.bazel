@@ -25,6 +25,12 @@ proto_library(
 )
 
 proto_library(
+    name = "tracing_proto",
+    srcs = ["tracing.proto"],
+    visibility = ["//:__subpackages__"],
+)
+
+proto_library(
     name = "sandwich_proto",
     srcs = ["sandwich.proto"],
     visibility = [
@@ -33,6 +39,7 @@ proto_library(
     deps = [
         ":errors_proto",
         ":io_proto",
+        ":tracing_proto",
         ":tunnel_proto",
     ],
 )
@@ -60,6 +67,12 @@ py_proto_library(
 )
 
 py_proto_library(
+    name = "tracing_python_proto",
+    srcs = ["tracing.proto"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_proto_library(
     name = "sandwich_python_proto",
     srcs = ["sandwich.proto"],
     visibility = ["//:__subpackages__"],
@@ -81,6 +94,7 @@ go_proto_library(
         ":errors_proto",
         ":io_proto",
         ":sandwich_proto",
+        ":tracing_proto",
         ":tunnel_proto",
     ],
     visibility = ["//visibility:public"],
@@ -100,6 +114,19 @@ rust_proto_library(
     visibility = ["//:__subpackages__"],
     deps = [
         ":sandwich_proto",
+    ],
+)
+
+rust_proto_library(
+    name = "tracing_rust_proto",
+    crate_name = "tracing_proto",
+    rustc_flags = [
+        "-A",
+        "ambiguous_glob_reexports",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":tracing_proto",
     ],
 )
 

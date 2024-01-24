@@ -82,6 +82,37 @@ pub extern "C" fn sandwich_tunnel_new(
     }
 }
 
+/// Adds a tracer object to a tunnel object.
+#[no_mangle]
+#[cfg(feature = "tracer")]
+pub extern "C" fn sandwich_tunnel_add_tracer(
+    tun: *mut c_void,
+    context_cstr: *const std::ffi::c_char,
+    fd: c_int,
+) {
+    use std::fs::File;
+    use std::os::fd::FromRawFd;
+
+    use crate::support::tracing::{
+        convert_cstring, extract_context, SandwichSpanExporter, SandwichTracer,
+    };
+
+    let mut b = unsafe { Box::<Tunnel>::from_raw(tun.cast()) };
+    let context_str = convert_cstring(context_cstr);
+
+    let ctx: opentelemetry_api::Context = match context_str {
+        Some(c) => extract_context(c),
+        None => opentelemetry_api::Context::new(),
+    };
+    let file_object = unsafe { File::from_raw_fd(fd) };
+
+    let exporter = SandwichSpanExporter::new(file_object);
+    let tracer = SandwichTracer::new(ctx, exporter);
+
+    b.add_tracer(tracer);
+    Box::into_raw(b);
+}
+
 /// Releases a tunnel.
 #[no_mangle]
 pub extern "C" fn sandwich_tunnel_free(tun: *mut c_void) {

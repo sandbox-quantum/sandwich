@@ -27,6 +27,7 @@ go_library(
         "generated_error_codes.go",
         "io.go",
         "sandwich.go",
+        "tracing.go",
         "tunnel.go",
     ],
     cdeps = [
@@ -40,6 +41,13 @@ go_library(
     deps = [
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
+        "@io_opentelemetry_go_otel//:go_default_library",
+        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@io_opentelemetry_go_otel//propagation:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//trace:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//common/v1:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//trace/v1:go_default_library",
         "@org_golang_google_protobuf//proto:go_default_library",
     ],
 )
@@ -57,6 +65,13 @@ go_test(
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_bazel_rules_go//go/tools/bazel",
+        "@io_opentelemetry_go_otel//:go_default_library",
+        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@io_opentelemetry_go_otel//propagation:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//trace:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//common/v1:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//trace/v1:go_default_library",
     ],
 )
 
@@ -73,6 +88,13 @@ go_test(
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_bazel_rules_go//go/tools/bazel",
+        "@io_opentelemetry_go_otel//:go_default_library",
+        "@io_opentelemetry_go_otel//attribute:go_default_library",
+        "@io_opentelemetry_go_otel//propagation:go_default_library",
+        "@io_opentelemetry_go_otel_sdk//trace:go_default_library",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//common/v1:go_default_library",
+        "@io_opentelemetry_go_proto_otlp//trace/v1:go_default_library",
     ],
 )
 
