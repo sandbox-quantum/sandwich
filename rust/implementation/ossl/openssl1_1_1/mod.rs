@@ -1195,109 +1195,11 @@ mod additional_tests {
 
 #[cfg(test)]
 pub(crate) mod additional_test {
+    use crate::io::test::MpscIO;
     use crate::test::resolve_runfile;
     use crate::tunnel::{tls, Context};
 
     use super::get_openssl_name;
-
-    /// A simple I/O interface.
-    struct IOBuffer {
-        pub(self) read: Vec<u8>,
-        pub(self) write: Vec<u8>,
-    }
-
-    /// Implements [`crate::IO`] for [`IOBuffer`].
-    impl crate::IO for IOBuffer {
-        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
-            let n = std::cmp::min(buf.len(), self.read.len());
-            if n == 0 {
-                Err(std::io::ErrorKind::WouldBlock.into())
-            } else {
-                buf.copy_from_slice(&self.read[0..n]);
-                self.read.drain(0..n);
-                Ok(n)
-            }
-        }
-
-        fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
-            self.write.extend_from_slice(buf);
-            Ok(buf.len())
-        }
-    }
-
-    /// Implements [`IOBuffer`].
-    impl IOBuffer {
-        /// Constructs a new [`IOBuffer`].
-        fn new() -> Self {
-            Self {
-                read: Vec::new(),
-                write: Vec::new(),
-            }
-        }
-    }
-
-    /// A double I/O interface.
-    struct LinkedIOBuffer {
-        pub(self) buf: Vec<u8>,
-        pub(self) recv: std::sync::mpsc::Receiver<Vec<u8>>,
-        pub(self) send: std::sync::mpsc::Sender<Vec<u8>>,
-    }
-
-    /// Implements [`crate::IO`] for [`LinkedIOBuffer`].
-    impl crate::IO for LinkedIOBuffer {
-        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> Result<usize, std::io::Error> {
-            let n = std::cmp::min(buf.len(), self.buf.len());
-            if n > 0 {
-                buf[0..n].copy_from_slice(&self.buf[0..n]);
-                self.buf.drain(0..n);
-            }
-            if n == buf.len() {
-                return Ok(n);
-            }
-
-            let r = buf.len() - n;
-            match self.recv.try_recv() {
-                Ok(mut v) => {
-                    self.buf.append(&mut v);
-                    Ok::<(), std::io::Error>(())
-                }
-                Err(e) => match e {
-                    std::sync::mpsc::TryRecvError::Empty => {
-                        Err(std::io::ErrorKind::WouldBlock.into())
-                    }
-                    _ => Err(std::io::ErrorKind::BrokenPipe.into()),
-                },
-            }?;
-
-            let result = n;
-            let n = std::cmp::min(r, self.buf.len());
-            buf[result..result + n].copy_from_slice(&self.buf[0..n]);
-            self.buf.drain(0..n);
-            Ok(result + n)
-        }
-
-        fn write(&mut self, buf: &[u8], _state: pb::State) -> Result<usize, std::io::Error> {
-            self.send
-                .send(Vec::from(buf))
-                .map(|_| buf.len())
-                .map_err(|_| std::io::ErrorKind::BrokenPipe.into())
-        }
-    }
-
-    /// Implements [`LinkedIOBuffer`].
-    impl LinkedIOBuffer {
-        /// Constructs a new [`LinkedIOBuffer`].
-        fn new(
-            send: std::sync::mpsc::Sender<Vec<u8>>,
-            recv: std::sync::mpsc::Receiver<Vec<u8>>,
-        ) -> Self {
-            Self {
-                buf: Vec::new(),
-                recv,
-                send,
-            }
-        }
-    }
 
     #[test]
     fn test_client() {
@@ -1337,7 +1239,7 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let io = IOBuffer::new();
+        let io = MpscIO::default();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -1350,7 +1252,7 @@ pub(crate) mod additional_test {
         assert!(tun.is_ok());
         let mut tun = tun.unwrap();
         let rec = tun.handshake().unwrap();
-        assert_eq!(rec, pb::HandshakeState::HANDSHAKESTATE_WANT_READ);
+        assert_eq!(rec, pb::HandshakeState::HANDSHAKESTATE_WANT_WRITE);
         assert_eq!(tun.state(), pb::State::STATE_HANDSHAKE_IN_PROGRESS);
         let _ = tun.close();
     }
@@ -1404,7 +1306,7 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let io = IOBuffer::new();
+        let io = MpscIO::new();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -1424,9 +1326,6 @@ pub(crate) mod additional_test {
     /// Test tunnel between client and server.
     #[test]
     fn test_all() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -1463,7 +1362,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -1511,7 +1409,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -1545,9 +1444,6 @@ pub(crate) mod additional_test {
     /// Tests TLS 1.2 tunnel between client and server.
     #[test]
     fn test_tls12_all() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -1587,7 +1483,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -1638,7 +1533,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -1726,9 +1622,6 @@ pub(crate) mod additional_test {
     /// Test tunnel between client and server with an expired certificate.
     #[test]
     fn test_expired() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -1761,7 +1654,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -1805,7 +1697,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -1851,9 +1744,6 @@ pub(crate) mod additional_test {
     #[test]
     #[allow(non_snake_case)]
     fn test_mTLS() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let server_certificate = resolve_runfile("testdata/dilithium5.cert.pem");
         let server_private_key = resolve_runfile("testdata/dilithium5.key.pem");
 
@@ -1909,7 +1799,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -1960,7 +1849,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -1995,9 +1885,6 @@ pub(crate) mod additional_test {
     #[test]
     #[allow(non_snake_case)]
     fn test_mTLS_no_client_cert() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let server_certificate = resolve_runfile("testdata/dilithium5.cert.pem");
         let server_private_key = resolve_runfile("testdata/dilithium5.key.pem");
 
@@ -2034,7 +1921,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -2085,7 +1971,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2122,9 +2009,6 @@ pub(crate) mod additional_test {
     /// and `allow_expired_certificate` to true.
     #[test]
     fn test_expired_allow_expired_certificate() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -2158,7 +2042,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -2202,7 +2085,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2272,7 +2156,7 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let io = IOBuffer::new();
+        let io = MpscIO::default();
 
         let tunnel_configuration = pb_api::TunnelConfiguration::new();
         ctx.new_tunnel(Box::new(io), tunnel_configuration)
@@ -2316,7 +2200,7 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let io = IOBuffer::new();
+        let io = MpscIO::default();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2370,7 +2254,7 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let io = IOBuffer::new();
+        let io = MpscIO::default();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2420,7 +2304,7 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let io = IOBuffer::new();
+        let io = MpscIO::default();
 
         let tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2446,9 +2330,6 @@ pub(crate) mod additional_test {
     /// matches the SANs in the certificate presented by the server.
     #[test]
     fn test_san_dns_match() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -2481,7 +2362,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -2525,7 +2405,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2574,9 +2455,6 @@ pub(crate) mod additional_test {
     /// doesn't match the SANs in the certificate presented by the server.
     #[test]
     fn test_san_dns_mismatch() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -2609,7 +2487,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -2653,7 +2530,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2704,9 +2582,6 @@ pub(crate) mod additional_test {
     /// matches the SANs in the certificate presented by the server.
     #[test]
     fn test_san_email_match() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -2739,7 +2614,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -2783,7 +2657,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2832,9 +2707,6 @@ pub(crate) mod additional_test {
     /// doesn't match the SANs in the certificate presented by the server.
     #[test]
     fn test_san_email_mismatch() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -2867,7 +2739,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -2911,7 +2782,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -2962,9 +2834,6 @@ pub(crate) mod additional_test {
     /// matches the SANs in the certificate presented by the server.
     #[test]
     fn test_san_ip_address_match() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -2997,7 +2866,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -3041,7 +2909,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -3090,9 +2959,6 @@ pub(crate) mod additional_test {
     /// doesn't match the SANs in the certificate presented by the server.
     #[test]
     fn test_san_ip_address_mismatch() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -3125,7 +2991,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -3169,7 +3034,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -3220,9 +3086,6 @@ pub(crate) mod additional_test {
     /// for that email and also a wildcard DNS name.
     #[test]
     fn test_san_email_certificate_email_wildcard_match() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -3255,7 +3118,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -3299,7 +3161,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(
@@ -3348,9 +3211,6 @@ pub(crate) mod additional_test {
     /// for an email and also a wildcard DNS name that covers the DNS name.
     #[test]
     fn test_san_dns_wildcard_match() {
-        let ((cli_send, cli_recv), (serv_send, serv_recv)) =
-            (std::sync::mpsc::channel(), std::sync::mpsc::channel());
-
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
                 r#"
@@ -3383,7 +3243,6 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let client_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let client_io = LinkedIOBuffer::new(serv_send, cli_recv);
 
         let config = protobuf::text_format::parse_from_str::<pb_api::Configuration>(
             format!(
@@ -3427,7 +3286,8 @@ pub(crate) mod additional_test {
 
         let sw_ctx = crate::Context::new();
         let server_ctx = Context::try_from(&sw_ctx, &config).unwrap();
-        let server_io = LinkedIOBuffer::new(cli_send, serv_recv);
+
+        let (client_io, server_io) = MpscIO::new_pair();
 
         let client_tunnel_configuration =
             protobuf::text_format::parse_from_str::<pb_api::TunnelConfiguration>(

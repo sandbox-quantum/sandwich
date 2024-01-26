@@ -11,7 +11,7 @@ use std::ptr::{self, NonNull};
 use crate::ossl3::{support, LibCtx};
 use crate::support::Pimpl;
 use crate::tunnel::tls::{TlsVersion, VerifyMode};
-use crate::tunnel::{tls, Mode};
+use crate::tunnel::{tls, Mode, IO};
 use crate::Result;
 
 use support::{NativePrivateKey, NativeSsl, NativeSslCtx, NativeX509Certificate};
@@ -752,9 +752,9 @@ impl<'a> Context<'a> {
     /// Creates a new tunnel.
     pub(crate) fn new_tunnel(
         &self,
-        io: Box<dyn crate::IO>,
+        io: Box<dyn IO>,
         configuration: pb_api::TunnelConfiguration,
-    ) -> std::result::Result<PinnedTunnel<'_>, (crate::Error, Box<dyn crate::IO>)> {
+    ) -> std::result::Result<PinnedTunnel<'_>, (crate::Error, Box<dyn IO>)> {
         TunnelBuilder {
             ssl_ctx: self,
             io,

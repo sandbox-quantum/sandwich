@@ -4,7 +4,8 @@ import socket
 import pysandwich.proto.io_pb2 as SandwichIOProto
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 from pysandwich import sandwich
-from pysandwich.io import IO, IOException, OwnedIO
+from pysandwich.io import IOException, OwnedIO
+from pysandwich.tunnel import IO as TunnelIO
 
 """Sandwich I/O Helper API.
 
@@ -14,7 +15,7 @@ Author: jgoertzen-sb
 """
 
 
-class SwOwnedIOWrapper(IO):
+class SwOwnedIOWrapper(TunnelIO):
     """A SwOwnedIOWrapper to allow python to use rust created IO objects."""
 
     def __init__(self, owned_io):
@@ -31,11 +32,11 @@ class SwOwnedIOWrapper(IO):
             raise ValueError("sock must be a socket type")
         self._sock = sock
 
-    def read(self, n, tunnel_state: SandwichTunnelProto.State) -> bytes:
+    def read(self, n) -> bytes:
         buf = ctypes.create_string_buffer(n)
         err = ctypes.pointer(ctypes.c_int(0))
         bytes_read = self._owned_io.io.contents.readfn(
-            self._owned_io.io.contents.uarg, buf, n, tunnel_state, err
+            self._owned_io.io.contents.uarg, buf, n, err
         )
         if err.contents.value != SandwichIOProto.IOERROR_OK:
             raise IOException(err.contents.value)
@@ -43,14 +44,20 @@ class SwOwnedIOWrapper(IO):
         buf = buf[0:bytes_read]
         return bytes(buf)
 
-    def write(self, buf, tunnel_state: SandwichTunnelProto.State) -> int:
+    def write(self, buf) -> int:
         err = ctypes.pointer(ctypes.c_int(0))
         bytes_written = self._owned_io.io.contents.writefn(
-            self._owned_io.io.contents.uarg, buf, len(buf), tunnel_state, err
+            self._owned_io.io.contents.uarg, buf, len(buf), err
         )
         if err.contents.value != SandwichIOProto.IOERROR_OK:
             raise IOException(err.contents.value)
         return bytes_written
+
+    def flush(self) -> int:
+        pass
+
+    def set_state(self, tunnel_state: SandwichTunnelProto.State):
+        pass
 
     def __del__(self):
         sandwich.sandwich().c_call(

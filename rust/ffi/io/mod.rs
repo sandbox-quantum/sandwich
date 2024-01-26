@@ -4,7 +4,7 @@
 //! Sandwich I/O module for FFI.
 
 use std::ffi::{c_int, c_void};
-use std::io::Result;
+use std::io::{Read, Result, Write};
 
 use protobuf::Enum;
 
@@ -17,22 +17,12 @@ mod helpers;
 mod listener;
 
 /// A read function.
-pub type ReadFn = extern "C" fn(
-    uarg: *mut c_void,
-    buf: *mut c_void,
-    count: usize,
-    tunnel_state: c_int,
-    err: *mut c_int,
-) -> usize;
+pub type ReadFn =
+    extern "C" fn(uarg: *mut c_void, buf: *mut c_void, count: usize, err: *mut c_int) -> usize;
 
 /// A write function.
-pub type WriteFn = extern "C" fn(
-    uarg: *mut c_void,
-    buf: *const c_void,
-    count: usize,
-    tunnel_state: c_int,
-    err: *mut c_int,
-) -> usize;
+pub type WriteFn =
+    extern "C" fn(uarg: *mut c_void, buf: *const c_void, count: usize, err: *mut c_int) -> usize;
 
 /// A flush function.
 pub type FlushFn = extern "C" fn(uarg: *mut c_void) -> c_int;
@@ -52,21 +42,32 @@ pub struct IO {
 
     /// A user argument which will be passed to the given
     /// read, write and flush functions when called.
-    uarg: *mut c_void,
+    pub(crate) uarg: *mut c_void,
+}
+
+impl std::fmt::Debug for IO {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "ForeignIO(readfn={readfn:p}, writefn={writefn:p}, flushfn={flushfn:?}, uarg={uarg:p})",
+            readfn = self.readfn,
+            writefn = self.writefn,
+            flushfn = self.flushfn,
+            uarg = self.uarg,
+        )
+    }
 }
 
 /// IO is Sendable.
 unsafe impl Send for IO {}
 
-/// Implements [`crate::IO`] for [`IO`].
-impl crate::IO for IO {
-    fn read(&mut self, buf: &mut [u8], tunnel_state: pb::State) -> Result<usize> {
+impl Read for IO {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let mut err = support::to_c_int(IOError::IOERROR_UNKNOWN.value());
         let n = (self.readfn)(
             self.uarg,
             buf.as_mut_ptr().cast(),
             buf.len(),
-            tunnel_state.value(),
             &mut err as *mut c_int,
         );
         let err = IOError::from_i32(support::to_i32(err)).unwrap_or(IOError::IOERROR_UNKNOWN);
@@ -76,14 +77,15 @@ impl crate::IO for IO {
             Err(error::error_kind_from_io_error(err).into())
         }
     }
+}
 
-    fn write(&mut self, buf: &[u8], tunnel_state: pb::State) -> Result<usize> {
+impl Write for IO {
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
         let mut err = support::to_c_int(IOError::IOERROR_UNKNOWN.value());
         let n = (self.writefn)(
             self.uarg,
             buf.as_ptr().cast(),
             buf.len(),
-            tunnel_state.value(),
             &mut err as *mut c_int,
         );
         let err = IOError::from_i32(support::to_i32(err)).unwrap_or(IOError::IOERROR_UNKNOWN);

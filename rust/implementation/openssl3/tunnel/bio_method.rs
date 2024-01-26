@@ -104,18 +104,16 @@ impl Bio {
     fn read(&self, buffer: &mut [u8]) -> Result<usize, pb::IOError> {
         let tun = self.get_tunnel().ok_or(pb::IOError::IOERROR_SYSTEM_ERROR)?;
         self.synchronize_states(tun);
-        (tun.io)
-            .read(buffer, tun.state)
-            .map_err(|e| e.into_io_error())
+        (tun.io).set_state(tun.state);
+        (tun.io).read(buffer).map_err(|e| e.into_io_error())
     }
 
     /// Writes data to the BIO.
     fn write(&self, buffer: &[u8]) -> Result<usize, pb::IOError> {
         let tun = self.get_tunnel().ok_or(pb::IOError::IOERROR_SYSTEM_ERROR)?;
         self.synchronize_states(tun);
-        (tun.io)
-            .write(buffer, tun.state)
-            .map_err(|e| e.into_io_error())
+        (tun.io).set_state(tun.state);
+        (tun.io).write(buffer).map_err(|e| e.into_io_error())
     }
 
     /// Flushes data.

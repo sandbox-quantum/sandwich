@@ -17,6 +17,7 @@ See `io.py` for more information.
 
 Author: sb
 """
+import abc
 import ctypes
 
 from opentelemetry.sdk.trace.export import SpanExporter
@@ -29,6 +30,49 @@ from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
 from pysandwich import sandwich
 from pysandwich.sandwich import Sandwich
 from pysandwich.tracing import SandwichTracer
+
+
+class IO(SandwichIO.IO):
+    """Abstraction of a `struct SandwichTunnelIO` handle.
+
+    The C handle is built by the tunnel, using the methods from this class and
+    `SandwichIO`.
+    """
+
+    class CTunnelIO(ctypes.Structure):
+        """The `struct SandwichTunnelIO`."""
+
+        # typedef void(SandwichTunnelIOSetStateFunction)(void *uarg, enum
+        # SandwichTunnelState tunnel_state);
+        _SET_STATE_FN_TYPE = ctypes.CFUNCTYPE(
+            None,  # Return type
+            ctypes.c_void_p,  # *uarg
+            ctypes.c_int,  # tunnel_state
+        )
+
+        _fields_ = [
+            (
+                "base",
+                SandwichIO.IO.Settings,
+            ),
+            (
+                "set_statefn",
+                _SET_STATE_FN_TYPE,
+            ),
+        ]
+
+    @abc.abstractmethod
+    def set_state(self, tunnel_state: SandwichTunnelProto.State):
+        """Set the state of the tunnel.
+
+        Args:
+            tunnel_state:
+                Current state of the tunnel.
+
+        It is guaranteed that the state of the tunnel will not change between
+        two calls to set_state.
+        """
+        raise NotImplementedError
 
 
 class Context:
@@ -138,6 +182,7 @@ class Tunnel:
     Attributes:
         _ctx: Context handle for creating the tunnel.
         _io: I/O interface to use.
+        _cio: C structure containing the Tunnel IO interface (struct SandwichTunnelIO).
     """
 
     State = SandwichTunnelProto.State
@@ -147,7 +192,7 @@ class Tunnel:
     def __init__(
         self,
         ctx: Context,
-        io: SandwichIO.IO,
+        io: IO,
         configuration: TunnelConfiguration,
     ):
         """Initializes a tunnel.
@@ -175,25 +220,24 @@ class Tunnel:
 
         # WARNING: we have to keep a reference to this object, otherwise
         # the garbage collector will clean references to the ctypes.FUNCTYPE.
-        self._settings = SandwichIO.IO.Settings()
-        self._settings.readfn = SandwichIO.IO.Settings._READ_FN_TYPE(
-            lambda uarg, buf, count, tunnel_state, err: self._io_read(
-                buf, count, tunnel_state, err
-            )
+        self._cio = IO.CTunnelIO()
+        self._cio.base.readfn = SandwichIO.IO.Settings._READ_FN_TYPE(
+            lambda uarg, buf, count, err: self._io_read(buf, count, err)
         )
-        self._settings.writefn = SandwichIO.IO.Settings._WRITE_FN_TYPE(
-            lambda uarg, buf, count, tunnel_state, err: self._io_write(
-                buf, count, tunnel_state, err
-            )
+        self._cio.base.writefn = SandwichIO.IO.Settings._WRITE_FN_TYPE(
+            lambda uarg, buf, count, err: self._io_write(buf, count, err)
         )
-        self._settings.flushfn = SandwichIO.IO.Settings._FLUSH_FN_TYPE(
+        self._cio.base.flushfn = SandwichIO.IO.Settings._FLUSH_FN_TYPE(
             lambda uarg: self._io_flush()
+        )
+        self._cio.set_statefn = IO.CTunnelIO._SET_STATE_FN_TYPE(
+            lambda uarg, tunnel_state: self._set_state(tunnel_state)
         )
 
         err = sandwich.sandwich().c_call(
             "sandwich_tunnel_new",
             self._ctx._handle,
-            ctypes.byref(self._settings),
+            ctypes.byref(self._cio),
             conf,
             ctypes.byref(self._handle),
         )
@@ -350,7 +394,6 @@ class Tunnel:
         self,
         buf: ctypes.c_void_p,
         count: int,
-        tunnel_state: ctypes.c_int,
         err: ctypes.POINTER(ctypes.c_int),
     ) -> int:
         """Trampoline routine for reading, between C and Python.
@@ -360,8 +403,6 @@ class Tunnel:
                 ctypes void pointer buffer, where to store read bytes.
             count:
                 Size of `buf`.
-            tunnel_state:
-                State of the tunnel.
             err:
                 Pointer to an IOError, to set.
 
@@ -373,7 +414,7 @@ class Tunnel:
         """
         data = None
         try:
-            data = self._io.read(count, tunnel_state)
+            data = self._io.read(count)
         except SandwichIO.IOException as e:
             err[0] = e.code
             return 0
@@ -387,7 +428,6 @@ class Tunnel:
         self,
         buf: ctypes.c_void_p,
         count: int,
-        tunnel_state: ctypes.c_int,
         err: ctypes.POINTER(ctypes.c_int),
     ) -> int:
         """Trampoline routine for writing, between C and Python.
@@ -397,8 +437,6 @@ class Tunnel:
                 ctypes void pointer buffer, source.
             count:
                 Size of `buf`.
-            tunnel_state:
-                State of the tunnel.
             err:
                 Pointer to an IOError, to set.
 
@@ -412,7 +450,6 @@ class Tunnel:
         try:
             w = self._io.write(
                 ctypes.string_at(buf, count),
-                tunnel_state,
             )
         except SandwichIO.IOException as e:
             err[0] = e.code()
@@ -435,6 +472,15 @@ class Tunnel:
         except SandwichIO.IOException as e:
             err = e.code()
         return err
+
+    def _set_state(self, tunnel_state: ctypes.c_int):
+        """Trampoline routine for setting the tunnel' state, between C and Python.
+
+        Args:
+            tunnel_state:
+                State of the tunnel.
+        """
+        self._io.set_state(tunnel_state)
 
     def __del__(self):
         """Destructs the tunnel.

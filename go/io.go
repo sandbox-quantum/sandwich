@@ -36,12 +36,12 @@ static struct SandwichIO* allocSandwichIO(void) {
   return (struct SandwichIO*)calloc(1, sizeof(struct SandwichIO));
 }
 
-static size_t client_bridge_read(SandwichIOReadFunctionPtr read, void *uarg, void *buf, size_t count, enum SandwichTunnelState tunnel_state, enum SandwichIOError *err) {
-	return read(uarg, buf, count, tunnel_state, err);
+static size_t client_bridge_read(SandwichIOReadFunctionPtr read, void *uarg, void *buf, size_t count, enum SandwichIOError *err) {
+	return read(uarg, buf, count, err);
 }
 
-static size_t client_bridge_write(SandwichIOWriteFunctionPtr write, void *uarg, void *buf, size_t count, enum SandwichTunnelState tunnel_state, enum SandwichIOError *err) {
-	return write(uarg, buf, count, tunnel_state, err);
+static size_t client_bridge_write(SandwichIOWriteFunctionPtr write, void *uarg, void *buf, size_t count, enum SandwichIOError *err) {
+	return write(uarg, buf, count, err);
 }
 
 static enum SandwichIOError client_bridge_flush(SandwichIOFlushFunctionPtr flush, void *uarg) {
@@ -58,10 +58,10 @@ import "C"
 // IO represents the I/O interface used by Sandwich.
 type IO interface {
 	// Read reads data from the connection.
-	Read(b []byte, tunnel_state pb.State) (n int, err *IOError)
+	Read(b []byte) (n int, err *IOError)
 
 	// Write writes data from the connection.
-	Write(b []byte, tunnel_state pb.State) (n int, err *IOError)
+	Write(b []byte) (n int, err *IOError)
 
 	// Flush flushes data from the connection.
 	Flush() *IOError
@@ -78,10 +78,10 @@ func createSettings(goio *goIOWrapper) *C.struct_SandwichIO {
 }
 
 //export sandwichGoIORead
-func sandwichGoIORead(ioint unsafe.Pointer, buf C.mutBuf, size C.size_t, tunnel_state C.enum_SandwichTunnelState, err *C.enum_SandwichIOError) C.size_t {
+func sandwichGoIORead(ioint unsafe.Pointer, buf C.mutBuf, size C.size_t, err *C.enum_SandwichIOError) C.size_t {
 	io := *(*IO)(ioint)
 
-	n, ioerr := io.Read(unsafe.Slice((*byte)(buf), int(size)), pb.State(tunnel_state))
+	n, ioerr := io.Read(unsafe.Slice((*byte)(buf), int(size)))
 	if ioerr != nil {
 		*err = C.enum_SandwichIOError(((Error)(ioerr)).Code())
 	} else {
@@ -91,10 +91,10 @@ func sandwichGoIORead(ioint unsafe.Pointer, buf C.mutBuf, size C.size_t, tunnel_
 }
 
 //export sandwichGoIOWrite
-func sandwichGoIOWrite(ioint unsafe.Pointer, buf C.constBuf, size C.size_t, tunnel_state C.enum_SandwichTunnelState, err *C.enum_SandwichIOError) C.size_t {
+func sandwichGoIOWrite(ioint unsafe.Pointer, buf C.constBuf, size C.size_t, err *C.enum_SandwichIOError) C.size_t {
 	io := *(*IO)(ioint)
 
-	n, ioerr := io.Write(unsafe.Slice((*byte)(buf), int(size)), pb.State(tunnel_state))
+	n, ioerr := io.Write(unsafe.Slice((*byte)(buf), int(size)))
 	if ioerr != nil {
 		*err = C.enum_SandwichIOError(((Error)(ioerr)).Code())
 	} else {
@@ -141,13 +141,12 @@ type swOwnedIOWrapper struct {
 }
 
 // Reads implements the sandwich.IO interface for bufIO.
-func (rawIO *swOwnedIOWrapper) Read(b []byte, tunnel_state pb.State) (int, *IOError) {
+func (rawIO *swOwnedIOWrapper) Read(b []byte) (int, *IOError) {
 	settings := rawIO.handle.io
 	count := len(b)
 	buf := b
-	state := uint32(tunnel_state)
 	err := uint32(pb.IOError_IOERROR_UNKNOWN)
-	bytes_read := C.client_bridge_read(settings.read, unsafe.Pointer(settings.uarg), unsafe.Pointer(&buf[0]), C.size_t(count), state, &err)
+	bytes_read := C.client_bridge_read(settings.read, unsafe.Pointer(settings.uarg), unsafe.Pointer(&buf[0]), C.size_t(count), &err)
 	pb_err := pb.IOError(err)
 	if pb_err != pb.IOError_IOERROR_OK {
 		return 0, NewIOErrorFromEnum(pb_err)
@@ -156,13 +155,12 @@ func (rawIO *swOwnedIOWrapper) Read(b []byte, tunnel_state pb.State) (int, *IOEr
 }
 
 // Write implements the sandwich.IO interface for bufIO.
-func (rawIO *swOwnedIOWrapper) Write(b []byte, tunnel_state pb.State) (int, *IOError) {
+func (rawIO *swOwnedIOWrapper) Write(b []byte) (int, *IOError) {
 	settings := rawIO.handle.io
 	count := len(b)
 	buf := b
-	state := uint32(tunnel_state)
 	err := uint32(pb.IOError_IOERROR_UNKNOWN)
-	bytes_written := C.client_bridge_write(settings.write, unsafe.Pointer(settings.uarg), unsafe.Pointer(&buf[0]), C.size_t(count), state, &err)
+	bytes_written := C.client_bridge_write(settings.write, unsafe.Pointer(settings.uarg), unsafe.Pointer(&buf[0]), C.size_t(count), &err)
 	pb_err := pb.IOError(err)
 	if pb_err != pb.IOError_IOERROR_OK {
 		return 0, NewIOErrorFromEnum(pb_err)
@@ -194,7 +192,7 @@ type IORWWrapper struct {
 	conn io.ReadWriter
 }
 
-func (c *IORWWrapper) Read(b []byte, tunnel_state pb.State) (int, *IOError) {
+func (c *IORWWrapper) Read(b []byte) (int, *IOError) {
 	n, err := c.conn.Read(b)
 	if err != nil {
 		return 0, NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
@@ -202,7 +200,7 @@ func (c *IORWWrapper) Read(b []byte, tunnel_state pb.State) (int, *IOError) {
 	return n, nil
 }
 
-func (c *IORWWrapper) Write(b []byte, tunnel_state pb.State) (int, *IOError) {
+func (c *IORWWrapper) Write(b []byte) (int, *IOError) {
 	n, err := c.conn.Write(b)
 	if err != nil {
 		return 0, NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)

@@ -30,7 +30,7 @@ Here is an example of an I/O structure that would forward the data to a socket i
 
 ## Go API
 
-Go users need to implement the [sandwich.IO](https://pkg.go.dev/github.com/sandbox-quantum/sandwich/go/#IO) interface.
+Go users need to implement the [sandwich.TunnelIO](https://pkg.go.dev/github.com/sandbox-quantum/sandwich/go/#TunnelIO) interface.
 
 Here is an example wrapping an `io.ReadWrite` object, extracted from the Sandwich Go library:
 

@@ -12,6 +12,8 @@ extern crate testdata;
 #[cfg(not(feature = "bazel"))]
 use std::path::Path;
 
+use std::net;
+
 pub use sandwich_api_proto as pb_api;
 pub use sandwich_proto as pb;
 
@@ -45,7 +47,7 @@ pub fn resolve_runfile(path: impl AsRef<Path>) -> String {
 }
 
 pub mod io {
-    use std::io::{ErrorKind as IOErrorKind, Result as IOResult};
+    use std::io::{ErrorKind as IOErrorKind, Read, Result as IOResult, Write};
     use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 
     use super::*;
@@ -108,8 +110,8 @@ pub mod io {
         }
     }
 
-    impl sandwich::IO for MpscIO {
-        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
+    impl Read for MpscIO {
+        fn read(&mut self, buf: &mut [u8]) -> IOResult<usize> {
             let n = std::cmp::min(buf.len(), self.buffer.len());
             if n > 0 {
                 buf[0..n].copy_from_slice(&self.buffer[0..n]);
@@ -153,8 +155,10 @@ pub mod io {
             }
             Ok(bread)
         }
+    }
 
-        fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
+    impl Write for MpscIO {
+        fn write(&mut self, buf: &[u8]) -> IOResult<usize> {
             let write_stream = self
                 .write_stream
                 .as_ref()
@@ -164,5 +168,33 @@ pub mod io {
                 .map(|_| buf.len())
                 .map_err(|_| IOErrorKind::ConnectionAborted.into())
         }
+
+        fn flush(&mut self) -> IOResult<()> {
+            Ok(())
+        }
     }
+
+    impl sandwich::tunnel::IO for MpscIO {}
+
+    /// Wrapper around a `TcpStream` object.
+    #[derive(Debug)]
+    pub struct TcpStream(pub net::TcpStream);
+
+    impl Read for TcpStream {
+        fn read(&mut self, buf: &mut [u8]) -> IOResult<usize> {
+            self.0.read(buf)
+        }
+    }
+
+    impl Write for TcpStream {
+        fn write(&mut self, buf: &[u8]) -> IOResult<usize> {
+            self.0.write(buf)
+        }
+
+        fn flush(&mut self) -> IOResult<()> {
+            self.0.flush()
+        }
+    }
+
+    impl sandwich::tunnel::IO for TcpStream {}
 }

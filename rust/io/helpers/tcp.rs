@@ -63,11 +63,8 @@ impl crate::io::listener::Listener for TcpListener {
 
 #[cfg(test)]
 pub(crate) mod test {
+    use std::io::{Read, Write};
     use std::net::TcpStream;
-
-    use pb::State::STATE_CONNECTION_IN_PROGRESS;
-
-    use crate::IO;
 
     use super::*;
 
@@ -106,13 +103,13 @@ pub(crate) mod test {
     fn handle_client_blocking(mut stream: TcpStream) {
         let mut recv = [0u8; 5];
         let send = [2u8; 3];
-        match stream.read(&mut recv, STATE_CONNECTION_IN_PROGRESS) {
+        match stream.read(&mut recv) {
             Ok(5) => {}
             Ok(v) => panic!("Read the wrong amount of bytes. Expected 5, got {v}"),
             Err(e) => panic!("Failed to read: {}", e),
         }
         assert_eq!(recv, [0u8, 1u8, 2u8, 3u8, 4u8]);
-        match stream.write(&send, STATE_CONNECTION_IN_PROGRESS) {
+        match stream.write(&send) {
             Ok(3) => {}
             Ok(v) => panic!("Wrote wrong amount of bytes. Expected 3, got {v}"),
             Err(e) => panic!("Failed to write: {}", e),
@@ -123,12 +120,12 @@ pub(crate) mod test {
     fn client_blocking_communicate(mut io: TcpStream) {
         let send = [0u8, 1u8, 2u8, 3u8, 4u8];
         let mut recv = [0u8; 3];
-        match io.write(&send, STATE_CONNECTION_IN_PROGRESS) {
+        match io.write(&send) {
             Ok(5) => {}
             Ok(v) => panic!("Wrote wrong amount of bytes. Expected 5, got {v}"),
             Err(e) => panic!("Failed to write 5 bytes: {}", e),
         }
-        match io.read(&mut recv, STATE_CONNECTION_IN_PROGRESS) {
+        match io.read(&mut recv) {
             Ok(3) => {}
             Ok(v) => panic!("Read the wrong amount of bytes. Expected 3, got {v}"),
             Err(e) => panic!("Failed to read 3 bytes: {}", e),

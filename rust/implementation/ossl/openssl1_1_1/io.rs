@@ -100,8 +100,9 @@ unsafe extern "C" fn bio_write(
         }
     }
 
+    (tun.io).set_state(tun.state);
     (tun.io)
-        .write(std::slice::from_raw_parts(data.cast(), len), tun.state)
+        .write(std::slice::from_raw_parts(data.cast(), len))
         .map(|n| {
             *written = n;
             1
@@ -137,8 +138,9 @@ unsafe extern "C" fn bio_read(
             }
         }
     }
+    (tun.io).set_state(tun.state);
     (tun.io)
-        .read(std::slice::from_raw_parts_mut(data.cast(), len), tun.state)
+        .read(std::slice::from_raw_parts_mut(data.cast(), len))
         .map(|n| {
             *read = n;
             1

@@ -19,7 +19,7 @@ use crate::implementation::ossl;
 
 use super::Tunnel;
 
-use crate::tunnel::tls;
+use crate::tunnel::{tls, IO};
 
 /// Mode for a [`Context`].
 ///
@@ -40,7 +40,7 @@ pub(crate) enum Mode {
 /// the tunnel.
 /// Returning the I/O interface in case of error allows the caller to re-use it
 /// without having to create a new one.
-pub type TunnelResult<'a> = Result<Tunnel<'a>, (crate::Error, Box<dyn crate::IO>)>;
+pub type TunnelResult<'a> = Result<Tunnel<'a>, (crate::Error, Box<dyn IO>)>;
 
 /// A Sandwich context.
 pub enum Context<'a> {
@@ -140,7 +140,7 @@ impl<'a> Context<'a> {
         .map_err(|e| e >> pb::APIError::APIERROR_CONFIGURATION)
     }
 
-    /// Creates a new tunnel from an I/O interface. See [`crate::IO`] from [`crate::io`] module.
+    /// Creates a new tunnel from an I/O interface. See [`IO`] from [`crate::io`] module.
     ///
     /// The I/O interface must outlive the tunnel, as the tunnel makes use
     /// of it to send and receive data.
@@ -148,7 +148,7 @@ impl<'a> Context<'a> {
     /// If an error occured, the IO interface is returned to the user.
     pub fn new_tunnel(
         &self,
-        io: Box<dyn crate::IO>,
+        io: Box<dyn IO>,
         configuration: pb_api::TunnelConfiguration,
     ) -> TunnelResult<'_> {
         match self {

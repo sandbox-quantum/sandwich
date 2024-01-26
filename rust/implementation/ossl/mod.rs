@@ -23,7 +23,7 @@ use crate::support::tracing;
 #[cfg(feature = "tracer")]
 use crate::support::tracing::SandwichTracer;
 use crate::support::Pimpl;
-use crate::tunnel::{tls, Mode};
+use crate::tunnel::{tls, Mode, IO};
 use tls::{TlsVersion, VerifyMode};
 
 /// User-data index of the tunnel security requirements in the SSL handle.
@@ -438,9 +438,9 @@ where
 {
     pub(crate) fn new_tunnel(
         &self,
-        io: Box<dyn crate::IO>,
+        io: Box<dyn IO>,
         configuration: pb_api::TunnelConfiguration,
-    ) -> Result<PinnedOsslTunnel<'_, OsslInterface>, (crate::Error, Box<dyn crate::IO>)> {
+    ) -> Result<PinnedOsslTunnel<'_, OsslInterface>, (crate::Error, Box<dyn IO>)> {
         OsslTunnel::<OsslInterface>::try_from(TunnelBuilder {
             ctx: self,
             io,
@@ -662,7 +662,7 @@ where
     pub(crate) bio: NonNull<OsslInterface::NativeBio>,
 
     /// The IO.
-    pub(crate) io: Box<dyn crate::IO>,
+    pub(crate) io: Box<dyn IO>,
 
     /// The security at tunnel time.
     pub(crate) security_requirements: tls::TunnelSecurityRequirements,
@@ -695,7 +695,7 @@ where
     pub(crate) ctx: &'b OsslContext<'a, OsslInterface>,
 
     /// The IO interface.
-    pub(crate) io: Box<dyn crate::IO>,
+    pub(crate) io: Box<dyn IO>,
 
     /// The tunnel-time configuration.
     pub(crate) configuration: pb_api::TunnelConfiguration,
@@ -742,7 +742,7 @@ where
 {
     fn try_from<'b>(
         builder: TunnelBuilder<'b, '_, OsslInterface>,
-    ) -> Result<PinnedOsslTunnel<'a, OsslInterface>, (crate::Error, Box<dyn crate::IO>)>
+    ) -> Result<PinnedOsslTunnel<'a, OsslInterface>, (crate::Error, Box<dyn IO>)>
     where
         'b: 'a,
     {
