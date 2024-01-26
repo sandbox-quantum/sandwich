@@ -7,9 +7,10 @@ use std::ffi::{c_int, c_void};
 
 use protobuf::Enum;
 
-use crate::ffi::io::IO;
 use crate::ffi::{support, Error};
-use crate::tunnel::{Context, Tunnel};
+use crate::tunnel::{self, Context, Tunnel};
+
+use super::IO;
 
 /// A serialized [`pb_api::TunnelConfiguration`] for FFI.
 #[repr(C)]
@@ -67,7 +68,7 @@ pub extern "C" fn sandwich_tunnel_new(
         return e.into();
     }
 
-    let io: Box<dyn crate::IO> = Box::new(unsafe { *cio });
+    let io: Box<dyn tunnel::IO> = Box::new(unsafe { *cio });
     let r = b.new_tunnel(io, tunnel_configuration);
     match r {
         Ok(t) => {

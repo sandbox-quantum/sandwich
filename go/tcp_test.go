@@ -29,19 +29,19 @@ var (
 	keyPath  string = "testdata/localhost.key.pem"
 )
 
-// bufIO implements sandwich.IO, using a TX buffer and a
+// serverIO implements sandwich.IO and sandwich.TunnelIO using a TX buffer and a
 // remote peer.
 type serverIO struct {
 	io *net.Conn
 }
 
-// newBufIO Creates a new buffer IO.
+// newServerIO Creates a new serverIO.
 func newServerIO() *serverIO {
 	return new(serverIO)
 }
 
-// Reads implements the sandwich.IO interface for bufIO.
-func (io *serverIO) Read(b []byte, tunnel_state pb.State) (int, *sandwich.IOError) {
+// Reads implements the sandwich.IO interface for serverIO.
+func (io *serverIO) Read(b []byte) (int, *sandwich.IOError) {
 	(*(io.io)).SetReadDeadline(time.Now().Add(1 * time.Millisecond))
 	bytes_read, err := (*(io.io)).Read(b)
 	if bytes_read == 0 {
@@ -55,8 +55,8 @@ func (io *serverIO) Read(b []byte, tunnel_state pb.State) (int, *sandwich.IOErro
 	return bytes_read, nil
 }
 
-// Write implements the sandwich.IO interface for bufIO.
-func (io *serverIO) Write(b []byte, tunnel_state pb.State) (int, *sandwich.IOError) {
+// Write implements the sandwich.IO interface for serverIO.
+func (io *serverIO) Write(b []byte) (int, *sandwich.IOError) {
 	(*(io.io)).SetWriteDeadline(time.Now().Add(1 * time.Millisecond))
 	bytes_written, err := (*(io.io)).Write(b)
 	if bytes_written == 0 {
@@ -71,10 +71,13 @@ func (io *serverIO) Write(b []byte, tunnel_state pb.State) (int, *sandwich.IOErr
 	return bytes_written, nil
 }
 
-// Flush implements the sandwich.IO interface for bufIO.
+// Flush implements the sandwich.IO interface for serverIO.
 func (io *serverIO) Flush() *sandwich.IOError {
 	return nil
 }
+
+// SetState implements the sandwich.TunnelIO interface for serverIO.
+func (io *serverIO) SetState(tunnelState pb.State) {}
 
 // createServerConfiguration creates the configuration for the server.
 func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
@@ -215,8 +218,8 @@ func createClientContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelC
 }
 
 type ioInts struct {
-	client sandwich.IO
-	server sandwich.IO
+	client sandwich.TunnelIO
+	server sandwich.TunnelIO
 }
 
 func generateRandomPort() uint16 {
@@ -263,7 +266,7 @@ func createIOs() ioInts {
 }
 
 // createServerTunnel creates the tunnel for the server.
-func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.IO) (*sandwich.Tunnel, error) {
+func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
 	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the server's tunnel: %v", err)
@@ -273,7 +276,7 @@ func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwi
 }
 
 // createClientTunnel creates the tunnel for the client.
-func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.IO) (*sandwich.Tunnel, error) {
+func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
 	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the client's tunnel: %v", err)

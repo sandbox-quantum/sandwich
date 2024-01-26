@@ -9,6 +9,7 @@ use std::ptr::NonNull;
 
 use crate::support::Pimpl;
 use crate::tunnel::tls::{self, VerifierSanitizer};
+use crate::tunnel::IO;
 use crate::Result;
 
 use crate::ossl3::error::{Error, ErrorLibrary, SslError};
@@ -412,7 +413,7 @@ pub struct Tunnel<'a> {
     security_requirements: tls::TunnelSecurityRequirements,
 
     /// IO interface.
-    pub(super) io: Box<dyn crate::IO>,
+    pub(super) io: Box<dyn IO>,
 
     /// state.
     pub(super) state: pb::State,
@@ -435,7 +436,7 @@ pub(crate) struct TunnelBuilder<'a> {
     pub(crate) ssl_ctx: &'a Context<'a>,
 
     /// The IO interface.
-    pub(crate) io: Box<dyn crate::IO>,
+    pub(crate) io: Box<dyn IO>,
 
     /// The tunnel-time configuration.
     pub(crate) configuration: pb_api::TunnelConfiguration,
@@ -443,7 +444,7 @@ pub(crate) struct TunnelBuilder<'a> {
 
 /// Tunnel builder result.
 type TunnelBuilderResult<'a> =
-    std::result::Result<Pin<Box<Tunnel<'a>>>, (crate::Error, Box<dyn crate::IO>)>;
+    std::result::Result<Pin<Box<Tunnel<'a>>>, (crate::Error, Box<dyn IO>)>;
 
 impl std::fmt::Debug for TunnelBuilder<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

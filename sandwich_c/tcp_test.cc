@@ -250,7 +250,7 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 ///
 /// \return The tunnel.
 [[nodiscard]] auto CreateTunnel(
-    struct ::SandwichTunnelContext *ctx, const struct ::SandwichIO &io,
+    struct ::SandwichTunnelContext *ctx, const struct ::SandwichTunnelIO &io,
     const struct ::SandwichTunnelConfigurationSerialized &configuration)
     -> std::unique_ptr<struct ::SandwichTunnel, SandwichTunnelDeleter> {
   struct ::SandwichTunnel *tun{nullptr};
@@ -430,9 +430,13 @@ void client_thread(std::string server_hostname, uint16_t server_port) {
   auto client = CreateClientContext(runfiles);
   sandwich_io_client_tcp_new(server_hostname.c_str(), server_port, true,
                              &client_io);
+
+  struct ::SandwichTunnelIO io {
+    .base = *client_io->io, .set_state = nullptr,
+  };
   // Create tunnels.
-  auto client_tunnel = CreateTunnel(&*client, *(client_io->io),
-                                    SandwichTunnelConfigurationVerifierEmpty);
+  auto client_tunnel =
+      CreateTunnel(&*client, io, SandwichTunnelConfigurationVerifierEmpty);
 
   // Client initiates the handshake.
   ClientInitiateHandshake(&*client_tunnel);
@@ -466,8 +470,11 @@ void server_thread(std::string server_hostname, uint16_t server_port) {
   struct SandwichIOOwned *listener_io;
   err = sandwich_listener_accept(&*server_listener, &listener_io);
   sandwich_assert(err == SANDWICH_IOERROR_OK);
-  auto server_tunnel = CreateTunnel(&*server, *(listener_io->io),
-                                    SandwichTunnelConfigurationVerifierEmpty);
+  struct ::SandwichTunnelIO io {
+    .base = *listener_io->io, .set_state = nullptr,
+  };
+  auto server_tunnel =
+      CreateTunnel(&*server, io, SandwichTunnelConfigurationVerifierEmpty);
 
   // Server answers.
   ServerAnswerHandshake(&*server_tunnel);

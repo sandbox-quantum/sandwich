@@ -10,8 +10,30 @@ use std::path::{Path, PathBuf};
 
 use sandwich::pb::HandshakeState;
 use sandwich::pb_api as sw_api;
-use sandwich::tunnel::Context;
+use sandwich::tunnel::{Context, IO};
 use std::sync::mpsc::Sender;
+
+/// Wrapper around a [`TcpStream`].
+#[derive(Debug)]
+struct TcpIo(TcpStream);
+
+impl std::io::Read for TcpIo {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        self.0.read(buffer)
+    }
+}
+
+impl std::io::Write for TcpIo {
+    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
+        self.0.write(buffer)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.0.flush()
+    }
+}
+
+impl IO for TcpIo {}
 
 /// Creates the Sandwich configuration.
 fn create_server_configuration(
@@ -82,7 +104,7 @@ fn tunnel_echo_handler(
     tunnel_verifier: &sw_api::TunnelConfiguration,
 ) {
     let mut tunnel = server_ctx
-        .new_tunnel(Box::new(connection), tunnel_verifier.clone())
+        .new_tunnel(Box::new(TcpIo(connection)), tunnel_verifier.clone())
         .expect("cannot create the tunnel");
 
     match tunnel.handshake() {

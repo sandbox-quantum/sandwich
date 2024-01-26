@@ -22,5 +22,8 @@
 //! - [`tunnel::sandwich_tunnel_state`]: returns the state of the Tunnel.
 //! - [`tunnel::sandwich_tunnel_close`]: closes the tunnel.
 
+pub(crate) use io::IO;
+
 mod context;
+mod io;
 mod tunnel;

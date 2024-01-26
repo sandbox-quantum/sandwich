@@ -6,7 +6,7 @@ extern crate polling;
 extern crate protobuf;
 extern crate sandwich;
 
-use std::io::{BufRead, Write};
+use std::io::{BufRead, Read, Write};
 use std::net::TcpStream;
 use std::os::fd::AsRawFd;
 use std::sync::mpsc::{Receiver, Sender};
@@ -15,12 +15,34 @@ use sandwich::pb::HandshakeState;
 use sandwich::pb_api as sw_api;
 
 use polling::{Event, Poller};
-use sandwich::tunnel::{Context, RecordResult};
+use sandwich::tunnel::{Context, RecordResult, IO};
 
 pub struct TcpIo {
     pub socket: TcpStream,
     pub fd: i32,
 }
+
+/// Wrapper around a [`TcpStream`].
+#[derive(Debug)]
+struct TcpIoStream(TcpStream);
+
+impl Read for TcpIoStream {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        self.0.read(buffer)
+    }
+}
+
+impl Write for TcpIoStream {
+    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
+        self.0.write(buffer)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.0.flush()
+    }
+}
+
+impl IO for TcpIoStream {}
 
 /// Creates the Sandwich configuration.
 pub fn create_client_configuration(tls_version: &str) -> Result<sw_api::Configuration, String> {
@@ -115,7 +137,9 @@ pub fn connect_to_server(
 
     let mut tunnel = client_ctx
         .new_tunnel(
-            Box::new(tcp_io.socket.try_clone().expect("failed to clone socket")),
+            Box::new(TcpIoStream(
+                tcp_io.socket.try_clone().expect("failed to clone socket"),
+            )),
             tunnel_verifier,
         )
         .expect("cannot create the tunnel");
@@ -222,7 +246,9 @@ pub fn connect_to_server_mpsc(
 
     let mut tunnel = client_ctx
         .new_tunnel(
-            Box::new(tcp_io.socket.try_clone().expect("failed to clone socket")),
+            Box::new(TcpIoStream(
+                tcp_io.socket.try_clone().expect("failed to clone socket"),
+            )),
             tunnel_verifier,
         )
         .expect("cannot create the tunnel");

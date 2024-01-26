@@ -5,6 +5,7 @@ filegroup(
     name = "tunnel",
     srcs = [
         "context.rs",
+        "io.rs",
         "mod.rs",
     ],
     visibility = ["//rust:__subpackages__"],

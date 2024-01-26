@@ -29,6 +29,7 @@
 //!    an error stack string.
 
 pub(crate) use error::Error;
+pub(crate) use io::IO;
 
 pub(crate) mod context;
 pub(crate) mod error;

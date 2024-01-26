@@ -97,11 +97,9 @@ unsafe extern "C" fn bio_write(
         }
     }
 
+    (tun.io).set_state(tun.state);
     (tun.io)
-        .write(
-            std::slice::from_raw_parts(data.cast(), len as usize),
-            tun.state,
-        )
+        .write(std::slice::from_raw_parts(data.cast(), len as usize))
         .map(|n| n as i32)
         .unwrap_or_else(|e| match e.into_io_error() {
             pb::IOError::IOERROR_IN_PROGRESS | pb::IOError::IOERROR_WOULD_BLOCK => {
@@ -134,11 +132,9 @@ unsafe extern "C" fn bio_read(
         }
     }
 
+    (tun.io).set_state(tun.state);
     (tun.io)
-        .read(
-            std::slice::from_raw_parts_mut(data.cast(), len as usize),
-            tun.state,
-        )
+        .read(std::slice::from_raw_parts_mut(data.cast(), len as usize))
         .map(|n| n as i32)
         .unwrap_or_else(|e| match e.into_io_error() {
             pb::IOError::IOERROR_IN_PROGRESS | pb::IOError::IOERROR_WOULD_BLOCK => {

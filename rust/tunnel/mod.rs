@@ -16,11 +16,14 @@ use crate::support::tracing::SandwichTracer;
 
 #[cfg(any(feature = "openssl1_1_1", feature = "boringssl"))]
 use crate::implementation::ossl;
+pub use io::IO;
 
 mod context;
 
 #[cfg(feature = "ffi")]
 mod ffi;
+
+mod io;
 
 /// Structure for states and errors based on protobuf definitions.
 pub struct ProtoStateErrorBase<Enum: protobuf::Enum>(Enum, Option<crate::Error>);
@@ -171,6 +174,26 @@ impl std::fmt::Display for RecordError {
     }
 }
 
+impl From<RecordError> for std::io::Error {
+    fn from(re: RecordError) -> Self {
+        use std::io::ErrorKind;
+        std::io::Error::new(
+            match re.0 {
+                pb::RecordError::RECORDERROR_OK => ErrorKind::Other,
+                pb::RecordError::RECORDERROR_WANT_READ
+                | pb::RecordError::RECORDERROR_WANT_WRITE => ErrorKind::WouldBlock,
+                pb::RecordError::RECORDERROR_BEING_SHUTDOWN
+                | pb::RecordError::RECORDERROR_CLOSED => ErrorKind::BrokenPipe,
+                pb::RecordError::RECORDERROR_TOO_BIG => ErrorKind::OutOfMemory,
+                pb::RecordError::RECORDERROR_UNKNOWN => ErrorKind::Other,
+            },
+            re,
+        )
+    }
+}
+
+impl std::error::Error for RecordError {}
+
 /// A record result.
 /// A record result is either an amount of bytes read or written, nothing
 /// or a record error.
@@ -264,6 +287,22 @@ impl std::fmt::Debug for Tunnel<'_> {
             #[cfg(feature = "openssl3")]
             Self::OpenSSL3(t) => write!(f, "Tunnel(OpenSSL3({t:?}))"),
         }
+    }
+}
+
+impl std::io::Read for Tunnel<'_> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.read(buf).map_err(std::io::Error::from)
+    }
+}
+
+impl std::io::Write for Tunnel<'_> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.write(buf).map_err(std::io::Error::from)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 }
 

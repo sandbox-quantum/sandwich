@@ -45,6 +45,31 @@ extern struct SandwichTunnelConfigurationSerialized
 /// \brief A Sandwich tunnel.
 struct SandwichTunnel;
 
+/// \brief An IO callback triggered when the state of the tunnel changes.
+///
+/// It is guaranteed that the state of the tunnel will not change between two
+/// calls to this callback.
+///
+/// \param[in,out] uarg User opaque argument.
+/// \param tunnel_state The new state of the tunnel.
+typedef void(SandwichTunnelIOSetStateFunction)(
+    void *uarg, enum SandwichTunnelState tunnel_state);
+typedef SandwichTunnelIOSetStateFunction *SandwichTunnelIOSetStateFunctionPtr;
+
+/// \brief An IO specific to tunnels.
+struct SandwichTunnelIO {
+  /// \brief The base IO object.
+  struct SandwichIO base;
+
+  /// \brief The callback used to indicate when the state of the tunnel changes.
+  ///
+  /// It is guaranteed that the state of the tunnel will not change between two
+  /// calls to this callback.
+  ///
+  /// `NULL` is a valid value.
+  SandwichTunnelIOSetStateFunctionPtr set_state;
+};
+
 /// \brief Create a context from an encoded protobuf message.
 ///
 /// \param sw Top-level Sandwich context.
@@ -67,12 +92,14 @@ sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
 
 /// \brief Create a tunnel.
 ///
-/// A tunnel is created from an I/O interface. `SandwichIO` are
-/// used to create an I/O interface that forwards calls to the `read`, and
-/// `write` of `SandwichIO`.
+/// A tunnel is created from an IO interface. `SandwichTunnelIO` are
+/// used to create an IO interface that forwards calls to the `read`, and
+/// `write` of `SandwichTunnelIO`.
+/// The state of the tunnel is exposed to the IO interface through the
+/// ::SandwichTunnelIO->set_state function.
 ///
 /// Since the implementation of `sandwich_tunnel_new` makes a copy of
-/// `SandwichIO`, the caller does not need to keep `io` in memory.
+/// `SandwichTunnelIO`, the caller does not need to keep `io` in memory.
 /// In other words, Sandwich does not take the ownership of `io`.
 ///
 /// \param[in] ctx Sandwich context used for setting up the tunnel.
@@ -85,7 +112,7 @@ sandwich_tunnel_context_free(struct SandwichTunnelContext *ctx);
 /// \return NULL if no error occured, else a chain of errors.
 SANDWICH_API struct SandwichError *
 sandwich_tunnel_new(struct SandwichTunnelContext *ctx,
-                    const struct SandwichIO *io,
+                    const struct SandwichTunnelIO *io,
                     struct SandwichTunnelConfigurationSerialized configuration,
                     struct SandwichTunnel **tun);
 

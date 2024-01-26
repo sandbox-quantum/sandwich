@@ -33,7 +33,7 @@ var (
 	tls13           string = "tls13"
 )
 
-// bufIO implements sandwich.IO, using a TX buffer and a
+// bufIO implements sandwich.IO and sandwich.TunnelIO using a TX buffer and a
 // remote peer.
 type bufIO struct {
 	tx     bytes.Buffer
@@ -46,7 +46,7 @@ func newBufIO() *bufIO {
 }
 
 // Reads implements the sandwich.IO interface for bufIO.
-func (buf *bufIO) Read(b []byte, tunnel_state pb.State) (int, *sandwich.IOError) {
+func (buf *bufIO) Read(b []byte) (int, *sandwich.IOError) {
 	if buf.tx.Len() == 0 {
 		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
 	}
@@ -61,7 +61,7 @@ func (buf *bufIO) Read(b []byte, tunnel_state pb.State) (int, *sandwich.IOError)
 }
 
 // Write implements the sandwich.IO interface for bufIO.
-func (buf *bufIO) Write(b []byte, tunnel_state pb.State) (int, *sandwich.IOError) {
+func (buf *bufIO) Write(b []byte) (int, *sandwich.IOError) {
 	n, err := buf.remote.tx.Write(b)
 	if err != nil {
 		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
@@ -76,6 +76,9 @@ func (buf *bufIO) Write(b []byte, tunnel_state pb.State) (int, *sandwich.IOError
 func (buf *bufIO) Flush() *sandwich.IOError {
 	return nil
 }
+
+// SetState implements the sandwich.TunnelIO interface for bufIO.
+func (buf *bufIO) SetState(tunnelState pb.State) {}
 
 // createServerConfiguration creates the configuration for the server.
 func createServerConfiguration(t *testing.T, cert *string, key *string) (*api.Configuration, error) {
@@ -264,8 +267,8 @@ func createClientContext(t *testing.T, cert *string, tls_version *string, sw *sa
 }
 
 type ioInts struct {
-	client sandwich.IO
-	server sandwich.IO
+	client sandwich.TunnelIO
+	server sandwich.TunnelIO
 }
 
 // createServerClientIOs creates the I/O interfaces for the server and the client.
@@ -281,7 +284,7 @@ func createIOs() ioInts {
 }
 
 // createServerTunnel creates the tunnel for the server.
-func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.IO) (*sandwich.Tunnel, error) {
+func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
 	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the server's tunnel: %v", err)
@@ -291,7 +294,7 @@ func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwi
 }
 
 // createClientTunnel creates the tunnel for the client.
-func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.IO) (*sandwich.Tunnel, error) {
+func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
 	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the client's tunnel: %v", err)

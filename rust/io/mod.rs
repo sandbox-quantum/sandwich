@@ -1,18 +1,11 @@
 // Copyright (c) SandboxAQ. All rights reserved.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-//! Defines [`IO`] trait.
-//!
-//! This module provides the definition of an I/O interface.
-//!
-//! An [`IO`] trait must implements the following methods:
-//!  * `Read`
-//!  * `Write`
-//!
-//! Each of these methods may return an [`Error`], such as `ConnectionRefused`
-//! or `WouldBlock`.
+//! This module provides the definition of I/O interfaces.
 //!
 //! I/O interfaces are used to abstract the I/O plane.
+
+use std::io::{Read, Write};
 
 /// Support for errors.
 pub mod error;
@@ -24,119 +17,9 @@ pub mod helpers;
 /// new connections and create I/O objects.
 pub mod listener;
 
-/// An I/O interface.
-///
-/// # Example
-///
-/// ```
-///
-/// use sandwich_proto as pb;
-/// use sandwich::io::Result as IOResult;
-///
-/// /// A simple variable-sized buffer.
-/// type Buffer = Vec<u8>;
-///
-/// /// A stream backed by `std::sync::mpsc::channel`.
-/// struct BufferedChannel {
-///     outs: Option<std::sync::mpsc::Sender<Buffer>>,
-///     ins: Option<std::sync::mpsc::Receiver<Buffer>>,
-///     buffer: Buffer,
-/// }
-///
-/// /// Implements `BufferedChannel`.
-/// impl BufferedChannel {
-///     /// Instantiates a `BufferedChannel` and returns the sender to
-///     /// itself.
-///     fn new() -> Self {
-///         Self{
-///             outs: None,
-///             ins: None,
-///             buffer: Buffer::with_capacity(4096usize),
-///         }
-///     }
-///
-///     /// Links two `BufferedChannel` together.
-///     fn link(a: &mut Self, b: &mut Self) {
-///         (a.outs, b.ins) = { let (s, r) = std::sync::mpsc::channel(); (Some(s), Some(r)) };
-///         (b.outs, a.ins) = { let (s, r) = std::sync::mpsc::channel(); (Some(s), Some(r)) };
-///     }
-/// }
-///
-/// /// Implements `sandwich::IO` for `BufferedChannel`.
-/// impl sandwich::IO for BufferedChannel {
-///     fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
-///         let n = std::cmp::min(buf.len(), self.buffer.len());
-///         if n > 0 {
-///             buf.copy_from_slice(&self.buffer[0 .. n]);
-///             self.buffer.drain(0..n);
-///         }
-///         let r = buf.len() - n;
-///         if r == 0 {
-///             return Ok(n);
-///         }
-///         let mut it = &mut buf[n..];
-///         let bread = n;
-///
-///         let e = match self.ins {
-///             Some(ref ins) => match ins.try_recv() {
-///                 Ok(v) => {
-///                     self.buffer.extend(v);
-///                     Ok(self.buffer.len())
-///                 },
-///                 Err(std::sync::mpsc::TryRecvError::Empty) => Err(pb::IOError::IOERROR_WOULD_BLOCK),
-///                 Err(std::sync::mpsc::TryRecvError::Disconnected) => Err(pb::IOError::IOERROR_CLOSED),
-///             },
-///             None => Err(pb::IOError::IOERROR_IN_PROGRESS),
-///         };
-///         match e {
-///             Ok(s) => {
-///                 let n = std::cmp::min(it.len(), s);
-///                 Ok(bread + if n > 0 {
-///                     it.copy_from_slice(&self.buffer[0 .. n]);
-///                     self.buffer.drain(0..n);
-///                     n
-///                 } else {
-///                     0
-///                 })
-///             },
-///             Err(e) => match bread {
-///                 0 => Err(e.into()),
-///                 _ => Ok(bread)
-///             }
-///         }
-///     }
-///
-///     fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
-///         match self.outs {
-///             Some(ref s) => match s.send(buf.into()) {
-///                 Ok(_) => Ok(buf.len()),
-///                 Err(_) => Err(pb::IOError::IOERROR_CLOSED.into()),
-///             },
-///             None => Err(pb::IOError::IOERROR_IN_PROGRESS.into()),
-///         }
-///     }
-///
-/// }
-/// ```
-pub trait IO: Send {
-    /// Reads some bytes from the I/O plane.
-    fn read(&mut self, buf: &mut [u8], state: pb::State) -> Result<usize, std::io::Error>;
-
-    /// Writes some bytes to the I/O plane.
-    fn write(&mut self, buf: &[u8], state: pb::State) -> Result<usize, std::io::Error>;
-
-    /// Flushes bytes from the I/O interface.
-    fn flush(&mut self) -> Result<(), std::io::Error> {
-        Ok(())
-    }
-}
-
-/// Implements [`std::fmt::Debug`] for [`IO`].
-impl std::fmt::Debug for dyn IO {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "IO")
-    }
-}
+/// An IO interface that implements both [`Read`] and [`Write`] traits.
+pub trait IO: Read + Write {}
+impl<T> IO for T where T: Read + Write {}
 
 #[cfg(test)]
 #[allow(dead_code)]
@@ -202,8 +85,8 @@ pub(crate) mod test {
         }
     }
 
-    impl crate::IO for MpscIO {
-        fn read(&mut self, buf: &mut [u8], _state: pb::State) -> IOResult<usize> {
+    impl std::io::Read for MpscIO {
+        fn read(&mut self, buf: &mut [u8]) -> IOResult<usize> {
             let n = std::cmp::min(buf.len(), self.buffer.len());
             if n > 0 {
                 buf[0..n].copy_from_slice(&self.buffer[0..n]);
@@ -244,44 +127,25 @@ pub(crate) mod test {
             }
             Ok(bread)
         }
+    }
 
-        fn write(&mut self, buf: &[u8], _state: pb::State) -> IOResult<usize> {
+    impl std::io::Write for MpscIO {
+        fn write(&mut self, buf: &[u8]) -> IOResult<usize> {
             let write_stream = self.write_stream.as_ref().ok_or(IOErrorKind::WouldBlock)?;
             write_stream
                 .send(buf.into())
                 .map(|_| buf.len())
                 .map_err(|_| IOErrorKind::ConnectionAborted.into())
         }
+
+        fn flush(&mut self) -> IOResult<()> {
+            Ok(())
+        }
     }
 
-    /// Tests [`MpscIO`].
-    #[test]
-    fn test_mpscio() {
-        use crate::IO;
-
-        let (mut left, mut right) = MpscIO::new_pair();
-        let s = pb::State::STATE_HANDSHAKE_DONE;
-
-        let mut buffer = vec![0u8; 42];
-
-        assert_eq!(
-            left.read(&mut buffer, s).map_err(|e| e.kind()),
-            Err(IOErrorKind::WouldBlock)
-        );
-
-        assert_eq!(right.write(b"hello world", s).map_err(|e| e.kind()), Ok(11));
-        assert_eq!(
-            left.read(&mut buffer[0..10], s).map_err(|e| e.kind()),
-            Ok(10)
-        );
-        assert_eq!(&buffer[0..10], b"hello worl");
-        assert_eq!(right.write(b"another msg", s).map_err(|e| e.kind()), Ok(11));
-        assert_eq!(
-            left.read(&mut buffer[10..11], s).map_err(|e| e.kind()),
-            Ok(1)
-        );
-        assert_eq!(&buffer[0..11], b"hello world");
-        assert_eq!(left.read(&mut buffer[..], s).map_err(|e| e.kind()), Ok(11));
-        assert_eq!(&buffer[0..11], b"another msg");
-    }
+    #[cfg(all(
+        any(feature = "openssl1_1_1", feature = "boringssl", feature = "openssl3"),
+        feature = "tunnel"
+    ))]
+    impl crate::tunnel::IO for MpscIO {}
 }

@@ -5,6 +5,7 @@
 
 use std::ffi::{c_int, c_void, CStr};
 use std::fs::File;
+use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::os::fd::{FromRawFd, RawFd};
 
@@ -22,16 +23,11 @@ pub(crate) extern "C" fn sandwich_helper_io_read(
     uarg: *mut c_void,
     buf: *mut c_void,
     count: usize,
-    tunnel_state: c_int,
     err: *mut c_int,
 ) -> usize {
     let mut boxed_helper_io: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(uarg.cast()) };
     let slice = unsafe { std::slice::from_raw_parts_mut(buf.cast(), count) };
-    let Some(tunnel_state) = pb::State::from_i32(support::to_i32(tunnel_state)) else {
-        unsafe { *err = support::to_c_int(IOError::IOERROR_SYSTEM_ERROR.value()) };
-        return 0;
-    };
-    let r = boxed_helper_io.read(slice, tunnel_state);
+    let r = boxed_helper_io.read(slice);
     Box::into_raw(boxed_helper_io);
     match r {
         Ok(size) => {
@@ -50,16 +46,11 @@ pub(crate) extern "C" fn sandwich_helper_io_write(
     uarg: *mut c_void,
     buf: *const c_void,
     count: usize,
-    tunnel_state: c_int,
     err: *mut c_int,
 ) -> usize {
     let mut boxed_helper_io: Box<Box<dyn crate::IO>> = unsafe { Box::from_raw(uarg.cast()) };
     let slice = unsafe { std::slice::from_raw_parts(buf.cast(), count) };
-    let Some(tunnel_state) = pb::State::from_i32(support::to_i32(tunnel_state)) else {
-        unsafe { *err = support::to_c_int(IOError::IOERROR_SYSTEM_ERROR.value()) };
-        return 0;
-    };
-    let r = boxed_helper_io.write(slice, tunnel_state);
+    let r = boxed_helper_io.write(slice);
     Box::into_raw(boxed_helper_io);
     match r {
         Ok(size) => {
@@ -111,6 +102,17 @@ pub type FreeFn = extern "C" fn(uarg: *mut IO);
 pub struct OwnedIo {
     pub(crate) io: *mut IO,
     pub(crate) freeptr: Option<FreeFn>,
+}
+
+impl std::fmt::Debug for OwnedIo {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "ForeignOwnedIO(io={io:?}, freeptr={freeptr:?})",
+            io = self.io,
+            freeptr = self.freeptr,
+        )
+    }
 }
 
 /// Creates a new client TCP IO object.

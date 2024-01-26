@@ -5,6 +5,7 @@ filegroup(
     name = "ffi",
     srcs = [
         "context.rs",
+        "io.rs",
         "mod.rs",
         "tunnel.rs",
     ],

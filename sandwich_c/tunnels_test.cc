@@ -204,10 +204,8 @@ auto CreateServerContext(const struct SandwichContext *sw,
 /// \brief Read from a socket.
 ///
 /// This method is a SandwichIOReadFunction.
-auto SandwichReadFromSocket(
-    void *uarg, void *buf, const size_t count,
-    [[maybe_unused]] const enum ::SandwichTunnelState state,
-    enum ::SandwichIOError *err) -> size_t {
+auto SandwichReadFromSocket(void *uarg, void *buf, const size_t count,
+                            enum ::SandwichIOError *err) -> size_t {
   *err = SANDWICH_IOERROR_OK;
 
   const auto fd = static_cast<int>(reinterpret_cast<uintptr_t>(uarg));
@@ -259,10 +257,8 @@ auto SandwichReadFromSocket(
 /// \brief Write to a socket.
 ///
 /// This method is a SandwichIOWriteFunction.
-auto SandwichWriteToSocket(
-    void *uarg, const void *buf, const size_t count,
-    [[maybe_unused]] const enum ::SandwichTunnelState state,
-    enum ::SandwichIOError *err) -> size_t {
+auto SandwichWriteToSocket(void *uarg, const void *buf, const size_t count,
+                           enum ::SandwichIOError *err) -> size_t {
   *err = SANDWICH_IOERROR_OK;
 
   const auto fd = static_cast<int>(reinterpret_cast<uintptr_t>(uarg));
@@ -310,11 +306,16 @@ void CloseSocket(void *uarg) {
   ::close(fd);
 }
 
-/// \brief Global CIO settings structure for sockets.
-constexpr struct ::SandwichIO SandwichSocketCIOSettings = {
+/// \brief Global IO interface for sockets.
+constexpr struct ::SandwichIO SandwichSocketIO = {
     .read = SandwichReadFromSocket,
     .write = SandwichWriteToSocket,
     .uarg = nullptr};
+
+/// \brief Global tunnel IO interface for sockets.
+constexpr struct ::SandwichTunnelIO SandwichSocketTunnelIO {
+  .base = SandwichSocketIO, .set_state = nullptr,
+};
 // --8<-- [end:cio_socket]
 
 /// \brief Deleter for Sandwich Tunnel.
@@ -330,7 +331,7 @@ using SandwichTunnelDeleter = std::function<void(struct ::SandwichTunnel *)>;
 ///
 /// \return The tunnel.
 [[nodiscard]] auto CreateTunnel(
-    struct ::SandwichTunnelContext *ctx, const struct ::SandwichIO &io,
+    struct ::SandwichTunnelContext *ctx, const struct ::SandwichTunnelIO &io,
     const struct ::SandwichTunnelConfigurationSerialized &configuration)
     -> std::unique_ptr<struct ::SandwichTunnel, SandwichTunnelDeleter> {
   struct ::SandwichTunnel *tun{nullptr};
@@ -536,11 +537,11 @@ int main(int argc, char **argv) {
 
   // Create I/O interfaces for client and server.
 
-  struct ::SandwichIO client_io = SandwichSocketCIOSettings;
-  client_io.uarg = reinterpret_cast<void *>(fds[0]);
+  struct ::SandwichTunnelIO client_io = SandwichSocketTunnelIO;
+  client_io.base.uarg = reinterpret_cast<void *>(fds[0]);
 
-  struct ::SandwichIO server_io = SandwichSocketCIOSettings;
-  server_io.uarg = reinterpret_cast<void *>(fds[1]);
+  struct ::SandwichTunnelIO server_io = SandwichSocketTunnelIO;
+  server_io.base.uarg = reinterpret_cast<void *>(fds[1]);
 
   // Create tunnels.
   auto client_tunnel = CreateTunnel(&*client, client_io,
@@ -577,7 +578,7 @@ int main(int argc, char **argv) {
   // TLS alert.
   ServerClosesTunnel(&*server_tunnel);
 
-  CloseSocket(client_io.uarg);
-  CloseSocket(server_io.uarg);
+  CloseSocket(client_io.base.uarg);
+  CloseSocket(server_io.base.uarg);
   return 0;
 }

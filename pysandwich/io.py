@@ -24,7 +24,6 @@ import abc
 import ctypes
 
 import pysandwich.proto.io_pb2 as SandwichIOProto
-import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 from pysandwich import errors
 
 
@@ -126,27 +125,23 @@ class IO(abc.ABC):
         """The `struct SandwichIO`."""
 
         # typedef size_t(SandwichIOReadFunction)(void *uarg, void *buf, size_t count,
-        # enum SandwichTunnelState tunnel_state,
         # enum SandwichIOError *err);
         _READ_FN_TYPE = ctypes.CFUNCTYPE(
             ctypes.c_size_t,  # Return type
             ctypes.c_void_p,  # *uarg
             ctypes.c_void_p,  # *buf
             ctypes.c_size_t,  # count
-            ctypes.c_int,  # tunnel_state
             ctypes.POINTER(ctypes.c_int),  # *err
         )
 
         # typedef size_t(SandwichIOWriteFunction)(void *uarg, const void *buf,
         # size_t count,
-        # enum SandwichTunnelState tunnel_state,
         # enum SandwichIOError *err);
         _WRITE_FN_TYPE = ctypes.CFUNCTYPE(
             ctypes.c_size_t,  # Return type
             ctypes.c_void_p,  # *uarg
             ctypes.c_void_p,  # *buf
             ctypes.c_size_t,  # count
-            ctypes.c_int,  # tunnel_state
             ctypes.POINTER(ctypes.c_int),  # *err
         )
 
@@ -176,7 +171,7 @@ class IO(abc.ABC):
         ]
 
     @abc.abstractmethod
-    def read(self, n: int, tunnel_state: SandwichTunnelProto.State) -> bytes:
+    def read(self, n: int) -> bytes:
         """Read function.
 
         Args:
@@ -192,7 +187,7 @@ class IO(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def write(self, buf: bytes, tunnel_state: SandwichTunnelProto.State) -> int:
+    def write(self, buf: bytes) -> int:
         """Write function.
 
         Args:

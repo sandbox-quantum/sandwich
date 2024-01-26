@@ -11,7 +11,6 @@
 
 #include "sandwich_c/export.h"
 #include "sandwich_c/ioerrors.h"
-#include "sandwich_c/tunnel_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,12 +21,10 @@ extern "C" {
 /// \param[in,out] uarg User opaque argument.
 /// \param[out] buf Destination buffer.
 /// \param count Amount of bytes to read.
-/// \param tunnel_state Current state of the tunnel.
 /// \param[out] err Error, if any.
 ///
 /// \return The amount of bytes successfully read, or 0.
 typedef size_t(SandwichIOReadFunction)(void *uarg, void *buf, size_t count,
-                                       enum SandwichTunnelState tunnel_state,
                                        enum SandwichIOError *err);
 typedef SandwichIOReadFunction *SandwichIOReadFunctionPtr;
 
@@ -36,13 +33,11 @@ typedef SandwichIOReadFunction *SandwichIOReadFunctionPtr;
 /// \param[in,out] uarg User opaque argument.
 /// \param[out] buf Source buffer.
 /// \param count Amount of bytes to write.
-/// \param tunnel_state Current state of the tunnel.
 /// \param[out] err Error, if any.
 ///
 /// \return The amount of bytes successfully written, or 0.
 typedef size_t(SandwichIOWriteFunction)(void *uarg, const void *buf,
                                         size_t count,
-                                        enum SandwichTunnelState tunnel_state,
                                         enum SandwichIOError *err);
 typedef SandwichIOWriteFunction *SandwichIOWriteFunctionPtr;
 
@@ -77,20 +72,20 @@ typedef SandwichOwnedIOFreeFunction *SandwichOwnedIOFreeFunctionPtr;
 
 /// \brief An IO owned by the Sandwich Library.
 ///
-/// ::SandwichIOOwned objects owns the underlying `io->uarg` object pointer,
+/// ::SandwichIOOwned objects own the underlying `io->uarg` object pointer,
 /// and provides a `freeptr` function that is responsible for destroying that
 /// object. ::SandwichIOOwned must be freed by calling the
 /// ::sandwich_io_owned_free function. This is what is returned from
 /// sandwich_io_*_new functions.
 struct SandwichIOOwned {
-  // \brief the io which is owned by Sandwich.
+  /// \brief The IO which is owned by Sandwich.
   struct SandwichIO *io;
 
-  // \brief the function used to free the owned io.
+  /// \brief The function used to free the owned IO.
   SandwichOwnedIOFreeFunctionPtr freeptr;
 };
 
-/// \brief Creates a TCP based IO object to be used for a client tunnel
+/// \brief Creates a TCP based IO object to be used as an IO.
 ///
 /// \param[in] hostname the hostname of the target server.
 /// \param[in] port the port number of the target server.
@@ -103,7 +98,7 @@ SANDWICH_API enum SandwichIOError
 sandwich_io_client_tcp_new(const char *hostname, uint16_t port, bool async,
                            struct SandwichIOOwned **ownedIO);
 
-/// \brief Creates an IO object that wraps a UNIX socket
+/// \brief Creates an IO object that wraps a UNIX socket.
 ///
 /// \param[in] fd the file descriptor of the unix socket.
 /// \param[out] ownedIO the created UNIX socket sandwich owned IO object. The

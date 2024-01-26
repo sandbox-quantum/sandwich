@@ -213,7 +213,10 @@ fn test_external_empty_verifier() {
     client_io.set_nonblocking(false).unwrap();
 
     let mut client_tunnel = client_context
-        .new_tunnel(Box::new(client_io), client_tunnel_configuration)
+        .new_tunnel(
+            Box::new(support::io::TcpStream(client_io)),
+            client_tunnel_configuration,
+        )
         .unwrap();
 
     assert_eq!(
@@ -262,7 +265,10 @@ fn test_external_load_cas_from_default_verify_path() {
     client_io.set_nonblocking(false).unwrap();
 
     let mut client_tunnel = client_context
-        .new_tunnel(Box::new(client_io), client_tunnel_configuration)
+        .new_tunnel(
+            Box::new(support::io::TcpStream(client_io)),
+            client_tunnel_configuration,
+        )
         .unwrap();
 
     assert_eq!(
@@ -319,7 +325,10 @@ fn test_external_load_cas_from_trusted_cas_must_fail() {
     client_io.set_nonblocking(false).unwrap();
 
     let mut client_tunnel = client_context
-        .new_tunnel(Box::new(client_io), client_tunnel_configuration)
+        .new_tunnel(
+            Box::new(support::io::TcpStream(client_io)),
+            client_tunnel_configuration,
+        )
         .unwrap();
 
     client_tunnel
