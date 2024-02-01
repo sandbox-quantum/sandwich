@@ -58,6 +58,16 @@ Contributors need to sign and send a Contributor License Agreement:
 * individuals need to sign [the Individual Contributor License Agreement](docs/cla/individual.pdf), and send it by email alongside their Github handle at `sandwich [at] sandboxaq.com`
 * corporate contributors need to sign [the Corporate Contributor License Agreement](docs/cla/corporate.pdf), and send it by email alongside their Github handle at `sandwich [at] sandboxaq.com`
 
+## Security
+
+The library has been security audited internally. Third party security audit
+was also conducted by an independent security research firm
+[Trail of Bits](https://www.trailofbits.com/).
+All bugs have been fixed and incorporated in this github repository.
+
+Please [contact us](sandwich@sandboxquantum.com) for any security issues you
+may encounter in this software. Thanks!
+
 ## Disclaimer
 
 The software and documentation are provided "as is" and SandboxAQ hereby disclaims all warranties, whether express, implied, statutory, or otherwise.
