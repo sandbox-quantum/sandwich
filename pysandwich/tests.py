@@ -14,11 +14,12 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 import pysandwich.proto.api.v1.configuration_pb2 as SandwichAPI
 import pysandwich.proto.api.v1.encoding_format_pb2 as EncodingFormat
+import pysandwich.proto.api.v1.listener_configuration_pb2 as ListenerAPI
 import pysandwich.proto.api.v1.verifiers_pb2 as SandwichVerifiers
 import pysandwich.errors as errors
 import pysandwich.io as SandwichIO
 from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
-from pysandwich import tunnel
+from pysandwich import listener, tunnel
 from pysandwich.io_helpers import io_client_tcp_new, io_socket_wrap
 from pysandwich.sandwich import Sandwich
 
@@ -173,14 +174,19 @@ def make_io() -> tuple[SandwichIO.IO, SandwichIO.IO]:
 @pytest.fixture
 def make_tcp_io() -> tuple[SandwichIO.IO, SandwichIO.IO]:
     print(f"{_LISTENING_ADDRESS}:{_LISTENING_PORT}")
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((_LISTENING_ADDRESS, _LISTENING_PORT))
-    server_socket.listen(1)
-    client_io = io_client_tcp_new(_LISTENING_ADDRESS, _LISTENING_PORT, False)
-    server_socket, _ = server_socket.accept()
-    server_socket.setblocking(0)
 
-    yield (client_io, io_socket_wrap(server_socket))
+    conf = ListenerAPI.ListenerConfiguration()
+    conf.tcp.addr.hostname = _LISTENING_ADDRESS
+    conf.tcp.addr.port = _LISTENING_PORT
+    conf.tcp.blocking_mode = ListenerAPI.BLOCKINGMODE_NONBLOCKING
+
+    server_listener = listener.Listener(conf)
+    server_listener.listen()
+
+    client_io = io_client_tcp_new(_LISTENING_ADDRESS, _LISTENING_PORT, False)
+    server_io = server_listener.accept()
+
+    yield (client_io, server_io)
 
 
 @pytest.fixture
