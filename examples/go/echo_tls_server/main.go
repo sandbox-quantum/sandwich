@@ -12,6 +12,7 @@ import (
 	"net"
 
 	// --8<-- [start:go_imports]
+	swproto "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 	swapi "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 	sw "github.com/sandbox-quantum/sandwich/go"
 	// --8<-- [end:go_imports]
@@ -87,15 +88,33 @@ func createServerConfiguration(certfile *string, keyfile *string) *swapi.Configu
 
 // --8<-- [end:go_server_cfg]
 
+// connWrapper wraps a connection.
+type connWrapper struct {
+	// conn is the connection.
+	conn net.Conn
+}
+
+// Read implements io.Read.
+func (conn *connWrapper) Read(b []byte) (int, error) {
+	return conn.conn.Read(b)
+}
+
+// Write implements io.Write.
+func (conn *connWrapper) Write(b []byte) (int, error) {
+	return conn.conn.Write(b)
+}
+
+// SetState implements sw.TunnelIO.
+func (conn *connWrapper) SetState(tunnel_state swproto.State) {}
+
 func SWAccept(ctx *sw.TunnelContext, listener net.Listener) (*sw.Tunnel, error) {
 	conn, err := listener.Accept()
 	if err != nil {
 		return nil, err
 	}
 
-	swio := sw.IOWrapRW(conn)
 	// --8<-- [start:go_new_tunnel]
-	tunnel, err := sw.NewTunnel(ctx, &swio, &swapi.TunnelConfiguration{
+	tunnel, err := sw.NewTunnel(ctx, &connWrapper{conn: conn}, &swapi.TunnelConfiguration{
 		Verifier: &swapi.TunnelVerifier{
 			Verifier: &swapi.TunnelVerifier_EmptyVerifier{
 				EmptyVerifier: &swapi.EmptyVerifier{},
