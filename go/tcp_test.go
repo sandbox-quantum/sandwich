@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"math/big"
 	"net"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -40,40 +39,16 @@ func newServerIO() *serverIO {
 	return new(serverIO)
 }
 
-// Reads implements the sandwich.IO interface for serverIO.
-func (io *serverIO) Read(b []byte) (int, *sandwich.IOError) {
+// Reads implements io.Read.
+func (io *serverIO) Read(b []byte) (int, error) {
 	(*(io.io)).SetReadDeadline(time.Now().Add(1 * time.Millisecond))
-	bytes_read, err := (*(io.io)).Read(b)
-	if bytes_read == 0 {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
-	}
-	if err != nil && err.(*net.OpError).Err == os.ErrDeadlineExceeded {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
-	} else if err != nil {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
-	}
-	return bytes_read, nil
+	return (*(io.io)).Read(b)
 }
 
-// Write implements the sandwich.IO interface for serverIO.
-func (io *serverIO) Write(b []byte) (int, *sandwich.IOError) {
+// Write implements io.Write.
+func (io *serverIO) Write(b []byte) (int, error) {
 	(*(io.io)).SetWriteDeadline(time.Now().Add(1 * time.Millisecond))
-	bytes_written, err := (*(io.io)).Write(b)
-	if bytes_written == 0 {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
-	}
-	if err != nil && err.(*net.OpError).Err == os.ErrDeadlineExceeded {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
-	}
-	if err != nil {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
-	}
-	return bytes_written, nil
-}
-
-// Flush implements the sandwich.IO interface for serverIO.
-func (io *serverIO) Flush() *sandwich.IOError {
-	return nil
+	return (*(io.io)).Write(b)
 }
 
 // SetState implements the sandwich.TunnelIO interface for serverIO.

@@ -45,8 +45,8 @@ func newBufIO() *bufIO {
 	return new(bufIO)
 }
 
-// Reads implements the sandwich.IO interface for bufIO.
-func (buf *bufIO) Read(b []byte) (int, *sandwich.IOError) {
+// Reads implements io.Read.
+func (buf *bufIO) Read(b []byte) (int, error) {
 	if buf.tx.Len() == 0 {
 		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
 	}
@@ -60,8 +60,8 @@ func (buf *bufIO) Read(b []byte) (int, *sandwich.IOError) {
 	return n, nil
 }
 
-// Write implements the sandwich.IO interface for bufIO.
-func (buf *bufIO) Write(b []byte) (int, *sandwich.IOError) {
+// Write implements io.Write.
+func (buf *bufIO) Write(b []byte) (int, error) {
 	n, err := buf.remote.tx.Write(b)
 	if err != nil {
 		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
@@ -70,11 +70,6 @@ func (buf *bufIO) Write(b []byte) (int, *sandwich.IOError) {
 		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
 	}
 	return n, nil
-}
-
-// Flush implements the sandwich.IO interface for bufIO.
-func (buf *bufIO) Flush() *sandwich.IOError {
-	return nil
 }
 
 // SetState implements the sandwich.TunnelIO interface for bufIO.
@@ -335,8 +330,6 @@ func testTunnels(t *testing.T, cert *string, key *string, tls_version *string) {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
-	} else {
-		t.Errorf("Bad type for `error`")
 	}
 
 	err = serverTunnel.Handshake()
@@ -347,8 +340,6 @@ func testTunnels(t *testing.T, cert *string, key *string, tls_version *string) {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
-	} else {
-		t.Errorf("Bad type for `error`")
 	}
 
 	err = clientTunnel.Handshake()
@@ -444,8 +435,6 @@ func TestTunnelLargeReadWriteGC(t *testing.T) {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
-	} else {
-		t.Errorf("Bad type for `error`")
 	}
 
 	err = serverTunnel.Handshake()
@@ -456,8 +445,6 @@ func TestTunnelLargeReadWriteGC(t *testing.T) {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
-	} else {
-		t.Errorf("Bad type for `error`")
 	}
 
 	err = clientTunnel.Handshake()
@@ -676,8 +663,6 @@ func TestExpiredTunnels(t *testing.T) {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
-	} else {
-		t.Errorf("Bad type for `error`")
 	}
 
 	err = serverTunnel.Handshake()
@@ -688,8 +673,6 @@ func TestExpiredTunnels(t *testing.T) {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
-	} else {
-		t.Errorf("Bad type for `error` %v", err)
 	}
 
 	err = clientTunnel.Handshake()
