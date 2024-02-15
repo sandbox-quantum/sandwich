@@ -4,15 +4,12 @@
 package sandwich_test
 
 import (
-	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 	"github.com/sandbox-quantum/sandwich/go"
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"net"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
@@ -27,32 +24,6 @@ var (
 	certPath string = "testdata/localhost.cert.pem"
 	keyPath  string = "testdata/localhost.key.pem"
 )
-
-// serverIO implements sandwich.IO and sandwich.TunnelIO using a TX buffer and a
-// remote peer.
-type serverIO struct {
-	io *net.Conn
-}
-
-// newServerIO Creates a new serverIO.
-func newServerIO() *serverIO {
-	return new(serverIO)
-}
-
-// Reads implements io.Read.
-func (io *serverIO) Read(b []byte) (int, error) {
-	(*(io.io)).SetReadDeadline(time.Now().Add(1 * time.Millisecond))
-	return (*(io.io)).Read(b)
-}
-
-// Write implements io.Write.
-func (io *serverIO) Write(b []byte) (int, error) {
-	(*(io.io)).SetWriteDeadline(time.Now().Add(1 * time.Millisecond))
-	return (*(io.io)).Write(b)
-}
-
-// SetState implements the sandwich.TunnelIO interface for serverIO.
-func (io *serverIO) SetState(tunnelState pb.State) {}
 
 // createServerConfiguration creates the configuration for the server.
 func createServerConfiguration(t *testing.T) (*api.Configuration, error) {
