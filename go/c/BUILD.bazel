@@ -1,0 +1,25 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "c",
+    srcs = [
+        "errors.go",
+        "io.go",
+        "lib.go",
+        "listener.go",
+        "owned_io.go",
+        "tunnel.go",
+        "tunnel_io.go",
+    ],
+    cdeps = [
+        "//sandwich_c:sandwich",
+    ],
+    cgo = True,
+    importpath = "github.com/sandbox-quantum/sandwich/go/c",
+    visibility = [
+        "//go:__subpackages__",
+    ],
+)
