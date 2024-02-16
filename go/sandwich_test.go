@@ -16,6 +16,7 @@ import (
 	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
+	swerrors "github.com/sandbox-quantum/sandwich/go/errors"
 )
 
 var testCertPattern = "testdata/%s.cert.pem"
@@ -48,14 +49,14 @@ func newBufIO() *bufIO {
 // Reads implements io.Read.
 func (buf *bufIO) Read(b []byte) (int, error) {
 	if buf.tx.Len() == 0 {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
+		return 0, swerrors.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
 	}
 	n, err := buf.tx.Read(b)
 	if err != nil {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
+		return 0, swerrors.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
 	}
 	if n == 0 {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
+		return 0, swerrors.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
 	}
 	return n, nil
 }
@@ -64,10 +65,10 @@ func (buf *bufIO) Read(b []byte) (int, error) {
 func (buf *bufIO) Write(b []byte) (int, error) {
 	n, err := buf.remote.tx.Write(b)
 	if err != nil {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
+		return 0, swerrors.NewIOErrorFromEnum(pb.IOError_IOERROR_UNKNOWN)
 	}
 	if n == 0 {
-		return 0, sandwich.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
+		return 0, swerrors.NewIOErrorFromEnum(pb.IOError_IOERROR_WOULD_BLOCK)
 	}
 	return n, nil
 }
@@ -326,7 +327,7 @@ func testTunnels(t *testing.T, cert *string, key *string, tls_version *string) {
 	if err == nil {
 		t.Errorf("Expected errHanshake not nil, got nil")
 	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
+	if handshakeErr, ok := err.(*swerrors.HandshakeStateError); ok {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
@@ -336,7 +337,7 @@ func testTunnels(t *testing.T, cert *string, key *string, tls_version *string) {
 	if err == nil {
 		t.Errorf("Expected errHanshake not nil, got nil")
 	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
+	if handshakeErr, ok := err.(*swerrors.HandshakeStateError); ok {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
@@ -428,7 +429,7 @@ func TestTunnelLargeReadWriteGC(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected errHanshake not nil, got nil")
 	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
+	if handshakeErr, ok := err.(*swerrors.HandshakeStateError); ok {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
@@ -438,7 +439,7 @@ func TestTunnelLargeReadWriteGC(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected errHanshake not nil, got nil")
 	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
+	if handshakeErr, ok := err.(*swerrors.HandshakeStateError); ok {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
@@ -653,7 +654,7 @@ func TestExpiredTunnels(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected errHanshake not nil, got nil")
 	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
+	if handshakeErr, ok := err.(*swerrors.HandshakeStateError); ok {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
@@ -663,7 +664,7 @@ func TestExpiredTunnels(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected errHanshake not nil, got nil")
 	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeStateError); ok {
+	if handshakeErr, ok := err.(*swerrors.HandshakeStateError); ok {
 		if handshakeErr.Code() != int32(pb.HandshakeState_HANDSHAKESTATE_WANT_READ) {
 			t.Errorf("Expected WANT_READ, got %v", err)
 		}
@@ -673,7 +674,7 @@ func TestExpiredTunnels(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected an error, got nil")
 	}
-	if handshakeErr, ok := err.(*sandwich.HandshakeError); ok {
+	if handshakeErr, ok := err.(*swerrors.HandshakeError); ok {
 		if handshakeErr.Code() != int32(pb.HandshakeError_HANDSHAKEERROR_CERTIFICATE_EXPIRED) {
 			t.Errorf("Expected CERTIFICATE_EXPIRED, got %v", err)
 		}

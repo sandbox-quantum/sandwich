@@ -3,28 +3,10 @@
 
 load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
-load("//common/tools/protemplate:rules.bzl", "template_proto_library")
-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
-
-template_proto_library(
-    name = "gen_error_codes",
-    out = "code_gen.go_tmp",
-    proto = "//proto:errors_proto",
-    template = "gen_error_codes.template",
-    visibility = ["//go:__subpackages__"],
-)
-
-write_source_file(
-    name = "write_gen_error_codes",
-    in_file = ":gen_error_codes",
-    out_file = "generated_error_codes.go",
-)
 
 go_library(
     name = "sandwich",
     srcs = [
-        "errors.go",
-        "generated_error_codes.go",
         "io.go",
         "sandwich.go",
         "tracing.go",
@@ -36,6 +18,7 @@ go_library(
     ],
     deps = [
         "//go/c",
+        "//go/errors",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_opentelemetry_go_otel//:go_default_library",
@@ -58,6 +41,7 @@ go_test(
     ],
     deps = [
         ":sandwich",
+        "//go/errors",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_bazel_rules_go//go/tools/bazel",
