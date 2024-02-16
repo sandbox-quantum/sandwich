@@ -3,37 +3,19 @@
 
 package sandwich
 
-/*
-  #include <stdbool.h>
-  #include <stdint.h>
-  #include "sandwich_c/io.h"
-  #include "sandwich_c/sandwich.h"
-  #include "sandwich_c/listener.h"
-  #include <stdlib.h>
-*/
-import "C"
-
 import (
-	"runtime"
+	swc "github.com/sandbox-quantum/sandwich/go/c"
 )
 
-// Sandwich wraps a `struct SandwichContext *`, which is the top-level context
-// of the Sandwich library.
+// Sandwich is the top-level Sandwich context.
 type Sandwich struct {
-	// handle is the C handle to the `struct SandwichContext *`.
-	handle *C.struct_SandwichContext
+	// c is the C handle to the top-level Sandwich context.
+	c *swc.Lib
 }
 
 // NewSandwich instantiates a new top-level context.
 func NewSandwich() *Sandwich {
-	sw := new(Sandwich)
-	sw.handle = C.sandwich_lib_context_new()
-
-	runtime.SetFinalizer(sw, (*Sandwich).free)
-	return sw
-}
-
-func (sw *Sandwich) free() {
-	C.sandwich_lib_context_free(sw.handle)
-	sw.handle = nil
+	return &Sandwich{
+		c: swc.NewLib(),
+	}
 }

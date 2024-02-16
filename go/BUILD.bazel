@@ -30,15 +30,12 @@ go_library(
         "tracing.go",
         "tunnel.go",
     ],
-    cdeps = [
-        "//sandwich_c:sandwich",
-    ],
-    cgo = True,
     importpath = "github.com/sandbox-quantum/sandwich/go",
     visibility = [
         "//visibility:public",
     ],
     deps = [
+        "//go/c",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_opentelemetry_go_otel//:go_default_library",
@@ -56,7 +53,6 @@ go_test(
     name = "sandwich_test",
     timeout = "short",
     srcs = ["sandwich_test.go"],
-    cgo = True,
     data = [
         "//testdata",
     ],
@@ -79,7 +75,6 @@ go_test(
     name = "tcp_test",
     timeout = "short",
     srcs = ["tcp_test.go"],
-    cgo = True,
     data = [
         "//testdata",
     ],

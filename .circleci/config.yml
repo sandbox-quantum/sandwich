@@ -1,5 +1,4 @@
 version: 2.1
-
 jobs:
   run-all-tests:
     resource_class: xlarge
@@ -19,14 +18,12 @@ jobs:
             echo 'export GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcloud-service-key.json"' >> "${BASH_ENV}"
             source "${BASH_ENV}"
             echo "${BAZEL_CACHE_GCS_SA_KEY}" > "${GOOGLE_APPLICATION_CREDENTIALS}"
-
       - checkout
       - run:
           name: "Run all test targets"
           command: |
             source "${BASH_ENV}"
             bazelisk test ${BAZEL_CACHE_ARGS} //...
-
       - run:
           name: "Test external Go integration"
           command: |
@@ -37,8 +34,8 @@ jobs:
             export CGO_LDFLAGS="-L$PWD/bazel-bin/rust/"
             export GO_EXAMPLE_DIR="$PWD/examples/go/echo_tls_server"
             echo "replace github.com/sandbox-quantum/sandwich/go => $PWD/go" >>"$GO_EXAMPLE_DIR/go.mod"
+            echo "replace github.com/sandbox-quantum/sandwich/go/c => $PWD/go/c" >> "$GO_EXAMPLE_DIR/go.mod"
             pushd "$GO_EXAMPLE_DIR" && go build && popd
-
       - run:
           name: "Test external Python integration"
           command: |
@@ -49,14 +46,12 @@ jobs:
             source venv/bin/activate
             pip install .
             SANDWICH_C_LIB="$PWD/bazel-bin/rust/libsandwich_full.so" python -c 'from pysandwich import sandwich; sandwich.sandwich()'
-
       - run:
           name: "Build the Rust package natively"
           command: |
             source "${BASH_ENV}"
             export CARGO_BAZELISK_EXTRA_ARGS="${BAZEL_CACHE_ARGS}"
             cargo test --release --lib -vv
-
   release-linux-dockerbuild:
     parameters:
       mode:
@@ -96,7 +91,6 @@ jobs:
       - store_artifacts:
           name: "Export build artifacts"
           path: ~/export_artifacts/
-
   release-macos:
     macos:
       xcode: 14.0.0
@@ -146,12 +140,9 @@ jobs:
 
             mkdir -p ~/export_artifacts
             mv "$(bazelisk cquery -c opt "${PLATFORM_FLAG}" --output=files //:export)" ~/export_artifacts/<< parameters.artifact_file_name >>
-
       - store_artifacts:
           name: "Export build artifacts"
           path: ~/export_artifacts/
-
-
   publish-doc:
     resource_class: xlarge
     docker:
@@ -170,7 +161,6 @@ jobs:
             DOC_HTML=$(bazelisk cquery --output files //docs:docs)
             bazelisk build //docs:docs
             ghp-import "$DOC_HTML" -p -o
-
 workflows:
   presubmit:
     jobs:
