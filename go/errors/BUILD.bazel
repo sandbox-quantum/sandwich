@@ -1,0 +1,36 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//common/tools/protemplate:rules.bzl", "template_proto_library")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
+
+template_proto_library(
+    name = "gen_error_codes",
+    out = "code_gen.go_tmp",
+    proto = "//proto:errors_proto",
+    template = "gen_error_codes.template",
+    visibility = ["//go:__subpackages__"],
+)
+
+write_source_file(
+    name = "write_gen_error_codes",
+    in_file = ":gen_error_codes",
+    out_file = "generated_error_codes.go",
+)
+
+go_library(
+    name = "errors",
+    srcs = [
+        "errors.go",
+        "generated_error_codes.go",
+    ],
+    importpath = "github.com/sandbox-quantum/sandwich/go/errors",
+    visibility = [
+        "//go:__subpackages__",
+    ],
+    deps = [
+        "//go/c",
+        "//proto:sandwich_go_proto",
+    ],
+)
