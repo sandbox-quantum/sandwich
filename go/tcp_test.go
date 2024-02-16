@@ -269,7 +269,6 @@ func clientRoutine(t *testing.T, wg *sync.WaitGroup, clientTunnel *sandwich.Tunn
 		t.Errorf("Expected %v, got %v", pongMsg, buf)
 	}
 
-	clientTunnel.Close()
 	wg.Done()
 }
 
@@ -300,7 +299,6 @@ func serverRoutine(t *testing.T, wg *sync.WaitGroup, serverTunnel *sandwich.Tunn
 		t.Errorf("Expected %v bytes sent, got %v", len(sendMsg), n)
 	}
 
-	serverTunnel.Close()
 	wg.Done()
 }
 

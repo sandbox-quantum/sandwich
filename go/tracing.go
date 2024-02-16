@@ -39,7 +39,7 @@ type SandwichSpan struct {
 	End_time   int64
 }
 
-func NewSandwichTracer(ctx context.Context, tracer trace.Tracer) SandwichTracer {
+func NewSandwichTracer(ctx context.Context, tracer trace.Tracer) *SandwichTracer {
 	/// ctx:    Context originated from an existing span. If provided a blank context, the spans in rust
 	///         won't be assigned the same trace ID.
 	/// tracer: We need to get the tracer so we can recreate the spans from rust in Go. This differs from
@@ -55,7 +55,7 @@ func NewSandwichTracer(ctx context.Context, tracer trace.Tracer) SandwichTracer 
 
 	r, w, _ := os.Pipe()
 
-	return SandwichTracer{
+	return &SandwichTracer{
 		tracer:         tracer,
 		read_buf_fd:    r,
 		write_buf_fd:   int32(w.Fd()),

@@ -115,7 +115,6 @@ func SWAccept(ctx *sw.TunnelContext, listener net.Listener) (*sw.Tunnel, error) 
 }
 
 func handleTunnel(tunnel *sw.Tunnel) {
-	defer tunnel.Close()
 	reader := bufio.NewReader(tunnel)
 	for {
 		bytes, err := reader.ReadBytes(byte('\n'))

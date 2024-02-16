@@ -390,9 +390,6 @@ func testTunnels(t *testing.T, cert *string, key *string, tls_version *string) {
 	if buf != pongMsg {
 		t.Errorf("Expected %v, got %v", pongMsg, buf)
 	}
-
-	clientTunnel.Close()
-	serverTunnel.Close()
 }
 
 func TestTls13Tunnels(t *testing.T) {
@@ -476,9 +473,6 @@ func TestTunnelLargeReadWriteGC(t *testing.T) {
 		runtime.GC()
 		debug.FreeOSMemory()
 	}
-
-	clientTunnel.Close()
-	serverTunnel.Close()
 }
 
 // createTunnelConfigurationWithEmptyTunnelVerifier creates a configuration with an empty verifier.
@@ -686,6 +680,4 @@ func TestExpiredTunnels(t *testing.T) {
 	} else {
 		t.Errorf("Bad type for `error`")
 	}
-	clientTunnel.Close()
-	serverTunnel.Close()
 }
