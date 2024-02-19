@@ -26,7 +26,7 @@ mkdocs_project(
         "//examples/python/tls_client:mkdocs",
         "//examples/rust/echo_tls_server:mkdocs",
         "//examples/rust/tls_client:mkdocs",
-        "//go:mkdocs",
+        "//go/io:mkdocs",
         "//pysandwich:mkdocs",
         "//rust:mkdocs",
         "//sandwich_c:mkdocs",

@@ -14,6 +14,7 @@ import (
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
+	swio "github.com/sandbox-quantum/sandwich/go/io"
 )
 
 var testCertPattern = "testdata/%s.cert.pem"
@@ -164,8 +165,8 @@ func createClientContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelC
 }
 
 type ioInts struct {
-	client sandwich.TunnelIO
-	server sandwich.TunnelIO
+	client *swio.OwnedIO
+	server *swio.OwnedIO
 }
 
 func generateRandomPort() uint16 {
@@ -195,12 +196,12 @@ func createIOs() ioInts {
 	hostname := "127.0.0.1"
 	port := generateRandomPort()
 	listener_config := createListenerConfiguration(hostname, port)
-	listener, err := sandwich.NewListener(listener_config)
+	listener, err := swio.NewListener(listener_config)
 	if err != nil {
 		fmt.Println("Error listening:", err)
 	}
 	listener.Listen()
-	client, _ := sandwich.IOTCPClient(hostname, port, true)
+	client, _ := swio.IOTCPClient(hostname, port, true)
 	server, err2 := listener.Accept()
 	if err2 != nil {
 		fmt.Println("Error accepting:", err)
@@ -212,8 +213,8 @@ func createIOs() ioInts {
 }
 
 // createServerTunnel creates the tunnel for the server.
-func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
+func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io *swio.OwnedIO) (*sandwich.Tunnel, error) {
+	tun, err := sandwich.NewTunnelWithReadWriter(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the server's tunnel: %v", err)
 	}
@@ -222,8 +223,8 @@ func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwi
 }
 
 // createClientTunnel creates the tunnel for the client.
-func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
+func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io *swio.OwnedIO) (*sandwich.Tunnel, error) {
+	tun, err := sandwich.NewTunnelWithReadWriter(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the client's tunnel: %v", err)
 	}

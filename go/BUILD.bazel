@@ -1,13 +1,11 @@
 # Copyright (c) SandboxAQ. All rights reserved.
 # SPDX-License-Identifier: AGPL-3.0-only
 
-load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "sandwich",
     srcs = [
-        "io.go",
         "sandwich.go",
         "tracing.go",
         "tunnel.go",
@@ -19,6 +17,7 @@ go_library(
     deps = [
         "//go/c",
         "//go/errors",
+        "//go/io",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_opentelemetry_go_otel//:go_default_library",
@@ -64,6 +63,7 @@ go_test(
     ],
     deps = [
         ":sandwich",
+        "//go/io",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_bazel_rules_go//go/tools/bazel",
@@ -75,13 +75,4 @@ go_test(
         "@io_opentelemetry_go_proto_otlp//common/v1:go_default_library",
         "@io_opentelemetry_go_proto_otlp//trace/v1:go_default_library",
     ],
-)
-
-mkdocs_tree(
-    name = "mkdocs",
-    srcs = [
-        "io.go",
-    ],
-    path = "go",
-    visibility = ["//docs:__subpackages__"],
 )

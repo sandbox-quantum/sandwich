@@ -25,7 +25,9 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	github.com/sandbox-quantum/sandwich/go/c v0.2.0
 	github.com/sandbox-quantum/sandwich/go/errors v0.2.0
+	github.com/sandbox-quantum/sandwich/go/io v0.2.0
 )
 
 replace github.com/sandbox-quantum/sandwich/go/c => ./c
 replace github.com/sandbox-quantum/sandwich/go/errors => ./errors
+replace github.com/sandbox-quantum/sandwich/go/io => ./io
