@@ -91,9 +91,11 @@ pub(crate) fn errstr() -> String {
 
     if let Some(first_null_byte) = buffer.iter().position(|x| *x == 0u8) {
         if first_null_byte == 0 {
-            return "(empty error)".to_string();
+            return "no additional information".to_string();
         }
         buffer.resize(first_null_byte, 0u8);
+    } else if buffer.is_empty() {
+        return "no additional information".to_string();
     }
 
     String::from_utf8(buffer).unwrap_or_else(|_| "unknown error (not UTF-8)".into())
