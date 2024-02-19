@@ -1,8 +1,9 @@
 module tls_client
 
 require (
-	github.com/sandbox-quantum/sandwich/go v0.1.0
+	github.com/sandbox-quantum/sandwich/go v0.2.0
 	github.com/sandbox-quantum/sandwich/go/io v0.2.0
+	github.com/sandbox-quantum/sandwich/go/tunnel v0.2.0
 )
 
 require (
