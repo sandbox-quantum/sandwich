@@ -1,0 +1,34 @@
+# Copyright (c) SandboxAQ. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+load("//common/rules/mkdocs:rules.bzl", "mkdocs_tree")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "io",
+    srcs = [
+        "io.go",
+        "listener.go",
+    ],
+    importpath = "github.com/sandbox-quantum/sandwich/go/io",
+    visibility = [
+        "//examples/go:__subpackages__",
+        "//go:__subpackages__",
+    ],
+    deps = [
+        "//go/c",
+        "//go/errors",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@org_golang_google_protobuf//proto:go_default_library",
+    ],
+)
+
+mkdocs_tree(
+    name = "mkdocs",
+    srcs = [
+        "io.go",
+    ],
+    path = "go",
+    visibility = ["//docs:__subpackages__"],
+)

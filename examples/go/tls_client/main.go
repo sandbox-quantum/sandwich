@@ -14,6 +14,7 @@ import (
 
 	swapi "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 	sw "github.com/sandbox-quantum/sandwich/go"
+	swio "github.com/sandbox-quantum/sandwich/go/io"
 )
 
 func createClientConfiguration(cert *string, tls_version *string) *swapi.Configuration {
@@ -115,7 +116,7 @@ func main() {
 		log.Fatalln("Please provide a TLS protocol version, e.g --tls_version tls13 or tls12")
 	}
 
-	swio, ioerr := sw.IOTCPClient(*host, uint16(*port), true)
+	swio, ioerr := swio.IOTCPClient(*host, uint16(*port), true)
 	if ioerr != nil {
 		log.Fatalln("Error connecting to destination:", ioerr)
 		return
@@ -129,7 +130,7 @@ func main() {
 		return
 	}
 
-	tunnel, err := sw.NewTunnel(ctx, swio, &swapi.TunnelConfiguration{
+	tunnel, err := sw.NewTunnelWithReadWriter(ctx, swio, &swapi.TunnelConfiguration{
 		Verifier: &swapi.TunnelVerifier{
 			Verifier: &swapi.TunnelVerifier_EmptyVerifier{
 				EmptyVerifier: &swapi.EmptyVerifier{},
