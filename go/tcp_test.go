@@ -15,6 +15,7 @@ import (
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 	swio "github.com/sandbox-quantum/sandwich/go/io"
+	swtunnel "github.com/sandbox-quantum/sandwich/go/tunnel"
 )
 
 var testCertPattern = "testdata/%s.cert.pem"
@@ -132,14 +133,14 @@ func createClientConfiguration(t *testing.T) (*api.Configuration, error) {
 }
 
 // createServerContext creates the server context.
-func createServerContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+func createServerContext(t *testing.T, sw *sandwich.Sandwich) (*swtunnel.TunnelContext, error) {
 	config, err := createServerConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the server configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(sw, config)
+	ctx, err := swtunnel.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the server context: %v", err)
 		panic("failed")
@@ -149,14 +150,14 @@ func createServerContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelC
 }
 
 // createClientContext creates the client context.
-func createClientContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+func createClientContext(t *testing.T, sw *sandwich.Sandwich) (*swtunnel.TunnelContext, error) {
 	config, err := createClientConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the client configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(sw, config)
+	ctx, err := swtunnel.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the client context: %v", err)
 	}
@@ -213,8 +214,8 @@ func createIOs() ioInts {
 }
 
 // createServerTunnel creates the tunnel for the server.
-func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io *swio.OwnedIO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnelWithReadWriter(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
+func createServerTunnel(t *testing.T, context *swtunnel.TunnelContext, io *swio.OwnedIO) (*swtunnel.Tunnel, error) {
+	tun, err := swtunnel.NewTunnelWithReadWriter(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the server's tunnel: %v", err)
 	}
@@ -223,8 +224,8 @@ func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io *swio.
 }
 
 // createClientTunnel creates the tunnel for the client.
-func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io *swio.OwnedIO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnelWithReadWriter(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
+func createClientTunnel(t *testing.T, context *swtunnel.TunnelContext, io *swio.OwnedIO) (*swtunnel.Tunnel, error) {
+	tun, err := swtunnel.NewTunnelWithReadWriter(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the client's tunnel: %v", err)
 	}
@@ -243,7 +244,7 @@ func createTunnelConfigurationWithEmptyTunnelVerifier() *api.TunnelConfiguration
 	}
 }
 
-func clientRoutine(t *testing.T, wg *sync.WaitGroup, clientTunnel *sandwich.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
+func clientRoutine(t *testing.T, wg *sync.WaitGroup, clientTunnel *swtunnel.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
 	var buf [4]byte
 	err := clientTunnel.Handshake()
 	n := 0
@@ -273,7 +274,7 @@ func clientRoutine(t *testing.T, wg *sync.WaitGroup, clientTunnel *sandwich.Tunn
 	wg.Done()
 }
 
-func serverRoutine(t *testing.T, wg *sync.WaitGroup, serverTunnel *sandwich.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
+func serverRoutine(t *testing.T, wg *sync.WaitGroup, serverTunnel *swtunnel.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
 	var buf [4]byte
 	n := 0
 	err := serverTunnel.Handshake()

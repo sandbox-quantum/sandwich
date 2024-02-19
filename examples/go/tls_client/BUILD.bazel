@@ -23,6 +23,7 @@ go_binary(
     deps = [
         "//go:sandwich",
         "//go/io",
+        "//go/tunnel",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
     ],

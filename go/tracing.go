@@ -29,6 +29,16 @@ type SandwichTracer struct {
 	ctx            context.Context
 }
 
+// GetContextString returns the context string of a SandwichTracer.
+func (tracer *SandwichTracer) GetContextString() string {
+	return tracer.context_string
+}
+
+// GetWriteBufFd returns the write buffer file descriptor  of a SandwichTracer.
+func (tracer *SandwichTracer) GetWriteBufFd() int32 {
+	return tracer.write_buf_fd
+}
+
 // This is all of the interesting information we care about from a span in Rust.
 type SandwichSpan struct {
 	Name       string

@@ -14,6 +14,7 @@ import (
 	// --8<-- [start:go_imports]
 	swapi "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 	sw "github.com/sandbox-quantum/sandwich/go"
+	swtunnel "github.com/sandbox-quantum/sandwich/go/tunnel"
 	// --8<-- [end:go_imports]
 )
 
@@ -87,14 +88,14 @@ func createServerConfiguration(certfile *string, keyfile *string) *swapi.Configu
 
 // --8<-- [end:go_server_cfg]
 
-func SWAccept(ctx *sw.TunnelContext, listener net.Listener) (*sw.Tunnel, error) {
+func SWAccept(ctx *swtunnel.TunnelContext, listener net.Listener) (*swtunnel.Tunnel, error) {
 	conn, err := listener.Accept()
 	if err != nil {
 		return nil, err
 	}
 
 	// --8<-- [start:go_new_tunnel]
-	tunnel, err := sw.NewTunnelWithReadWriter(ctx, conn, &swapi.TunnelConfiguration{
+	tunnel, err := swtunnel.NewTunnelWithReadWriter(ctx, conn, &swapi.TunnelConfiguration{
 		Verifier: &swapi.TunnelVerifier{
 			Verifier: &swapi.TunnelVerifier_EmptyVerifier{
 				EmptyVerifier: &swapi.EmptyVerifier{},
@@ -114,7 +115,7 @@ func SWAccept(ctx *sw.TunnelContext, listener net.Listener) (*sw.Tunnel, error) 
 	return tunnel, nil
 }
 
-func handleTunnel(tunnel *sw.Tunnel) {
+func handleTunnel(tunnel *swtunnel.Tunnel) {
 	reader := bufio.NewReader(tunnel)
 	for {
 		bytes, err := reader.ReadBytes(byte('\n'))
@@ -148,7 +149,7 @@ func main() {
 	sw_lib_ctx := sw.NewSandwich()
 
 	conf := createServerConfiguration(serverCert, serverKey)
-	tunnel_ctx, err := sw.NewTunnelContext(sw_lib_ctx, conf)
+	tunnel_ctx, err := swtunnel.NewTunnelContext(sw_lib_ctx, conf)
 	if err != nil {
 		log.Fatalln(err)
 	}

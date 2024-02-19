@@ -19,3 +19,8 @@ func NewSandwich() *Sandwich {
 		c: swc.NewLib(),
 	}
 }
+
+// GetCHandle returns the underyling C handle.
+func (sw *Sandwich) GetCHandle() *swc.Lib {
+	return sw.c
+}

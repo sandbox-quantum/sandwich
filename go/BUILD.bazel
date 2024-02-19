@@ -8,7 +8,6 @@ go_library(
     srcs = [
         "sandwich.go",
         "tracing.go",
-        "tunnel.go",
     ],
     importpath = "github.com/sandbox-quantum/sandwich/go",
     visibility = [
@@ -41,6 +40,7 @@ go_test(
     deps = [
         ":sandwich",
         "//go/errors",
+        "//go/tunnel",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_bazel_rules_go//go/tools/bazel",
@@ -64,6 +64,7 @@ go_test(
     deps = [
         ":sandwich",
         "//go/io",
+        "//go/tunnel",
         "//proto:sandwich_go_proto",
         "//proto/api/v1:api_go_proto",
         "@io_bazel_rules_go//go/tools/bazel",

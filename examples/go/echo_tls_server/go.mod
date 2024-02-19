@@ -1,6 +1,9 @@
 module echo_tls_server
 
-require github.com/sandbox-quantum/sandwich/go v0.1.0
+require (
+	github.com/sandbox-quantum/sandwich/go v0.2.0
+	github.com/sandbox-quantum/sandwich/go/tunnel v0.2.0
+)
 
 require (
 	github.com/bazelbuild/rules_go v0.46.0 // indirect

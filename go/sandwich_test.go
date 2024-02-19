@@ -14,6 +14,7 @@ import (
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	pb "github.com/sandbox-quantum/sandwich/go/proto/sandwich"
+	swtunnel "github.com/sandbox-quantum/sandwich/go/tunnel"
 
 	api "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 	swerrors "github.com/sandbox-quantum/sandwich/go/errors"
@@ -34,7 +35,7 @@ var (
 	tls13           string = "tls13"
 )
 
-// bufIO implements sandwich.IO and sandwich.TunnelIO using a TX buffer and a
+// bufIO implements sandwich.IO and swtunnel.TunnelIO using a TX buffer and a
 // remote peer.
 type bufIO struct {
 	tx     bytes.Buffer
@@ -73,7 +74,7 @@ func (buf *bufIO) Write(b []byte) (int, error) {
 	return n, nil
 }
 
-// SetState implements the sandwich.TunnelIO interface for bufIO.
+// SetState implements the swtunnel.TunnelIO interface for bufIO.
 func (buf *bufIO) SetState(tunnelState pb.State) {}
 
 // createServerConfiguration creates the configuration for the server.
@@ -230,14 +231,14 @@ func createClientConfiguration(t *testing.T, cert *string, tls_version *string) 
 }
 
 // createServerContext creates the server context.
-func createServerContext(t *testing.T, cert *string, key *string, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+func createServerContext(t *testing.T, cert *string, key *string, sw *sandwich.Sandwich) (*swtunnel.TunnelContext, error) {
 	config, err := createServerConfiguration(t, cert, key)
 	if err != nil {
 		t.Errorf("Failed to create the server configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(sw, config)
+	ctx, err := swtunnel.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the server context: %v", err)
 		panic("failed")
@@ -247,14 +248,14 @@ func createServerContext(t *testing.T, cert *string, key *string, sw *sandwich.S
 }
 
 // createClientContext creates the client context.
-func createClientContext(t *testing.T, cert *string, tls_version *string, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+func createClientContext(t *testing.T, cert *string, tls_version *string, sw *sandwich.Sandwich) (*swtunnel.TunnelContext, error) {
 	config, err := createClientConfiguration(t, cert, tls_version)
 	if err != nil {
 		t.Errorf("Failed to create the client configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(sw, config)
+	ctx, err := swtunnel.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the client context: %v", err)
 	}
@@ -263,8 +264,8 @@ func createClientContext(t *testing.T, cert *string, tls_version *string, sw *sa
 }
 
 type ioInts struct {
-	client sandwich.TunnelIO
-	server sandwich.TunnelIO
+	client swtunnel.TunnelIO
+	server swtunnel.TunnelIO
 }
 
 // createServerClientIOs creates the I/O interfaces for the server and the client.
@@ -280,8 +281,8 @@ func createIOs() ioInts {
 }
 
 // createServerTunnel creates the tunnel for the server.
-func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
+func createServerTunnel(t *testing.T, context *swtunnel.TunnelContext, io swtunnel.TunnelIO) (*swtunnel.Tunnel, error) {
+	tun, err := swtunnel.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the server's tunnel: %v", err)
 	}
@@ -290,8 +291,8 @@ func createServerTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwi
 }
 
 // createClientTunnel creates the tunnel for the client.
-func createClientTunnel(t *testing.T, context *sandwich.TunnelContext, io sandwich.TunnelIO) (*sandwich.Tunnel, error) {
-	tun, err := sandwich.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
+func createClientTunnel(t *testing.T, context *swtunnel.TunnelContext, io swtunnel.TunnelIO) (*swtunnel.Tunnel, error) {
+	tun, err := swtunnel.NewTunnel(context, io, createTunnelConfigurationWithEmptyTunnelVerifier())
 	if err != nil {
 		t.Errorf("Failed to create the client's tunnel: %v", err)
 	}
@@ -593,14 +594,14 @@ func createClientExpiredConfiguration(t *testing.T) (*api.Configuration, error) 
 }
 
 // createServerExpiredContext creates the server context using an expired certificate.
-func createServerExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+func createServerExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*swtunnel.TunnelContext, error) {
 	config, err := createServerExpiredConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the server configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(sw, config)
+	ctx, err := swtunnel.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the server context: %v", err)
 		panic("failed")
@@ -610,14 +611,14 @@ func createServerExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.
 }
 
 // createClientExpiredContext creates the client context using an expired certificate.
-func createClientExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*sandwich.TunnelContext, error) {
+func createClientExpiredContext(t *testing.T, sw *sandwich.Sandwich) (*swtunnel.TunnelContext, error) {
 	config, err := createClientExpiredConfiguration(t)
 	if err != nil {
 		t.Errorf("Failed to create the client configuration: %v", err)
 		panic("failed")
 	}
 
-	ctx, err := sandwich.NewTunnelContext(sw, config)
+	ctx, err := swtunnel.NewTunnelContext(sw, config)
 	if err != nil {
 		t.Errorf("Failed to create the client context: %v", err)
 	}

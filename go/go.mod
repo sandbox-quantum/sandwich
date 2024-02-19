@@ -31,3 +31,4 @@ require (
 replace github.com/sandbox-quantum/sandwich/go/c => ./c
 replace github.com/sandbox-quantum/sandwich/go/errors => ./errors
 replace github.com/sandbox-quantum/sandwich/go/io => ./io
+replace github.com/sandbox-quantum/sandwich/go/tunnel -> ./tunnel

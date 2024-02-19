@@ -15,6 +15,7 @@ import (
 	swapi "github.com/sandbox-quantum/sandwich/go/proto/sandwich/api/v1"
 	sw "github.com/sandbox-quantum/sandwich/go"
 	swio "github.com/sandbox-quantum/sandwich/go/io"
+	swtunnel "github.com/sandbox-quantum/sandwich/go/tunnel"
 )
 
 func createClientConfiguration(cert *string, tls_version *string) *swapi.Configuration {
@@ -124,13 +125,13 @@ func main() {
 
 	sw_lib_ctx := sw.NewSandwich()
 
-	ctx, err := sw.NewTunnelContext(sw_lib_ctx, createClientConfiguration(cert, tls_version))
+	ctx, err := swtunnel.NewTunnelContext(sw_lib_ctx, createClientConfiguration(cert, tls_version))
 	if err != nil {
 		log.Fatalln("Error create tunnel context:", err)
 		return
 	}
 
-	tunnel, err := sw.NewTunnelWithReadWriter(ctx, swio, &swapi.TunnelConfiguration{
+	tunnel, err := swtunnel.NewTunnelWithReadWriter(ctx, swio, &swapi.TunnelConfiguration{
 		Verifier: &swapi.TunnelVerifier{
 			Verifier: &swapi.TunnelVerifier_EmptyVerifier{
 				EmptyVerifier: &swapi.EmptyVerifier{},
