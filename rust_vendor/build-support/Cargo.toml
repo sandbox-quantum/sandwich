@@ -1,6 +1,6 @@
 [package]
 name = "build-support"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 authors = ["SandboxAQ <sandwich@sandboxaq.com>"]
 description = "A companion for building Sandwich and its dependencies"
