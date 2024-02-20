@@ -37,10 +37,10 @@ crate_repositories()
 # --8<-- [start:import]
 http_archive(
     name = "sandwich",
-    sha256 = "52ffa90c658986e3a8d4eedfe7948dc224c1055f0188e4d26bf9457d1b7c44f8",
-    strip_prefix = "sandwich-0.1.0",
+    sha256 = "86bd6328e5cbdca7851e9772e4c1dda1a435e15686497dfc8fecadd4a4639920",
+    strip_prefix = "sandwich-0.2.0",
     urls = [
-        "https://github.com/sandbox-quantum/sandwich/archive/refs/tags/v0.1.0.tar.gz",
+        "https://github.com/sandbox-quantum/sandwich/archive/refs/tags/v0.2.0.tar.gz",
     ],
 )
 

@@ -1,6 +1,6 @@
 [package]
 name = "sandwich"
-version = "0.1.0"
+version = "0.2.0"
 edition = '2021'
 authors = ["SandboxAQ <sandwich@sandboxaq.com>"]
 description = "A simple, unified, and hard to misuse API for developers to use cryptographic algorithms and protocols."

@@ -1,6 +1,6 @@
 [package]
 name = "tracing-proto"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["SandboxAQ <sandwich@sandboxaq.com>"]
 description = "Protobuf definitions of tracing type used in Sandwich"

@@ -1,6 +1,6 @@
 [package]
 name = "openssl3"
-version = "3.2.0"
+version = "3.2.1"
 edition = "2018"
 authors = ["SandboxAQ <sandwich@sandboxaq.com>"]
 description = "OpenSSL 3.2 dependency for Sandwich"
