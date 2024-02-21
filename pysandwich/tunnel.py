@@ -14,10 +14,7 @@ The following classes are defined:
 
 To be able to use this API, the user has to define its own I/O interface.
 See `io.py` for more information.
-
-Author: sb
 """
-import abc
 import ctypes
 
 from opentelemetry.sdk.trace.export import SpanExporter
@@ -30,49 +27,6 @@ from pysandwich.proto.api.v1.tunnel_pb2 import TunnelConfiguration
 from pysandwich import sandwich
 from pysandwich.sandwich import Sandwich
 from pysandwich.tracing import SandwichTracer
-
-
-class IO(SandwichIO.IO):
-    """Abstraction of a `struct SandwichTunnelIO` handle.
-
-    The C handle is built by the tunnel, using the methods from this class and
-    `SandwichIO`.
-    """
-
-    class CTunnelIO(ctypes.Structure):
-        """The `struct SandwichTunnelIO`."""
-
-        # typedef void(SandwichTunnelIOSetStateFunction)(void *uarg, enum
-        # SandwichTunnelState tunnel_state);
-        _SET_STATE_FN_TYPE = ctypes.CFUNCTYPE(
-            None,  # Return type
-            ctypes.c_void_p,  # *uarg
-            ctypes.c_int,  # tunnel_state
-        )
-
-        _fields_ = [
-            (
-                "base",
-                SandwichIO.IO.Settings,
-            ),
-            (
-                "set_statefn",
-                _SET_STATE_FN_TYPE,
-            ),
-        ]
-
-    @abc.abstractmethod
-    def set_state(self, tunnel_state: SandwichTunnelProto.State):
-        """Set the state of the tunnel.
-
-        Args:
-            tunnel_state:
-                Current state of the tunnel.
-
-        It is guaranteed that the state of the tunnel will not change between
-        two calls to set_state.
-        """
-        raise NotImplementedError
 
 
 class Context:
@@ -192,7 +146,7 @@ class Tunnel:
     def __init__(
         self,
         ctx: Context,
-        io: IO,
+        io: SandwichIO.TunnelIO,
         configuration: TunnelConfiguration,
     ):
         """Initializes a tunnel.
@@ -201,7 +155,7 @@ class Tunnel:
             ctx:
                 Context handle to use to create the tunnel.
             io:
-                IO interface to use to create the tunnel.
+                TunnelIO interface to use to create the tunnel.
             configuration:
                 Tunnel configuration.
 
@@ -212,7 +166,6 @@ class Tunnel:
         self._handle = ctypes.c_void_p(None)
         self._io = io
         self.tracer = None
-
         conf_bytes = configuration.SerializeToString()
         conf = sandwich.TunnelConfigurationSerialized()
         conf.src = conf_bytes
@@ -220,7 +173,7 @@ class Tunnel:
 
         # WARNING: we have to keep a reference to this object, otherwise
         # the garbage collector will clean references to the ctypes.FUNCTYPE.
-        self._cio = IO.CTunnelIO()
+        self._cio = SandwichIO.TunnelIO.CTunnelIO()
         self._cio.base.readfn = SandwichIO.IO.Settings._READ_FN_TYPE(
             lambda uarg, buf, count, err: self._io_read(buf, count, err)
         )
@@ -230,7 +183,7 @@ class Tunnel:
         self._cio.base.flushfn = SandwichIO.IO.Settings._FLUSH_FN_TYPE(
             lambda uarg: self._io_flush()
         )
-        self._cio.set_statefn = IO.CTunnelIO._SET_STATE_FN_TYPE(
+        self._cio.set_statefn = SandwichIO.TunnelIO.CTunnelIO._SET_STATE_FN_TYPE(
             lambda uarg, tunnel_state: self._set_state(tunnel_state)
         )
 
@@ -462,9 +415,6 @@ class Tunnel:
 
         Raises:
             SandwichIO.IOException
-
-        Returns:
-            An IO error.
         """
         err = 0
         try:

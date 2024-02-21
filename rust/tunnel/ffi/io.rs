@@ -8,6 +8,9 @@ use std::io::{Read, Result, Write};
 
 use protobuf::Enum;
 
+#[allow(unused_imports)]
+use crate::ffi::io::helpers as io_helpers;
+use crate::ffi::io::{OwnedIo, OwnedIoUarg};
 use crate::ffi::support;
 use crate::tunnel;
 
@@ -57,5 +60,36 @@ impl tunnel::IO for IO {
             return;
         };
         set_state(self.base.uarg, support::to_c_int(state.value()));
+    }
+}
+
+/// Trampoline for Turbo `set_state` implementation designed for FFI.
+#[cfg(feature = "turbo")]
+extern "C" fn turbo_trampoline_set_state(uarg: *mut c_void, tunnel_state: c_int) {
+    use tunnel::IO as _;
+    let owned_io_uarg: &mut OwnedIoUarg = unsafe { &mut *uarg.cast() };
+    let tunnel_state =
+        pb::State::from_i32(support::to_i32(tunnel_state)).unwrap_or(pb::State::STATE_ERROR);
+    match owned_io_uarg {
+        OwnedIoUarg::TurboClient(turbo_client) => turbo_client.set_state(tunnel_state),
+        OwnedIoUarg::TurboServer(turbo_server) => turbo_server.set_state(tunnel_state),
+        _ => {}
+    }
+}
+
+/// Converts an owned IO into a tunnel IO.
+#[no_mangle]
+pub extern "C" fn sandwich_owned_io_to_tunnel_io(owned_io: *const OwnedIo) -> IO {
+    let owned_io: &OwnedIo = unsafe { &*owned_io };
+    let owned_io_uarg: &OwnedIoUarg = owned_io.as_ref();
+    IO {
+        base: *owned_io.as_ref(),
+        set_state: match owned_io_uarg {
+            #[cfg(feature = "turbo")]
+            OwnedIoUarg::TurboClient(_) | OwnedIoUarg::TurboServer(_) => {
+                Some(turbo_trampoline_set_state)
+            }
+            _ => None,
+        },
     }
 }

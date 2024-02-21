@@ -147,12 +147,14 @@ func NewRecordPlaneErrorFromEnum(err pb.RecordError) *RecordPlaneError {
 // ioErrorMap is a map code -> string for errors regarding the I/O interface.
 // These errors ared defined in `io.proto` defined by `IOError`.
 var ioErrorMap = map[int32]string{
-	int32(pb.IOError_IOERROR_IN_PROGRESS): "the I/O interface is still connecting to the remote peer",
-	int32(pb.IOError_IOERROR_WOULD_BLOCK): "the I/O operation would block, but the I/O interface is non-blocking",
-	int32(pb.IOError_IOERROR_REFUSED):     "the I/O interface has been refused connection",
-	int32(pb.IOError_IOERROR_CLOSED):      "this I/O interface is closed",
-	int32(pb.IOError_IOERROR_INVALID):     "this I/O interface isn't valid",
-	int32(pb.IOError_IOERROR_UNKNOWN):     "this I/O interface raised an unknown error",
+	int32(pb.IOError_IOERROR_IN_PROGRESS):    "the I/O interface is still connecting to the remote peer",
+	int32(pb.IOError_IOERROR_WOULD_BLOCK):    "the I/O operation would block, but the I/O interface is non-blocking",
+	int32(pb.IOError_IOERROR_REFUSED):        "the I/O interface has been refused connection",
+	int32(pb.IOError_IOERROR_CLOSED):         "this I/O interface is closed",
+	int32(pb.IOError_IOERROR_INVALID):        "this I/O interface isn't valid",
+	int32(pb.IOError_IOERROR_SYSTEM_ERROR):   "there was a system error while trying to use this I/O",
+	int32(pb.IOError_IOERROR_ADDRESS_IN_USE): "address is already in use",
+	int32(pb.IOError_IOERROR_UNKNOWN):        "this I/O interface raised an unknown error",
 }
 
 // IOError defines the error that can happens during the i/o operations done by

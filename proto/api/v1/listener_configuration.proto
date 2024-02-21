@@ -38,11 +38,26 @@ message ListenerModeTCP {
   BlockingMode blocking_mode = 2;
 }
 
+// Protobuf configuration for Turbo mode.
+message ListenerModeTurbo {
+  // The UDP socket address.
+  SocketAddress udp = 1;
+
+  // The TCP socket address.
+  SocketAddress tcp = 2;
+
+  // Blocking mode.
+  BlockingMode blocking_mode = 3;
+}
+
 // Protobuf configuration for a Sandwich Listener.
 message ListenerConfiguration {
   // Transport mode.
   oneof mode {
     // Standard mode.
     ListenerModeTCP tcp = 1;
+
+    // Turbo mode.
+    ListenerModeTurbo turbo = 2;
   }
 }

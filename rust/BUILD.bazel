@@ -12,6 +12,11 @@ load(":rules.bzl", "sandwich_variant")
 # Source files of Sandwich.
 _SANDWICH_SRCS = [
     "//rust/error",
+    "//rust/experimental",
+    "//rust/experimental/turbo",
+    "//rust/experimental/turbo/io",
+    "//rust/experimental/turbo/protocol",
+    "//rust/experimental/turbo/support",
     "//rust/ffi",
     "//rust/implementation",
     "//rust/implementation/openssl3",
@@ -45,6 +50,15 @@ _SANDWICH_PROTOBUF_DEPS = [
     "//proto/api/v1:api_rust_proto",
     "@crate_index//:protobuf",
 ] + _TRACING_DEPS
+
+# Rust dependencies for Turbo transport.
+_SANDWICH_TURBO_DEPS = [
+    "@crate_index//:byteorder",
+    "@crate_index//:log",
+    "@crate_index//:polling",
+    "@crate_index//:rand_core",
+    "@crate_index//:socket2",
+]
 
 sandwich_variant(
     name = "naked",
@@ -395,7 +409,9 @@ sandwich_variant(
         "-W",
         "missing_docs",
     ],
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//visibility:public",
+    ],
     deps = _SANDWICH_FULL_VARIANT_DEPS,
 )
 
@@ -431,6 +447,59 @@ rust_shared_library(
     proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = _SANDWICH_FULL_VARIANT_DEPS,
+)
+
+sandwich_variant(
+    name = "full+turbo",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "boringssl",
+        "openssl1_1_1",
+        "openssl3",
+        "turbo",
+    ],
+    generate_doc = True,
+    generate_ffi = True,
+    rustc_flags = [
+        "-W",
+        "missing_docs",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = _SANDWICH_FULL_VARIANT_DEPS + _SANDWICH_TURBO_DEPS,
+)
+
+rust_static_library(
+    name = "sandwich_full+turbo_ffi_static",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+        "openssl1_1_1",
+        "openssl3",
+        "tunnel",
+        "turbo",
+    ],
+    crate_name = "sandwich_full_turbo",
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS + _SANDWICH_TURBO_DEPS,
+)
+
+rust_shared_library(
+    name = "sandwich_full+turbo_ffi_shared",
+    srcs = _SANDWICH_SRCS,
+    crate_features = [
+        "boringssl",
+        "ffi",
+        "openssl1_1_1",
+        "openssl3",
+        "tunnel",
+        "turbo",
+    ],
+    crate_name = "sandwich_full_turbo",
+    visibility = ["//visibility:public"],
+    deps = _SANDWICH_FULL_VARIANT_DEPS + _SANDWICH_TURBO_DEPS,
 )
 
 mkdocs_tree(

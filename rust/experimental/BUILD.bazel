@@ -2,16 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 filegroup(
-    name = "ffi",
+    name = "experimental",
     srcs = [
-        "context.rs",
-        "error.rs",
-        "io/helpers.rs",
-        "io/listener.rs",
-        "io/mod.rs",
-        "io/owned.rs",
         "mod.rs",
-        "support.rs",
     ],
     visibility = ["//rust:__subpackages__"],
 )

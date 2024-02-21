@@ -13,8 +13,11 @@ use pb::IOError;
 use crate::ffi::support;
 use crate::io::error;
 
-mod helpers;
+pub(crate) use owned::{OwnedIo, OwnedIoUarg};
+
+pub(crate) mod helpers;
 mod listener;
+pub(crate) mod owned;
 
 /// A read function.
 pub type ReadFn =

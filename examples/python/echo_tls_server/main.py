@@ -80,7 +80,7 @@ def create_tcp_listener(hostname: str, port: int) -> SandwichListener.Listener:
 sw = Sandwich()
 
 
-def server_to_client(server_ctx_conf, swio: SandwichIOHelpers.SwOwnedIOWrapper):
+def server_to_client(server_ctx_conf, swio: SandwichIOHelpers.SwTunnelIOWrapper):
     # --8<-- [start:py_ctx]
     server_tun_conf = create_server_tun_conf()
     server = SandwichTunnel.Tunnel(server_ctx_conf, swio, server_tun_conf)

@@ -14,8 +14,6 @@ The following classes are defined:
 
 To be able to use this API, the user has to define its own I/O interface.
 See `io.py` for more information.
-
-Author: sb
 """
 
 import ctypes
@@ -26,7 +24,7 @@ from collections import namedtuple
 from types import MappingProxyType
 
 import pysandwich.errors as errors
-from pysandwich.io import OwnedIO
+from pysandwich.io import OwnedIO, TunnelIO
 
 _ext = {"Darwin": "dylib", "Windows": "dll"}.get(platform.system(), "so")
 
@@ -246,6 +244,21 @@ class _SandwichCLib:
                 ],
                 ret=ctypes.c_int32,
             ),
+            # enum SandwichIOError sandwich_io_client_turbo_new(
+            #       const char *udp_hostname, const uint16_t udp_port,
+            #       const char *tcp_hostname, const uint16_t tcp_port,
+            #       bool is_blocking, struct SandwichIOOwned **ownedIO);
+            "sandwich_io_client_turbo_new": __fs(
+                args=[
+                    ctypes.c_char_p,
+                    ctypes.c_uint16,
+                    ctypes.c_char_p,
+                    ctypes.c_uint16,
+                    ctypes.c_bool,
+                    ctypes.POINTER(ctypes.POINTER(OwnedIO)),
+                ],
+                ret=ctypes.c_int32,
+            ),
             # enum SandwichIOError sandwich_io_socket_wrap_new(
             #       int fd, struct SandwichIOOwned **ownedIO);
             "sandwich_io_socket_wrap_new": __fs(
@@ -259,13 +272,23 @@ class _SandwichCLib:
             "sandwich_io_owned_free": __fs(args=[ctypes.c_void_p], ret=None),
             # struct SandwichError *sandwich_listener_new(const void *src,
             #       size_t n, struct SandwichListener **out);
+            # strcut SandwichTunnelIO sandwich_owned_io_to_tunnel_io(
+            #       struct SandwichIOOwned *ownedIO)
+            "sandwich_owned_io_to_tunnel_io": __fs(
+                args=[
+                    ctypes.c_void_p,
+                ],
+                ret=TunnelIO.CTunnelIO,
+            ),
+            # struct SandwichError *sandwich_listener_new(const void *src,
+            #       size_t n, struct SandwichListener **out);
             "sandwich_listener_new": __fs(
-                [
+                args=[
                     ctypes.c_void_p,
                     ctypes.c_size_t,
                     ctypes.c_void_p,
                 ],
-                ctypes.c_void_p,
+                ret=ctypes.c_void_p,
             ),
             # enum SandwichIOError sandwich_listener_listen(
             #       struct SandwichListener *listener);

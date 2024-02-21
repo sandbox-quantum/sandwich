@@ -24,8 +24,6 @@ All exceptions are based on the error codes defined by the following protobuf:
 
 `SandwichException` exposes a `code` method to get the corresponding error code.
 This error code is compatible with the C++ library.
-
-Author: thb-sb
 """
 
 import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto

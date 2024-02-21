@@ -17,6 +17,9 @@ def rust_deps():
             )],
         },
         packages = {
+            "byteorder": crate.spec(
+                version = "1.4.3",
+            ),
             "async-trait": crate.spec(
                 version = "0.1.72",
             ),
@@ -62,6 +65,10 @@ def rust_deps():
                 version = "0.11.18",
                 features = ["blocking"],
             ),
+            "rand_core": crate.spec(
+                version = "0.6.4",
+                features = ["getrandom"],
+            ),
             "serde": crate.spec(
                 version = "1.0.185",
                 features = ["derive"],
@@ -71,6 +78,9 @@ def rust_deps():
             ),
             "shlex": crate.spec(
                 version = "1.1.0",
+            ),
+            "socket2": crate.spec(
+                version = "0.5.4",
             ),
             "syn": crate.spec(
                 version = "2.0.29",

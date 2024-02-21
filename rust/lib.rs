@@ -124,6 +124,7 @@ pub use crate::io::IO;
 
 #[macro_use]
 mod error;
+pub mod experimental;
 mod implementation;
 pub mod io;
 mod support;

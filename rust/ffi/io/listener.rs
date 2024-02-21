@@ -4,15 +4,15 @@
 //! Sandwich Listener module for FFI.
 
 use std::ffi::{c_int, c_void};
+use std::ptr::{self, NonNull};
 
 use protobuf::Enum;
 
-use crate::ffi::io::helpers;
 use crate::ffi::support;
 use crate::io::error::IntoIOError;
 use crate::io::listener::Listener;
 
-use super::IO;
+use super::OwnedIo;
 
 /// Causes given listener to start listening for connections.
 #[no_mangle]
@@ -32,34 +32,22 @@ pub extern "C" fn sandwich_listener_listen(listener: *mut c_void) -> c_int {
 #[no_mangle]
 pub extern "C" fn sandwich_listener_accept(
     listener: *mut c_void,
-    owned_io: *mut *mut helpers::OwnedIo,
+    owned_io: *mut *mut OwnedIo,
 ) -> c_int {
+    let owned_io = NonNull::new(owned_io);
     let mut b: Box<Box<dyn Listener>> = unsafe { Box::from_raw(listener.cast()) };
-    let r = b.accept();
+    let r = b.ffi_accept_owned();
     Box::into_raw(b);
     let ret = match r {
-        Ok(new_io) => {
-            if !owned_io.is_null() {
-                let io_ptr = Box::into_raw(Box::new(new_io));
-                let settings = Box::new(IO {
-                    readfn: helpers::sandwich_helper_io_read,
-                    writefn: helpers::sandwich_helper_io_write,
-                    flushfn: Some(helpers::sandwich_helper_io_flush),
-                    uarg: io_ptr.cast(),
-                });
-                let oio = Box::new(helpers::OwnedIo {
-                    io: Box::into_raw(settings).cast(),
-                    freeptr: Some(helpers::sandwich_helper_owned_io_free),
-                });
-                unsafe {
-                    *owned_io = Box::into_raw(oio);
-                };
+        Ok(boxed_owned_io) => {
+            if let Some(owned_io) = owned_io {
+                unsafe { *owned_io.as_ptr() = Box::into_raw(boxed_owned_io) };
             }
             pb::IOError::IOERROR_OK.value()
         }
         Err(e) => {
-            if !owned_io.is_null() {
-                unsafe { *owned_io = std::ptr::null_mut() };
+            if let Some(owned_io) = owned_io {
+                unsafe { *owned_io.as_ptr() = ptr::null_mut() };
             }
             e.into_io_error().value()
         }
