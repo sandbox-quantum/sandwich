@@ -176,6 +176,19 @@ sandwich_tunnel_state(const struct SandwichTunnel *tun);
 /// NULL for `tun` is allowed.
 SANDWICH_API void sandwich_tunnel_free(struct SandwichTunnel *tun);
 
+/// \brief Return the view of a tunnel IO from an owned IO.
+///
+/// \param owned_io Owned io.
+///
+/// The tunnel IO returned by this function is a view of the owned IO. It means
+/// that the user is STILL responsible for freeing the owned IO using
+/// `sandwich_io_owned_free`.
+/// Once freed, the view can no longer be used.
+///
+/// \return A view of the owned IO as a tunnel IO.
+SANDWICH_API struct SandwichTunnelIO
+sandwich_owned_io_to_tunnel_io(const struct SandwichIOOwned *owned_io);
+
 #ifdef __cplusplus
 } // end extern "C"
 #endif

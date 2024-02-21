@@ -62,10 +62,46 @@ cc_library(
     alwayslink = True,
 )
 
+cc_library(
+    name = "sandwich+turbo",
+    hdrs = [
+        "sandwich.h",
+        "turbo.h",
+    ],
+    linkopts = [] + select({
+        "@platforms//os:ios": [
+            "-framework",
+            "Security",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = [
+        "//:__subpackages__",
+    ],
+    deps = [
+        ":sandwich_hdrs",
+        "//proto/api/v1:api_cc_proto",
+        "//rust:sandwich_full+turbo_ffi_static",
+    ],
+    alwayslink = True,
+)
+
 cc_import(
     name = "sandwich_shared_import",
     hdrs = [":sandwich_hdrs_all_files"],
     shared_library = "//rust:sandwich_full_ffi_shared",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":sandwich_hdrs",
+    ],
+)
+
+cc_import(
+    name = "sandwich+turbo_shared_import",
+    hdrs = ["sandwich.h"],
+    shared_library = "//rust:sandwich_full+turbo_ffi_shared",
     visibility = [
         "//visibility:public",
     ],
@@ -106,6 +142,26 @@ cc_test(
     linkstatic = True,
     deps = [
         ":sandwich",
+        "//proto:sandwich_cc_proto",
+        "//proto/api/v1:api_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+)
+
+cc_test(
+    name = "turbo_test",
+    timeout = "short",
+    srcs = ["turbo_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata",
+    ],
+    flaky = True,
+    linkstatic = True,
+    deps = [
+        ":sandwich+turbo",
         "//proto:sandwich_cc_proto",
         "//proto/api/v1:api_cc_proto",
         "@bazel_tools//tools/cpp/runfiles",

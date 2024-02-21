@@ -16,14 +16,13 @@ raise an exception of type `IOException`.
 
 The user has to define a class extending `IO`.
 An example can be found in `tunnel_test.py`.
-
-Author: thb-sb
 """
 
 import abc
 import ctypes
 
 import pysandwich.proto.io_pb2 as SandwichIOProto
+import pysandwich.proto.tunnel_pb2 as SandwichTunnelProto
 from pysandwich import errors
 
 
@@ -202,13 +201,14 @@ class IO(abc.ABC):
         """
         raise NotImplementedError
 
-    def flush(self) -> int:  # noqa: B027
+    @abc.abstractmethod
+    def flush(self):
         """Flush function.
 
         Raises:
-            IOException: an error occured during writing
+            IOException: an error occured while flushing
         """
-        pass
+        raise NotImplementedError
 
 
 class OwnedIO(ctypes.Structure):
@@ -231,3 +231,46 @@ class OwnedIO(ctypes.Structure):
             _FREE_PTR_TYPE,
         ),
     ]
+
+
+class TunnelIO(IO):
+    """Abstraction of a `struct SandwichTunnelIO` handle.
+
+    The C handle is built by the tunnel, using the methods from this class and
+    `SandwichIO`.
+    """
+
+    class CTunnelIO(ctypes.Structure):
+        """The `struct SandwichTunnelIO`."""
+
+        # typedef void(SandwichTunnelIOSetStateFunction)(void *uarg, enum
+        # SandwichTunnelState tunnel_state);
+        _SET_STATE_FN_TYPE = ctypes.CFUNCTYPE(
+            None,  # Return type
+            ctypes.c_void_p,  # *uarg
+            ctypes.c_int,  # tunnel_state
+        )
+
+        _fields_ = [
+            (
+                "base",
+                IO.Settings,
+            ),
+            (
+                "set_statefn",
+                _SET_STATE_FN_TYPE,
+            ),
+        ]
+
+    @abc.abstractmethod
+    def set_state(self, tunnel_state: SandwichTunnelProto.State):
+        """Set the state of the tunnel.
+
+        Args:
+            tunnel_state:
+                Current state of the tunnel.
+
+        It is guaranteed that the state of the tunnel will not change between
+        two calls to set_state.
+        """
+        raise NotImplementedError

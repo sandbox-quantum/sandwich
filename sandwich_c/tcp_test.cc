@@ -431,12 +431,11 @@ void client_thread(std::string server_hostname, uint16_t server_port) {
   sandwich_io_client_tcp_new(server_hostname.c_str(), server_port, true,
                              &client_io);
 
-  struct ::SandwichTunnelIO io {
-    .base = *client_io->io, .set_state = nullptr,
-  };
+
+  auto client_tunnel_io = ::sandwich_owned_io_to_tunnel_io(client_io);
   // Create tunnels.
   auto client_tunnel =
-      CreateTunnel(&*client, io, SandwichTunnelConfigurationVerifierEmpty);
+      CreateTunnel(&*client, client_tunnel_io, SandwichTunnelConfigurationVerifierEmpty);
 
   // Client initiates the handshake.
   ClientInitiateHandshake(&*client_tunnel);
@@ -470,11 +469,9 @@ void server_thread(std::string server_hostname, uint16_t server_port) {
   struct SandwichIOOwned *listener_io;
   err = sandwich_listener_accept(&*server_listener, &listener_io);
   sandwich_assert(err == SANDWICH_IOERROR_OK);
-  struct ::SandwichTunnelIO io {
-    .base = *listener_io->io, .set_state = nullptr,
-  };
+  auto server_tunnel_io = ::sandwich_owned_io_to_tunnel_io(listener_io);
   auto server_tunnel =
-      CreateTunnel(&*server, io, SandwichTunnelConfigurationVerifierEmpty);
+      CreateTunnel(&*server, server_tunnel_io, SandwichTunnelConfigurationVerifierEmpty);
 
   // Server answers.
   ServerAnswerHandshake(&*server_tunnel);

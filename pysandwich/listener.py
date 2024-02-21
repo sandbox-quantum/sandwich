@@ -7,14 +7,12 @@ import pysandwich.proto.api.v1.listener_configuration_pb2 as ListenerAPI
 import pysandwich.proto.io_pb2 as SandwichIOProto
 from pysandwich import sandwich
 from pysandwich.io import IOException, OwnedIO
-from pysandwich.io_helpers import SwOwnedIOWrapper
+from pysandwich.io_helpers import SwTunnelIOWrapper
 
 """Sandwich Listener API.
 
 This API creates listener objects which can be used by servers
 to establish multiple connections.
-
-Author: jgoertzen-sb
 """
 
 
@@ -45,7 +43,7 @@ class Listener:
         if err != SandwichIOProto.IOERROR_OK:
             raise IOException(err.value)
 
-    def accept(self) -> SwOwnedIOWrapper:
+    def accept(self) -> SwTunnelIOWrapper:
         owned_ptr = ctypes.POINTER(OwnedIO)()
         err = self._sandwich_clib.c_call(
             "sandwich_listener_accept",
@@ -54,7 +52,7 @@ class Listener:
         )
         if err != SandwichIOProto.IOERROR_OK:
             raise IOException(err)
-        return SwOwnedIOWrapper(owned_ptr.contents)
+        return SwTunnelIOWrapper(owned_ptr.contents)
 
     def close(self):
         self._sandwich_clib.c_call("sandwich_listener_close", self._listener)

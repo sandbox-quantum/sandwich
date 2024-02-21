@@ -2,16 +2,11 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 filegroup(
-    name = "ffi",
+    name = "protocol",
     srcs = [
-        "context.rs",
-        "error.rs",
-        "io/helpers.rs",
-        "io/listener.rs",
-        "io/mod.rs",
-        "io/owned.rs",
+        "metadata.rs",
         "mod.rs",
-        "support.rs",
+        "packet.rs",
     ],
     visibility = ["//rust:__subpackages__"],
 )
