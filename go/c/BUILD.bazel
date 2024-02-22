@@ -23,3 +23,27 @@ go_library(
         "//go:__subpackages__",
     ],
 )
+
+go_library(
+    name = "c+turbo",
+    srcs = [
+        "errors.go",
+        "io.go",
+        "lib.go",
+        "listener.go",
+        "owned_io.go",
+        "tunnel.go",
+        "tunnel_io.go",
+    ],
+    cdeps = [
+        "//sandwich_c:sandwich+turbo",
+    ],
+    cgo = True,
+    copts = [
+        "-DSANDWICHTURBO",
+    ],
+    importpath = "github.com/sandbox-quantum/sandwich/go/c",
+    visibility = [
+        "//go:__subpackages__",
+    ],
+)

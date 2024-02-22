@@ -60,3 +60,15 @@ func IOTCPClient(hostname string, port uint16, isBlocking bool) (*OwnedIO, *swer
 		c: ownedIO,
 	}, nil
 }
+
+// Creates a Sandwich owned Turbo based IO Object.
+func IOTurboClient(udp_hostname string, udp_port uint16, tcp_hostname string, tcp_port uint16, isBlocking bool) (*OwnedIO, *swerrors.IOError) {
+	ownedIO, err := swc.NewOwnedIOTurboClient(udp_hostname, udp_port, tcp_hostname, tcp_port, isBlocking)
+	pbErr := pb.IOError(err)
+	if pbErr != pb.IOError_IOERROR_OK {
+		return nil, swerrors.NewIOErrorFromEnum(pbErr)
+	}
+	return &OwnedIO{
+		c: ownedIO,
+	}, nil
+}

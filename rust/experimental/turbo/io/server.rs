@@ -45,6 +45,11 @@ pub struct Server {
 
     /// Indicates if the tombstone has been received and processed.
     tombstone_received: bool,
+
+    /// The duration to wait for operations to complete.
+    /// Some(Duration(0s)) == NONBLOCKING
+    /// None               == BLOCKING
+    duration: Option<std::time::Duration>,
 }
 
 /// Implements [`std::fmt::Debug`] for [`Server`].
@@ -67,6 +72,11 @@ impl Server {
         Box<Self>,
         std::sync::Arc<super::DatagramStream<support::ASet<super::PartialDatagram>>>,
     ) {
+        let duration = if engine.is_blocking() {
+            None
+        } else {
+            Some(std::time::Duration::from_secs(0))
+        };
         let s = Box::new(Self {
             udp,
             udp_addr,
@@ -80,6 +90,7 @@ impl Server {
             server_out: std::collections::HashMap::new(),
             tombstone_received: false,
             pending_fragments: std::collections::HashSet::<u8>::new(),
+            duration,
         });
         let stream = s.dg_stream.clone();
         (s, stream)
@@ -101,7 +112,6 @@ impl std::io::Read for Server {
         log::debug!("Ask for reading {:#x} byte(s)", slice.len());
         // If the handshake is not done, read from UDP,
         // otherwise read from TCP.
-
         match self.current_state {
             crate::pb::State::STATE_HANDSHAKE_DONE => {
                 if !self.tombstone_received {
@@ -112,12 +122,9 @@ impl std::io::Read for Server {
             }
             crate::pb::State::STATE_NOT_CONNECTED
             | crate::pb::State::STATE_CONNECTION_IN_PROGRESS
-            | crate::pb::State::STATE_HANDSHAKE_IN_PROGRESS => {
+            | crate::pb::State::STATE_HANDSHAKE_IN_PROGRESS => loop {
                 log::debug!("Reading from UDP");
-                if let Ok((n, index)) = self
-                    .dg_stream
-                    .read(Some(std::time::Duration::from_secs(0)), slice)
-                {
+                if let Ok((n, index)) = self.dg_stream.read(self.duration, slice) {
                     log::debug!("Got {n:#x} bytes from dgstream with index: {index:#}");
                     read_so_far += n;
                     self.pending_fragments.insert(index);
@@ -125,11 +132,13 @@ impl std::io::Read for Server {
                 let _ = self.respond_all();
                 if read_so_far > 0 {
                     log::debug!("read {read_so_far:#x} bytes so far");
-                    Ok(read_so_far)
+                    return Ok(read_so_far);
+                } else if read_so_far == 0 && self.duration.is_none() {
+                    continue;
                 } else {
-                    Err(ErrorKind::WouldBlock.into())
+                    return Err(ErrorKind::WouldBlock.into());
                 }
-            }
+            },
             crate::pb::State::STATE_BEING_SHUTDOWN
             | crate::pb::State::STATE_DISCONNECTED
             | crate::pb::State::STATE_ERROR => {

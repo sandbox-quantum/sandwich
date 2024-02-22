@@ -457,9 +457,11 @@ sandwich_variant(
         "openssl1_1_1",
         "openssl3",
         "turbo",
+        "tracer",
     ],
     generate_doc = True,
     generate_ffi = True,
+    proc_macro_deps = ["@crate_index//:async-trait"],
     rustc_flags = [
         "-W",
         "missing_docs",
@@ -480,8 +482,10 @@ rust_static_library(
         "openssl3",
         "tunnel",
         "turbo",
+        "tracer",
     ],
     crate_name = "sandwich_full_turbo",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = _SANDWICH_FULL_VARIANT_DEPS + _SANDWICH_TURBO_DEPS,
 )
@@ -496,8 +500,10 @@ rust_shared_library(
         "openssl3",
         "tunnel",
         "turbo",
+        "tracer",
     ],
     crate_name = "sandwich_full_turbo",
+    proc_macro_deps = ["@crate_index//:async-trait"],
     visibility = ["//visibility:public"],
     deps = _SANDWICH_FULL_VARIANT_DEPS + _SANDWICH_TURBO_DEPS,
 )

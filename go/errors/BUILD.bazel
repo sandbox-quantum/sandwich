@@ -34,3 +34,19 @@ go_library(
         "//proto:sandwich_go_proto",
     ],
 )
+
+go_library(
+    name = "errors+turbo",
+    srcs = [
+        "errors.go",
+        "generated_error_codes.go",
+    ],
+    importpath = "github.com/sandbox-quantum/sandwich/go/errors",
+    visibility = [
+        "//go:__subpackages__",
+    ],
+    deps = [
+        "//go/c:c+turbo",
+        "//proto:sandwich_go_proto",
+    ],
+)

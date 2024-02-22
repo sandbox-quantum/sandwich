@@ -183,6 +183,11 @@ pub(crate) struct Engine {
 
     /// Boolean to stop the engine.
     stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+
+    /// Indicates whether ServerIOs are blocking or not.
+    /// Some(Duration(0s)) == NONBLOCKING
+    /// None               == BLOCKING
+    duration: Option<std::time::Duration>,
 }
 
 /// Implements [`std::fmt::Debug`] for [`Engine`].
@@ -216,6 +221,11 @@ pub struct TurboListener {
 
     /// The thread that handles TCP connections.
     tcp_thread: Option<std::thread::JoinHandle<()>>,
+
+    /// Indicates if listener is blocking or not.
+    /// Some(Duration(0s)) == NONBLOCKING
+    /// None               == BLOCKING
+    duration: Option<std::time::Duration>,
 }
 
 /// Implements [`TurboListener`].
@@ -224,7 +234,7 @@ impl TurboListener {
     pub fn new(
         udp_addr: impl ToSocketAddrs,
         tcp_addr: impl ToSocketAddrs,
-        _is_blocking: bool,
+        is_blocking: bool,
     ) -> std::io::Result<TurboListener> {
         let udp = match udp_addr
             .to_socket_addrs()?
@@ -247,13 +257,18 @@ impl TurboListener {
             }
             None => return Err(ErrorKind::AddrNotAvailable.into()),
         };
-
+        let duration = if is_blocking {
+            None
+        } else {
+            Some(std::time::Duration::from_secs(0))
+        };
         Ok(TurboListener {
             engine: None,
             udp_socket: Some(udp),
             tcp_listener: Some(tcp),
             udp_thread: None,
             tcp_thread: None,
+            duration,
         })
     }
 
@@ -399,7 +414,11 @@ impl TurboListener {
                             continue;
                         }
                     };
-                    if let Err(e) = tcp.set_nonblocking(true) {
+                    if engine.is_blocking() {
+                        if let Err(e) = tcp.set_nonblocking(false) {
+                            log::error!("failed to set new tcp connection as blocking: {e}");
+                        }
+                    } else if let Err(e) = tcp.set_nonblocking(true) {
                         log::error!("failed to set new tcp connection as non-blocking: {e}");
                     }
                     // Add to poll list until tombstone is received.
@@ -516,6 +535,7 @@ impl crate::io::listener::Listener for TurboListener {
             servers: std::collections::VecDeque::new().into(),
             servers_cv: std::sync::Condvar::new(),
             stop: std::sync::Arc::new(false.into()),
+            duration: self.duration,
         });
 
         let e = engine.clone();
@@ -568,20 +588,33 @@ impl crate::io::listener::Listener for TurboListener {
 impl Engine {
     /// Pop a new server, return WouldBlock if no server is available.
     pub(crate) fn get_server(&self) -> std::io::Result<Box<super::Server>> {
-        let mut r = self
-            .servers_cv
-            .wait_timeout_while(
-                self.servers.lock().expect("poisoned server mutex"),
-                std::time::Duration::from_secs(0),
-                |s| s.is_empty(),
-            )
-            .expect("poisoned cv server mutex");
-        if r.1.timed_out() {
-            Err(ErrorKind::WouldBlock.into())
-        } else {
-            match r.0.pop_front() {
+        if self.duration.is_none() {
+            let mut r = self
+                .servers_cv
+                .wait_while(self.servers.lock().expect("poisoned server mutex"), |s| {
+                    s.is_empty()
+                })
+                .expect("poisoned cv server mutex");
+            match r.pop_front() {
                 Some(v) => Ok(v),
                 None => unreachable!(),
+            }
+        } else {
+            let mut r = self
+                .servers_cv
+                .wait_timeout_while(
+                    self.servers.lock().expect("poisoned server mutex"),
+                    std::time::Duration::from_secs(0),
+                    |s| s.is_empty(),
+                )
+                .expect("poisoned cv server mutex");
+            if r.1.timed_out() {
+                Err(std::io::ErrorKind::WouldBlock.into())
+            } else {
+                match r.0.pop_front() {
+                    Some(v) => Ok(v),
+                    None => unreachable!(),
+                }
             }
         }
     }
@@ -592,5 +625,11 @@ impl Engine {
             .lock()
             .expect("poisoned map mutex")
             .remove(&cid);
+    }
+
+    /// Returns whether ServerIOs that belong to this engine are blocking
+    /// or not.
+    pub(crate) fn is_blocking(&self) -> bool {
+        self.duration.is_none()
     }
 }
