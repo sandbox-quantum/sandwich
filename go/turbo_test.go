@@ -227,7 +227,7 @@ func createTunnelConfigurationWithEmptyTunnelVerifier() *api.TunnelConfiguration
 }
 
 func clientRoutine(t *testing.T, wg *sync.WaitGroup, sw *sandwich.Sandwich, hostname string, port uint16, recvMsg [4]byte, sendMsg [4]byte) {
-	io, _ := swio.IOTurboClient(hostname, port, hostname, port, true)
+	io, _ := swio.IOTurboClient(hostname, port, hostname, port)
 	clientContext, err := createClientContext(t, sw)
 	if err != nil {
 		t.Errorf("Failed to create Client context: %v", err)

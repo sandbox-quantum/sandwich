@@ -103,9 +103,9 @@ func (ownedIO *OwnedIO) SetState(tunnelState uint32) {
 }
 
 // NewOwnedIOTCPClient creates a new client side Sandwich IO using TCP.
-func NewOwnedIOTCPClient(hostname string, port uint16, isBlocking bool) (*OwnedIO, uint32) {
+func NewOwnedIOTCPClient(hostname string, port uint16) (*OwnedIO, uint32) {
 	var handle *C.struct_SandwichIOOwned = nil
-	err := C.sandwich_io_client_tcp_new(C.CString(hostname), C.ushort(port), C.bool(isBlocking), &handle)
+	err := C.sandwich_io_client_tcp_new(C.CString(hostname), C.ushort(port), C.bool(true), &handle)
 	if err != 0 {
 		return nil, err
 	}
@@ -113,10 +113,10 @@ func NewOwnedIOTCPClient(hostname string, port uint16, isBlocking bool) (*OwnedI
 }
 
 // NewOwnedIOTurboClient creates a new client side Sandwich IO using Turbo transport.
-func NewOwnedIOTurboClient(udp_hostname string, udp_port uint16, tcp_hostname string, tcp_port uint16, isBlocking bool) (*OwnedIO, uint32) {
+func NewOwnedIOTurboClient(udp_hostname string, udp_port uint16, tcp_hostname string, tcp_port uint16) (*OwnedIO, uint32) {
 	if C.turbo_enabled() {
 		var handle *C.struct_SandwichIOOwned = nil
-		err := C.sandwich_io_client_turbo_new(C.CString(udp_hostname), C.ushort(udp_port), C.CString(tcp_hostname), C.ushort(tcp_port), C.bool(isBlocking), &handle)
+		err := C.sandwich_io_client_turbo_new(C.CString(udp_hostname), C.ushort(udp_port), C.CString(tcp_hostname), C.ushort(tcp_port), C.bool(true), &handle)
 		if err != 0 {
 			return nil, err
 		}
