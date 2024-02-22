@@ -24,6 +24,26 @@ go_library(
     ],
 )
 
+go_library(
+    name = "io+turbo",
+    srcs = [
+        "io.go",
+        "listener.go",
+    ],
+    importpath = "github.com/sandbox-quantum/sandwich/go/io",
+    visibility = [
+        "//examples/go:__subpackages__",
+        "//go:__subpackages__",
+    ],
+    deps = [
+        "//go/c:c+turbo",
+        "//go/errors:errors+turbo",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@org_golang_google_protobuf//proto:go_default_library",
+    ],
+)
+
 mkdocs_tree(
     name = "mkdocs",
     srcs = [

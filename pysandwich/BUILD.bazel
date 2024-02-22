@@ -132,9 +132,26 @@ py_test(
 )
 
 py_test(
-    name = "turbo_test",
+    name = "async_turbo_test",
     timeout = "short",
-    srcs = ["turbo_test.py"],
+    srcs = ["async_turbo_test.py"],
+    data = [
+        ":sandwich+turbo_c_lib",
+        "//testdata",
+    ],
+    env = {
+        "SANDWICH_C_LIB": "pysandwich/libsandwich_full+turbo.so",
+    },
+    flaky = True,
+    deps = [
+        ":python+turbo",
+    ],
+)
+
+py_test(
+    name = "blocking_turbo_test",
+    timeout = "short",
+    srcs = ["blocking_turbo_test.py"],
     data = [
         ":sandwich+turbo_c_lib",
         "//testdata",

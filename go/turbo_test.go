@@ -6,7 +6,6 @@ package sandwich_test
 import (
 	"github.com/sandbox-quantum/sandwich/go"
 	"crypto/rand"
-	"fmt"
 	"math/big"
 	"sync"
 	"testing"
@@ -180,36 +179,19 @@ func generateRandomPort() uint16 {
 
 func createListenerConfiguration(ipaddr string, port uint16) *api.ListenerConfiguration {
 	return &api.ListenerConfiguration{
-		Mode: &api.ListenerConfiguration_Tcp{
-			Tcp: &api.ListenerModeTCP{
-				Addr: &api.SocketAddress{
+		Mode: &api.ListenerConfiguration_Turbo{
+			Turbo: &api.ListenerModeTurbo{
+				Udp: &api.SocketAddress{
+					Hostname: ipaddr,
+					Port:     uint32(port),
+				},
+				Tcp: &api.SocketAddress{
 					Hostname: ipaddr,
 					Port:     uint32(port),
 				},
 				BlockingMode: api.BlockingMode_BLOCKINGMODE_BLOCKING,
 			},
 		},
-	}
-}
-
-// createServerClientIOs creates the I/O interfaces for the server and the client.
-func createIOs() ioInts {
-	hostname := "127.0.0.1"
-	port := generateRandomPort()
-	listener_config := createListenerConfiguration(hostname, port)
-	listener, err := swio.NewListener(listener_config)
-	if err != nil {
-		fmt.Println("Error listening:", err)
-	}
-	listener.Listen()
-	client, _ := swio.IOTCPClient(hostname, port, true)
-	server, err2 := listener.Accept()
-	if err2 != nil {
-		fmt.Println("Error accepting:", err2)
-	}
-	return ioInts{
-		client: client,
-		server: server,
 	}
 }
 
@@ -244,9 +226,18 @@ func createTunnelConfigurationWithEmptyTunnelVerifier() *api.TunnelConfiguration
 	}
 }
 
-func clientRoutine(t *testing.T, wg *sync.WaitGroup, clientTunnel *swtunnel.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
+func clientRoutine(t *testing.T, wg *sync.WaitGroup, sw *sandwich.Sandwich, hostname string, port uint16, recvMsg [4]byte, sendMsg [4]byte) {
+	io, _ := swio.IOTurboClient(hostname, port, hostname, port, true)
+	clientContext, err := createClientContext(t, sw)
+	if err != nil {
+		t.Errorf("Failed to create Client context: %v", err)
+	}
+	clientTunnel, err := createClientTunnel(t, clientContext, io)
+	if err != nil {
+		t.Errorf("Failed to create the server tunnel: %v", err)
+	}
 	var buf [4]byte
-	err := clientTunnel.Handshake()
+	err = clientTunnel.Handshake()
 	n := 0
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -274,10 +265,28 @@ func clientRoutine(t *testing.T, wg *sync.WaitGroup, clientTunnel *swtunnel.Tunn
 	wg.Done()
 }
 
-func serverRoutine(t *testing.T, wg *sync.WaitGroup, serverTunnel *swtunnel.Tunnel, recvMsg [4]byte, sendMsg [4]byte) {
+func serverRoutine(t *testing.T, wg *sync.WaitGroup, sw *sandwich.Sandwich, hostname string, port uint16, recvMsg [4]byte, sendMsg [4]byte) {
+	listener_config := createListenerConfiguration(hostname, port)
+	listener, err := swio.NewListener(listener_config)
+	if err != nil {
+		t.Errorf("Error listening:", err)
+	}
+	listener.Listen()
+	io, err2 := listener.Accept()
+	if err2 != nil {
+		t.Errorf("Error accepting:", err2)
+	}
+	serverContext, err := createServerContext(t, sw)
+	if err != nil {
+		t.Errorf("Failed to create Server context: %v", err)
+	}
+	serverTunnel, err := createServerTunnel(t, serverContext, io)
+	if err != nil {
+		t.Errorf("Failed to create the server tunnel: %v", err)
+	}
 	var buf [4]byte
 	n := 0
-	err := serverTunnel.Handshake()
+	err = serverTunnel.Handshake()
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -308,32 +317,14 @@ func TestTunnels(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	sw := sandwich.NewSandwich()
-	serverContext, err := createServerContext(t, sw)
-	if err != nil {
-		t.Errorf("Failed to create Server context: %v", err)
-	}
+	hostname := "127.0.0.1"
+	port := generateRandomPort()
 
-	clientContext, err := createClientContext(t, sw)
-	if err != nil {
-		t.Errorf("Failed to create Client context: %v", err)
-	}
-
-	ioInterfaces := createIOs()
-
-	serverTunnel, err := createServerTunnel(t, serverContext, ioInterfaces.server)
-	if err != nil {
-		t.Errorf("Failed to create the server tunnel: %v", err)
-	}
-
-	clientTunnel, err := createClientTunnel(t, clientContext, ioInterfaces.client)
-	if err != nil {
-		t.Errorf("Failed to create the server tunnel: %v", err)
-	}
 	go func() {
-		serverRoutine(t, &wg, serverTunnel, pingMsg, pongMsg)
+		serverRoutine(t, &wg, sw, hostname, port, pingMsg, pongMsg)
 	}()
 	go func() {
-		clientRoutine(t, &wg, clientTunnel, pongMsg, pingMsg)
+		clientRoutine(t, &wg, sw, hostname, port, pongMsg, pingMsg)
 	}()
 	wg.Wait()
 }

@@ -33,6 +33,11 @@ pub struct Client {
 
     /// SID sent.
     tombstone_sent: bool,
+
+    /// The duration to wait for operations to complete.
+    /// Some(Duration(0s)) == NONBLOCKING
+    /// None               == BLOCKING
+    duration: Option<std::time::Duration>,
 }
 
 /// Implements [`std::fmt::Debug`] for [`Client`].
@@ -51,9 +56,6 @@ impl Client {
         tcp_addr: impl ToSocketAddrs,
         is_blocking: bool,
     ) -> std::io::Result<Self> {
-        if is_blocking {
-            return Err(ErrorKind::Unsupported.into());
-        }
         let (tcp, _tcp_addr) = tcp_addr
             .to_socket_addrs()?
             .find_map(|sock_addr| {
@@ -77,18 +79,33 @@ impl Client {
             .ok_or(ErrorKind::AddrNotAvailable)?;
 
         let mut err = std::io::Error::from(ErrorKind::AddrNotAvailable);
+        let duration = if is_blocking {
+            None
+        } else {
+            Some(std::time::Duration::from_secs(0))
+        };
         let udp = udp_addr
             .to_socket_addrs()?
             .find_map(|sock_addr| {
                 let udp_sock =
                     std::net::UdpSocket::bind((std::net::Ipv4Addr::new(0, 0, 0, 0), 0u16)).ok()?;
-                udp_sock
-                    .set_nonblocking(true)
-                    .and_then(|_| udp_sock.connect(sock_addr))
-                    .map_err(|e| {
-                        err = e;
-                    })
-                    .ok()?;
+                if duration.is_some() {
+                    udp_sock
+                        .set_nonblocking(true)
+                        .and_then(|_| udp_sock.connect(sock_addr))
+                        .map_err(|e| {
+                            err = e;
+                        })
+                        .ok()?;
+                } else {
+                    udp_sock
+                        .set_nonblocking(false)
+                        .and_then(|_| udp_sock.connect(sock_addr))
+                        .map_err(|e| {
+                            err = e;
+                        })
+                        .ok()?;
+                }
                 Some(udp_sock)
             })
             .ok_or(err)?;
@@ -101,6 +118,7 @@ impl Client {
             cid: ConnectionID::from_rand(),
             index_out: 1u8,
             tombstone_sent: false,
+            duration,
         })
     }
 }
@@ -120,17 +138,19 @@ impl std::io::Read for Client {
             }
             crate::pb::State::STATE_NOT_CONNECTED
             | crate::pb::State::STATE_CONNECTION_IN_PROGRESS
-            | crate::pb::State::STATE_HANDSHAKE_IN_PROGRESS => {
-                log::debug!("Reading from UDP");
+            | crate::pb::State::STATE_HANDSHAKE_IN_PROGRESS => loop {
                 if let Ok((n, _index)) = self
                     .dg_stream
                     .read(Some(std::time::Duration::from_secs(0)), slice)
                 {
-                    log::debug!("Got {n:#x} bytes from dgstream");
+                    log::debug!("Read {n:#x} bytes from dgstream");
                     read_so_far += n;
-                    slice = &mut slice[n..];
+                    slice = &mut slice[n..]
                 }
-
+                if read_so_far > 0 {
+                    log::debug!("read {read_so_far:#x} bytes");
+                    return Ok(read_so_far);
+                }
                 let packet = Packet::from_udp(&mut self.udp);
                 if let Ok(packet) = packet {
                     if packet.metadata().cid() != &self.cid {
@@ -144,23 +164,15 @@ impl std::io::Read for Client {
                     }
                     log::debug!("Received new packet {packet:?} from UDP");
                     self.dg_stream.insert(packet)?;
-                    if let Ok((n, _index)) = self
-                        .dg_stream
-                        .read(Some(std::time::Duration::from_secs(0)), slice)
-                    {
-                        log::debug!("Read {n:#x} bytes again from dgstream");
-                        read_so_far += n;
-                    }
                 } else {
                     log::debug!("Failed to read from UDP: {}", packet.unwrap_err());
                 }
-                if read_so_far > 0 {
-                    log::debug!("read {read_so_far:#x} bytes so far");
-                    Ok(read_so_far)
+                if read_so_far == 0 && self.duration.is_none() {
+                    continue;
                 } else {
-                    Err(ErrorKind::WouldBlock.into())
+                    return Err(ErrorKind::WouldBlock.into());
                 }
-            }
+            },
             crate::pb::State::STATE_BEING_SHUTDOWN
             | crate::pb::State::STATE_DISCONNECTED
             | crate::pb::State::STATE_ERROR => {
@@ -181,6 +193,9 @@ impl std::io::Write for Client {
                     let mut b = Vec::with_capacity(METADATA_SIZE);
                     b.write_all(self.cid.as_ref())?;
                     b.write_all(&[self.dg_stream.index() - 1])?;
+                    if self.duration.is_none() {
+                        self.tcp.set_nonblocking(false)?;
+                    }
                     self.tcp.write_all(&b)?;
                     self.tombstone_sent = true;
                 }

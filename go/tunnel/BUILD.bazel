@@ -24,3 +24,25 @@ go_library(
         "@org_golang_google_protobuf//proto:go_default_library",
     ],
 )
+
+go_library(
+    name = "tunnel+turbo",
+    srcs = [
+        "tunnel.go",
+    ],
+    importpath = "github.com/sandbox-quantum/sandwich/go/tunnel",
+    visibility = [
+        "//examples/go:__subpackages__",
+        "//go:__subpackages__",
+    ],
+    deps = [
+        "//go:sandwich+turbo",
+        "//go/c:c+turbo",
+        "//go/errors:errors+turbo",
+        "//go/io:io+turbo",
+        "//proto:sandwich_go_proto",
+        "//proto/api/v1:api_go_proto",
+        "@io_opentelemetry_go_otel_trace//:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+    ],
+)

@@ -72,6 +72,7 @@ pub fn try_from(configuration: &pb_api::ListenerConfiguration) -> crate::Result<
                 .ok_or(pb::ConfigurationError::CONFIGURATIONERROR_INVALID_LISTENER)?;
 
             let is_blocking = match m.blocking_mode.enum_value() {
+                Ok(pb_api::listener_configuration::BlockingMode::BLOCKINGMODE_BLOCKING) => true,
                 Ok(pb_api::listener_configuration::BlockingMode::BLOCKINGMODE_NONBLOCKING) => false,
                 _ => {
                     return Err((
@@ -175,7 +176,7 @@ pub(crate) mod test {
             "#,
             )
             .unwrap();
-        assert!(super::try_from(&listener_config).is_err());
+        assert!(super::try_from(&listener_config).is_ok());
     }
 
     #[cfg(not(feature = "turbo"))]

@@ -65,8 +65,8 @@ cc_library(
 cc_library(
     name = "sandwich+turbo",
     hdrs = [
-        "sandwich.h",
         "turbo.h",
+        ":sandwich_hdrs_all_files",
     ],
     linkopts = [] + select({
         "@platforms//os:ios": [
@@ -149,9 +149,29 @@ cc_test(
 )
 
 cc_test(
-    name = "turbo_test",
+    name = "async_turbo_test",
     timeout = "short",
-    srcs = ["turbo_test.cc"],
+    srcs = ["async_turbo_test.cc"],
+    copts = [
+        "--std=c++20",
+    ],
+    data = [
+        "//testdata",
+    ],
+    flaky = True,
+    linkstatic = True,
+    deps = [
+        ":sandwich+turbo",
+        "//proto:sandwich_cc_proto",
+        "//proto/api/v1:api_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+)
+
+cc_test(
+    name = "blocking_turbo_test",
+    timeout = "short",
+    srcs = ["blocking_turbo_test.cc"],
     copts = [
         "--std=c++20",
     ],
