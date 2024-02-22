@@ -50,8 +50,8 @@ func (ownedIO *OwnedIO) Write(b []byte) (int, error) {
 }
 
 // Creates a Sandwich owned TCP based IO Object.
-func IOTCPClient(hostname string, port uint16, isBlocking bool) (*OwnedIO, *swerrors.IOError) {
-	ownedIO, err := swc.NewOwnedIOTCPClient(hostname, port, isBlocking)
+func IOTCPClient(hostname string, port uint16) (*OwnedIO, *swerrors.IOError) {
+	ownedIO, err := swc.NewOwnedIOTCPClient(hostname, port)
 	pbErr := pb.IOError(err)
 	if pbErr != pb.IOError_IOERROR_OK {
 		return nil, swerrors.NewIOErrorFromEnum(pbErr)
@@ -62,8 +62,8 @@ func IOTCPClient(hostname string, port uint16, isBlocking bool) (*OwnedIO, *swer
 }
 
 // Creates a Sandwich owned Turbo based IO Object.
-func IOTurboClient(udp_hostname string, udp_port uint16, tcp_hostname string, tcp_port uint16, isBlocking bool) (*OwnedIO, *swerrors.IOError) {
-	ownedIO, err := swc.NewOwnedIOTurboClient(udp_hostname, udp_port, tcp_hostname, tcp_port, isBlocking)
+func IOTurboClient(udp_hostname string, udp_port uint16, tcp_hostname string, tcp_port uint16) (*OwnedIO, *swerrors.IOError) {
+	ownedIO, err := swc.NewOwnedIOTurboClient(udp_hostname, udp_port, tcp_hostname, tcp_port)
 	pbErr := pb.IOError(err)
 	if pbErr != pb.IOError_IOERROR_OK {
 		return nil, swerrors.NewIOErrorFromEnum(pbErr)

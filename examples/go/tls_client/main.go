@@ -117,7 +117,7 @@ func main() {
 		log.Fatalln("Please provide a TLS protocol version, e.g --tls_version tls13 or tls12")
 	}
 
-	swio, ioerr := swio.IOTCPClient(*host, uint16(*port), true)
+	swio, ioerr := swio.IOTCPClient(*host, uint16(*port))
 	if ioerr != nil {
 		log.Fatalln("Error connecting to destination:", ioerr)
 		return

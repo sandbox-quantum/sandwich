@@ -202,7 +202,7 @@ func createIOs() ioInts {
 		fmt.Println("Error listening:", err)
 	}
 	listener.Listen()
-	client, _ := swio.IOTCPClient(hostname, port, true)
+	client, _ := swio.IOTCPClient(hostname, port)
 	server, err2 := listener.Accept()
 	if err2 != nil {
 		fmt.Println("Error accepting:", err2)
