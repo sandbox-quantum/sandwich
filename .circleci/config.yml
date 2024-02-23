@@ -35,6 +35,9 @@ jobs:
             export GO_EXAMPLE_DIR="$PWD/examples/go/echo_tls_server"
             echo "replace github.com/sandbox-quantum/sandwich/go => $PWD/go" >>"$GO_EXAMPLE_DIR/go.mod"
             echo "replace github.com/sandbox-quantum/sandwich/go/c => $PWD/go/c" >> "$GO_EXAMPLE_DIR/go.mod"
+            echo "replace github.com/sandbox-quantum/sandwich/go/errors => $PWD/go/errors" >> "$GO_EXAMPLE_DIR/go.mod"
+            echo "replace github.com/sandbox-quantum/sandwich/go/io => $PWD/go/io" >> "$GO_EXAMPLE_DIR/go.mod"
+            echo "replace github.com/sandbox-quantum/sandwich/go/tunnel => $PWD/go/tunnel" >> "$GO_EXAMPLE_DIR/go.mod"
             pushd "$GO_EXAMPLE_DIR" && go build && popd
       - run:
           name: "Test external Python integration"
