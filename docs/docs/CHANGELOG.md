@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.0 (Feb 23, 2024)
+
+### Major changes
+
+ - Experimental [TurboTLS](https://cryptographycaffe.sandboxaq.com/posts/turbo-tls/) protocol implementation.
+
+### Minor changes
+
+ - Revamped Go Language binding to workaround restriction Golang places on accessing c types across packages.
+ - Go helpers now always return blocking IOs.
+
+
 ## v0.2.0 (Feb 5, 2024)
 
 ### Major changes
