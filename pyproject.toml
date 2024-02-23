@@ -1,6 +1,6 @@
 [project]
 name = "pysandwich"
-version = "0.2.0"
+version = "0.3.0"
 description = "Sandwich Python bindings"
 authors = [
     {name = "SandboxAQ", email = "sandwich@sandboxaq.com"},
