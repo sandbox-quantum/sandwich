@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="lib_8h" kind="file" language="C++">
+    <compoundname>lib.h</compoundname>
+    <includes refid="export_8h" local="yes">sandwich_c/export.h</includes>
+    <includedby refid="sandwich_8h" local="yes">docs/sandwich_c/sandwich.h</includedby>
+    <incdepgraph>
+      <node id="2">
+        <label>sandwich_c/export.h</label>
+        <link refid="export_8h"/>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/lib.h</label>
+        <link refid="lib_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>docs/sandwich_c/lib.h</label>
+        <link refid="lib_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="lib_8h_1a6205d655ac27d84422f57e548f673252" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> struct SandwichContext *</type>
+        <definition>SANDWICH_API struct SandwichContext * sandwich_lib_context_new</definition>
+        <argsstring>(void)</argsstring>
+        <name>sandwich_lib_context_new</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Create a top-level Sandwich context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>A new top-level Sandwich context. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/lib.h" line="22" column="35" declfile="docs/sandwich_c/lib.h" declline="22" declcolumn="35"/>
+      </memberdef>
+      <memberdef kind="function" id="lib_8h_1a5b0fa63287b48fc8eb7607f77072d427" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_lib_context_free</definition>
+        <argsstring>(struct SandwichContext *sw)</argsstring>
+        <name>sandwich_lib_context_free</name>
+        <param>
+          <type>struct SandwichContext *</type>
+          <declname>sw</declname>
+        </param>
+        <briefdescription>
+<para>Free a top-level Sandwich context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">sw</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Top-level Sandwich context to free.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+NULL for <computeroutput>sw</computeroutput> is allowed. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/lib.h" line="29" column="19" declfile="docs/sandwich_c/lib.h" declline="29" declcolumn="19"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Top-level context for the Sandwich library. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>SandboxAQ.<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//<sp/>SPDX-License-Identifier:<sp/>AGPL-3.0-only</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="export_8h" kindref="compound">sandwich_c/export.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"></codeline>
+<codeline lineno="17"><highlight class="keyword">struct<sp/></highlight><highlight class="normal">SandwichContext;</highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight></codeline>
+<codeline lineno="22" refid="lib_8h_1a6205d655ac27d84422f57e548f673252" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal">SandwichContext<sp/>*<ref refid="lib_8h_1a6205d655ac27d84422f57e548f673252" kindref="member">sandwich_lib_context_new</ref>(</highlight><highlight class="keywordtype">void</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29" refid="lib_8h_1a5b0fa63287b48fc8eb7607f77072d427" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="lib_8h_1a5b0fa63287b48fc8eb7607f77072d427" kindref="member">sandwich_lib_context_free</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichContext<sp/>*sw);</highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/lib.h"/>
+  </compounddef>
+</doxygen>

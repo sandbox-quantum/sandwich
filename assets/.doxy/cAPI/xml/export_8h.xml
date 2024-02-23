@@ -1,0 +1,105 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="export_8h" kind="file" language="C++">
+    <compoundname>export.h</compoundname>
+    <includedby refid="error_8h" local="yes">docs/sandwich_c/error.h</includedby>
+    <includedby refid="io_8h" local="yes">docs/sandwich_c/io.h</includedby>
+    <includedby refid="lib_8h" local="yes">docs/sandwich_c/lib.h</includedby>
+    <includedby refid="listener_8h" local="yes">docs/sandwich_c/listener.h</includedby>
+    <includedby refid="tracer_8h" local="yes">docs/sandwich_c/tracer.h</includedby>
+    <includedby refid="tunnel_8h" local="yes">docs/sandwich_c/tunnel.h</includedby>
+    <invincdepgraph>
+      <node id="2">
+        <label>docs/sandwich_c/error.h</label>
+        <link refid="error_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/export.h</label>
+        <link refid="export_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>docs/sandwich_c/io.h</label>
+        <link refid="io_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>docs/sandwich_c/lib.h</label>
+        <link refid="lib_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>docs/sandwich_c/listener.h</label>
+        <link refid="listener_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+      <node id="7">
+        <label>docs/sandwich_c/tracer.h</label>
+        <link refid="tracer_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>docs/sandwich_c/tunnel.h</label>
+        <link refid="tunnel_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="export_8h_1a3298d07d3713a0d86267cd907a504b09" prot="public" static="no">
+        <name>SANDWICH_API</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/export.h" line="9" column="10" bodyfile="docs/sandwich_c/export.h" bodystart="9" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>SandboxAQ.<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//<sp/>SPDX-License-Identifier:<sp/>AGPL-3.0-only</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>(defined(__clang__)<sp/>||<sp/>(_GNUC__<sp/>&gt;=<sp/>4))</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>SANDWICH_API<sp/>__attribute__((visibility(&quot;default&quot;)))</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#else</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9" refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" refkind="member"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>SANDWICH_API</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/export.h"/>
+  </compounddef>
+</doxygen>

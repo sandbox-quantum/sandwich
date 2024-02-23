@@ -1,0 +1,196 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="ioerrors_8h" kind="file" language="C++">
+    <compoundname>ioerrors.h</compoundname>
+    <includedby refid="io_8h" local="yes">docs/sandwich_c/io.h</includedby>
+    <invincdepgraph>
+      <node id="2">
+        <label>docs/sandwich_c/io.h</label>
+        <link refid="io_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/ioerrors.h</label>
+        <link refid="ioerrors_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>docs/sandwich_c/listener.h</label>
+        <link refid="listener_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+      <node id="6">
+        <label>docs/sandwich_c/tracer.h</label>
+        <link refid="tracer_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>docs/sandwich_c/tunnel.h</label>
+        <link refid="tunnel_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichIOError</name>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1dadb803f165e846c1eddfe8c7d57d1671d" prot="public">
+          <name>SANDWICH_IOERROR_OK</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1dafad3987c184425f67b01a65ebc059cc5" prot="public">
+          <name>SANDWICH_IOERROR_IN_PROGRESS</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da43952091e65041b1884c3526944605a9" prot="public">
+          <name>SANDWICH_IOERROR_WOULD_BLOCK</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1daef22def4929af9dcae1163bc62fc70d1" prot="public">
+          <name>SANDWICH_IOERROR_REFUSED</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da4c6d35d744851d7025c825493e0b4d35" prot="public">
+          <name>SANDWICH_IOERROR_CLOSED</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da2cd8230ab02b11ed0e63b29279a85e5d" prot="public">
+          <name>SANDWICH_IOERROR_INVALID</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da775f1554525b35657237475c0c98cc58" prot="public">
+          <name>SANDWICH_IOERROR_UNKNOWN</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da6f630359328f4a63a27674268616a38a" prot="public">
+          <name>SANDWICH_IOERROR_SYSTEM_ERROR</name>
+          <initializer>= 7</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da03919023f39952c2f4fb4cdaf81cec34" prot="public">
+          <name>SANDWICH_IOERROR_ADDRESS_IN_USE</name>
+          <initializer>= 8</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum IOError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/ioerrors.h" line="28" column="1" bodyfile="docs/sandwich_c/ioerrors.h" bodystart="28" bodyend="38"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="ioerrors_8h_1a3bf3ecd8acffa30ea44a8a42ae5db654" prot="public" static="no">
+        <type>enum <ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></type>
+        <definition>typedef enum SandwichIOError SandwichIOError</definition>
+        <argsstring></argsstring>
+        <name>SandwichIOError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/ioerrors.h" line="39" column="29" bodyfile="docs/sandwich_c/ioerrors.h" bodystart="39" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Sandwich I/O errors specification. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>2023<sp/>SandboxAQ</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;License&quot;);</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>you<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>You<sp/>may<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/><sp/><sp/><sp/><sp/><sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or<sp/>implied.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing<sp/>permissions<sp/>and</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//<sp/>limitations<sp/>under<sp/>the<sp/>License.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight></codeline>
+<codeline lineno="28" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="29" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1dadb803f165e846c1eddfe8c7d57d1671d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1dadb803f165e846c1eddfe8c7d57d1671d" kindref="member">SANDWICH_IOERROR_OK</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="30" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1dafad3987c184425f67b01a65ebc059cc5" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1dafad3987c184425f67b01a65ebc059cc5" kindref="member">SANDWICH_IOERROR_IN_PROGRESS</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="31" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da43952091e65041b1884c3526944605a9" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da43952091e65041b1884c3526944605a9" kindref="member">SANDWICH_IOERROR_WOULD_BLOCK</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="32" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1daef22def4929af9dcae1163bc62fc70d1" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1daef22def4929af9dcae1163bc62fc70d1" kindref="member">SANDWICH_IOERROR_REFUSED</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="33" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da4c6d35d744851d7025c825493e0b4d35" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da4c6d35d744851d7025c825493e0b4d35" kindref="member">SANDWICH_IOERROR_CLOSED</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="34" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da2cd8230ab02b11ed0e63b29279a85e5d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da2cd8230ab02b11ed0e63b29279a85e5d" kindref="member">SANDWICH_IOERROR_INVALID</ref><sp/>=<sp/>5,</highlight></codeline>
+<codeline lineno="35" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da775f1554525b35657237475c0c98cc58" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da775f1554525b35657237475c0c98cc58" kindref="member">SANDWICH_IOERROR_UNKNOWN</ref><sp/>=<sp/>6,</highlight></codeline>
+<codeline lineno="36" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da6f630359328f4a63a27674268616a38a" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da6f630359328f4a63a27674268616a38a" kindref="member">SANDWICH_IOERROR_SYSTEM_ERROR</ref><sp/>=<sp/>7,</highlight></codeline>
+<codeline lineno="37" refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da03919023f39952c2f4fb4cdaf81cec34" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1da03919023f39952c2f4fb4cdaf81cec34" kindref="member">SANDWICH_IOERROR_ADDRESS_IN_USE</ref><sp/>=<sp/>8,</highlight></codeline>
+<codeline lineno="38"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="39" refid="ioerrors_8h_1a3bf3ecd8acffa30ea44a8a42ae5db654" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref>;</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="43"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/ioerrors.h"/>
+  </compounddef>
+</doxygen>

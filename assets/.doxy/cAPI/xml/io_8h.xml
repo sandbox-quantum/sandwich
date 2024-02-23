@@ -1,0 +1,465 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="io_8h" kind="file" language="C++">
+    <compoundname>io.h</compoundname>
+    <includes local="no">sys/types.h</includes>
+    <includes refid="export_8h" local="yes">sandwich_c/export.h</includes>
+    <includes refid="ioerrors_8h" local="yes">sandwich_c/ioerrors.h</includes>
+    <includedby refid="listener_8h" local="yes">docs/sandwich_c/listener.h</includedby>
+    <includedby refid="sandwich_8h" local="yes">docs/sandwich_c/sandwich.h</includedby>
+    <includedby refid="tunnel_8h" local="yes">docs/sandwich_c/tunnel.h</includedby>
+    <incdepgraph>
+      <node id="3">
+        <label>sandwich_c/export.h</label>
+        <link refid="export_8h"/>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/io.h</label>
+        <link refid="io_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>sandwich_c/ioerrors.h</label>
+        <link refid="ioerrors_8h"/>
+      </node>
+      <node id="2">
+        <label>sys/types.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>docs/sandwich_c/io.h</label>
+        <link refid="io_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>docs/sandwich_c/listener.h</label>
+        <link refid="listener_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+      <node id="5">
+        <label>docs/sandwich_c/tracer.h</label>
+        <link refid="tracer_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>docs/sandwich_c/tunnel.h</label>
+        <link refid="tunnel_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="structSandwichIO" prot="public">SandwichIO</innerclass>
+    <innerclass refid="structSandwichIOOwned" prot="public">SandwichIOOwned</innerclass>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="io_8h_1a572a088fc653713ab3495c2013be0ac7" prot="public" static="no">
+        <type>size_t()</type>
+        <definition>typedef size_t() SandwichIOReadFunction(void *uarg, void *buf, size_t count, enum SandwichIOError *err)</definition>
+        <argsstring>(void *uarg, void *buf, size_t count, enum SandwichIOError *err)</argsstring>
+        <name>SandwichIOReadFunction</name>
+        <briefdescription>
+<para>Read function for the I/O interface. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">uarg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>User opaque argument. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Destination buffer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>count</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Amount of bytes to read. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Error, if any.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The amount of bytes successfully read, or 0. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="27" column="9" bodyfile="docs/sandwich_c/io.h" bodystart="27" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="io_8h_1a3871ed804223d7aeb6b0f6e7d4cbf35b" prot="public" static="no">
+        <type><ref refid="io_8h_1a572a088fc653713ab3495c2013be0ac7" kindref="member">SandwichIOReadFunction</ref> *</type>
+        <definition>typedef SandwichIOReadFunction* SandwichIOReadFunctionPtr</definition>
+        <argsstring></argsstring>
+        <name>SandwichIOReadFunctionPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="29" column="32" bodyfile="docs/sandwich_c/io.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="io_8h_1a0bbb5f628ac89a965df9be97ac621126" prot="public" static="no">
+        <type>size_t()</type>
+        <definition>typedef size_t() SandwichIOWriteFunction(void *uarg, const void *buf, size_t count, enum SandwichIOError *err)</definition>
+        <argsstring>(void *uarg, const void *buf, size_t count, enum SandwichIOError *err)</argsstring>
+        <name>SandwichIOWriteFunction</name>
+        <briefdescription>
+<para>Write function for the I/O interface. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">uarg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>User opaque argument. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Source buffer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>count</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Amount of bytes to write. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Error, if any.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The amount of bytes successfully written, or 0. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="39" column="9" bodyfile="docs/sandwich_c/io.h" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="io_8h_1a0294b6bf341b83929aaf0270c72b82f1" prot="public" static="no">
+        <type><ref refid="io_8h_1a0bbb5f628ac89a965df9be97ac621126" kindref="member">SandwichIOWriteFunction</ref> *</type>
+        <definition>typedef SandwichIOWriteFunction* SandwichIOWriteFunctionPtr</definition>
+        <argsstring></argsstring>
+        <name>SandwichIOWriteFunctionPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="42" column="33" bodyfile="docs/sandwich_c/io.h" bodystart="42" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="io_8h_1ab430df749364cfd0cd3227fa27e58dca" prot="public" static="no">
+        <type><ref refid="io_8h_1a4d32b9b4ac6d286369d85f635e47e4d3" kindref="member">SandwichIOFlushFunction</ref> *</type>
+        <definition>typedef SandwichIOFlushFunction* SandwichIOFlushFunctionPtr</definition>
+        <argsstring></argsstring>
+        <name>SandwichIOFlushFunctionPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="50" column="33" bodyfile="docs/sandwich_c/io.h" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="io_8h_1a9187f5bc478f70889e7402eadef7ca64" prot="public" static="no">
+        <type>void()</type>
+        <definition>typedef void() SandwichOwnedIOFreeFunction(struct SandwichIO *io)</definition>
+        <argsstring>(struct SandwichIO *io)</argsstring>
+        <name>SandwichOwnedIOFreeFunction</name>
+        <briefdescription>
+<para>A destructor function for owned I/O interface. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="70" column="9" bodyfile="docs/sandwich_c/io.h" bodystart="70" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="io_8h_1a69abb8b55ba846c2bca5fbc85c126f4e" prot="public" static="no">
+        <type><ref refid="io_8h_1a9187f5bc478f70889e7402eadef7ca64" kindref="member">SandwichOwnedIOFreeFunction</ref> *</type>
+        <definition>typedef SandwichOwnedIOFreeFunction* SandwichOwnedIOFreeFunctionPtr</definition>
+        <argsstring></argsstring>
+        <name>SandwichOwnedIOFreeFunctionPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="71" column="37" bodyfile="docs/sandwich_c/io.h" bodystart="71" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="io_8h_1a4d32b9b4ac6d286369d85f635e47e4d3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>enum <ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref>()</type>
+        <definition>enum SandwichIOError() SandwichIOFlushFunction</definition>
+        <argsstring>(void *uarg)</argsstring>
+        <name>SandwichIOFlushFunction</name>
+        <param>
+          <type>void *</type>
+          <declname>uarg</declname>
+        </param>
+        <briefdescription>
+<para>Flush function for the I/O interface. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">uarg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>User opaque argument.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>IOERROR_OK if success, else an IO error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="42" column="33" declfile="docs/sandwich_c/io.h" declline="42" declcolumn="33"/>
+      </memberdef>
+      <memberdef kind="function" id="io_8h_1a82f0af62941281dfe9c3e74293ee55d6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> enum <ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></type>
+        <definition>SANDWICH_API enum SandwichIOError sandwich_io_client_tcp_new</definition>
+        <argsstring>(const char *hostname, uint16_t port, bool async, struct SandwichIOOwned **ownedIO)</argsstring>
+        <name>sandwich_io_client_tcp_new</name>
+        <param>
+          <type>const char *</type>
+          <declname>hostname</declname>
+        </param>
+        <param>
+          <type>uint16_t</type>
+          <declname>port</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>async</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> **</type>
+          <declname>ownedIO</declname>
+        </param>
+        <briefdescription>
+<para>Creates a TCP based IO object to be used as an IO. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">hostname</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the hostname of the target server. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">port</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the port number of the target server. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">async</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>indicates whether sockets should be non-blocking or not. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">ownedIO</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the created TCP based sandwich owned IO object.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>IOERROR_OK if the operation was a success, otherwise returns the error that occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="98" column="1" declfile="docs/sandwich_c/io.h" declline="98" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="io_8h_1acb766a19a1826cca0d7a1d368d587add" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> enum <ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></type>
+        <definition>SANDWICH_API enum SandwichIOError sandwich_io_socket_wrap_new</definition>
+        <argsstring>(int fd, struct SandwichIOOwned **ownedIO)</argsstring>
+        <name>sandwich_io_socket_wrap_new</name>
+        <param>
+          <type>int</type>
+          <declname>fd</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> **</type>
+          <declname>ownedIO</declname>
+        </param>
+        <briefdescription>
+<para>Creates an IO object that wraps a UNIX socket. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">fd</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file descriptor of the unix socket. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">ownedIO</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the created UNIX socket sandwich owned IO object. The caller is responsible for freeing that object with <ref refid="io_8h_1ae87bb1b6e44ee5a68c4095fa47fdd039" kindref="member">sandwich_io_owned_free</ref>.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>IOERROR_OK if the operation was a success, otherwise returns the error that occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="110" column="1" declfile="docs/sandwich_c/io.h" declline="110" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="io_8h_1ae87bb1b6e44ee5a68c4095fa47fdd039" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_io_owned_free</definition>
+        <argsstring>(struct SandwichIOOwned *ownedIO)</argsstring>
+        <name>sandwich_io_owned_free</name>
+        <param>
+          <type>struct <ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> *</type>
+          <declname>ownedIO</declname>
+        </param>
+        <briefdescription>
+<para>Frees a <ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> object created by one of the sandwich_io_*_new() functions. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="114" column="19" declfile="docs/sandwich_c/io.h" declline="114" declcolumn="19"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>I/O abstraction for Sandwich. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>SandboxAQ.<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//<sp/>SPDX-License-Identifier:<sp/>AGPL-3.0-only</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sys/types.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="export_8h" kindref="compound">sandwich_c/export.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="ioerrors_8h" kindref="compound">sandwich_c/ioerrors.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight></codeline>
+<codeline lineno="27" refid="io_8h_1a572a088fc653713ab3495c2013be0ac7" refkind="member"><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/>size_t(<ref refid="io_8h_1a572a088fc653713ab3495c2013be0ac7" kindref="member">SandwichIOReadFunction</ref>)(</highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*uarg,<sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*buf,<sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>count,</highlight></codeline>
+<codeline lineno="28"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref><sp/>*err);</highlight></codeline>
+<codeline lineno="29" refid="io_8h_1a3871ed804223d7aeb6b0f6e7d4cbf35b" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/><ref refid="io_8h_1a572a088fc653713ab3495c2013be0ac7" kindref="member">SandwichIOReadFunction</ref><sp/>*<ref refid="io_8h_1a3871ed804223d7aeb6b0f6e7d4cbf35b" kindref="member">SandwichIOReadFunctionPtr</ref>;</highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight></codeline>
+<codeline lineno="39" refid="io_8h_1a0bbb5f628ac89a965df9be97ac621126" refkind="member"><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/>size_t(<ref refid="io_8h_1a0bbb5f628ac89a965df9be97ac621126" kindref="member">SandwichIOWriteFunction</ref>)(</highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*uarg,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*buf,</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>count,</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref><sp/>*err);</highlight></codeline>
+<codeline lineno="42" refid="io_8h_1a4d32b9b4ac6d286369d85f635e47e4d3" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/><ref refid="io_8h_1a0bbb5f628ac89a965df9be97ac621126" kindref="member">SandwichIOWriteFunction</ref><sp/>*<ref refid="io_8h_1a0294b6bf341b83929aaf0270c72b82f1" kindref="member">SandwichIOWriteFunctionPtr</ref>;</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"></highlight></codeline>
+<codeline lineno="49"><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref>(<ref refid="io_8h_1a4d32b9b4ac6d286369d85f635e47e4d3" kindref="member">SandwichIOFlushFunction</ref>)(</highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*uarg);</highlight></codeline>
+<codeline lineno="50" refid="io_8h_1ab430df749364cfd0cd3227fa27e58dca" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/><ref refid="io_8h_1a4d32b9b4ac6d286369d85f635e47e4d3" kindref="member">SandwichIOFlushFunction</ref><sp/>*<ref refid="io_8h_1ab430df749364cfd0cd3227fa27e58dca" kindref="member">SandwichIOFlushFunctionPtr</ref>;</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"></highlight></codeline>
+<codeline lineno="53" refid="structSandwichIO" refkind="compound"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichIO" kindref="compound">SandwichIO</ref><sp/>{</highlight></codeline>
+<codeline lineno="55" refid="structSandwichIO_1aa4fd6ac7d8b1f34f4a14c2028c8f3188" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="io_8h_1a3871ed804223d7aeb6b0f6e7d4cbf35b" kindref="member">SandwichIOReadFunctionPtr</ref><sp/><ref refid="structSandwichIO_1aa4fd6ac7d8b1f34f4a14c2028c8f3188" kindref="member">read</ref>;</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58" refid="structSandwichIO_1aba6808596ad13bbcfbe3e2dd081fd90f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="io_8h_1a0294b6bf341b83929aaf0270c72b82f1" kindref="member">SandwichIOWriteFunctionPtr</ref><sp/><ref refid="structSandwichIO_1aba6808596ad13bbcfbe3e2dd081fd90f" kindref="member">write</ref>;</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight></codeline>
+<codeline lineno="63" refid="structSandwichIO_1a5a5cf39b0a017ac8183607ab85884b8c" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="io_8h_1ab430df749364cfd0cd3227fa27e58dca" kindref="member">SandwichIOFlushFunctionPtr</ref><sp/><ref refid="structSandwichIO_1a5a5cf39b0a017ac8183607ab85884b8c" kindref="member">flush</ref>;</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight></codeline>
+<codeline lineno="66" refid="structSandwichIO_1abbbbf12c587802cd27ce4eac6e3a3542" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*<ref refid="structSandwichIO_1abbbbf12c587802cd27ce4eac6e3a3542" kindref="member">uarg</ref>;</highlight></codeline>
+<codeline lineno="67"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"></highlight></codeline>
+<codeline lineno="70" refid="io_8h_1a9187f5bc478f70889e7402eadef7ca64" refkind="member"><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/>void(<ref refid="io_8h_1a9187f5bc478f70889e7402eadef7ca64" kindref="member">SandwichOwnedIOFreeFunction</ref>)(</highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichIO" kindref="compound">SandwichIO</ref><sp/>*io);</highlight></codeline>
+<codeline lineno="71" refid="io_8h_1a69abb8b55ba846c2bca5fbc85c126f4e" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/><ref refid="io_8h_1a9187f5bc478f70889e7402eadef7ca64" kindref="member">SandwichOwnedIOFreeFunction</ref><sp/>*<ref refid="io_8h_1a69abb8b55ba846c2bca5fbc85c126f4e" kindref="member">SandwichOwnedIOFreeFunctionPtr</ref>;</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"></highlight></codeline>
+<codeline lineno="80" refid="structSandwichIOOwned" refkind="compound"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref><sp/>{</highlight></codeline>
+<codeline lineno="82" refid="structSandwichIOOwned_1a56590e9132faa97a07b0e7581715b134" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichIO" kindref="compound">SandwichIO</ref><sp/>*<ref refid="structSandwichIOOwned_1a56590e9132faa97a07b0e7581715b134" kindref="member">io</ref>;</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85" refid="structSandwichIOOwned_1aea4b7a33cfa8a5d2ab3a8978d504d9cd" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="io_8h_1a69abb8b55ba846c2bca5fbc85c126f4e" kindref="member">SandwichOwnedIOFreeFunctionPtr</ref><sp/><ref refid="structSandwichIOOwned_1aea4b7a33cfa8a5d2ab3a8978d504d9cd" kindref="member">freeptr</ref>;</highlight></codeline>
+<codeline lineno="86"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"></highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></highlight></codeline>
+<codeline lineno="98" refid="io_8h_1a82f0af62941281dfe9c3e74293ee55d6" refkind="member"><highlight class="normal"><ref refid="io_8h_1a82f0af62941281dfe9c3e74293ee55d6" kindref="member">sandwich_io_client_tcp_new</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*hostname,<sp/>uint16_t<sp/>port,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>async,</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref><sp/>**ownedIO);</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"></highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></highlight></codeline>
+<codeline lineno="110" refid="io_8h_1acb766a19a1826cca0d7a1d368d587add" refkind="member"><highlight class="normal"><ref refid="io_8h_1acb766a19a1826cca0d7a1d368d587add" kindref="member">sandwich_io_socket_wrap_new</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fd,<sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref><sp/>**ownedIO);</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"></highlight></codeline>
+<codeline lineno="114" refid="io_8h_1ae87bb1b6e44ee5a68c4095fa47fdd039" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="io_8h_1ae87bb1b6e44ee5a68c4095fa47fdd039" kindref="member">sandwich_io_owned_free</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref><sp/>*ownedIO);</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="117"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="118"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/io.h"/>
+  </compounddef>
+</doxygen>

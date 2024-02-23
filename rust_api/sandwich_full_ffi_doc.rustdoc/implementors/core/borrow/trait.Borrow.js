@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"sandwich":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.74.0/core/borrow/trait.Borrow.html\" title=\"trait core::borrow::Borrow\">Borrow</a>&lt;<a class=\"enum\" href=\"sandwich/enum.ProtoBasedErrorCode.html\" title=\"enum sandwich::ProtoBasedErrorCode\">ProtoBasedErrorCode</a>&gt; for <a class=\"struct\" href=\"sandwich/struct.ErrorCode.html\" title=\"struct sandwich::ErrorCode\">ErrorCode</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

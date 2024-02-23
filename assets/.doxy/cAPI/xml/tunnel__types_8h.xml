@@ -1,0 +1,328 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="tunnel__types_8h" kind="file" language="C++">
+    <compoundname>tunnel_types.h</compoundname>
+    <includedby refid="tunnel_8h" local="yes">docs/sandwich_c/tunnel.h</includedby>
+    <invincdepgraph>
+      <node id="3">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+      <node id="4">
+        <label>docs/sandwich_c/tracer.h</label>
+        <link refid="tracer_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>docs/sandwich_c/tunnel.h</label>
+        <link refid="tunnel_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/tunnel_types.h</label>
+        <link refid="tunnel__types_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichTunnelState</name>
+        <enumvalue id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8abd3c861162b5033d95022150ee75de40" prot="public">
+          <name>SANDWICH_TUNNEL_STATE_NOT_CONNECTED</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a34a3a6f31347af865f6640e6e81b1559" prot="public">
+          <name>SANDWICH_TUNNEL_STATE_CONNECTION_IN_PROGRESS</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8aedc21718a6d60047a49053eca0b8ba5d" prot="public">
+          <name>SANDWICH_TUNNEL_STATE_HANDSHAKE_IN_PROGRESS</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a7bf0e9614bb332a8c644eea81a632955" prot="public">
+          <name>SANDWICH_TUNNEL_STATE_HANDSHAKE_DONE</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a5c57beea8da9847ccdd1bc8454a37dcf" prot="public">
+          <name>SANDWICH_TUNNEL_STATE_BEING_SHUTDOWN</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8af3e4136f86c668fb578bbdd28646125f" prot="public">
+          <name>SANDWICH_TUNNEL_STATE_DISCONNECTED</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8ab06f058534ae7d7790cf6601c092806f" prot="public">
+          <name>SANDWICH_TUNNEL_STATE_ERROR</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum State. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel_types.h" line="28" column="1" bodyfile="docs/sandwich_c/tunnel_types.h" bodystart="28" bodyend="36"/>
+      </memberdef>
+      <memberdef kind="enum" id="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichTunnelHandshakeState</name>
+        <enumvalue id="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9ae871511c92af245a32241ce4f53b9018" prot="public">
+          <name>SANDWICH_TUNNEL_HANDSHAKESTATE_IN_PROGRESS</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9a6e6181ebb5ad0b5d315111e193b388d6" prot="public">
+          <name>SANDWICH_TUNNEL_HANDSHAKESTATE_DONE</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9aaa9f19063fe815a792675e1f51e3327b" prot="public">
+          <name>SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9ac65e2f6398d0d4738b1a931ab81723fc" prot="public">
+          <name>SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_WRITE</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9aa15021c9996cdee12b1e926d9cb59a6a" prot="public">
+          <name>SANDWICH_TUNNEL_HANDSHAKESTATE_ERROR</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum HandshakeState. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel_types.h" line="40" column="1" bodyfile="docs/sandwich_c/tunnel_types.h" bodystart="40" bodyend="46"/>
+      </memberdef>
+      <memberdef kind="enum" id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichTunnelRecordError</name>
+        <enumvalue id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa6f7603e21c4ec1390d4c94d70f40ba34" prot="public">
+          <name>SANDWICH_TUNNEL_RECORDERROR_OK</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa1452785ad2d894cd0e9cd4a8f54695bd" prot="public">
+          <name>SANDWICH_TUNNEL_RECORDERROR_WANT_READ</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaadec3028e44a7a49e8825ceb0864e6309" prot="public">
+          <name>SANDWICH_TUNNEL_RECORDERROR_WANT_WRITE</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaae4e508aad00864379d0a17807fe837ba" prot="public">
+          <name>SANDWICH_TUNNEL_RECORDERROR_BEING_SHUTDOWN</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa367b622e01267860b826bbd1691718f0" prot="public">
+          <name>SANDWICH_TUNNEL_RECORDERROR_CLOSED</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa021039e5abd6664ebcf7f7e91a46a5e8" prot="public">
+          <name>SANDWICH_TUNNEL_RECORDERROR_TOO_BIG</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa7385170785d077445efe2865d22638ff" prot="public">
+          <name>SANDWICH_TUNNEL_RECORDERROR_UNKNOWN</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum RecordError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel_types.h" line="50" column="1" bodyfile="docs/sandwich_c/tunnel_types.h" bodystart="50" bodyend="58"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="tunnel__types_8h_1af22319b04a3be038ef11f2b8f9f97141" prot="public" static="no">
+        <type>enum <ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" kindref="member">SandwichTunnelState</ref></type>
+        <definition>typedef enum SandwichTunnelState SandwichTunnelState</definition>
+        <argsstring></argsstring>
+        <name>SandwichTunnelState</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel_types.h" line="37" column="33" bodyfile="docs/sandwich_c/tunnel_types.h" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="tunnel__types_8h_1aea0a3f1e8bac29354d6bc5a6d23632b4" prot="public" static="no">
+        <type>enum <ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" kindref="member">SandwichTunnelHandshakeState</ref></type>
+        <definition>typedef enum SandwichTunnelHandshakeState SandwichTunnelHandshakeState</definition>
+        <argsstring></argsstring>
+        <name>SandwichTunnelHandshakeState</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel_types.h" line="47" column="42" bodyfile="docs/sandwich_c/tunnel_types.h" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="tunnel__types_8h_1aec574bfdb1f91919f2791104bc516b46" prot="public" static="no">
+        <type>enum <ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref></type>
+        <definition>typedef enum SandwichTunnelRecordError SandwichTunnelRecordError</definition>
+        <argsstring></argsstring>
+        <name>SandwichTunnelRecordError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel_types.h" line="59" column="39" bodyfile="docs/sandwich_c/tunnel_types.h" bodystart="59" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Sandwich tunnel types and states specification. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>2023<sp/>SandboxAQ</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;License&quot;);</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>you<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>You<sp/>may<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/><sp/><sp/><sp/><sp/><sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or<sp/>implied.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing<sp/>permissions<sp/>and</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//<sp/>limitations<sp/>under<sp/>the<sp/>License.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight></codeline>
+<codeline lineno="28" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" kindref="member">SandwichTunnelState</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="29" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8abd3c861162b5033d95022150ee75de40" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8abd3c861162b5033d95022150ee75de40" kindref="member">SANDWICH_TUNNEL_STATE_NOT_CONNECTED</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="30" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a34a3a6f31347af865f6640e6e81b1559" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a34a3a6f31347af865f6640e6e81b1559" kindref="member">SANDWICH_TUNNEL_STATE_CONNECTION_IN_PROGRESS</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="31" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8aedc21718a6d60047a49053eca0b8ba5d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8aedc21718a6d60047a49053eca0b8ba5d" kindref="member">SANDWICH_TUNNEL_STATE_HANDSHAKE_IN_PROGRESS</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="32" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a7bf0e9614bb332a8c644eea81a632955" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a7bf0e9614bb332a8c644eea81a632955" kindref="member">SANDWICH_TUNNEL_STATE_HANDSHAKE_DONE</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="33" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a5c57beea8da9847ccdd1bc8454a37dcf" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8a5c57beea8da9847ccdd1bc8454a37dcf" kindref="member">SANDWICH_TUNNEL_STATE_BEING_SHUTDOWN</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="34" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8af3e4136f86c668fb578bbdd28646125f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8af3e4136f86c668fb578bbdd28646125f" kindref="member">SANDWICH_TUNNEL_STATE_DISCONNECTED</ref><sp/>=<sp/>5,</highlight></codeline>
+<codeline lineno="35" refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8ab06f058534ae7d7790cf6601c092806f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8ab06f058534ae7d7790cf6601c092806f" kindref="member">SANDWICH_TUNNEL_STATE_ERROR</ref><sp/>=<sp/>6,</highlight></codeline>
+<codeline lineno="36"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="37" refid="tunnel__types_8h_1af22319b04a3be038ef11f2b8f9f97141" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" kindref="member">SandwichTunnelState</ref><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" kindref="member">SandwichTunnelState</ref>;</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" kindref="member">SandwichTunnelHandshakeState</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="41" refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9ae871511c92af245a32241ce4f53b9018" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9ae871511c92af245a32241ce4f53b9018" kindref="member">SANDWICH_TUNNEL_HANDSHAKESTATE_IN_PROGRESS</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="42" refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9a6e6181ebb5ad0b5d315111e193b388d6" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9a6e6181ebb5ad0b5d315111e193b388d6" kindref="member">SANDWICH_TUNNEL_HANDSHAKESTATE_DONE</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="43" refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9aaa9f19063fe815a792675e1f51e3327b" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9aaa9f19063fe815a792675e1f51e3327b" kindref="member">SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_READ</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="44" refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9ac65e2f6398d0d4738b1a931ab81723fc" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9ac65e2f6398d0d4738b1a931ab81723fc" kindref="member">SANDWICH_TUNNEL_HANDSHAKESTATE_WANT_WRITE</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="45" refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9aa15021c9996cdee12b1e926d9cb59a6a" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9aa15021c9996cdee12b1e926d9cb59a6a" kindref="member">SANDWICH_TUNNEL_HANDSHAKESTATE_ERROR</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="46"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="47" refid="tunnel__types_8h_1aea0a3f1e8bac29354d6bc5a6d23632b4" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" kindref="member">SandwichTunnelHandshakeState</ref><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" kindref="member">SandwichTunnelHandshakeState</ref>;</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"></highlight></codeline>
+<codeline lineno="50" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="51" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa6f7603e21c4ec1390d4c94d70f40ba34" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa6f7603e21c4ec1390d4c94d70f40ba34" kindref="member">SANDWICH_TUNNEL_RECORDERROR_OK</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="52" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa1452785ad2d894cd0e9cd4a8f54695bd" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa1452785ad2d894cd0e9cd4a8f54695bd" kindref="member">SANDWICH_TUNNEL_RECORDERROR_WANT_READ</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="53" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaadec3028e44a7a49e8825ceb0864e6309" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaadec3028e44a7a49e8825ceb0864e6309" kindref="member">SANDWICH_TUNNEL_RECORDERROR_WANT_WRITE</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="54" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaae4e508aad00864379d0a17807fe837ba" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaae4e508aad00864379d0a17807fe837ba" kindref="member">SANDWICH_TUNNEL_RECORDERROR_BEING_SHUTDOWN</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="55" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa367b622e01267860b826bbd1691718f0" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa367b622e01267860b826bbd1691718f0" kindref="member">SANDWICH_TUNNEL_RECORDERROR_CLOSED</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="56" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa021039e5abd6664ebcf7f7e91a46a5e8" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa021039e5abd6664ebcf7f7e91a46a5e8" kindref="member">SANDWICH_TUNNEL_RECORDERROR_TOO_BIG</ref><sp/>=<sp/>5,</highlight></codeline>
+<codeline lineno="57" refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa7385170785d077445efe2865d22638ff" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aaa7385170785d077445efe2865d22638ff" kindref="member">SANDWICH_TUNNEL_RECORDERROR_UNKNOWN</ref><sp/>=<sp/>6,</highlight></codeline>
+<codeline lineno="58"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="59" refid="tunnel__types_8h_1aec574bfdb1f91919f2791104bc516b46" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref>;</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight></codeline>
+<codeline lineno="62"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="63"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/tunnel_types.h"/>
+  </compounddef>
+</doxygen>

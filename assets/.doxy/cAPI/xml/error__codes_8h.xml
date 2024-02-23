@@ -1,0 +1,1217 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="error__codes_8h" kind="file" language="C++">
+    <compoundname>error_codes.h</compoundname>
+    <includedby refid="error_8h" local="yes">docs/sandwich_c/error.h</includedby>
+    <invincdepgraph>
+      <node id="2">
+        <label>docs/sandwich_c/error.h</label>
+        <link refid="error_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/error_codes.h</label>
+        <link refid="error__codes_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fe" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichAPIError</name>
+        <enumvalue id="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fea60543c211bfe9bf3b078c6d1be65c934" prot="public">
+          <name>SANDWICH_APIERROR_CONFIGURATION</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fea5de3e81e7935f230ec06fd6cad23781c" prot="public">
+          <name>SANDWICH_APIERROR_SOCKET</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05feaec339d2e0581658f2c363e1843ec54ab" prot="public">
+          <name>SANDWICH_APIERROR_TUNNEL</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum APIError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="28" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="28" bodyend="32"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6d" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichConfigurationError</name>
+        <enumvalue id="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6daf7a587262a30d8564593ff9ebb0106bc" prot="public">
+          <name>SANDWICH_CONFIGURATIONERROR_INVALID_IMPLEMENTATION</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da703bcdede00c080cc5b3e57d1a9581d2" prot="public">
+          <name>SANDWICH_CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da9f7ff1a243620937df5d123d33514b3a" prot="public">
+          <name>SANDWICH_CONFIGURATIONERROR_INVALID</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da3e381f55a98c2b07f692f00ed1ae340d" prot="public">
+          <name>SANDWICH_CONFIGURATIONERROR_INVALID_LISTENER</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum ConfigurationError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="36" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="36" bodyend="41"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichProtobufError</name>
+        <enumvalue id="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6aa16160dbdd0f6e3a4592ac9efa7f447c" prot="public">
+          <name>SANDWICH_PROTOBUFERROR_EMPTY</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a48b61d2ee17b3830a36e9d20657816aa" prot="public">
+          <name>SANDWICH_PROTOBUFERROR_TOO_BIG</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a0d40ec55987e0426512a85fe2e5c7e08" prot="public">
+          <name>SANDWICH_PROTOBUFERROR_PARSE_FAILED</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6ae825759445f0ce41cdee72ce6194c4b9" prot="public">
+          <name>SANDWICH_PROTOBUFERROR_NULLPTR</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a62b62c180cb1135a6a3484e998318be1" prot="public">
+          <name>SANDWICH_PROTOBUFERROR_INVALID_ARGUMENT</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum ProtobufError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="45" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="45" bodyend="51"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4a" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichTLSConfigurationError</name>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa96f187e07df5d129ed4d2f28d6a4e44b" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa1d2297e10938571c7395d54b61700636" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_INVALID_CASE</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa4b2e8824b22a16a0efb704753d078100" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_EMPTY</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa35073d7efc70b0d6dea2f078b0505ea2" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa2bd34b4e605d722f3abc1db1a2eabfc7" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa4cb7871c6307834d4b6d9b0fe63e5332" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_INVALID</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aaf227ada4efbc04d010fe661128def696" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa9a44300b904ce2fc20ab7ee49f3e19d0" prot="public">
+          <name>SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_CONTROL_CHARACTERS</name>
+          <initializer>= 7</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum TLSConfigurationError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="55" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="55" bodyend="64"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4b" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichCertificateError</name>
+        <enumvalue id="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4bad5de0d2ea8c0304fe0b0893778e8aa7d" prot="public">
+          <name>SANDWICH_CERTIFICATEERROR_MALFORMED</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4badaed2196cf62cd47618214d7111bc59f" prot="public">
+          <name>SANDWICH_CERTIFICATEERROR_EXPIRED</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4ba3b971b3e8a157451897c55aecb6e62d3" prot="public">
+          <name>SANDWICH_CERTIFICATEERROR_NOT_FOUND</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4baf92b24cce0de0987206649b318d4309d" prot="public">
+          <name>SANDWICH_CERTIFICATEERROR_UNKNOWN</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4baba86dbab55564fb1c1ea10fb85276f30" prot="public">
+          <name>SANDWICH_CERTIFICATEERROR_UNSUPPORTED</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum CertificateError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="68" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="68" bodyend="74"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1ab9b8c347f01924037747a4452bccda57" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichPrivateKeyError</name>
+        <enumvalue id="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a0536230e7e16f9f906a8dc9118f5779d" prot="public">
+          <name>SANDWICH_PRIVATEKEYERROR_MALFORMED</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a9696ccc91ebd464c576087566ccce08c" prot="public">
+          <name>SANDWICH_PRIVATEKEYERROR_NOT_FOUND</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab9b8c347f01924037747a4452bccda57ae33b3b3d1f48f457180b5813578d3180" prot="public">
+          <name>SANDWICH_PRIVATEKEYERROR_UNKNOWN</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab9b8c347f01924037747a4452bccda57aab8d6d650e50f98a8c2c5299b7f88efb" prot="public">
+          <name>SANDWICH_PRIVATEKEYERROR_UNSUPPORTED</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a93984d05f968ba2694bdfbfc0f70233b" prot="public">
+          <name>SANDWICH_PRIVATEKEYERROR_NOT_SERVER</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum PrivateKeyError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="78" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="78" bodyend="84"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efd" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichASN1Error</name>
+        <enumvalue id="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efda2d2995dac490e58426cd40cad0f9ead6" prot="public">
+          <name>SANDWICH_ASN1ERROR_INVALID_FORMAT</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efda872f2a18e096b8a0de3b3516533f6e51" prot="public">
+          <name>SANDWICH_ASN1ERROR_MALFORMED</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum ASN1Error. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="88" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="88" bodyend="91"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bc" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichALPNError</name>
+        <enumvalue id="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bca9971cce0a0e9c8ee6c7a3e4021e75afa" prot="public">
+          <name>SANDWICH_ALPNERROR_LENGTH_ERROR</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bca4fe1e24f5dda3bbdf0e271393276fc04" prot="public">
+          <name>SANDWICH_ALPNERROR_INVALID_STRING</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum ALPNError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="95" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="95" bodyend="98"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichDataSourceError</name>
+        <enumvalue id="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6a75ca6dd610aeeb37585a4b6933a0114d" prot="public">
+          <name>SANDWICH_DATASOURCEERROR_EMPTY</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6ad8ab63e1ff329d1bd403fd2de536e3d5" prot="public">
+          <name>SANDWICH_DATASOURCEERROR_INVALID_CASE</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6a92404f0b7ed1ddadee92baa724a4cdf9" prot="public">
+          <name>SANDWICH_DATASOURCEERROR_NOT_FOUND</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum DataSourceError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="102" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="102" bodyend="106"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichKEMError</name>
+        <enumvalue id="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08ace4574ade725dc671cff45cb70908ef4" prot="public">
+          <name>SANDWICH_KEMERROR_INVALID</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08aa2dbce1baf3967d68199d6fbd35341c0" prot="public">
+          <name>SANDWICH_KEMERROR_TOO_MANY</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum KEMError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="110" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="110" bodyend="113"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1ae3ead610f0525295839948ec56139bec" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichSystemError</name>
+        <enumvalue id="error__codes_8h_1ae3ead610f0525295839948ec56139beca52d9d227339b51dd205519c37598dd50" prot="public">
+          <name>SANDWICH_SYSTEMERROR_MEMORY</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ae3ead610f0525295839948ec56139becacd72236482c8b54089d55be84a9bbcd3" prot="public">
+          <name>SANDWICH_SYSTEMERROR_INTEGER_OVERFLOW</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ae3ead610f0525295839948ec56139beca4984eefbc90f067ba771dd80dc50d2a5" prot="public">
+          <name>SANDWICH_SYSTEMERROR_BACKEND</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum SystemError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="117" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="117" bodyend="121"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichSocketError</name>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a444eff680aa032d8356d58757e9aa25f" prot="public">
+          <name>SANDWICH_SOCKETERROR_BAD_FD</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a34b73f2db0fe529f1881183f9fd5532d" prot="public">
+          <name>SANDWICH_SOCKETERROR_CREATION_FAILED</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aedea6d125f6ec9a7345dd9d07b58cc8b" prot="public">
+          <name>SANDWICH_SOCKETERROR_BAD_NETADDR</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94ae82d637d8e983891237d1032fb77ce98" prot="public">
+          <name>SANDWICH_SOCKETERROR_NETADDR_UNKNOWN</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a3b1accf20a15b2004070d4fba627ae9d" prot="public">
+          <name>SANDWICH_SOCKETERROR_FSTAT_FAILED</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a84a720a7d2b93da9ebe4307770fed5e4" prot="public">
+          <name>SANDWICH_SOCKETERROR_NOT_SOCK</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a3b0e4fb8f2699a7d81cc1694aa1f3616" prot="public">
+          <name>SANDWICH_SOCKETERROR_GETSOCKNAME_FAILED</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aee39f3ff2a9d8571a3cd25e26e5fdd7f" prot="public">
+          <name>SANDWICH_SOCKETERROR_SETSOCKOPT_FAILED</name>
+          <initializer>= 7</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aebef646a2806dea3add20b2dcdd274b6" prot="public">
+          <name>SANDWICH_SOCKETERROR_INVALID_AI_FAMILY</name>
+          <initializer>= 8</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum SocketError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="125" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="125" bodyend="135"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichHandshakeError</name>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a05df13de1262161d3c0806e29f534cdb" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_INVALID_SERVER_NAME</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8aa82161cb5ce81b715338c9d9d18de8f1" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a1ac094fa72cf2001ea57c937cfe26fc0" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_CERTIFICATE_EXPIRED</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a79557b2fb63cad2b6b02799daeaf13e4" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_CERTIFICATE_REVOKED</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8ac8589027c1018cf4366f66b36abb4884" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_INVALID_CERTIFICATE</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a7710f84a00cd5602f27fa8ecaf4a99a6" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a8e8975eb72a90645b3920d2428de3af0" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_UNKNOWN_ERROR</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a3eae1e570acd57607d60c62c1ce28e71" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_DEPTH_EXCEEDED</name>
+          <initializer>= 7</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8aa44339a62f2e4a15de432d2ad37df498" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_UNSUPPORTED_PROTOCOL</name>
+          <initializer>= 8</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a46a0eb0fc6e0016f5186288c29ac750d" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_NO_SHARED_CIPHER</name>
+          <initializer>= 9</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a11e20ce1b7528241dd2d664bfb283a06" prot="public">
+          <name>SANDWICH_HANDSHAKEERROR_NO_SUITABLE_KEY_SHARE</name>
+          <initializer>= 10</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum HandshakeError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="139" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="139" bodyend="151"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1a61c039412f53742e7435861e4dd04127" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichTunnelError</name>
+        <enumvalue id="error__codes_8h_1a61c039412f53742e7435861e4dd04127a2e4730550826370d15c6d966fa180a25" prot="public">
+          <name>SANDWICH_TUNNELERROR_INVALID</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a61c039412f53742e7435861e4dd04127a671337531d9f55ce1c1822810abcdfae" prot="public">
+          <name>SANDWICH_TUNNELERROR_VERIFIER</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1a61c039412f53742e7435861e4dd04127a22c9b13774a6e2d6be03293bb519c59c" prot="public">
+          <name>SANDWICH_TUNNELERROR_UNKNOWN</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum TunnelError. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="155" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="155" bodyend="159"/>
+      </memberdef>
+      <memberdef kind="enum" id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" prot="public" static="no" strong="no">
+        <type></type>
+        <name>SandwichErrorKind</name>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a51f8699aaf864c769f2d683c1c1114bb" prot="public">
+          <name>SANDWICH_ERRORKIND_API</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a01a0a035d7a4070fb95597dd4051a0b5" prot="public">
+          <name>SANDWICH_ERRORKIND_CONFIGURATION</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aeaf0e8ffbfb062beba8a706ce64e87ed" prot="public">
+          <name>SANDWICH_ERRORKIND_TLS_CONFIGURATION</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a91c2f1e45e334f46b3a665ed0a4be645" prot="public">
+          <name>SANDWICH_ERRORKIND_CERTIFICATE</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aa1d5b567d62613cd822eac432928fef3" prot="public">
+          <name>SANDWICH_ERRORKIND_SYSTEM</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a4a8a018fca03bd3370ecc09340a8a285" prot="public">
+          <name>SANDWICH_ERRORKIND_SOCKET</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ab69ccf2956eaef5db3f562bd2ecbfd0a" prot="public">
+          <name>SANDWICH_ERRORKIND_PROTOBUF</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aa967b3ef62add1b636a48c7791881d9f" prot="public">
+          <name>SANDWICH_ERRORKIND_PRIVATE_KEY</name>
+          <initializer>= 7</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a525efc3e04bd8bafdd82efc2331a2a8b" prot="public">
+          <name>SANDWICH_ERRORKIND_ASN1</name>
+          <initializer>= 8</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a7389b8d1ef962079a3014ef9b18b8c2e" prot="public">
+          <name>SANDWICH_ERRORKIND_DATA_SOURCE</name>
+          <initializer>= 9</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a5312253303ac6859945baaf688efc46d" prot="public">
+          <name>SANDWICH_ERRORKIND_KEM</name>
+          <initializer>= 10</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a6209887c32aa1558e4b2168908ad0593" prot="public">
+          <name>SANDWICH_ERRORKIND_HANDSHAKE</name>
+          <initializer>= 11</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ad9dd742c46be29393d29b44f61a033d1" prot="public">
+          <name>SANDWICH_ERRORKIND_TUNNEL</name>
+          <initializer>= 12</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a1215e0c10302696323a3e8f2abe8e211" prot="public">
+          <name>SANDWICH_ERRORKIND_ALPN</name>
+          <initializer>= 13</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ad18e70015b29acd88095350e2d0d566e" prot="public">
+          <name>SANDWICH_ERRORKIND_IO</name>
+          <initializer>= 14</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Enum ErrorKind. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="163" column="1" bodyfile="docs/sandwich_c/error_codes.h" bodystart="163" bodyend="179"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="error__codes_8h_1a05767d5a9d503475404e250a0eb57d56" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fe" kindref="member">SandwichAPIError</ref></type>
+        <definition>typedef enum SandwichAPIError SandwichAPIError</definition>
+        <argsstring></argsstring>
+        <name>SandwichAPIError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="33" column="30" bodyfile="docs/sandwich_c/error_codes.h" bodystart="33" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1a0320029d9ff92b5752fcb47d9e00c878" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6d" kindref="member">SandwichConfigurationError</ref></type>
+        <definition>typedef enum SandwichConfigurationError SandwichConfigurationError</definition>
+        <argsstring></argsstring>
+        <name>SandwichConfigurationError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="42" column="40" bodyfile="docs/sandwich_c/error_codes.h" bodystart="42" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1a253ade11d497598874560ade841d0d1c" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6" kindref="member">SandwichProtobufError</ref></type>
+        <definition>typedef enum SandwichProtobufError SandwichProtobufError</definition>
+        <argsstring></argsstring>
+        <name>SandwichProtobufError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="52" column="35" bodyfile="docs/sandwich_c/error_codes.h" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1aa6128043806928e3a6b8ed7ef02ed102" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4a" kindref="member">SandwichTLSConfigurationError</ref></type>
+        <definition>typedef enum SandwichTLSConfigurationError SandwichTLSConfigurationError</definition>
+        <argsstring></argsstring>
+        <name>SandwichTLSConfigurationError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="65" column="43" bodyfile="docs/sandwich_c/error_codes.h" bodystart="65" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1ad22d539587c0a6c0594a9e5c6c58168a" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4b" kindref="member">SandwichCertificateError</ref></type>
+        <definition>typedef enum SandwichCertificateError SandwichCertificateError</definition>
+        <argsstring></argsstring>
+        <name>SandwichCertificateError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="75" column="38" bodyfile="docs/sandwich_c/error_codes.h" bodystart="75" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1aad5b4d38f66a6b6126dac1d615a0ecbd" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57" kindref="member">SandwichPrivateKeyError</ref></type>
+        <definition>typedef enum SandwichPrivateKeyError SandwichPrivateKeyError</definition>
+        <argsstring></argsstring>
+        <name>SandwichPrivateKeyError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="85" column="37" bodyfile="docs/sandwich_c/error_codes.h" bodystart="85" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1ae7e21af1ba20f5dcbb6ac2cb30947033" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efd" kindref="member">SandwichASN1Error</ref></type>
+        <definition>typedef enum SandwichASN1Error SandwichASN1Error</definition>
+        <argsstring></argsstring>
+        <name>SandwichASN1Error</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="92" column="31" bodyfile="docs/sandwich_c/error_codes.h" bodystart="92" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1a430782c67c951a40e26182323071da4f" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bc" kindref="member">SandwichALPNError</ref></type>
+        <definition>typedef enum SandwichALPNError SandwichALPNError</definition>
+        <argsstring></argsstring>
+        <name>SandwichALPNError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="99" column="31" bodyfile="docs/sandwich_c/error_codes.h" bodystart="99" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1ab7383ea66fe0a51aaa3dda852e679316" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6" kindref="member">SandwichDataSourceError</ref></type>
+        <definition>typedef enum SandwichDataSourceError SandwichDataSourceError</definition>
+        <argsstring></argsstring>
+        <name>SandwichDataSourceError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="107" column="37" bodyfile="docs/sandwich_c/error_codes.h" bodystart="107" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1ae36133e785a6749f34f410b3fe7dbf82" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08" kindref="member">SandwichKEMError</ref></type>
+        <definition>typedef enum SandwichKEMError SandwichKEMError</definition>
+        <argsstring></argsstring>
+        <name>SandwichKEMError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="114" column="30" bodyfile="docs/sandwich_c/error_codes.h" bodystart="114" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1a9cc1aac6c14437dbb8ca1332b04921be" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1ae3ead610f0525295839948ec56139bec" kindref="member">SandwichSystemError</ref></type>
+        <definition>typedef enum SandwichSystemError SandwichSystemError</definition>
+        <argsstring></argsstring>
+        <name>SandwichSystemError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="122" column="33" bodyfile="docs/sandwich_c/error_codes.h" bodystart="122" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1a4d550ceeed32b510e7b72c8986b8c360" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94" kindref="member">SandwichSocketError</ref></type>
+        <definition>typedef enum SandwichSocketError SandwichSocketError</definition>
+        <argsstring></argsstring>
+        <name>SandwichSocketError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="136" column="33" bodyfile="docs/sandwich_c/error_codes.h" bodystart="136" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1a0bdfb44aac6c30c85b75d725d4d6018c" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8" kindref="member">SandwichHandshakeError</ref></type>
+        <definition>typedef enum SandwichHandshakeError SandwichHandshakeError</definition>
+        <argsstring></argsstring>
+        <name>SandwichHandshakeError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="152" column="36" bodyfile="docs/sandwich_c/error_codes.h" bodystart="152" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1a206147d684906cad449950609b3b6967" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127" kindref="member">SandwichTunnelError</ref></type>
+        <definition>typedef enum SandwichTunnelError SandwichTunnelError</definition>
+        <argsstring></argsstring>
+        <name>SandwichTunnelError</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="160" column="33" bodyfile="docs/sandwich_c/error_codes.h" bodystart="160" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="error__codes_8h_1aba2a881cb2a79780c7d1f87f452ed7c9" prot="public" static="no">
+        <type>enum <ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" kindref="member">SandwichErrorKind</ref></type>
+        <definition>typedef enum SandwichErrorKind SandwichErrorKind</definition>
+        <argsstring></argsstring>
+        <name>SandwichErrorKind</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error_codes.h" line="180" column="31" bodyfile="docs/sandwich_c/error_codes.h" bodystart="180" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Sandwich errors specification. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>2023<sp/>SandboxAQ</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;License&quot;);</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>you<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>You<sp/>may<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/><sp/><sp/><sp/><sp/><sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or<sp/>implied.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing<sp/>permissions<sp/>and</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//<sp/>limitations<sp/>under<sp/>the<sp/>License.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight></codeline>
+<codeline lineno="28" refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fe" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fe" kindref="member">SandwichAPIError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="29" refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fea60543c211bfe9bf3b078c6d1be65c934" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fea60543c211bfe9bf3b078c6d1be65c934" kindref="member">SANDWICH_APIERROR_CONFIGURATION</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="30" refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fea5de3e81e7935f230ec06fd6cad23781c" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fea5de3e81e7935f230ec06fd6cad23781c" kindref="member">SANDWICH_APIERROR_SOCKET</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="31" refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05feaec339d2e0581658f2c363e1843ec54ab" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05feaec339d2e0581658f2c363e1843ec54ab" kindref="member">SANDWICH_APIERROR_TUNNEL</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="32"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="33" refid="error__codes_8h_1a05767d5a9d503475404e250a0eb57d56" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fe" kindref="member">SandwichAPIError</ref><sp/><ref refid="error__codes_8h_1aa8402bbe1b78bd002ff4276c61df05fe" kindref="member">SandwichAPIError</ref>;</highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36" refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6d" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6d" kindref="member">SandwichConfigurationError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="37" refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6daf7a587262a30d8564593ff9ebb0106bc" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6daf7a587262a30d8564593ff9ebb0106bc" kindref="member">SANDWICH_CONFIGURATIONERROR_INVALID_IMPLEMENTATION</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="38" refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da703bcdede00c080cc5b3e57d1a9581d2" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da703bcdede00c080cc5b3e57d1a9581d2" kindref="member">SANDWICH_CONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="39" refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da9f7ff1a243620937df5d123d33514b3a" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da9f7ff1a243620937df5d123d33514b3a" kindref="member">SANDWICH_CONFIGURATIONERROR_INVALID</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="40" refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da3e381f55a98c2b07f692f00ed1ae340d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6da3e381f55a98c2b07f692f00ed1ae340d" kindref="member">SANDWICH_CONFIGURATIONERROR_INVALID_LISTENER</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="41"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="42" refid="error__codes_8h_1a0320029d9ff92b5752fcb47d9e00c878" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6d" kindref="member">SandwichConfigurationError</ref><sp/><ref refid="error__codes_8h_1a7344e50c9a613d1d713c2e071f449c6d" kindref="member">SandwichConfigurationError</ref>;</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"></highlight></codeline>
+<codeline lineno="45" refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6" kindref="member">SandwichProtobufError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="46" refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6aa16160dbdd0f6e3a4592ac9efa7f447c" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6aa16160dbdd0f6e3a4592ac9efa7f447c" kindref="member">SANDWICH_PROTOBUFERROR_EMPTY</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="47" refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a48b61d2ee17b3830a36e9d20657816aa" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a48b61d2ee17b3830a36e9d20657816aa" kindref="member">SANDWICH_PROTOBUFERROR_TOO_BIG</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="48" refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a0d40ec55987e0426512a85fe2e5c7e08" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a0d40ec55987e0426512a85fe2e5c7e08" kindref="member">SANDWICH_PROTOBUFERROR_PARSE_FAILED</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="49" refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6ae825759445f0ce41cdee72ce6194c4b9" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6ae825759445f0ce41cdee72ce6194c4b9" kindref="member">SANDWICH_PROTOBUFERROR_NULLPTR</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="50" refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a62b62c180cb1135a6a3484e998318be1" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6a62b62c180cb1135a6a3484e998318be1" kindref="member">SANDWICH_PROTOBUFERROR_INVALID_ARGUMENT</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="51"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="52" refid="error__codes_8h_1a253ade11d497598874560ade841d0d1c" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6" kindref="member">SandwichProtobufError</ref><sp/><ref refid="error__codes_8h_1ac93821e5e6665b427b2c38a9ebed94c6" kindref="member">SandwichProtobufError</ref>;</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight></codeline>
+<codeline lineno="55" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4a" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4a" kindref="member">SandwichTLSConfigurationError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="56" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa96f187e07df5d129ed4d2f28d6a4e44b" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa96f187e07df5d129ed4d2f28d6a4e44b" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_IMPLEMENTATION</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="57" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa1d2297e10938571c7395d54b61700636" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa1d2297e10938571c7395d54b61700636" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_INVALID_CASE</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="58" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa4b2e8824b22a16a0efb704753d078100" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa4b2e8824b22a16a0efb704753d078100" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_EMPTY</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="59" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa35073d7efc70b0d6dea2f078b0505ea2" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa35073d7efc70b0d6dea2f078b0505ea2" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_PROTOCOL_VERSION</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="60" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa2bd34b4e605d722f3abc1db1a2eabfc7" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa2bd34b4e605d722f3abc1db1a2eabfc7" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_PRIVATE_KEY_INCONSISTENT_WITH_CERTIFICATE</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="61" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa4cb7871c6307834d4b6d9b0fe63e5332" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa4cb7871c6307834d4b6d9b0fe63e5332" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_INVALID</ref><sp/>=<sp/>5,</highlight></codeline>
+<codeline lineno="62" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aaf227ada4efbc04d010fe661128def696" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aaf227ada4efbc04d010fe661128def696" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_CIPHERSUITE</ref><sp/>=<sp/>6,</highlight></codeline>
+<codeline lineno="63" refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa9a44300b904ce2fc20ab7ee49f3e19d0" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4aa9a44300b904ce2fc20ab7ee49f3e19d0" kindref="member">SANDWICH_TLSCONFIGURATIONERROR_UNSUPPORTED_CONTROL_CHARACTERS</ref><sp/>=<sp/>7,</highlight></codeline>
+<codeline lineno="64"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="65" refid="error__codes_8h_1aa6128043806928e3a6b8ed7ef02ed102" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4a" kindref="member">SandwichTLSConfigurationError</ref><sp/><ref refid="error__codes_8h_1a73b1f4d5135f2744492f1eea7836ba4a" kindref="member">SandwichTLSConfigurationError</ref>;</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"></highlight></codeline>
+<codeline lineno="68" refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4b" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4b" kindref="member">SandwichCertificateError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="69" refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4bad5de0d2ea8c0304fe0b0893778e8aa7d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4bad5de0d2ea8c0304fe0b0893778e8aa7d" kindref="member">SANDWICH_CERTIFICATEERROR_MALFORMED</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="70" refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4badaed2196cf62cd47618214d7111bc59f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4badaed2196cf62cd47618214d7111bc59f" kindref="member">SANDWICH_CERTIFICATEERROR_EXPIRED</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="71" refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4ba3b971b3e8a157451897c55aecb6e62d3" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4ba3b971b3e8a157451897c55aecb6e62d3" kindref="member">SANDWICH_CERTIFICATEERROR_NOT_FOUND</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="72" refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4baf92b24cce0de0987206649b318d4309d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4baf92b24cce0de0987206649b318d4309d" kindref="member">SANDWICH_CERTIFICATEERROR_UNKNOWN</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="73" refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4baba86dbab55564fb1c1ea10fb85276f30" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4baba86dbab55564fb1c1ea10fb85276f30" kindref="member">SANDWICH_CERTIFICATEERROR_UNSUPPORTED</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="74"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="75" refid="error__codes_8h_1ad22d539587c0a6c0594a9e5c6c58168a" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4b" kindref="member">SandwichCertificateError</ref><sp/><ref refid="error__codes_8h_1a219735c98a1ab6f910a6c0f57bfabd4b" kindref="member">SandwichCertificateError</ref>;</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"></highlight></codeline>
+<codeline lineno="78" refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57" kindref="member">SandwichPrivateKeyError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="79" refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a0536230e7e16f9f906a8dc9118f5779d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a0536230e7e16f9f906a8dc9118f5779d" kindref="member">SANDWICH_PRIVATEKEYERROR_MALFORMED</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="80" refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a9696ccc91ebd464c576087566ccce08c" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a9696ccc91ebd464c576087566ccce08c" kindref="member">SANDWICH_PRIVATEKEYERROR_NOT_FOUND</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="81" refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57ae33b3b3d1f48f457180b5813578d3180" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57ae33b3b3d1f48f457180b5813578d3180" kindref="member">SANDWICH_PRIVATEKEYERROR_UNKNOWN</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="82" refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57aab8d6d650e50f98a8c2c5299b7f88efb" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57aab8d6d650e50f98a8c2c5299b7f88efb" kindref="member">SANDWICH_PRIVATEKEYERROR_UNSUPPORTED</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="83" refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a93984d05f968ba2694bdfbfc0f70233b" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57a93984d05f968ba2694bdfbfc0f70233b" kindref="member">SANDWICH_PRIVATEKEYERROR_NOT_SERVER</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="84"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="85" refid="error__codes_8h_1aad5b4d38f66a6b6126dac1d615a0ecbd" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57" kindref="member">SandwichPrivateKeyError</ref><sp/><ref refid="error__codes_8h_1ab9b8c347f01924037747a4452bccda57" kindref="member">SandwichPrivateKeyError</ref>;</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"></highlight></codeline>
+<codeline lineno="88" refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efd" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efd" kindref="member">SandwichASN1Error</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="89" refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efda2d2995dac490e58426cd40cad0f9ead6" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efda2d2995dac490e58426cd40cad0f9ead6" kindref="member">SANDWICH_ASN1ERROR_INVALID_FORMAT</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="90" refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efda872f2a18e096b8a0de3b3516533f6e51" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efda872f2a18e096b8a0de3b3516533f6e51" kindref="member">SANDWICH_ASN1ERROR_MALFORMED</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="91"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="92" refid="error__codes_8h_1ae7e21af1ba20f5dcbb6ac2cb30947033" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efd" kindref="member">SandwichASN1Error</ref><sp/><ref refid="error__codes_8h_1aef4f941aa3cc9000f22e3b63bab75efd" kindref="member">SandwichASN1Error</ref>;</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"></highlight></codeline>
+<codeline lineno="95" refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bc" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bc" kindref="member">SandwichALPNError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="96" refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bca9971cce0a0e9c8ee6c7a3e4021e75afa" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bca9971cce0a0e9c8ee6c7a3e4021e75afa" kindref="member">SANDWICH_ALPNERROR_LENGTH_ERROR</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="97" refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bca4fe1e24f5dda3bbdf0e271393276fc04" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bca4fe1e24f5dda3bbdf0e271393276fc04" kindref="member">SANDWICH_ALPNERROR_INVALID_STRING</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="98"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="99" refid="error__codes_8h_1a430782c67c951a40e26182323071da4f" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bc" kindref="member">SandwichALPNError</ref><sp/><ref refid="error__codes_8h_1a81ce8d4f56c4f37985b5c0c954a129bc" kindref="member">SandwichALPNError</ref>;</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"></highlight></codeline>
+<codeline lineno="102" refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6" kindref="member">SandwichDataSourceError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="103" refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6a75ca6dd610aeeb37585a4b6933a0114d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6a75ca6dd610aeeb37585a4b6933a0114d" kindref="member">SANDWICH_DATASOURCEERROR_EMPTY</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="104" refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6ad8ab63e1ff329d1bd403fd2de536e3d5" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6ad8ab63e1ff329d1bd403fd2de536e3d5" kindref="member">SANDWICH_DATASOURCEERROR_INVALID_CASE</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="105" refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6a92404f0b7ed1ddadee92baa724a4cdf9" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6a92404f0b7ed1ddadee92baa724a4cdf9" kindref="member">SANDWICH_DATASOURCEERROR_NOT_FOUND</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="106"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="107" refid="error__codes_8h_1ab7383ea66fe0a51aaa3dda852e679316" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6" kindref="member">SandwichDataSourceError</ref><sp/><ref refid="error__codes_8h_1ae332f36d5d20e15c5c7ce3e8e3fd5be6" kindref="member">SandwichDataSourceError</ref>;</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"></highlight></codeline>
+<codeline lineno="110" refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08" kindref="member">SandwichKEMError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="111" refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08ace4574ade725dc671cff45cb70908ef4" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08ace4574ade725dc671cff45cb70908ef4" kindref="member">SANDWICH_KEMERROR_INVALID</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="112" refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08aa2dbce1baf3967d68199d6fbd35341c0" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08aa2dbce1baf3967d68199d6fbd35341c0" kindref="member">SANDWICH_KEMERROR_TOO_MANY</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="113"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="114" refid="error__codes_8h_1ae36133e785a6749f34f410b3fe7dbf82" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08" kindref="member">SandwichKEMError</ref><sp/><ref refid="error__codes_8h_1a9fbcae7a1de42d2d210e00dea8716b08" kindref="member">SandwichKEMError</ref>;</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="117" refid="error__codes_8h_1ae3ead610f0525295839948ec56139bec" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ae3ead610f0525295839948ec56139bec" kindref="member">SandwichSystemError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="118" refid="error__codes_8h_1ae3ead610f0525295839948ec56139beca52d9d227339b51dd205519c37598dd50" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ae3ead610f0525295839948ec56139beca52d9d227339b51dd205519c37598dd50" kindref="member">SANDWICH_SYSTEMERROR_MEMORY</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="119" refid="error__codes_8h_1ae3ead610f0525295839948ec56139becacd72236482c8b54089d55be84a9bbcd3" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ae3ead610f0525295839948ec56139becacd72236482c8b54089d55be84a9bbcd3" kindref="member">SANDWICH_SYSTEMERROR_INTEGER_OVERFLOW</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="120" refid="error__codes_8h_1ae3ead610f0525295839948ec56139beca4984eefbc90f067ba771dd80dc50d2a5" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ae3ead610f0525295839948ec56139beca4984eefbc90f067ba771dd80dc50d2a5" kindref="member">SANDWICH_SYSTEMERROR_BACKEND</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="121"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="122" refid="error__codes_8h_1a9cc1aac6c14437dbb8ca1332b04921be" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ae3ead610f0525295839948ec56139bec" kindref="member">SandwichSystemError</ref><sp/><ref refid="error__codes_8h_1ae3ead610f0525295839948ec56139bec" kindref="member">SandwichSystemError</ref>;</highlight></codeline>
+<codeline lineno="123"><highlight class="normal"></highlight></codeline>
+<codeline lineno="125" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94" kindref="member">SandwichSocketError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="126" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a444eff680aa032d8356d58757e9aa25f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a444eff680aa032d8356d58757e9aa25f" kindref="member">SANDWICH_SOCKETERROR_BAD_FD</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="127" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a34b73f2db0fe529f1881183f9fd5532d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a34b73f2db0fe529f1881183f9fd5532d" kindref="member">SANDWICH_SOCKETERROR_CREATION_FAILED</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="128" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aedea6d125f6ec9a7345dd9d07b58cc8b" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aedea6d125f6ec9a7345dd9d07b58cc8b" kindref="member">SANDWICH_SOCKETERROR_BAD_NETADDR</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="129" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94ae82d637d8e983891237d1032fb77ce98" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94ae82d637d8e983891237d1032fb77ce98" kindref="member">SANDWICH_SOCKETERROR_NETADDR_UNKNOWN</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="130" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a3b1accf20a15b2004070d4fba627ae9d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a3b1accf20a15b2004070d4fba627ae9d" kindref="member">SANDWICH_SOCKETERROR_FSTAT_FAILED</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="131" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a84a720a7d2b93da9ebe4307770fed5e4" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a84a720a7d2b93da9ebe4307770fed5e4" kindref="member">SANDWICH_SOCKETERROR_NOT_SOCK</ref><sp/>=<sp/>5,</highlight></codeline>
+<codeline lineno="132" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a3b0e4fb8f2699a7d81cc1694aa1f3616" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94a3b0e4fb8f2699a7d81cc1694aa1f3616" kindref="member">SANDWICH_SOCKETERROR_GETSOCKNAME_FAILED</ref><sp/>=<sp/>6,</highlight></codeline>
+<codeline lineno="133" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aee39f3ff2a9d8571a3cd25e26e5fdd7f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aee39f3ff2a9d8571a3cd25e26e5fdd7f" kindref="member">SANDWICH_SOCKETERROR_SETSOCKOPT_FAILED</ref><sp/>=<sp/>7,</highlight></codeline>
+<codeline lineno="134" refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aebef646a2806dea3add20b2dcdd274b6" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94aebef646a2806dea3add20b2dcdd274b6" kindref="member">SANDWICH_SOCKETERROR_INVALID_AI_FAMILY</ref><sp/>=<sp/>8,</highlight></codeline>
+<codeline lineno="135"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="136" refid="error__codes_8h_1a4d550ceeed32b510e7b72c8986b8c360" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94" kindref="member">SandwichSocketError</ref><sp/><ref refid="error__codes_8h_1ab5de61c79035336b51a90aec4a0a7d94" kindref="member">SandwichSocketError</ref>;</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"></highlight></codeline>
+<codeline lineno="139" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8" kindref="member">SandwichHandshakeError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="140" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a05df13de1262161d3c0806e29f534cdb" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a05df13de1262161d3c0806e29f534cdb" kindref="member">SANDWICH_HANDSHAKEERROR_INVALID_SERVER_NAME</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="141" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8aa82161cb5ce81b715338c9d9d18de8f1" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8aa82161cb5ce81b715338c9d9d18de8f1" kindref="member">SANDWICH_HANDSHAKEERROR_CERTIFICATE_VERIFICATION_FAILED</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="142" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a1ac094fa72cf2001ea57c937cfe26fc0" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a1ac094fa72cf2001ea57c937cfe26fc0" kindref="member">SANDWICH_HANDSHAKEERROR_CERTIFICATE_EXPIRED</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="143" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a79557b2fb63cad2b6b02799daeaf13e4" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a79557b2fb63cad2b6b02799daeaf13e4" kindref="member">SANDWICH_HANDSHAKEERROR_CERTIFICATE_REVOKED</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="144" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8ac8589027c1018cf4366f66b36abb4884" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8ac8589027c1018cf4366f66b36abb4884" kindref="member">SANDWICH_HANDSHAKEERROR_INVALID_CERTIFICATE</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="145" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a7710f84a00cd5602f27fa8ecaf4a99a6" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a7710f84a00cd5602f27fa8ecaf4a99a6" kindref="member">SANDWICH_HANDSHAKEERROR_CERTIFICATE_SIGNATURE_VERIFICATION_FAILED</ref><sp/>=<sp/>5,</highlight></codeline>
+<codeline lineno="146" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a8e8975eb72a90645b3920d2428de3af0" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a8e8975eb72a90645b3920d2428de3af0" kindref="member">SANDWICH_HANDSHAKEERROR_UNKNOWN_ERROR</ref><sp/>=<sp/>6,</highlight></codeline>
+<codeline lineno="147" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a3eae1e570acd57607d60c62c1ce28e71" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a3eae1e570acd57607d60c62c1ce28e71" kindref="member">SANDWICH_HANDSHAKEERROR_DEPTH_EXCEEDED</ref><sp/>=<sp/>7,</highlight></codeline>
+<codeline lineno="148" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8aa44339a62f2e4a15de432d2ad37df498" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8aa44339a62f2e4a15de432d2ad37df498" kindref="member">SANDWICH_HANDSHAKEERROR_UNSUPPORTED_PROTOCOL</ref><sp/>=<sp/>8,</highlight></codeline>
+<codeline lineno="149" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a46a0eb0fc6e0016f5186288c29ac750d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a46a0eb0fc6e0016f5186288c29ac750d" kindref="member">SANDWICH_HANDSHAKEERROR_NO_SHARED_CIPHER</ref><sp/>=<sp/>9,</highlight></codeline>
+<codeline lineno="150" refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a11e20ce1b7528241dd2d664bfb283a06" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8a11e20ce1b7528241dd2d664bfb283a06" kindref="member">SANDWICH_HANDSHAKEERROR_NO_SUITABLE_KEY_SHARE</ref><sp/>=<sp/>10,</highlight></codeline>
+<codeline lineno="151"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="152" refid="error__codes_8h_1a0bdfb44aac6c30c85b75d725d4d6018c" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8" kindref="member">SandwichHandshakeError</ref><sp/><ref refid="error__codes_8h_1a144bb99d7dd9524f96bd8b7dc95f02d8" kindref="member">SandwichHandshakeError</ref>;</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"></highlight></codeline>
+<codeline lineno="155" refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127" kindref="member">SandwichTunnelError</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="156" refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127a2e4730550826370d15c6d966fa180a25" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127a2e4730550826370d15c6d966fa180a25" kindref="member">SANDWICH_TUNNELERROR_INVALID</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="157" refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127a671337531d9f55ce1c1822810abcdfae" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127a671337531d9f55ce1c1822810abcdfae" kindref="member">SANDWICH_TUNNELERROR_VERIFIER</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="158" refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127a22c9b13774a6e2d6be03293bb519c59c" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127a22c9b13774a6e2d6be03293bb519c59c" kindref="member">SANDWICH_TUNNELERROR_UNKNOWN</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="159"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="160" refid="error__codes_8h_1a206147d684906cad449950609b3b6967" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127" kindref="member">SandwichTunnelError</ref><sp/><ref refid="error__codes_8h_1a61c039412f53742e7435861e4dd04127" kindref="member">SandwichTunnelError</ref>;</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"></highlight></codeline>
+<codeline lineno="163" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" kindref="member">SandwichErrorKind</ref><sp/>{<sp/></highlight></codeline>
+<codeline lineno="164" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a51f8699aaf864c769f2d683c1c1114bb" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a51f8699aaf864c769f2d683c1c1114bb" kindref="member">SANDWICH_ERRORKIND_API</ref><sp/>=<sp/>0,</highlight></codeline>
+<codeline lineno="165" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a01a0a035d7a4070fb95597dd4051a0b5" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a01a0a035d7a4070fb95597dd4051a0b5" kindref="member">SANDWICH_ERRORKIND_CONFIGURATION</ref><sp/>=<sp/>1,</highlight></codeline>
+<codeline lineno="166" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aeaf0e8ffbfb062beba8a706ce64e87ed" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aeaf0e8ffbfb062beba8a706ce64e87ed" kindref="member">SANDWICH_ERRORKIND_TLS_CONFIGURATION</ref><sp/>=<sp/>2,</highlight></codeline>
+<codeline lineno="167" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a91c2f1e45e334f46b3a665ed0a4be645" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a91c2f1e45e334f46b3a665ed0a4be645" kindref="member">SANDWICH_ERRORKIND_CERTIFICATE</ref><sp/>=<sp/>3,</highlight></codeline>
+<codeline lineno="168" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aa1d5b567d62613cd822eac432928fef3" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aa1d5b567d62613cd822eac432928fef3" kindref="member">SANDWICH_ERRORKIND_SYSTEM</ref><sp/>=<sp/>4,</highlight></codeline>
+<codeline lineno="169" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a4a8a018fca03bd3370ecc09340a8a285" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a4a8a018fca03bd3370ecc09340a8a285" kindref="member">SANDWICH_ERRORKIND_SOCKET</ref><sp/>=<sp/>5,</highlight></codeline>
+<codeline lineno="170" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ab69ccf2956eaef5db3f562bd2ecbfd0a" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ab69ccf2956eaef5db3f562bd2ecbfd0a" kindref="member">SANDWICH_ERRORKIND_PROTOBUF</ref><sp/>=<sp/>6,</highlight></codeline>
+<codeline lineno="171" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aa967b3ef62add1b636a48c7791881d9f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86aa967b3ef62add1b636a48c7791881d9f" kindref="member">SANDWICH_ERRORKIND_PRIVATE_KEY</ref><sp/>=<sp/>7,</highlight></codeline>
+<codeline lineno="172" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a525efc3e04bd8bafdd82efc2331a2a8b" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a525efc3e04bd8bafdd82efc2331a2a8b" kindref="member">SANDWICH_ERRORKIND_ASN1</ref><sp/>=<sp/>8,</highlight></codeline>
+<codeline lineno="173" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a7389b8d1ef962079a3014ef9b18b8c2e" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a7389b8d1ef962079a3014ef9b18b8c2e" kindref="member">SANDWICH_ERRORKIND_DATA_SOURCE</ref><sp/>=<sp/>9,</highlight></codeline>
+<codeline lineno="174" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a5312253303ac6859945baaf688efc46d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a5312253303ac6859945baaf688efc46d" kindref="member">SANDWICH_ERRORKIND_KEM</ref><sp/>=<sp/>10,</highlight></codeline>
+<codeline lineno="175" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a6209887c32aa1558e4b2168908ad0593" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a6209887c32aa1558e4b2168908ad0593" kindref="member">SANDWICH_ERRORKIND_HANDSHAKE</ref><sp/>=<sp/>11,</highlight></codeline>
+<codeline lineno="176" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ad9dd742c46be29393d29b44f61a033d1" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ad9dd742c46be29393d29b44f61a033d1" kindref="member">SANDWICH_ERRORKIND_TUNNEL</ref><sp/>=<sp/>12,</highlight></codeline>
+<codeline lineno="177" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a1215e0c10302696323a3e8f2abe8e211" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86a1215e0c10302696323a3e8f2abe8e211" kindref="member">SANDWICH_ERRORKIND_ALPN</ref><sp/>=<sp/>13,</highlight></codeline>
+<codeline lineno="178" refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ad18e70015b29acd88095350e2d0d566e" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86ad18e70015b29acd88095350e2d0d566e" kindref="member">SANDWICH_ERRORKIND_IO</ref><sp/>=<sp/>14,</highlight></codeline>
+<codeline lineno="179"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="180" refid="error__codes_8h_1aba2a881cb2a79780c7d1f87f452ed7c9" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" kindref="member">SandwichErrorKind</ref><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" kindref="member">SandwichErrorKind</ref>;</highlight></codeline>
+<codeline lineno="181"><highlight class="normal"></highlight></codeline>
+<codeline lineno="182"><highlight class="normal"></highlight></codeline>
+<codeline lineno="183"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="184"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="185"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/error_codes.h"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structSandwichError" kind="struct" language="C++" prot="public">
+    <compoundname>SandwichError</compoundname>
+    <includes refid="error_8h" local="no">error.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structSandwichError_1ac9df4b785a0d9dd0681dd12eb5fb4b43" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="structSandwichError" kindref="compound">SandwichError</ref> *</type>
+        <definition>struct SandwichError* SandwichError::details</definition>
+        <argsstring></argsstring>
+        <name>details</name>
+        <qualifiedname>SandwichError::details</qualifiedname>
+        <briefdescription>
+<para>The encapsulated error. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error.h" line="20" column="22" bodyfile="docs/sandwich_c/error.h" bodystart="20" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichError_1ad35ed98cc5128a078371a7ecb73921bb" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* SandwichError::msg</definition>
+        <argsstring></argsstring>
+        <name>msg</name>
+        <qualifiedname>SandwichError::msg</qualifiedname>
+        <briefdescription>
+<para>An optional error string. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error.h" line="23" column="14" bodyfile="docs/sandwich_c/error.h" bodystart="23" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichError_1aa409db444f928202b85a6d9220115345" prot="public" static="no" mutable="no">
+        <type><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" kindref="member">SandwichErrorKind</ref></type>
+        <definition>SandwichErrorKind SandwichError::kind</definition>
+        <argsstring></argsstring>
+        <name>kind</name>
+        <qualifiedname>SandwichError::kind</qualifiedname>
+        <briefdescription>
+<para>The error kind. See error::ErrorKind enum. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error.h" line="26" column="21" bodyfile="docs/sandwich_c/error.h" bodystart="26" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichError_1abb4d3401ae91ac69281b2f46f85e5833" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int SandwichError::code</definition>
+        <argsstring></argsstring>
+        <name>code</name>
+        <qualifiedname>SandwichError::code</qualifiedname>
+        <briefdescription>
+<para>The error code. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error.h" line="29" column="7" bodyfile="docs/sandwich_c/error.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>An error code. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>SandwichError</label>
+        <link refid="structSandwichError"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>details</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="docs/sandwich_c/error.h" line="18" column="1" bodyfile="docs/sandwich_c/error.h" bodystart="18" bodyend="30"/>
+    <listofallmembers>
+      <member refid="structSandwichError_1abb4d3401ae91ac69281b2f46f85e5833" prot="public" virt="non-virtual"><scope>SandwichError</scope><name>code</name></member>
+      <member refid="structSandwichError_1ac9df4b785a0d9dd0681dd12eb5fb4b43" prot="public" virt="non-virtual"><scope>SandwichError</scope><name>details</name></member>
+      <member refid="structSandwichError_1aa409db444f928202b85a6d9220115345" prot="public" virt="non-virtual"><scope>SandwichError</scope><name>kind</name></member>
+      <member refid="structSandwichError_1ad35ed98cc5128a078371a7ecb73921bb" prot="public" virt="non-virtual"><scope>SandwichError</scope><name>msg</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

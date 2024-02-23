@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structSandwichTunnelIO" kind="struct" language="C++" prot="public">
+    <compoundname>SandwichTunnelIO</compoundname>
+    <includes refid="tunnel_8h" local="no">tunnel.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structSandwichTunnelIO_1af22cfdd389d6a6c75bfb97f3d19d59ba" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="structSandwichIO" kindref="compound">SandwichIO</ref></type>
+        <definition>struct SandwichIO SandwichTunnelIO::base</definition>
+        <argsstring></argsstring>
+        <name>base</name>
+        <qualifiedname>SandwichTunnelIO::base</qualifiedname>
+        <briefdescription>
+<para>The base IO object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="62" column="19" bodyfile="docs/sandwich_c/tunnel.h" bodystart="62" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichTunnelIO_1a0cdbf688a14179064106b83091828f09" prot="public" static="no" mutable="no">
+        <type><ref refid="tunnel_8h_1aa0d9cd2de623d6cb4b70204fb18be096" kindref="member">SandwichTunnelIOSetStateFunctionPtr</ref></type>
+        <definition>SandwichTunnelIOSetStateFunctionPtr SandwichTunnelIO::set_state</definition>
+        <argsstring></argsstring>
+        <name>set_state</name>
+        <qualifiedname>SandwichTunnelIO::set_state</qualifiedname>
+        <briefdescription>
+<para>The callback used to indicate when the state of the tunnel changes. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It is guaranteed that the state of the tunnel will not change between two calls to this callback.</para>
+<para><computeroutput>NULL</computeroutput> is a valid value. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="70" column="39" bodyfile="docs/sandwich_c/tunnel.h" bodystart="70" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>An IO specific to tunnels. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>SandwichIO</label>
+        <link refid="structSandwichIO"/>
+      </node>
+      <node id="1">
+        <label>SandwichTunnelIO</label>
+        <link refid="structSandwichTunnelIO"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>base</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="docs/sandwich_c/tunnel.h" line="60" column="1" bodyfile="docs/sandwich_c/tunnel.h" bodystart="60" bodyend="71"/>
+    <listofallmembers>
+      <member refid="structSandwichTunnelIO_1af22cfdd389d6a6c75bfb97f3d19d59ba" prot="public" virt="non-virtual"><scope>SandwichTunnelIO</scope><name>base</name></member>
+      <member refid="structSandwichTunnelIO_1a0cdbf688a14179064106b83091828f09" prot="public" virt="non-virtual"><scope>SandwichTunnelIO</scope><name>set_state</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="dir_f6ef5a90171f1138cc160f006fc74f9c" kind="dir">
+    <compoundname>docs/sandwich_c</compoundname>
+    <innerfile refid="error_8h">error.h</innerfile>
+    <innerfile refid="error__codes_8h">error_codes.h</innerfile>
+    <innerfile refid="export_8h">export.h</innerfile>
+    <innerfile refid="io_8h">io.h</innerfile>
+    <innerfile refid="ioerrors_8h">ioerrors.h</innerfile>
+    <innerfile refid="lib_8h">lib.h</innerfile>
+    <innerfile refid="listener_8h">listener.h</innerfile>
+    <innerfile refid="sandwich_8h">sandwich.h</innerfile>
+    <innerfile refid="tracer_8h">tracer.h</innerfile>
+    <innerfile refid="tunnel_8h">tunnel.h</innerfile>
+    <innerfile refid="tunnel__types_8h">tunnel_types.h</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="docs/sandwich_c/"/>
+  </compounddef>
+</doxygen>

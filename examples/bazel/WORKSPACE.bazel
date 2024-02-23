@@ -1,0 +1,70 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# Loads `rules_rust`.
+http_archive(
+    name = "rules_rust",
+    sha256 = "1e7114ea2af800c6987ca38daeee13e3ae6e934875b4f7ca24b798857f95431e",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.32.0/rules_rust-v0.32.0.tar.gz"],
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2021",
+)
+
+# Imports the `protobuf` crate.
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
+
+crates_repository(
+    name = "crates_io",
+    cargo_lockfile = "//:Cargo.lock",
+    lockfile = "//:Cargo.Bazel.lock",
+    packages = {
+        "protobuf": crate.spec(
+            version = "3.3.0",
+        ),
+    },
+)
+
+load("@crates_io//:defs.bzl", "crate_repositories")
+
+crate_repositories()
+
+# Loads sandwich.
+# --8<-- [start:import]
+http_archive(
+    name = "sandwich",
+    sha256 = "86bd6328e5cbdca7851e9772e4c1dda1a435e15686497dfc8fecadd4a4639920",
+    strip_prefix = "sandwich-0.2.0",
+    urls = [
+        "https://github.com/sandbox-quantum/sandwich/archive/refs/tags/v0.2.0.tar.gz",
+    ],
+)
+
+load("@sandwich//bazel:repositories.bzl", "sandwich_repositories")
+
+sandwich_repositories()
+
+load("@sandwich//bazel:deps.bzl", "sandwich_deps")
+
+sandwich_deps()
+
+load("@sandwich//bazel:python_deps.bzl", "sandwich_python_deps")
+
+sandwich_python_deps()
+
+load("@sandwich//bazel:python_pypi_deps.bzl", "sandwich_python_pypi_deps")
+
+sandwich_python_pypi_deps()
+
+load("@sandwich//bazel:rust_deps.bzl", "sandwich_rust_deps")
+
+sandwich_rust_deps()
+
+load("@com_sandboxquantum_bartleby//bartleby:deps.bzl", "bartleby_deps")
+
+bartleby_deps()
+# --8<-- [end:import]

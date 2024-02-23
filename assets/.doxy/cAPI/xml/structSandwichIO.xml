@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structSandwichIO" kind="struct" language="C++" prot="public">
+    <compoundname>SandwichIO</compoundname>
+    <includes refid="io_8h" local="no">io.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structSandwichIO_1aa4fd6ac7d8b1f34f4a14c2028c8f3188" prot="public" static="no" mutable="no">
+        <type><ref refid="io_8h_1a3871ed804223d7aeb6b0f6e7d4cbf35b" kindref="member">SandwichIOReadFunctionPtr</ref></type>
+        <definition>SandwichIOReadFunctionPtr SandwichIO::read</definition>
+        <argsstring></argsstring>
+        <name>read</name>
+        <qualifiedname>SandwichIO::read</qualifiedname>
+        <briefdescription>
+<para>The read function. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="55" column="29" bodyfile="docs/sandwich_c/io.h" bodystart="55" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichIO_1aba6808596ad13bbcfbe3e2dd081fd90f" prot="public" static="no" mutable="no">
+        <type><ref refid="io_8h_1a0294b6bf341b83929aaf0270c72b82f1" kindref="member">SandwichIOWriteFunctionPtr</ref></type>
+        <definition>SandwichIOWriteFunctionPtr SandwichIO::write</definition>
+        <argsstring></argsstring>
+        <name>write</name>
+        <qualifiedname>SandwichIO::write</qualifiedname>
+        <briefdescription>
+<para>The write function. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="58" column="30" bodyfile="docs/sandwich_c/io.h" bodystart="58" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichIO_1a5a5cf39b0a017ac8183607ab85884b8c" prot="public" static="no" mutable="no">
+        <type><ref refid="io_8h_1ab430df749364cfd0cd3227fa27e58dca" kindref="member">SandwichIOFlushFunctionPtr</ref></type>
+        <definition>SandwichIOFlushFunctionPtr SandwichIO::flush</definition>
+        <argsstring></argsstring>
+        <name>flush</name>
+        <qualifiedname>SandwichIO::flush</qualifiedname>
+        <briefdescription>
+<para>The flush function. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><computeroutput>NULL</computeroutput> is a valid value for flush. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="63" column="30" bodyfile="docs/sandwich_c/io.h" bodystart="63" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichIO_1abbbbf12c587802cd27ce4eac6e3a3542" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* SandwichIO::uarg</definition>
+        <argsstring></argsstring>
+        <name>uarg</name>
+        <qualifiedname>SandwichIO::uarg</qualifiedname>
+        <briefdescription>
+<para>Opaque argument to forward to read, write and flush. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="66" column="8" bodyfile="docs/sandwich_c/io.h" bodystart="66" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A generic I/O interface. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="docs/sandwich_c/io.h" line="53" column="1" bodyfile="docs/sandwich_c/io.h" bodystart="53" bodyend="67"/>
+    <listofallmembers>
+      <member refid="structSandwichIO_1a5a5cf39b0a017ac8183607ab85884b8c" prot="public" virt="non-virtual"><scope>SandwichIO</scope><name>flush</name></member>
+      <member refid="structSandwichIO_1aa4fd6ac7d8b1f34f4a14c2028c8f3188" prot="public" virt="non-virtual"><scope>SandwichIO</scope><name>read</name></member>
+      <member refid="structSandwichIO_1abbbbf12c587802cd27ce4eac6e3a3542" prot="public" virt="non-virtual"><scope>SandwichIO</scope><name>uarg</name></member>
+      <member refid="structSandwichIO_1aba6808596ad13bbcfbe3e2dd081fd90f" prot="public" virt="non-virtual"><scope>SandwichIO</scope><name>write</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

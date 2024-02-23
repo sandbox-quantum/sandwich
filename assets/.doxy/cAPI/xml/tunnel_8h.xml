@@ -1,0 +1,676 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="tunnel_8h" kind="file" language="C++">
+    <compoundname>tunnel.h</compoundname>
+    <includes local="no">sys/types.h</includes>
+    <includes refid="export_8h" local="yes">sandwich_c/export.h</includes>
+    <includes refid="io_8h" local="yes">sandwich_c/io.h</includes>
+    <includes refid="tunnel__types_8h" local="yes">sandwich_c/tunnel_types.h</includes>
+    <includedby refid="sandwich_8h" local="yes">docs/sandwich_c/sandwich.h</includedby>
+    <includedby refid="tracer_8h" local="yes">docs/sandwich_c/tracer.h</includedby>
+    <incdepgraph>
+      <node id="3">
+        <label>sandwich_c/export.h</label>
+        <link refid="export_8h"/>
+      </node>
+      <node id="4">
+        <label>sandwich_c/io.h</label>
+        <link refid="io_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>sandwich_c/ioerrors.h</label>
+        <link refid="ioerrors_8h"/>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/tunnel.h</label>
+        <link refid="tunnel_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>sandwich_c/tunnel_types.h</label>
+        <link refid="tunnel__types_8h"/>
+      </node>
+      <node id="2">
+        <label>sys/types.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="2">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+      <node id="3">
+        <label>docs/sandwich_c/tracer.h</label>
+        <link refid="tracer_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/tunnel.h</label>
+        <link refid="tunnel_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="structSandwichTunnelContextConfigurationSerialized" prot="public">SandwichTunnelContextConfigurationSerialized</innerclass>
+    <innerclass refid="structSandwichTunnelConfigurationSerialized" prot="public">SandwichTunnelConfigurationSerialized</innerclass>
+    <innerclass refid="structSandwichTunnelIO" prot="public">SandwichTunnelIO</innerclass>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="tunnel_8h_1ae44c0cded27629217b6a6dd98268bbba" prot="public" static="no">
+        <type>void()</type>
+        <definition>typedef void() SandwichTunnelIOSetStateFunction(void *uarg, enum SandwichTunnelState tunnel_state)</definition>
+        <argsstring>(void *uarg, enum SandwichTunnelState tunnel_state)</argsstring>
+        <name>SandwichTunnelIOSetStateFunction</name>
+        <briefdescription>
+<para>An IO callback triggered when the state of the tunnel changes. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It is guaranteed that the state of the tunnel will not change between two calls to this callback.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">uarg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>User opaque argument. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>tunnel_state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The new state of the tunnel. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="55" column="9" bodyfile="docs/sandwich_c/tunnel.h" bodystart="55" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="tunnel_8h_1aa0d9cd2de623d6cb4b70204fb18be096" prot="public" static="no">
+        <type><ref refid="tunnel_8h_1ae44c0cded27629217b6a6dd98268bbba" kindref="member">SandwichTunnelIOSetStateFunction</ref> *</type>
+        <definition>typedef SandwichTunnelIOSetStateFunction* SandwichTunnelIOSetStateFunctionPtr</definition>
+        <argsstring></argsstring>
+        <name>SandwichTunnelIOSetStateFunctionPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="57" column="42" bodyfile="docs/sandwich_c/tunnel.h" bodystart="57" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="tunnel_8h_1a1822628273de40a80b304dd3f6f6ca75" prot="public" static="no" extern="yes" mutable="no">
+        <type>struct <ref refid="structSandwichTunnelConfigurationSerialized" kindref="compound">SandwichTunnelConfigurationSerialized</ref></type>
+        <definition>struct SandwichTunnelConfigurationSerialized SandwichTunnelConfigurationVerifierEmpty</definition>
+        <argsstring></argsstring>
+        <name>SandwichTunnelConfigurationVerifierEmpty</name>
+        <briefdescription>
+<para>A tunnel configuration containing an empty Tunnel Verifier. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="43" column="1" declfile="docs/sandwich_c/tunnel.h" declline="43" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="tunnel_8h_1ac3cc2b07f37fb227e6522444da70550e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> struct <ref refid="structSandwichError" kindref="compound">SandwichError</ref> *</type>
+        <definition>SANDWICH_API struct SandwichError * sandwich_tunnel_context_new</definition>
+        <argsstring>(const struct SandwichContext *sw, struct SandwichTunnelContextConfigurationSerialized configuration, struct SandwichTunnelContext **ctx)</argsstring>
+        <name>sandwich_tunnel_context_new</name>
+        <param>
+          <type>const struct SandwichContext *</type>
+          <declname>sw</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structSandwichTunnelContextConfigurationSerialized" kindref="compound">SandwichTunnelContextConfigurationSerialized</ref></type>
+          <declname>configuration</declname>
+        </param>
+        <param>
+          <type>struct SandwichTunnelContext **</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Create a context from an encoded protobuf message. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>sw</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Top-level Sandwich context. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>configuration</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Serialized configuration. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The new Sandwich context object.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NULL if no error occured, else a chain of errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="80" column="33" declfile="docs/sandwich_c/tunnel.h" declline="80" declcolumn="33"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1ab5979cf3e9bfae2ba381e9117205239a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_tunnel_context_free</definition>
+        <argsstring>(struct SandwichTunnelContext *ctx)</argsstring>
+        <name>sandwich_tunnel_context_free</name>
+        <param>
+          <type>struct SandwichTunnelContext *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Free a Sandwich tunnel context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Context to free.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+NULL for <computeroutput>ctx</computeroutput> is allowed. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="91" column="1" declfile="docs/sandwich_c/tunnel.h" declline="91" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1adc9c81debdf50b060b1c1cc936e9d582" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> struct <ref refid="structSandwichError" kindref="compound">SandwichError</ref> *</type>
+        <definition>SANDWICH_API struct SandwichError * sandwich_tunnel_new</definition>
+        <argsstring>(struct SandwichTunnelContext *ctx, const struct SandwichTunnelIO *io, struct SandwichTunnelConfigurationSerialized configuration, struct SandwichTunnel **tun)</argsstring>
+        <name>sandwich_tunnel_new</name>
+        <param>
+          <type>struct SandwichTunnelContext *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const struct <ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref> *</type>
+          <declname>io</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structSandwichTunnelConfigurationSerialized" kindref="compound">SandwichTunnelConfigurationSerialized</ref></type>
+          <declname>configuration</declname>
+        </param>
+        <param>
+          <type>struct SandwichTunnel **</type>
+          <declname>tun</declname>
+        </param>
+        <briefdescription>
+<para>Create a tunnel. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>A tunnel is created from an IO interface. <computeroutput><ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref></computeroutput> are used to create an IO interface that forwards calls to the <computeroutput>read</computeroutput>, and <computeroutput>write</computeroutput> of <computeroutput><ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref></computeroutput>. The state of the tunnel is exposed to the IO interface through the <ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref>-&gt;set_state function.</para>
+<para>Since the implementation of <computeroutput>sandwich_tunnel_new</computeroutput> makes a copy of <computeroutput><ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref></computeroutput>, the caller does not need to keep <computeroutput>io</computeroutput> in memory. In other words, Sandwich does not take the ownership of <computeroutput>io</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Sandwich context used for setting up the tunnel. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">io</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>I/O interface to use to create the I/O interface. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">configuration</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Additional configuration the connection is subject to. A null pointer is undefined behavior. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">tun</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The new Sandwich tunnel object.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NULL if no error occured, else a chain of errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="114" column="1" declfile="docs/sandwich_c/tunnel.h" declline="114" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1a5c80a6c5e8bc8c0beec36c4f7bbb24c3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> struct <ref refid="structSandwichError" kindref="compound">SandwichError</ref> *</type>
+        <definition>SANDWICH_API struct SandwichError * sandwich_tunnel_handshake</definition>
+        <argsstring>(struct SandwichTunnel *tun, enum SandwichTunnelHandshakeState *state)</argsstring>
+        <name>sandwich_tunnel_handshake</name>
+        <param>
+          <type>struct SandwichTunnel *</type>
+          <declname>tun</declname>
+        </param>
+        <param>
+          <type>enum <ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" kindref="member">SandwichTunnelHandshakeState</ref> *</type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+<para>Perform the handshake. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">tun</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Tunnel. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">state</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The state of the tunnel</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Null if no error occured, else a chain of errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="126" column="1" declfile="docs/sandwich_c/tunnel.h" declline="126" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1a857c6c1212bea94d62fbee26ae3ee287" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> enum <ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref></type>
+        <definition>SANDWICH_API enum SandwichTunnelRecordError sandwich_tunnel_read</definition>
+        <argsstring>(struct SandwichTunnel *tun, void *dst, size_t n, size_t *r)</argsstring>
+        <name>sandwich_tunnel_read</name>
+        <param>
+          <type>struct SandwichTunnel *</type>
+          <declname>tun</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>dst</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>n</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>r</declname>
+        </param>
+        <briefdescription>
+<para>Read some bytes from the record plane of the tunnel. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">tun</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Tunnel.. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">dst</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Destination buffer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>n</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Amount of bytes to read. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">r</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Amount of bytes successfully read.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+NULL for <computeroutput>r</computeroutput> is allowed.</para>
+<para><simplesect kind="return"><para>An error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="140" column="1" declfile="docs/sandwich_c/tunnel.h" declline="140" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1ae122731167147ae812786d5cd29500a0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> enum <ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref></type>
+        <definition>SANDWICH_API enum SandwichTunnelRecordError sandwich_tunnel_write</definition>
+        <argsstring>(struct SandwichTunnel *tun, const void *src, size_t n, size_t *w)</argsstring>
+        <name>sandwich_tunnel_write</name>
+        <param>
+          <type>struct SandwichTunnel *</type>
+          <declname>tun</declname>
+        </param>
+        <param>
+          <type>const void *</type>
+          <declname>src</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>n</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>w</declname>
+        </param>
+        <briefdescription>
+<para>Write some bytes to the record plane of the tunnel. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">tun</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Tunnel. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">src</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Source buffer. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>n</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Amount of bytes to read. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">w</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Amount of bytes successfully written.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+NULL for <computeroutput>w</computeroutput> is allowed.</para>
+<para><simplesect kind="return"><para>An error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="154" column="1" declfile="docs/sandwich_c/tunnel.h" declline="154" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1aa7dfb77ecb209cf138b3340053ace0cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_tunnel_close</definition>
+        <argsstring>(struct SandwichTunnel *tun)</argsstring>
+        <name>sandwich_tunnel_close</name>
+        <param>
+          <type>struct SandwichTunnel *</type>
+          <declname>tun</declname>
+        </param>
+        <briefdescription>
+<para>Close the tunnel. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">tun</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Tunnel to close. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="160" column="19" declfile="docs/sandwich_c/tunnel.h" declline="160" declcolumn="19"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1a780ed8ffd1c915599c33788c9088caa0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> enum <ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" kindref="member">SandwichTunnelState</ref></type>
+        <definition>SANDWICH_API enum SandwichTunnelState sandwich_tunnel_state</definition>
+        <argsstring>(const struct SandwichTunnel *tun)</argsstring>
+        <name>sandwich_tunnel_state</name>
+        <param>
+          <type>const struct SandwichTunnel *</type>
+          <declname>tun</declname>
+        </param>
+        <briefdescription>
+<para>Get the state of the tunnel. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">tun</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Tunnel.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>The state of the tunnel. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="168" column="1" declfile="docs/sandwich_c/tunnel.h" declline="168" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1a30313a9f90b2b7ca275da8b96f90a71a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_tunnel_free</definition>
+        <argsstring>(struct SandwichTunnel *tun)</argsstring>
+        <name>sandwich_tunnel_free</name>
+        <param>
+          <type>struct SandwichTunnel *</type>
+          <declname>tun</declname>
+        </param>
+        <briefdescription>
+<para>Free a Sandwich tunnel. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If the I/O interface is still owned by the tunnel, it will be freed too.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="inout">tun</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Tunnel to free.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+NULL for <computeroutput>tun</computeroutput> is allowed. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="177" column="19" declfile="docs/sandwich_c/tunnel.h" declline="177" declcolumn="19"/>
+      </memberdef>
+      <memberdef kind="function" id="tunnel_8h_1a71fd735334e2f6734eb6c441959fb8e9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> struct <ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref></type>
+        <definition>SANDWICH_API struct SandwichTunnelIO sandwich_owned_io_to_tunnel_io</definition>
+        <argsstring>(const struct SandwichIOOwned *owned_io)</argsstring>
+        <name>sandwich_owned_io_to_tunnel_io</name>
+        <param>
+          <type>const struct <ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> *</type>
+          <declname>owned_io</declname>
+        </param>
+        <briefdescription>
+<para>Return the view of a tunnel IO from an owned IO. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>owned_io</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Owned io.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+The tunnel IO returned by this function is a view of the owned IO. It means that the user is STILL responsible for freeing the owned IO using <computeroutput>sandwich_io_owned_free</computeroutput>. Once freed, the view can no longer be used.</para>
+<para><simplesect kind="return"><para>A view of the owned IO as a tunnel IO. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/tunnel.h" line="190" column="1" declfile="docs/sandwich_c/tunnel.h" declline="190" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Sandwich Tunnel API. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>SandboxAQ.<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//<sp/>SPDX-License-Identifier:<sp/>AGPL-3.0-only</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sys/types.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="export_8h" kindref="compound">sandwich_c/export.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="io_8h" kindref="compound">sandwich_c/io.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="tunnel__types_8h" kindref="compound">sandwich_c/tunnel_types.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="keyword">struct<sp/></highlight><highlight class="normal">SandwichTunnelContext;</highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight></codeline>
+<codeline lineno="24" refid="structSandwichTunnelContextConfigurationSerialized" refkind="compound"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichTunnelContextConfigurationSerialized" kindref="compound">SandwichTunnelContextConfigurationSerialized</ref><sp/>{</highlight></codeline>
+<codeline lineno="26" refid="structSandwichTunnelContextConfigurationSerialized_1a18a1b7c87da19c94b5e7dd5150ab9a4d" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*<ref refid="structSandwichTunnelContextConfigurationSerialized_1a18a1b7c87da19c94b5e7dd5150ab9a4d" kindref="member">src</ref>;</highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29" refid="structSandwichTunnelContextConfigurationSerialized_1ac50a3ada505e781d2e30d0022cc47ad6" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="structSandwichTunnelContextConfigurationSerialized_1ac50a3ada505e781d2e30d0022cc47ad6" kindref="member">n</ref>;</highlight></codeline>
+<codeline lineno="30"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="33" refid="structSandwichTunnelConfigurationSerialized" refkind="compound"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichTunnelConfigurationSerialized" kindref="compound">SandwichTunnelConfigurationSerialized</ref><sp/>{</highlight></codeline>
+<codeline lineno="35" refid="structSandwichTunnelConfigurationSerialized_1ae06a15056d23b480e1db3a369da31bb4" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*<ref refid="structSandwichTunnelConfigurationSerialized_1ae06a15056d23b480e1db3a369da31bb4" kindref="member">src</ref>;</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38" refid="structSandwichTunnelConfigurationSerialized_1affdc41096c6ba445f3f39cc2cc797fa3" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="structSandwichTunnelConfigurationSerialized_1affdc41096c6ba445f3f39cc2cc797fa3" kindref="member">n</ref>;</highlight></codeline>
+<codeline lineno="39"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight></codeline>
+<codeline lineno="42"><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichTunnelConfigurationSerialized" kindref="compound">SandwichTunnelConfigurationSerialized</ref></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="tunnel_8h_1a1822628273de40a80b304dd3f6f6ca75" kindref="member">SandwichTunnelConfigurationVerifierEmpty</ref>;</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight></codeline>
+<codeline lineno="46"><highlight class="keyword">struct<sp/></highlight><highlight class="normal">SandwichTunnel;</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"></highlight></codeline>
+<codeline lineno="55" refid="tunnel_8h_1ae44c0cded27629217b6a6dd98268bbba" refkind="member"><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/>void(<ref refid="tunnel_8h_1ae44c0cded27629217b6a6dd98268bbba" kindref="member">SandwichTunnelIOSetStateFunction</ref>)(</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*uarg,<sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" kindref="member">SandwichTunnelState</ref><sp/>tunnel_state);</highlight></codeline>
+<codeline lineno="57" refid="tunnel_8h_1aa0d9cd2de623d6cb4b70204fb18be096" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">typedef</highlight><highlight class="normal"><sp/><ref refid="tunnel_8h_1ae44c0cded27629217b6a6dd98268bbba" kindref="member">SandwichTunnelIOSetStateFunction</ref><sp/>*<ref refid="tunnel_8h_1aa0d9cd2de623d6cb4b70204fb18be096" kindref="member">SandwichTunnelIOSetStateFunctionPtr</ref>;</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"></highlight></codeline>
+<codeline lineno="60" refid="structSandwichTunnelIO" refkind="compound"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref><sp/>{</highlight></codeline>
+<codeline lineno="62" refid="structSandwichTunnelIO_1af22cfdd389d6a6c75bfb97f3d19d59ba" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichIO" kindref="compound">SandwichIO</ref><sp/><ref refid="structSandwichTunnelIO_1af22cfdd389d6a6c75bfb97f3d19d59ba" kindref="member">base</ref>;</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight></codeline>
+<codeline lineno="70" refid="structSandwichTunnelIO_1a0cdbf688a14179064106b83091828f09" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="tunnel_8h_1aa0d9cd2de623d6cb4b70204fb18be096" kindref="member">SandwichTunnelIOSetStateFunctionPtr</ref><sp/><ref refid="structSandwichTunnelIO_1a0cdbf688a14179064106b83091828f09" kindref="member">set_state</ref>;</highlight></codeline>
+<codeline lineno="71"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"></highlight></codeline>
+<codeline lineno="80" refid="tunnel_8h_1ac3cc2b07f37fb227e6522444da70550e" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>*<ref refid="tunnel_8h_1ac3cc2b07f37fb227e6522444da70550e" kindref="member">sandwich_tunnel_context_new</ref>(</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichContext<sp/>*sw,</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichTunnelContextConfigurationSerialized" kindref="compound">SandwichTunnelContextConfigurationSerialized</ref><sp/>configuration,</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnelContext<sp/>**ctx);</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="91" refid="tunnel_8h_1ab5979cf3e9bfae2ba381e9117205239a" refkind="member"><highlight class="normal"><ref refid="tunnel_8h_1ab5979cf3e9bfae2ba381e9117205239a" kindref="member">sandwich_tunnel_context_free</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnelContext<sp/>*ctx);</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"></highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>*</highlight></codeline>
+<codeline lineno="114" refid="tunnel_8h_1adc9c81debdf50b060b1c1cc936e9d582" refkind="member"><highlight class="normal"><ref refid="tunnel_8h_1adc9c81debdf50b060b1c1cc936e9d582" kindref="member">sandwich_tunnel_new</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnelContext<sp/>*ctx,</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref><sp/>*io,</highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichTunnelConfigurationSerialized" kindref="compound">SandwichTunnelConfigurationSerialized</ref><sp/>configuration,</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnel<sp/>**tun);</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"></highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>*</highlight></codeline>
+<codeline lineno="126" refid="tunnel_8h_1a5c80a6c5e8bc8c0beec36c4f7bbb24c3" refkind="member"><highlight class="normal"><ref refid="tunnel_8h_1a5c80a6c5e8bc8c0beec36c4f7bbb24c3" kindref="member">sandwich_tunnel_handshake</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnel<sp/>*tun,</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1a87cf87d75cc73c4f70537ced614dbab9" kindref="member">SandwichTunnelHandshakeState</ref><sp/>*state);</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"></highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref></highlight></codeline>
+<codeline lineno="140" refid="tunnel_8h_1a857c6c1212bea94d62fbee26ae3ee287" refkind="member"><highlight class="normal"><ref refid="tunnel_8h_1a857c6c1212bea94d62fbee26ae3ee287" kindref="member">sandwich_tunnel_read</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnel<sp/>*tun,<sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*dst,<sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>n,</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>*r);</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"></highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1af84d1f872ea5405a4bf6389427bae8aa" kindref="member">SandwichTunnelRecordError</ref></highlight></codeline>
+<codeline lineno="154" refid="tunnel_8h_1ae122731167147ae812786d5cd29500a0" refkind="member"><highlight class="normal"><ref refid="tunnel_8h_1ae122731167147ae812786d5cd29500a0" kindref="member">sandwich_tunnel_write</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnel<sp/>*tun,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*src,<sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>n,</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>*w);</highlight></codeline>
+<codeline lineno="156"><highlight class="normal"></highlight></codeline>
+<codeline lineno="160" refid="tunnel_8h_1aa7dfb77ecb209cf138b3340053ace0cc" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="tunnel_8h_1aa7dfb77ecb209cf138b3340053ace0cc" kindref="member">sandwich_tunnel_close</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnel<sp/>*tun);</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"></highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="tunnel__types_8h_1a7d15e43ed430e881e54f38751fea6cf8" kindref="member">SandwichTunnelState</ref></highlight></codeline>
+<codeline lineno="168" refid="tunnel_8h_1a780ed8ffd1c915599c33788c9088caa0" refkind="member"><highlight class="normal"><ref refid="tunnel_8h_1a780ed8ffd1c915599c33788c9088caa0" kindref="member">sandwich_tunnel_state</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnel<sp/>*tun);</highlight></codeline>
+<codeline lineno="169"><highlight class="normal"></highlight></codeline>
+<codeline lineno="177" refid="tunnel_8h_1a30313a9f90b2b7ca275da8b96f90a71a" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="tunnel_8h_1a30313a9f90b2b7ca275da8b96f90a71a" kindref="member">sandwich_tunnel_free</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichTunnel<sp/>*tun);</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"></highlight></codeline>
+<codeline lineno="189"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichTunnelIO" kindref="compound">SandwichTunnelIO</ref></highlight></codeline>
+<codeline lineno="190" refid="tunnel_8h_1a71fd735334e2f6734eb6c441959fb8e9" refkind="member"><highlight class="normal"><ref refid="tunnel_8h_1a71fd735334e2f6734eb6c441959fb8e9" kindref="member">sandwich_owned_io_to_tunnel_io</ref>(const<sp/>struct<sp/><ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref><sp/>*owned_io);</highlight></codeline>
+<codeline lineno="191"><highlight class="normal"></highlight></codeline>
+<codeline lineno="192"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="193"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="194"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/tunnel.h"/>
+  </compounddef>
+</doxygen>

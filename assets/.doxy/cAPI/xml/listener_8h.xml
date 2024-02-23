@@ -1,0 +1,281 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="listener_8h" kind="file" language="C++">
+    <compoundname>listener.h</compoundname>
+    <includes local="no">sys/types.h</includes>
+    <includes refid="export_8h" local="yes">sandwich_c/export.h</includes>
+    <includes refid="io_8h" local="yes">sandwich_c/io.h</includes>
+    <includedby refid="sandwich_8h" local="yes">docs/sandwich_c/sandwich.h</includedby>
+    <incdepgraph>
+      <node id="3">
+        <label>sandwich_c/export.h</label>
+        <link refid="export_8h"/>
+      </node>
+      <node id="4">
+        <label>sandwich_c/io.h</label>
+        <link refid="io_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>sandwich_c/ioerrors.h</label>
+        <link refid="ioerrors_8h"/>
+      </node>
+      <node id="1">
+        <label>docs/sandwich_c/listener.h</label>
+        <link refid="listener_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>sys/types.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>docs/sandwich_c/listener.h</label>
+        <link refid="listener_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="listener_8h_1a55e1be141112ff60633b9fd90d21e751" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> struct <ref refid="structSandwichError" kindref="compound">SandwichError</ref> *</type>
+        <definition>SANDWICH_API struct SandwichError * sandwich_listener_new</definition>
+        <argsstring>(const void *src, size_t n, struct SandwichListener **out)</argsstring>
+        <name>sandwich_listener_new</name>
+        <param>
+          <type>const void *</type>
+          <declname>src</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>n</declname>
+        </param>
+        <param>
+          <type>struct SandwichListener **</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Creates a a new Listener object. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">src</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a serialized <computeroutput>ListenerConfiguration</computeroutput> protobuf message. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="in">n</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of src. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>points to the newly created listener.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>Error, if any. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/listener.h" line="30" column="1" declfile="docs/sandwich_c/listener.h" declline="30" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="listener_8h_1af9967dce35fc2b7d61769101ae9b91a4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> enum <ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></type>
+        <definition>SANDWICH_API enum SandwichIOError sandwich_listener_listen</definition>
+        <argsstring>(struct SandwichListener *listener)</argsstring>
+        <name>sandwich_listener_listen</name>
+        <param>
+          <type>struct SandwichListener *</type>
+          <declname>listener</declname>
+        </param>
+        <briefdescription>
+<para>Causes the Listener to start listening for connections. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">listener</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The listener object that should start listening for new connections.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>IOERROR_OK if the operation was a success, otherwise returns the error that occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/listener.h" line="40" column="1" declfile="docs/sandwich_c/listener.h" declline="40" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="listener_8h_1a95ad28bc7b713c941de9f9b11571003f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> enum <ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></type>
+        <definition>SANDWICH_API enum SandwichIOError sandwich_listener_accept</definition>
+        <argsstring>(struct SandwichListener *listener, struct SandwichIOOwned **ownedIO)</argsstring>
+        <name>sandwich_listener_accept</name>
+        <param>
+          <type>struct SandwichListener *</type>
+          <declname>listener</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> **</type>
+          <declname>ownedIO</declname>
+        </param>
+        <briefdescription>
+<para>Prompts the Listener to start accepting connections. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">listener</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the listener which should start accepting connections. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername direction="out">ownedIO</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the newly created OwnedIO struct containing the IO object to use with a tunnel. Null if an error occurs.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>IOERROR_OK if the operation was a success, otherwise returns the error that occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/listener.h" line="52" column="1" declfile="docs/sandwich_c/listener.h" declline="52" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="listener_8h_1ac9799d45e7457504b1cd404fefc98cfa" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_listener_close</definition>
+        <argsstring>(struct SandwichListener *listener)</argsstring>
+        <name>sandwich_listener_close</name>
+        <param>
+          <type>struct SandwichListener *</type>
+          <declname>listener</declname>
+        </param>
+        <briefdescription>
+<para>Closes the listener to new connections. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">listener</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the listener which should close. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/listener.h" line="58" column="19" declfile="docs/sandwich_c/listener.h" declline="58" declcolumn="19"/>
+      </memberdef>
+      <memberdef kind="function" id="listener_8h_1a41f1cf3d98c4066867b3cb17cbc6d10c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_listener_free</definition>
+        <argsstring>(struct SandwichListener *listener)</argsstring>
+        <name>sandwich_listener_free</name>
+        <param>
+          <type>struct SandwichListener *</type>
+          <declname>listener</declname>
+        </param>
+        <briefdescription>
+<para>Frees the given listener. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername direction="in">listener</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the listener which should start accepting connections. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/listener.h" line="63" column="19" declfile="docs/sandwich_c/listener.h" declline="63" declcolumn="19"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Sandwich C library, on top of the Rust implementation. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>SandboxAQ.<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//<sp/>SPDX-License-Identifier:<sp/>AGPL-3.0-only</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sys/types.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="export_8h" kindref="compound">sandwich_c/export.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="io_8h" kindref="compound">sandwich_c/io.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="keyword">struct<sp/></highlight><highlight class="normal">SandwichListener;</highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>*</highlight></codeline>
+<codeline lineno="30" refid="listener_8h_1a55e1be141112ff60633b9fd90d21e751" refkind="member"><highlight class="normal"><ref refid="listener_8h_1a55e1be141112ff60633b9fd90d21e751" kindref="member">sandwich_listener_new</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*src,<sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>n,<sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichListener<sp/>**out);</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="39"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></highlight></codeline>
+<codeline lineno="40" refid="listener_8h_1af9967dce35fc2b7d61769101ae9b91a4" refkind="member"><highlight class="normal"><ref refid="listener_8h_1af9967dce35fc2b7d61769101ae9b91a4" kindref="member">sandwich_listener_listen</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichListener<sp/>*listener);</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keyword">enum</highlight><highlight class="normal"><sp/><ref refid="ioerrors_8h_1a130c1632de92a805add2c84ce70e4a1d" kindref="member">SandwichIOError</ref></highlight></codeline>
+<codeline lineno="52" refid="listener_8h_1a95ad28bc7b713c941de9f9b11571003f" refkind="member"><highlight class="normal"><ref refid="listener_8h_1a95ad28bc7b713c941de9f9b11571003f" kindref="member">sandwich_listener_accept</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichListener<sp/>*listener,</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref><sp/>**ownedIO);</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58" refid="listener_8h_1ac9799d45e7457504b1cd404fefc98cfa" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="listener_8h_1ac9799d45e7457504b1cd404fefc98cfa" kindref="member">sandwich_listener_close</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichListener<sp/>*listener);</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight></codeline>
+<codeline lineno="63" refid="listener_8h_1a41f1cf3d98c4066867b3cb17cbc6d10c" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="listener_8h_1a41f1cf3d98c4066867b3cb17cbc6d10c" kindref="member">sandwich_listener_free</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/>SandwichListener<sp/>*listener);</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/listener.h"/>
+  </compounddef>
+</doxygen>

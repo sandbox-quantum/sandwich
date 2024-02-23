@@ -1,0 +1,169 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="error_8h" kind="file" language="C++">
+    <compoundname>error.h</compoundname>
+    <includes refid="error__codes_8h" local="yes">sandwich_c/error_codes.h</includes>
+    <includes refid="export_8h" local="yes">sandwich_c/export.h</includes>
+    <includedby refid="sandwich_8h" local="yes">docs/sandwich_c/sandwich.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>docs/sandwich_c/error.h</label>
+        <link refid="error_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>sandwich_c/error_codes.h</label>
+        <link refid="error__codes_8h"/>
+      </node>
+      <node id="3">
+        <label>sandwich_c/export.h</label>
+        <link refid="export_8h"/>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>docs/sandwich_c/error.h</label>
+        <link refid="error_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>docs/sandwich_c/sandwich.h</label>
+        <link refid="sandwich_8h"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="structSandwichError" prot="public">SandwichError</innerclass>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="error_8h_1a2c2a792ceb10538b164c5ce2b414bfd4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_error_free</definition>
+        <argsstring>(struct SandwichError *chain)</argsstring>
+        <name>sandwich_error_free</name>
+        <param>
+          <type>struct <ref refid="structSandwichError" kindref="compound">SandwichError</ref> *</type>
+          <declname>chain</declname>
+        </param>
+        <briefdescription>
+<para>Free an error chain. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>chain</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Error chain. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error.h" line="35" column="19" declfile="docs/sandwich_c/error.h" declline="35" declcolumn="19"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8h_1ab72c6522ffa61713b9cd45afea27f096" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> char *</type>
+        <definition>SANDWICH_API char * sandwich_error_stack_str_new</definition>
+        <argsstring>(const struct SandwichError *chain)</argsstring>
+        <name>sandwich_error_stack_str_new</name>
+        <param>
+          <type>const struct <ref refid="structSandwichError" kindref="compound">SandwichError</ref> *</type>
+          <declname>chain</declname>
+        </param>
+        <briefdescription>
+<para>Create an error stack string from a <ref refid="structSandwichError" kindref="compound">SandwichError</ref> chain. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>chain</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Error chain.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>A NUL terminated string describing the <ref refid="structSandwichError" kindref="compound">SandwichError</ref> chain </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error.h" line="43" column="1" declfile="docs/sandwich_c/error.h" declline="43" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="error_8h_1a8f0a70f2ddf19618bb8f6d5eb4c702b3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref> void</type>
+        <definition>SANDWICH_API void sandwich_error_stack_str_free</definition>
+        <argsstring>(const char *err_str)</argsstring>
+        <name>sandwich_error_stack_str_free</name>
+        <param>
+          <type>const char *</type>
+          <declname>err_str</declname>
+        </param>
+        <briefdescription>
+<para>Free a an error string (generated from sandwich_error_stack_str_new) </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>err_str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Pointer to error string to free.</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+NULL for err_str is allowed. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/error.h" line="50" column="19" declfile="docs/sandwich_c/error.h" declline="50" declcolumn="19"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Error handling for the Sandwich library. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>SandboxAQ.<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="comment">//<sp/>SPDX-License-Identifier:<sp/>AGPL-3.0-only</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="preprocessor">#pragma<sp/>once</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="error__codes_8h" kindref="compound">sandwich_c/error_codes.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="export_8h" kindref="compound">sandwich_c/export.h</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight></codeline>
+<codeline lineno="18" refid="structSandwichError" refkind="compound"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>{</highlight></codeline>
+<codeline lineno="20" refid="structSandwichError_1ac9df4b785a0d9dd0681dd12eb5fb4b43" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>*<ref refid="structSandwichError_1ac9df4b785a0d9dd0681dd12eb5fb4b43" kindref="member">details</ref>;</highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight></codeline>
+<codeline lineno="23" refid="structSandwichError_1ad35ed98cc5128a078371a7ecb73921bb" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*<ref refid="structSandwichError_1ad35ed98cc5128a078371a7ecb73921bb" kindref="member">msg</ref>;</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight></codeline>
+<codeline lineno="26" refid="structSandwichError_1aa409db444f928202b85a6d9220115345" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="error__codes_8h_1aab69037c1ac0f88bb898b510cd062d86" kindref="member">SandwichErrorKind</ref><sp/><ref refid="structSandwichError_1aa409db444f928202b85a6d9220115345" kindref="member">kind</ref>;</highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29" refid="structSandwichError_1abb4d3401ae91ac69281b2f46f85e5833" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="structSandwichError_1abb4d3401ae91ac69281b2f46f85e5833" kindref="member">code</ref>;</highlight></codeline>
+<codeline lineno="30"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="35" refid="error_8h_1a2c2a792ceb10538b164c5ce2b414bfd4" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="error_8h_1a2c2a792ceb10538b164c5ce2b414bfd4" kindref="member">sandwich_error_free</ref>(</highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>*chain);</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*</highlight></codeline>
+<codeline lineno="43" refid="error_8h_1ab72c6522ffa61713b9cd45afea27f096" refkind="member"><highlight class="normal"><ref refid="error_8h_1ab72c6522ffa61713b9cd45afea27f096" kindref="member">sandwich_error_stack_str_new</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">struct</highlight><highlight class="normal"><sp/><ref refid="structSandwichError" kindref="compound">SandwichError</ref><sp/>*chain);</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight></codeline>
+<codeline lineno="50" refid="error_8h_1a8f0a70f2ddf19618bb8f6d5eb4c702b3" refkind="member"><highlight class="normal"><ref refid="export_8h_1a3298d07d3713a0d86267cd907a504b09" kindref="member">SANDWICH_API</ref><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="error_8h_1a8f0a70f2ddf19618bb8f6d5eb4c702b3" kindref="member">sandwich_error_stack_str_free</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*err_str);</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"></highlight></codeline>
+<codeline lineno="52"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>__cplusplus</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="docs/sandwich_c/error.h"/>
+  </compounddef>
+</doxygen>

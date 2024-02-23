@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["file_descriptor"],"mod":["any_value","span","status"],"struct":["AnyValue","ArrayValue","InstrumentationScope","KeyValue","KeyValueList","Resource","ResourceSpans","ScopeSpans","Span","Status","TracesData"]};

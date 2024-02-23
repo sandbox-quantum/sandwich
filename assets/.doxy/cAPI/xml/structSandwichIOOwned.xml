@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.8" xml:lang="en-US">
+  <compounddef id="structSandwichIOOwned" kind="struct" language="C++" prot="public">
+    <compoundname>SandwichIOOwned</compoundname>
+    <includes refid="io_8h" local="no">io.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structSandwichIOOwned_1a56590e9132faa97a07b0e7581715b134" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="structSandwichIO" kindref="compound">SandwichIO</ref> *</type>
+        <definition>struct SandwichIO* SandwichIOOwned::io</definition>
+        <argsstring></argsstring>
+        <name>io</name>
+        <qualifiedname>SandwichIOOwned::io</qualifiedname>
+        <briefdescription>
+<para>The IO which is owned by Sandwich. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="82" column="19" bodyfile="docs/sandwich_c/io.h" bodystart="82" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structSandwichIOOwned_1aea4b7a33cfa8a5d2ab3a8978d504d9cd" prot="public" static="no" mutable="no">
+        <type><ref refid="io_8h_1a69abb8b55ba846c2bca5fbc85c126f4e" kindref="member">SandwichOwnedIOFreeFunctionPtr</ref></type>
+        <definition>SandwichOwnedIOFreeFunctionPtr SandwichIOOwned::freeptr</definition>
+        <argsstring></argsstring>
+        <name>freeptr</name>
+        <qualifiedname>SandwichIOOwned::freeptr</qualifiedname>
+        <briefdescription>
+<para>The function used to free the owned IO. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="docs/sandwich_c/io.h" line="85" column="34" bodyfile="docs/sandwich_c/io.h" bodystart="85" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>An IO owned by the Sandwich Library. </para>
+    </briefdescription>
+    <detaileddescription>
+<para><ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> objects own the underlying <computeroutput>io-&gt;uarg</computeroutput> object pointer, and provides a <computeroutput>freeptr</computeroutput> function that is responsible for destroying that object. <ref refid="structSandwichIOOwned" kindref="compound">SandwichIOOwned</ref> must be freed by calling the <ref refid="io_8h_1ae87bb1b6e44ee5a68c4095fa47fdd039" kindref="member">sandwich_io_owned_free</ref> function. This is what is returned from sandwich_io_*_new functions. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>SandwichIO</label>
+        <link refid="structSandwichIO"/>
+      </node>
+      <node id="1">
+        <label>SandwichIOOwned</label>
+        <link refid="structSandwichIOOwned"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>io</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="docs/sandwich_c/io.h" line="80" column="1" bodyfile="docs/sandwich_c/io.h" bodystart="80" bodyend="86"/>
+    <listofallmembers>
+      <member refid="structSandwichIOOwned_1aea4b7a33cfa8a5d2ab3a8978d504d9cd" prot="public" virt="non-virtual"><scope>SandwichIOOwned</scope><name>freeptr</name></member>
+      <member refid="structSandwichIOOwned_1a56590e9132faa97a07b0e7581715b134" prot="public" virt="non-virtual"><scope>SandwichIOOwned</scope><name>io</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

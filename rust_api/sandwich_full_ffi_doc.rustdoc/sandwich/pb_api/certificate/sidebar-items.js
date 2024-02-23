@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["file_descriptor"],"mod":["certificate"],"struct":["Certificate"]};
